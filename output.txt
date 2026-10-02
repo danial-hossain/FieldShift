@@ -1,0 +1,55 @@
+FieldShift Phase 2 — NASA POWER data pipeline
+
+IMPLEMENTED
+- Fetches NASA POWER Daily Point API data for configurable coordinates and date ranges.
+- Validates latitude, longitude, and start/end dates.
+- Uses a 30-second request timeout and reports connection, HTTP, invalid JSON, missing-field, and empty-response errors.
+- Returns date, temperature, temp_max, temp_min, rainfall, humidity, wind_speed, solar_radiation.
+- Parses dates and numeric values; converts NASA's -999 missing marker to NaN without substituting zero.
+- Detects latest valid observation based on at least one valid environmental measurement, not the latest calendar date.
+- Saves cleaned output to a coordinate/date-named CSV in data/nasa_power/.
+- Provides a recent-window helper with configurable processing delay.
+- Retains src.nasa_power compatibility imports and command-line execution.
+- Adds mocked unittest coverage; no new dependency was required.
+
+FILES CREATED
+- src/data/nasa_power.py — NASA POWER pipeline.
+- tests/test_nasa_power.py — 13 unit tests.
+- data/nasa_power/nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv — 30 rows fetched from NASA POWER by the example run.
+
+FILES MODIFIED
+- src/nasa_power.py — compatibility wrapper to the new module.
+- README.md — NASA POWER source, variables, cleaning/date logic, provenance, commands, and Phase 2 status.
+- output.txt — overwritten with this current task result.
+- requirements.txt was not changed.
+
+INSTALL (requirements unchanged; existing environment can be reused)
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+TEST
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+Result: 13 tests passed.
+
+NASA POWER EXAMPLE (requires network; saves a CSV)
+.\.venv\Scripts\python.exe -m src.data.nasa_power
+
+Example output:
+        date  temperature  temp_max  ...  humidity  wind_speed  solar_radiation
+2026-09-25        27.59     30.49  ...     88.91        1.71            14.75
+2026-09-26        28.48     32.74  ...     85.19        1.46            19.09
+2026-09-27        28.91     33.15  ...     80.55        0.83            19.44
+2026-09-28        29.12     33.16  ...     79.81        0.94              NaN
+2026-09-29        28.79     33.39  ...     81.53        1.55              NaN
+Latest valid NASA POWER observation: 2026-09-29 00:00:00
+
+Latest valid observation in the example run: 2026-09-29. The next calendar
+days were not used; latest-valid detection ignores rows only when all
+environmental measurements are missing. In this returned data, Sep 29 had
+valid temperature and other measurements although solar radiation was NaN.
+
+MISSING VALUES
+Every numeric field equal to NASA POWER's -999 marker is converted to pandas
+NaN during fetch and CSV preparation. Missing values remain missing; they are
+not converted to zero. The saved example CSV contains no -999 marker.
+
+No SMAP, MILP, RL, ML, dashboard, or stress-testing work was started.
