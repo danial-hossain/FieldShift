@@ -1,0 +1,44 @@
+{
+  "metadata": {
+    "name": "FieldShift MVP agronomic rules",
+    "version": "0.1.0",
+    "source_type": "demo",
+    "status": "demo_only",
+    "disclaimer": "Rules are schema examples and must not drive production decisions without expert review and sourced thresholds."
+  },
+  "hard_constraints": [],
+  "soft_preferences": [
+    {
+      "rule_id": "agronomic_001",
+      "type": "soil_ph_compatibility",
+      "description": "Prefer crops whose declared pH interval contains the field pH.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "demo_only",
+      "parameters": {
+        "range_source": "crop_requirements"
+      }
+    },
+    {
+      "rule_id": "agronomic_002",
+      "type": "irrigation_compatibility",
+      "description": "Consider irrigation availability when comparing crops with different water needs.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "schema_only",
+      "parameters": {
+        "water_threshold_mm": null
+      }
+    }
+  ],
+  "agronomic_information": [
+    {
+      "rule_id": "agronomic_info_001",
+      "type": "provenance_guardrail",
+      "description": "Placeholder crop requirements require sourced replacement before production use.",
+      "severity": "informational",
+      "source_type": "demo",
+      "status": "active"
+    }
+  ]
+}

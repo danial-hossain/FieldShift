@@ -1,4 +1,4 @@
-# FieldShift — Phase 1
+# FieldShift - Phases 1 and 2
 
 FieldShift Phase 1 is a modular pipeline for location-based daily climate data:
 
@@ -6,10 +6,11 @@ FieldShift Phase 1 is a modular pipeline for location-based daily climate data:
 NASA POWER API -> validation -> cleaning -> feature engineering -> clean CSV
 ```
 
-It does **not** treat NASA POWER as field-sensor data and does not infer soil
-conditions, nutrients, yield, crop prices, or other field measurements. AI,
-reinforcement learning, optimization, SMAP, API, and frontend work are outside
-this phase.
+The climate pipeline does **not** treat NASA POWER as field-sensor data or infer
+soil conditions, nutrients, yield, crop prices, or other field measurements.
+Phase 2 adds a separate, explicitly synthetic/demo agronomic data layer. AI,
+reinforcement learning, optimization, SMAP, API, and frontend work remain out
+of scope.
 
 ## Requirements and installation
 
@@ -22,7 +23,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Phase 1 uses only pandas, NumPy, requests, and pytest. Climate observations come
+Phases 1 and 2 use only pandas, NumPy, requests, and pytest. Climate observations come
 from the official [NASA POWER Daily Point API](https://power.larc.nasa.gov/docs/services/api/temporal/daily/point/).
 
 ## Fetch NASA POWER data
@@ -108,10 +109,97 @@ clean = pd.read_csv(
 monthly = aggregate_monthly(clean, heat_threshold=35)
 ```
 
+## Phase 2: agronomic data and knowledge
+
+Phase 2 supplies validated, structured inputs that later phases can combine
+into a field state. It does not make crop recommendations, predictions, or
+optimization decisions.
+
+```text
+data/
+|-- nasa_power/
+|   |-- nasa_power_2025.csv
+|   `-- nasa_power_2025_clean.csv
+|-- crops/
+|   |-- crop_catalog.csv
+|   `-- crop_requirements.csv
+|-- soil/
+|   `-- soil_data.csv
+`-- field_history/
+    `-- crop_history.csv
+
+knowledge_base/
+|-- crop_knowledge.json
+|-- agronomic_rules.json
+`-- rotation_rules.json
+```
+
+### Data provenance
+
+None of the Phase 2 records are real farmer or field observations:
+
+- `crop_catalog.csv`: six MVP crops. Family/boolean structure follows the
+  project specification; duration and water categories are placeholders.
+- `crop_requirements.csv`: six rows of placeholder numeric values for software
+  development. They are not validated agronomic recommendations.
+- `soil_data.csv`: three wholly synthetic demonstration fields. Coordinates,
+  nutrients, pH, area, texture, organic matter, and irrigation values are not
+  measurements from Bangladeshi farms.
+- `crop_history.csv`: nine wholly synthetic crop-history records.
+- Knowledge-base JSON: demo-only structured rules. No validated hard
+  constraints are asserted, and unknown thresholds are represented as `null`.
+
+Each CSV includes `source_type` and `data_status`. Each knowledge file includes
+the same provenance in its metadata and entries. Placeholder or synthetic data
+must be replaced with sourced, reviewed data before production use.
+
+### Schemas
+
+- Crop catalog: `crop_id`, `crop_name`, `crop_family`, legume/nitrogen-fixing
+  booleans, duration, water category, and provenance.
+- Crop requirements: temperature bounds, water/rainfall placeholders, soil pH
+  bounds, configurable heat-stress threshold, drought sensitivity, and
+  provenance.
+- Soil: field identifier, coordinates, area, N/P/K, explicit demo-only units,
+  pH, texture, organic matter, irrigation availability, and provenance.
+- Crop history: field identifier, season, year, crop identifier, and
+  provenance.
+- Knowledge rules: separate `hard_constraints`, `soft_preferences`, and
+  `agronomic_information` arrays.
+
+### Loading and validation
+
+`src.data_loader` resolves default paths relative to the repository, validates
+file existence and schemas, normalizes only explicitly valid boolean/numeric
+representations, and raises `DataValidationError` for malformed data.
+
+```python
+from src.data_loader import (
+    load_climate_data,
+    load_crop_catalog,
+    load_crop_requirements,
+    load_soil_data,
+    load_crop_history,
+    load_crop_knowledge,
+    load_agronomic_rules,
+    load_rotation_rules,
+)
+
+climate = load_climate_data()
+catalog = load_crop_catalog()
+requirements = load_crop_requirements(crop_catalog=catalog)
+soil = load_soil_data()
+history = load_crop_history(crop_catalog=catalog)
+crop_knowledge = load_crop_knowledge()
+agronomic_rules = load_agronomic_rules()
+rotation_rules = load_rotation_rules()
+```
+
 ## Tests
 
-Tests use mocked API responses and small local DataFrames; they do not require a
-live NASA request:
+The complete Phase 1 and Phase 2 suite uses mocked API responses, repository
+fixtures, and temporary malformed datasets. It does not require a live NASA
+request:
 
 ```powershell
 python -m pytest

@@ -1,0 +1,10 @@
+field_id,season,year,crop_id,source_type,data_status,notes
+demo_field_001,monsoon,2023,rice,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_001,winter,2024,mustard,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_001,summer,2025,mung_bean,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_002,winter,2023,wheat,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_002,monsoon,2024,maize,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_002,winter,2025,lentil,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_003,summer,2023,mung_bean,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_003,monsoon,2024,rice,synthetic,demo,Synthetic rotation history; not an observed farm record
+demo_field_003,winter,2025,wheat,synthetic,demo,Synthetic rotation history; not an observed farm record

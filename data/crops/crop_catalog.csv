@@ -1,0 +1,7 @@
+crop_id,crop_name,crop_family,is_legume,nitrogen_fixing,duration_days,water_requirement,source_type,data_status,notes
+rice,Rice,grass,false,false,120,high,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations
+wheat,Wheat,grass,false,false,110,medium,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations
+maize,Maize,grass,false,false,110,medium,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations
+mustard,Mustard,brassica,false,false,90,low,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations
+mung_bean,Mung bean,legume,true,true,70,low,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations
+lentil,Lentil,legume,true,true,100,low,placeholder,demo,Illustrative MVP record; duration and water category are not validated recommendations

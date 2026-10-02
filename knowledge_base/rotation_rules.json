@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "name": "FieldShift MVP rotation rules",
+    "version": "0.1.0",
+    "source_type": "demo",
+    "status": "demo_only",
+    "disclaimer": "Soft demo preferences only; no validated hard rotation constraints are asserted."
+  },
+  "hard_constraints": [],
+  "soft_preferences": [
+    {
+      "rule_id": "rotation_001",
+      "type": "same_crop_consecutive",
+      "description": "Prefer not to plant the identical crop in consecutive recorded seasons.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "demo_only",
+      "parameters": {
+        "lookback_seasons": 1
+      }
+    },
+    {
+      "rule_id": "rotation_002",
+      "type": "same_family_consecutive",
+      "description": "Prefer crop-family diversity between consecutive recorded seasons.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "demo_only",
+      "parameters": {
+        "lookback_seasons": 1
+      }
+    },
+    {
+      "rule_id": "rotation_003",
+      "type": "legume_rotation",
+      "description": "Represent a preference for including legumes in a rotation sequence.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "schema_only",
+      "parameters": {
+        "maximum_gap_seasons": null
+      }
+    },
+    {
+      "rule_id": "rotation_004",
+      "type": "water_intensive_sequence",
+      "description": "Represent a preference to review consecutive water-intensive crops.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "schema_only",
+      "parameters": {
+        "water_intensive_threshold_mm": null
+      }
+    },
+    {
+      "rule_id": "rotation_005",
+      "type": "soil_depletion",
+      "description": "Reserve a structured rule slot for future sourced nutrient-depletion logic.",
+      "severity": "soft",
+      "source_type": "demo",
+      "status": "schema_only",
+      "parameters": {
+        "nutrient_thresholds": null
+      }
+    }
+  ],
+  "agronomic_information": []
+}

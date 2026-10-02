@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "name": "FieldShift MVP crop knowledge",
+    "version": "0.1.0",
+    "source_type": "demo",
+    "status": "demo_only",
+    "disclaimer": "Structured development data only; not validated agronomic advice."
+  },
+  "crops": [
+    {
+      "crop_id": "rice",
+      "crop_family": "grass",
+      "is_legume": false,
+      "nitrogen_fixing": false,
+      "source_type": "demo"
+    },
+    {
+      "crop_id": "wheat",
+      "crop_family": "grass",
+      "is_legume": false,
+      "nitrogen_fixing": false,
+      "source_type": "demo"
+    },
+    {
+      "crop_id": "maize",
+      "crop_family": "grass",
+      "is_legume": false,
+      "nitrogen_fixing": false,
+      "source_type": "demo"
+    },
+    {
+      "crop_id": "mustard",
+      "crop_family": "brassica",
+      "is_legume": false,
+      "nitrogen_fixing": false,
+      "source_type": "demo"
+    },
+    {
+      "crop_id": "mung_bean",
+      "crop_family": "legume",
+      "is_legume": true,
+      "nitrogen_fixing": true,
+      "source_type": "demo"
+    },
+    {
+      "crop_id": "lentil",
+      "crop_family": "legume",
+      "is_legume": true,
+      "nitrogen_fixing": true,
+      "source_type": "demo"
+    }
+  ]
+}

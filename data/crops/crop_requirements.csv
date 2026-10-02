@@ -1,0 +1,7 @@
+crop_id,temperature_min,temperature_optimal,temperature_max,water_requirement_mm,rainfall_requirement_mm,soil_ph_min,soil_ph_max,heat_stress_threshold,drought_sensitivity,source_type,data_status,notes
+rice,20,28,38,1200,1000,5.0,7.0,35,high,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation
+wheat,10,20,30,450,350,6.0,7.5,28,medium,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation
+maize,15,25,35,500,450,5.5,7.5,33,medium,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation
+mustard,10,20,30,350,300,6.0,7.5,30,low,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation
+mung_bean,20,28,36,350,300,6.0,7.5,34,medium,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation
+lentil,10,20,30,300,250,6.0,8.0,30,medium,placeholder,demo,Illustrative values for software development only; not an agronomic recommendation

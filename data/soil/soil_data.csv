@@ -1,0 +1,4 @@
+field_id,latitude,longitude,area_hectares,nitrogen,phosphorus,potassium,nutrient_unit,ph,soil_texture,organic_matter,organic_matter_unit,irrigation_available,source_type,data_status,notes
+demo_field_001,23.7500,90.3500,1.20,42,18,35,demo_index,6.4,loam,2.1,demo_index,true,synthetic,demo,Synthetic record; nutrient and organic-matter values are demonstration inputs with no field provenance
+demo_field_002,24.1000,90.1000,0.80,30,24,28,demo_index,5.8,clay_loam,1.7,demo_index,false,synthetic,demo,Synthetic record; nutrient and organic-matter values are demonstration inputs with no field provenance
+demo_field_003,23.4000,89.9000,1.75,55,20,40,demo_index,7.1,silt_loam,2.5,demo_index,true,synthetic,demo,Synthetic record; nutrient and organic-matter values are demonstration inputs with no field provenance
