@@ -1,4 +1,4 @@
-# FieldShift - Phases 1 and 2
+# FieldShift - Phases 1, 2, and 3
 
 FieldShift Phase 1 is a modular pipeline for location-based daily climate data:
 
@@ -8,9 +8,10 @@ NASA POWER API -> validation -> cleaning -> feature engineering -> clean CSV
 
 The climate pipeline does **not** treat NASA POWER as field-sensor data or infer
 soil conditions, nutrients, yield, crop prices, or other field measurements.
-Phase 2 adds a separate, explicitly synthetic/demo agronomic data layer. AI,
-reinforcement learning, optimization, SMAP, API, and frontend work remain out
-of scope.
+Phase 2 adds a separate, explicitly synthetic/demo agronomic data layer. Phase
+3 integrates those inputs into an explainable field state and crop
+compatibility baseline. Reinforcement learning, optimization, SMAP, API, and
+frontend work remain out of scope.
 
 ## Requirements and installation
 
@@ -23,7 +24,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Phases 1 and 2 use only pandas, NumPy, requests, and pytest. Climate observations come
+Phases 1 through 3 use only pandas, NumPy, requests, and pytest. Climate observations come
 from the official [NASA POWER Daily Point API](https://power.larc.nasa.gov/docs/services/api/temporal/daily/point/).
 
 ## Fetch NASA POWER data
@@ -195,14 +196,128 @@ agronomic_rules = load_agronomic_rules()
 rotation_rules = load_rotation_rules()
 ```
 
+## Phase 3: field-state integration
+
+Phase 3 supplies a transparent baseline for combining the existing validated
+inputs. It does not train a model or produce a scientifically optimal crop.
+
+```text
+NASA POWER climate + synthetic soil + synthetic crop history
+                           +
+placeholder crop catalog/requirements + demo crop knowledge/rules
+                           |
+                           v
+                    canonical FieldState
+                           |
+                 candidate compatibility
+                           |
+             evidence + stable feature vector
+```
+
+### Canonical representations
+
+`src.field_state` defines immutable dataclasses for:
+
+- `FieldState`: field identity, coordinates, area, soil, aggregated climate,
+  history summary, time boundary, provenance, and warnings.
+- `SoilState`: N/P/K with their original `demo_index` unit, pH, texture,
+  organic matter with its original unit, and recorded irrigation availability.
+- `ClimateState`: selected-period observation count, temperature mean/min/max,
+  cumulative precipitation, mean humidity, wind speed, and solar radiation.
+  These are descriptive statistics, not stress classifications.
+- `HistoryState`: ordered records, previous crop/family, last-three-record
+  sequence, recent legume count, and factual trailing repetition counts. It
+  does not simulate nutrient or soil changes.
+- `CandidateCrop`: catalog metadata, nullable requirements, and knowledge
+  metadata with source-specific provenance retained.
+
+The default high-level APIs use repository-relative paths through the existing
+validated loaders:
+
+```python
+from src.field_state import build_candidate_crop, build_field_state
+
+state = build_field_state("demo_field_001")
+maize = build_candidate_crop("maize")
+```
+
+`build_field_state(..., as_of_date="2025-06-01")` excludes later climate
+observations. Crop history only records a year and season label, not an exact
+date, so an explicit boundary conservatively excludes the whole boundary year
+instead of guessing season dates. `climate_start_date` can select the beginning
+of the descriptive climate period.
+
+### Explainable compatibility
+
+`src.suitability` evaluates candidates in catalog order without ranking them:
+
+```python
+from src.suitability import evaluate_all_candidates, evaluate_candidate_crop
+
+one = evaluate_candidate_crop(state, "maize")
+all_candidates = evaluate_all_candidates(state)
+```
+
+Every signal is categorical and includes machine-readable evidence containing
+the actual field value, declared candidate values/range, result, reason, and
+applicable demo rule identifier.
+
+| Signal | Phase 3 behavior |
+| --- | --- |
+| Temperature | Compares historical period mean with declared nullable min/max. |
+| Soil pH | Compares field pH with declared nullable min/max. |
+| Rainfall | Returns `unknown`: historical period precipitation and the placeholder crop value lack a shared declared time basis. |
+| Irrigation | Availability is `compatible`; absent irrigation plus a placeholder `high` water category is a soft `borderline` review flag; other absent-irrigation cases are `unknown`. |
+| Rotation | Uses only the previous crop/family and the active soft demo repetition preferences. A repeat is `borderline`, never a hard constraint. |
+
+Missing field values or requirements return `unknown`; they are never filled
+with guessed thresholds. There is no numeric probability or aggregate score.
+Suitability, feasibility, and optimization remain separate concerns: Phase 3
+does not implement a feasibility solver, hard agronomic constraints, MILP,
+Pareto analysis, reinforcement learning, or multi-season planning.
+
+### Stable feature representation
+
+`src.feature_builder.build_feature_vector` combines field, climate, soil,
+history, candidate, provenance, and compatibility inputs in the fixed
+`FEATURE_NAMES` order. Numeric missing values use `0.0` plus a paired
+`*_missing` indicator; missing categories use `__missing__`. Compatibility is
+encoded as `-1` (incompatible), `0` (borderline or unknown), or `1`
+(compatible), with a separate unknown indicator.
+
+The categorical values intentionally remain strings. A future ML pipeline must
+fit any categorical encoder on training data only. The representation contains
+no target, fake recommendation label, yield, probability, or label leakage.
+
+### Phase 3 provenance and limitations
+
+- Climate: cleaned historical NASA POWER gridded point data, not field sensors.
+- Soil: synthetic/demo records.
+- Crop history: synthetic/demo records.
+- Crop catalog and requirements: placeholder/demo records.
+- Crop knowledge and agronomic/rotation rules: demo-only; hard-constraint
+  lists are empty.
+
+> Current agronomic datasets contain placeholder/demo and synthetic
+> information. Phase 3 compatibility outputs are architecture and pipeline
+> demonstrations, not validated real-world agronomic recommendations.
+
+The single climate file is reused by all demo fields; Phase 3 does not claim it
+is a measurement at each synthetic coordinate. Crop requirements do not define
+planting dates or comparable crop-period climate windows, and no yield/outcome
+labels exist. Those limitations prevent scientifically supported supervised
+accuracy claims or candidate ranking.
+
 ## Tests
 
-The complete Phase 1 and Phase 2 suite uses mocked API responses, repository
-fixtures, and temporary malformed datasets. It does not require a live NASA
-request:
+The complete Phase 1 through Phase 3 suite uses mocked API responses,
+repository fixtures, temporary malformed datasets, field-state integration,
+compatibility evidence, and deterministic feature-vector checks. It does not
+require a live NASA request:
 
 ```powershell
 python -m pytest
+python -m pip check
 ```
 
 The expected pipeline output is the clean daily CSV plus an audit report.

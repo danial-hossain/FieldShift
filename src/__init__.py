@@ -1,1 +1,1 @@
-"""FieldShift Phase 1 climate-data foundation."""
+"""FieldShift climate, agronomic-data, and explainable field-state foundation."""

@@ -259,10 +259,26 @@ def load_crop_requirements(
         "soil_ph_max",
         "heat_stress_threshold",
     )
-    _numeric(frame, numeric_columns, "crop requirements")
-    bad_temperature = ~(
-        frame["temperature_min"].le(frame["temperature_optimal"])
-        & frame["temperature_optimal"].le(frame["temperature_max"])
+    # Scientific requirements may legitimately be unknown. Preserve those
+    # values as NaN so downstream code can return an explicit ``unknown``
+    # signal instead of inventing a default.
+    _numeric(frame, numeric_columns, "crop requirements", allow_missing=True)
+    bad_temperature = (
+        (
+            frame["temperature_min"].notna()
+            & frame["temperature_optimal"].notna()
+            & frame["temperature_min"].gt(frame["temperature_optimal"])
+        )
+        | (
+            frame["temperature_optimal"].notna()
+            & frame["temperature_max"].notna()
+            & frame["temperature_optimal"].gt(frame["temperature_max"])
+        )
+        | (
+            frame["temperature_min"].notna()
+            & frame["temperature_max"].notna()
+            & frame["temperature_min"].gt(frame["temperature_max"])
+        )
     )
     if bad_temperature.any():
         crop_ids = frame.loc[bad_temperature, "crop_id"].tolist()
@@ -277,7 +293,11 @@ def load_crop_requirements(
     bad_ph = (
         frame["soil_ph_min"].lt(0)
         | frame["soil_ph_max"].gt(14)
-        | frame["soil_ph_min"].gt(frame["soil_ph_max"])
+        | (
+            frame["soil_ph_min"].notna()
+            & frame["soil_ph_max"].notna()
+            & frame["soil_ph_min"].gt(frame["soil_ph_max"])
+        )
     )
     if bad_ph.any():
         raise DataValidationError(
