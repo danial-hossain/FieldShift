@@ -1,0 +1,4 @@
+date,latitude,longitude,soil_moisture,source,data_status
+2026-09-25,23.8103,90.4125,0.24,demo,synthetic
+2026-09-26,23.8103,90.4125,0.23,demo,synthetic
+2026-09-27,23.8103,90.4125,0.22,demo,synthetic

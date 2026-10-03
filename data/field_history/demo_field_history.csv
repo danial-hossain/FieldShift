@@ -1,0 +1,5 @@
+field_id,year,season,crop,yield,irrigation,source,data_status
+field_001,2024,Aus,Rice,4.2,high,demo,synthetic
+field_001,2024,Rabi,Lentil,1.4,low,demo,synthetic
+field_001,2025,Aus,Rice,4.0,high,demo,synthetic
+field_002,2025,Rabi,Wheat,,medium,demo,synthetic

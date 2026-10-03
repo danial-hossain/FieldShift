@@ -1,0 +1,8 @@
+crop,family,is_legume,water_requirement,duration_days,min_temperature,max_temperature,min_ph,max_ph,expected_yield,production_cost,market_price,nutrient_effect,soil_impact,source,data_status
+Rice,Poaceae,false,1200,130,20,35,5.0,7.5,4.0,80000,30000,high_nitrogen_demand,high_water_use,demo,synthetic
+Wheat,Poaceae,false,450,120,10,25,5.5,7.5,2.8,55000,32000,moderate_nitrogen_demand,moderate_residue,demo,synthetic
+Maize,Poaceae,false,600,110,18,32,5.5,7.5,5.0,70000,25000,high_nitrogen_demand,moderate_residue,demo,synthetic
+Lentil,Fabaceae,true,300,110,10,28,5.5,7.5,1.2,35000,90000,biological_nitrogen_fixation,improves_rotation_diversity,demo,synthetic
+Mungbean,Fabaceae,true,350,75,20,35,5.5,7.5,1.0,30000,85000,biological_nitrogen_fixation,improves_rotation_diversity,demo,synthetic
+Mustard,Brassicaceae,false,350,100,8,25,5.5,7.5,1.5,38000,65000,moderate_nutrient_demand,deep_root_residue,demo,synthetic
+Potato,Solanaceae,false,500,100,12,25,5.0,6.5,15.0,120000,18000,high_potassium_demand,moderate_soil_disturbance,demo,synthetic
