@@ -1,0 +1,29 @@
+{
+  "dataset_title": "crop rotation dataset",
+  "kaggle_ref": "abhaysasthas/crop-rotation-dataset",
+  "dataset_url": "https://www.kaggle.com/datasets/abhaysasthas/crop-rotation-dataset",
+  "creator": "Abhay Sastha S",
+  "license": "MIT",
+  "retrieved_at": "2026-10-04T12:50:32Z",
+  "file": "new_synthetic_agri_data_india_fixed.csv",
+  "file_sha256": "13a544d7504ba7f88e36145903120d25adbdc915843ac069177dd27a69906a70",
+  "row_count": 5000,
+  "distinct_rotation_sequences": 32,
+  "distinct_regions": 37,
+  "year_range": [
+    2000,
+    2020
+  ],
+  "evidence_class": "synthetic",
+  "data_status": "synthetic_only",
+  "allowed_uses": [
+    "Synthetic simulator and policy-pipeline smoke tests",
+    "Exploratory analysis clearly labelled as generated data"
+  ],
+  "limitations": [
+    "The filename identifies the data as synthetic and the target is explicitly named Simulated Yield.",
+    "No data-generation method, agronomic validation, or source observations are documented.",
+    "Rows do not identify persistent fields or provide linked state-action-next-state reward trajectories.",
+    "Do not train or claim validation of a real-world yield model or RL policy from these records."
+  ]
+}

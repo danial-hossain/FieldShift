@@ -1,0 +1,13 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fieldshift
+      POSTGRES_USER: fieldshift
+      POSTGRES_PASSWORD: fieldshift
+    ports:
+      - "5433:5432"
+    volumes:
+      - fieldshift_postgres:/var/lib/postgresql/data
+volumes:
+  fieldshift_postgres:

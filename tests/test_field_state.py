@@ -47,6 +47,7 @@ class FieldStateTests(unittest.TestCase):
             "soil_data": soil,
             "field_history_data": history,
             "crop_knowledge": crops,
+            "field_size_ha": 10.0,
         }
         arguments.update(overrides)
         return build_field_state(**arguments)
@@ -180,6 +181,7 @@ class FieldStateTests(unittest.TestCase):
             "as_of_date",
             "latitude",
             "longitude",
+            "field_size_ha",
             "temperature",
             "temp_max",
             "temp_min",

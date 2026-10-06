@@ -1,0 +1,81 @@
+{
+  "status": "trained_for_offline_research_only",
+  "model_artifact": "C:\\FieldShift\\models\\ethiopia_trial_bandit\\ethiopia_trial_contextual_bandit.joblib",
+  "policy_type": "one_step_offline_contextual_bandit",
+  "sequential_rl_status": "not_trained",
+  "record_count": 5062,
+  "site_count": 11,
+  "eligible_action_count": 189,
+  "evaluation": {
+    "evaluation_protocol": "GroupKFold by recorded country/region/district/village; predicts yield for the treatment actually observed in each held-out record.",
+    "split_count": 5,
+    "site_group_count": 11,
+    "row_count": 5062,
+    "logged_action_reward_prediction": {
+      "mae_t_ha": 1.2399870768114185,
+      "rmse_t_ha": 1.6789350097635813,
+      "r2": -0.011874362256434345
+    },
+    "folds": [
+      {
+        "held_out_sites": [
+          "Ethiopia|SNNP|Lemo|Lemo"
+        ],
+        "train_rows": 3421,
+        "test_rows": 1641,
+        "rmse_t_ha": 1.835525876933158
+      },
+      {
+        "held_out_sites": [
+          "Ethiopia|Oromia|Sinana|Sinana"
+        ],
+        "train_rows": 4198,
+        "test_rows": 864,
+        "rmse_t_ha": 1.1442430199353795
+      },
+      {
+        "held_out_sites": [
+          "Ethiopia|Amhara|Tehulederi|Hayk",
+          "Ethiopia|Oromia|Sinana|Selka"
+        ],
+        "train_rows": 4238,
+        "test_rows": 824,
+        "rmse_t_ha": 1.0240994716343683
+      },
+      {
+        "held_out_sites": [
+          "Ethiopia|Amhara|Basona Worana|Goshe Bado",
+          "Ethiopia|Amhara|Gubalafto|Sirinka",
+          "Ethiopia|Tigray|Endamohoni|Tsibet"
+        ],
+        "train_rows": 4193,
+        "test_rows": 869,
+        "rmse_t_ha": 1.2653521978431221
+      },
+      {
+        "held_out_sites": [
+          "Ethiopia|Amhara|Basona Worana|Gudo Beret",
+          "Ethiopia|Amhara|BasonaWorana|Goshebado",
+          "Ethiopia|Amhara|Wereilu|Kabe",
+          "Ethiopia|Tigray|Endamehoni|Tsibet"
+        ],
+        "train_rows": 4198,
+        "test_rows": 864,
+        "rmse_t_ha": 2.489167332750021
+      }
+    ],
+    "counterfactual_policy_value": null,
+    "counterfactual_evaluation_reason": "The archive supplies no treatment-assignment propensities or predeclared counterfactual evaluation design.",
+    "causal_treatment_effects_estimated": false,
+    "bangladesh_validation": false
+  },
+  "limitations": [
+    "Training data are Ethiopian crop-treatment trials, not Bangladesh farm records.",
+    "Treatment labels are experiment inputs, not general-purpose farm actions.",
+    "Model rankings predict observed yield; they do not estimate causal treatment effects.",
+    "No action propensities are available, so counterfactual policy value is not estimated.",
+    "The model is one-step and has no state transitions, delayed outcomes, or multi-season learning.",
+    "Candidate actions are restricted to the same crop and source workbook and to treatments replicated at multiple recorded sites.",
+    "This model is not integrated into the app and must not be used as agronomic advice."
+  ]
+}

@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10251e" />
+    <meta name="description" content="FieldShift offline farm planning research prototype." />
+    <title>FieldShift | Farm planning research prototype</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="FieldShift home">
+          <span class="brand-mark" aria-hidden="true">FS</span>
+          <span>
+            <strong>FieldShift</strong>
+            <small>AI Rotation Planner</small>
+          </span>
+        </a>
+        <nav class="landing-nav" aria-label="Main navigation">
+          <a href="#howItWorks">How It Works</a>
+          <a href="#cropLibrary">Crop Library</a>
+        </nav>
+        <div class="topbar-actions">
+          <span id="connectionBadge" class="connection-badge"><i></i> Connecting…</span>
+          <button id="healthButton" class="button button-quiet" type="button">
+            <span aria-hidden="true">↻</span> Check health
+          </button>
+          <button id="historyButton" class="button button-quiet" type="button" hidden>Analysis history</button>
+          <button id="accountButton" class="button button-quiet" type="button">Sign in</button>
+          <button id="getStartedButton" class="button button-primary header-cta" type="button">Get Started</button>
+        </div>
+      </header>
+
+      <section class="landing-view" id="landingView">
+        <div class="landing-hero">
+          <div class="landing-copy">
+            <p class="landing-kicker"><span class="kicker-dot"></span> AI-POWERED DECISION SUPPORT</p>
+            <h1>Plan smarter.<br /><span>Farm sustainably.</span></h1>
+            <p class="landing-description">FieldShift helps you explore crop rotations that balance income, water use, soil benefits and farming risk.</p>
+            <p class="landing-tagline">SMARTER ROTATIONS. STRONGER FARMS.</p>
+            <div class="landing-actions">
+              <button id="startPlanningButton" class="button button-primary landing-primary" type="button">Start Planning <span aria-hidden="true">→</span></button>
+              <a class="button button-secondary" href="#howItWorks">How It Works</a>
+            </div>
+            <div class="landing-trust"><span><b>✓</b> 3-season research workflow</span><span><b>✓</b> Climate stress testing</span><span><b>✓</b> Explore without sign-up</span></div>
+          </div>
+          <div class="landing-preview">
+            <article class="preview-card">
+              <div class="preview-field">
+                <span class="preview-season">BUNDLED DEMO FIELD</span>
+                <svg class="parcel-map" viewBox="0 0 500 220" aria-hidden="true">
+                  <path class="parcel-shape" d="M122 30 318 22 391 192 79 196Z" />
+                  <path class="parcel-row" d="M132 58 327 51M121 86 340 79M109 114 353 107M98 142 365 135M88 169 377 162" />
+                  <circle class="parcel-pin" cx="246" cy="103" r="9" /><path class="parcel-pin-stem" d="M246 112v23" />
+                  <text class="parcel-title" x="246" y="158" text-anchor="middle">FieldShift demo field</text>
+                  <text class="parcel-caption" x="246" y="177" text-anchor="middle">Illustrative parcel preview</text>
+                </svg>
+                <span class="preview-lot">DEMO ONLY</span>
+              </div>
+              <div class="preview-content">
+                <p class="preview-label">ILLUSTRATIVE ROTATION PREVIEW</p>
+                <div class="preview-crops"><span class="preview-crop crop-rice">♧ Rice</span><b>→</b><span class="preview-crop crop-mustard">♨ Mustard</span><b>→</b><span class="preview-crop crop-mung">❋ Mung bean</span></div>
+                <div class="preview-match"><span class="match-mark">i</span><span><strong>Research demo preview</strong><small>Actual output is shown after workflow analysis</small></span><b>DEMO</b></div>
+              </div>
+            </article>
+            <div class="preview-metrics"><div><small>Return</small><strong>Optimizer output</strong></div><div><small>Water</small><strong>Data dependent</strong></div><div><small>Soil</small><strong>Input dependent</strong></div></div>
+          </div>
+        </div>
+        <section class="landing-features" id="cropLibrary">
+          <h2>Built for working farmers</h2>
+          <p>Not a crop encyclopedia — a decision-support workflow for exploring your field.</p>
+          <div class="landing-feature-grid">
+            <article><span>🌱</span><h3>Plan Around Your Field</h3><p>Start with field size, soil condition, previous crops and available water.</p></article>
+            <article><span>☁</span><h3>Account for Conditions</h3><p>Explore seasonal conditions using available climate data and clear source labels.</p></article>
+            <article><span>💧</span><h3>Balance Water</h3><p>Compare rotation strategies with different objective priorities.</p></article>
+            <article><span>✦</span><h3>Understand the Why</h3><p>Review optimizer status, priorities and research limitations.</p></article>
+          </div>
+        </section>
+        <section class="landing-how" id="howItWorks"><p class="landing-kicker">A CLEARER PLANNING WORKFLOW</p><h2>How FieldShift works</h2>
+          <div class="how-steps"><div><b>01</b><strong>Tell us about your field</strong></div><div><b>02</b><strong>Set your priorities</strong></div><div><b>03</b><strong>Explore strategies</strong></div><div><b>04</b><strong>Stress-test the plan</strong></div><div><b>05</b><strong>Review the final plan</strong></div></div>
+        </section>
+        <section class="landing-bottom-cta"><div><h2>Ready to explore your next rotation?</h2><p>Build a plan around your field, your priorities and the conditions you care about.</p></div><button id="bottomStartButton" class="button button-primary" type="button">Start Planning <span aria-hidden="true">→</span></button></section>
+      </section>
+
+      <main id="appWorkspace" hidden>
+        <aside class="app-sidebar">
+          <a class="sidebar-brand" href="/" aria-label="FieldShift home"><span class="brand-mark" aria-hidden="true">FS</span><span><strong>FieldShift</strong><small>AI Rotation Planner</small></span></a>
+          <div class="sidebar-farm"><span class="farm-icon">▣</span><span><strong id="sidebarFarmName">My Farm</strong><small id="sidebarFarmMeta">Field planning workspace</small></span></div>
+          <nav class="sidebar-nav" aria-label="Planning navigation">
+            <span class="sidebar-group-label">PLANNING</span>
+            <a href="#results" data-workflow-nav="dashboard"><span>◌</span> Dashboard</a>
+            <a href="#fieldSetup" data-workflow-nav="fieldSetup"><span>◈</span> My Field</a>
+            <a href="#aiInsights" data-workflow-nav="aiInsights"><span>✦</span> AI Insights <i>AI</i></a>
+            <a href="#rotationPlan" data-workflow-nav="rotationPlan"><span>◒</span> Crop Rotation</a>
+            <a href="#stressTest" data-workflow-nav="stressTest"><span>ϟ</span> Stress Test</a>
+            <a href="#whatIfAnalysis" data-workflow-nav="whatIfAnalysis"><span>⇄</span> What-if Analysis</a>
+            <a href="#rlSimulation" data-workflow-nav="rlSimulation"><span>◫</span> RL Simulation</a>
+            <span class="sidebar-group-label">RESOURCES</span>
+            <a href="#cropLibrary" data-return-landing><span>◇</span> Crop Library</a>
+            <a href="#historyButton" data-workflow-nav="history"><span>◷</span> Field History</a>
+            <a href="#howItWorks" data-return-landing><span>?</span> How It Works</a>
+          </nav>
+          <div class="sidebar-note"><strong>Climate Integration <small>DEMO</small></strong><span>Bundled NASA POWER data is limited to the documented demo location and dates.</span></div>
+        </aside>
+        <div class="app-main">
+        <div class="workspace-breadcrumb"><span id="breadcrumbFarm">My Farm</span><b>·</b><span id="breadcrumbSize">Field profile</span><b>·</b><strong id="breadcrumbStep">My Field</strong><div class="workflow-dots" aria-label="Workflow progress"><i class="active"></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+        <section class="workspace-intro"><div><p class="eyebrow">FIELD PROFILE</p><h2 id="workspaceTitle">Start with your location</h2><p id="workspaceDescription">Set the area and weather dates. You can use your device location or enter coordinates.</p></div><button id="backToLanding" class="button button-secondary" type="button">Back to overview</button></section>
+        <section class="hero" id="landing">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-line"></span> NASA POWER · ML · MILP · RL</p>
+            <h1>Plan with a clearer<br /><span>view of your field.</span></h1>
+            <p class="hero-description">
+              Explore an offline research workflow for climate context, synthetic yield estimation,
+              crop-rotation optimization, and a safety-checked baseline action.
+            </p>
+            <div class="hero-tags">
+              <span><b class="tag-dot dot-green"></b> Offline demo</span>
+              <span><b class="tag-dot dot-amber"></b> Synthetic research boundary</span>
+            </div>
+          </div>
+          <aside class="hero-card glass-card">
+            <div class="hero-card-top">
+              <span class="icon-orb" aria-hidden="true">⌁</span>
+              <span class="mini-label">WORKFLOW STATUS</span>
+            </div>
+            <div id="heroStatus" class="hero-status">Ready to explore</div>
+            <p id="heroStatusDetail">Your analysis runs locally with bundled demo data.</p>
+            <div class="hero-card-footer">
+              <span class="pulse-dot"></span>
+              <span id="heroMode">Waiting for a workflow run</span>
+            </div>
+          </aside>
+        </section>
+
+        <section class="boundary-banner" aria-label="Research limitations">
+          <span class="boundary-icon" aria-hidden="true">i</span>
+          <p><strong>Research prototype, not an agronomic recommendation.</strong>
+            The bundled run uses demo data; its ML estimate is synthetic and its RL policy is a deterministic baseline.
+            NASA POWER live retrieval is optional and does not fall back to demo data.</p>
+        </section>
+
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">YOUR WORKSPACE</p>
+            <h2>Farm setup <span class="heading-separator">/</span> Analysis</h2>
+          </div>
+          <span class="section-hint">Fields marked optional can be left blank</span>
+        </div>
+
+        <div class="workspace">
+          <section class="glass-card form-card" id="fieldSetup">
+            <div class="card-heading">
+              <div>
+                <span class="step-label">01 <span>FIELD PROFILE</span></span>
+                <h3 id="formCardTitle">Set your field location</h3>
+              </div>
+              <span class="heading-icon" aria-hidden="true">⌖</span>
+            </div>
+
+            <form id="farmForm">
+              <ol class="form-stepper" aria-label="Field setup steps">
+                <li class="active" data-step-indicator="1"><span>1</span><strong>Location</strong></li>
+                <li data-step-indicator="2"><span>2</span><strong>Field details</strong></li>
+                <li data-step-indicator="3"><span>3</span><strong>Plan preferences</strong></li>
+              </ol>
+              <div class="form-section" data-form-step="1">
+                <div class="form-section-title"><span>1. Where and when?</span><span>FIELD LOCATION</span></div>
+                <p class="input-guidance">The coordinates and dates start with the bundled Dhaka demo. Change them for your field; non-demo areas require NASA POWER live retrieval.</p>
+                <div class="field-grid">
+                  <label class="field">
+                    <span>Latitude</span>
+                    <input name="latitude" type="number" step="0.0001" min="-90" max="90" value="23.8103" required />
+                    <small class="field-help">North–south position in decimal degrees.</small>
+                  </label>
+                  <label class="field">
+                    <span>Longitude</span>
+                    <input name="longitude" type="number" step="0.0001" min="-180" max="180" value="90.4125" required />
+                    <small class="field-help">East–west position in decimal degrees.</small>
+                  </label>
+                  <label class="field">
+                    <span>Weather data starts</span>
+                    <input name="start_date" type="date" value="2026-08-31" required />
+                  </label>
+                  <label class="field">
+                    <span>Weather data ends</span>
+                    <input name="end_date" type="date" value="2026-09-29" required />
+                  </label>
+                </div>
+                <p class="input-guidance">These dates select climate observations for the analysis — they are not a planting schedule.</p>
+                <button id="geoButton" class="button button-outline location-button" type="button">
+                  <span aria-hidden="true">◎</span> <span class="geo-button-label">Use my location</span>
+                </button>
+                <section class="location-weather" aria-live="polite" aria-label="Location and latest weather">
+                  <div class="location-weather-heading">
+                    <span class="location-marker" aria-hidden="true">⌖</span>
+                    <div class="location-copy">
+                      <span class="location-eyebrow">YOUR SELECTED AREA</span>
+                      <strong id="locationName">Location not checked yet</strong>
+                      <small id="locationCoordinates">23.8103, 90.4125</small>
+                    </div>
+                    <button id="weatherButton" class="button button-outline" type="button"><span class="weather-button-label">Load weather</span></button>
+                  </div>
+                  <div class="weather-reading">
+                    <div class="weather-reading-main">
+                      <span>Latest daily temperature</span>
+                      <strong id="weatherTemperature">— <small>°C</small></strong>
+                    </div>
+                    <div class="weather-reading-detail">
+                      <strong id="weatherRange">High — · Low —</strong>
+                      <span id="weatherObservation">Check this area to load available weather.</span>
+                    </div>
+                  </div>
+                  <p id="locationStatus" class="location-status">Weather uses NASA POWER daily observations, not a live thermometer reading. The latest available date will be shown.</p>
+                  <p class="location-attribution">Location labels: <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> · Weather: NASA POWER. Your coordinates are sent only when you request this lookup.</p>
+                </section>
+              </div>
+
+              <div class="form-section" data-form-step="2" hidden>
+                <div class="form-section-title"><span>2. Tell us about your field</span><span>OPTIONAL DETAILS</span></div>
+                <div class="field-grid">
+                  <label class="field">
+                    <span>Field area <small>hectares</small></span>
+                    <input name="field_size_ha" type="number" step="0.1" min="0" placeholder="Not provided" />
+                    <small class="field-help">Approximate size is fine; you can leave this blank.</small>
+                  </label>
+                  <label class="field">
+                    <span>Soil texture</span>
+                    <select name="soil_texture">
+                      <option value="unknown" selected>Unknown</option>
+                      <option value="loam">Loam</option>
+                      <option value="silty_loam">Silty loam</option>
+                      <option value="clay_loam">Clay loam</option>
+                    </select>
+                    <small class="field-help">Choose “Unknown” if you are not sure.</small>
+                  </label>
+                  <label class="field">
+                    <span>Soil organic matter <small>% · optional</small></span>
+                    <input name="organic_matter" type="number" step="0.1" min="0" placeholder="Not provided" />
+                  </label>
+                  <label class="field">
+                    <span>Available irrigation <small>mm · optional</small></span>
+                    <input name="irrigation_capacity_mm" type="number" step="1" min="0" placeholder="Not provided" />
+                  </label>
+                  <label class="field" id="priority">
+                    <span>Priority</span>
+                    <select name="priority">
+                      <option value="profit">Profit</option>
+                      <option value="water_efficiency">Water efficiency</option>
+                      <option value="soil_health">Soil health</option>
+                    </select>
+                    <small class="field-help">Choose what you want to emphasize in the comparison.</small>
+                  </label>
+                  <label class="field">
+                    <span>Season</span>
+                    <select name="season">
+                      <option value="dry">Dry season</option>
+                      <option value="wet">Wet season</option>
+                      <option value="transition">Transition</option>
+                    </select>
+                    <small class="field-help">Select the growing season for your planning context.</small>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-section preference-section" data-form-step="3" hidden>
+                <div class="form-section-title"><span>3. Choose your planning preferences</span><span>PLAN OPTIONS</span></div>
+                <label class="field">
+                  <span>Weather data source</span>
+                  <select name="mode">
+                    <option value="offline">Bundled offline demo</option>
+                    <option value="live">NASA POWER live retrieval</option>
+                  </select>
+                  <small class="field-help">Live requests fetch NASA observations for your location; offline mode uses the bundled Dhaka demo.</small>
+                </label>
+                <div class="field-grid">
+                  <label class="field">
+                    <span>Previous crop <small>optional</small></span>
+                    <select name="previous_crop">
+                      <option value="">Not provided</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span>Crop year <small>if known</small></span>
+                    <input name="previous_crop_year" type="number" min="1" max="9999" placeholder="Year unknown" />
+                    <small class="field-help">Leave blank if you do not know the year.</small>
+                  </label>
+                </div>
+                <label class="toggle-row">
+                  <span class="toggle-copy"><strong>Include previous crop</strong><small>Use the crop entered above as planning context</small></span>
+                  <input name="include_history" type="checkbox" checked />
+                  <span class="toggle-ui" aria-hidden="true"></span>
+                </label>
+                <label class="toggle-row">
+                  <span class="toggle-copy"><strong>Allow unknown values</strong><small>Keep missing inputs unknown; do not assume zero</small></span>
+                  <input name="unknown_values_allowed" type="checkbox" checked />
+                  <span class="toggle-ui" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <div class="wizard-navigation">
+                <button id="stepBackButton" class="button button-secondary" type="button" hidden>Back</button>
+                <span id="stepCounter">Step 1 of 3</span>
+                <button id="stepNextButton" class="button button-primary" type="button">Continue <span aria-hidden="true">→</span></button>
+                <button id="runButton" type="submit" class="button button-primary" hidden>
+                  <span class="button-label">Run offline analysis</span>
+                  <span class="button-arrow" aria-hidden="true">↗</span>
+                </button>
+              </div>
+              <div class="form-actions">
+                <button id="resetButton" class="button button-text" type="reset">Reset form</button>
+                <button id="saveFieldButton" class="button button-outline" type="button">Save field</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="glass-card results-card" id="results" aria-live="polite" hidden>
+            <div class="card-heading results-heading">
+              <div>
+                <span class="step-label">02 <span>RESEARCH OUTPUT</span></span>
+                <h3>Analysis results</h3>
+              </div>
+              <div class="results-heading-actions">
+                <button id="editInputsButton" class="button button-outline" type="button">Edit inputs</button>
+                <span id="resultBadge" class="result-badge">Not run</span>
+              </div>
+            </div>
+            <div id="statusMessage" class="status-message" role="status">
+              <span class="status-symbol" aria-hidden="true">✦</span>
+              <span>Configure your field and run the offline workflow to see results.</span>
+            </div>
+            <div id="resultContent" class="result-content">
+              <div class="empty-state">
+                <div class="empty-illustration" aria-hidden="true">
+                  <span class="sun"></span><span class="field-line field-line-one"></span>
+                  <span class="field-line field-line-two"></span><span class="field-line field-line-three"></span>
+                </div>
+                <h4>Your field report will appear here</h4>
+                <p>Run the bundled workflow to view its climate source, model estimate, crop plan, and safety-checked baseline action.</p>
+                <div class="empty-steps">
+                  <span><b>1</b> Set profile</span><i></i><span><b>2</b> Run demo</span><i></i><span><b>3</b> Review</span>
+                </div>
+              </div>
+            </div>
+            <details class="raw-details" id="rawDetails" hidden>
+              <summary>View complete workflow response</summary>
+              <pre id="resultOutput"></pre>
+              <button id="copyButton" class="button button-outline copy-button" type="button">Copy JSON</button>
+            </details>
+          </section>
+        </div>
+        <details class="raw-details workflow-navigation">
+          <summary>Workflow navigation</summary>
+          <nav aria-label="FieldShift workflow stages">
+            <a class="button button-outline" href="#landing">Landing</a>
+            <a class="button button-outline" href="#fieldSetup">Field setup</a>
+            <a class="button button-outline" href="#priority">Priorities</a>
+            <a class="button button-outline" href="#runButton">Analysis</a>
+            <a class="button button-outline" href="#results">Results</a>
+            <a class="button button-outline" href="#whyPlan">Why plan</a>
+            <a class="button button-outline" href="#stressTest">Stress test</a>
+            <a class="button button-outline" href="#comparePlans">Compare</a>
+            <a class="button button-outline" href="#finalPlan">Final plan</a>
+          </nav>
+        </details>
+        <footer class="page-footer">
+          <span>FIELDSHIFT RESEARCH PROTOTYPE</span>
+          <span>Offline demo · No live field recommendations</span>
+        </footer>
+        </div>
+      </main>
+    </div>
+
+    <section id="accountView" class="account-view" hidden aria-labelledby="accountDialogTitle">
+      <div class="account-shell">
+        <aside class="account-story">
+          <a class="brand account-brand" href="/" aria-label="FieldShift home">
+            <span class="brand-mark" aria-hidden="true">FS</span>
+            <span><strong>FieldShift</strong><small>AI Rotation Planner</small></span>
+          </a>
+          <div class="account-story-copy">
+            <p class="landing-kicker"><span class="kicker-dot"></span> YOUR FIELD WORKSPACE</p>
+            <h1>Good plans<br />start with <span>your field.</span></h1>
+            <p>Sign in to keep your saved fields and analysis history together. You can also explore the offline demo without an account.</p>
+          </div>
+          <p class="account-story-note">Research prototype · Not an agronomic recommendation</p>
+        </aside>
+        <section id="accountDialog" class="account-panel">
+          <button id="closeAccountDialog" class="button button-text account-back" type="button">← <span>Back</span></button>
+          <div class="account-heading">
+            <span class="step-label">FIELDSHIFT <span>ACCOUNT</span></span>
+            <h2 id="accountDialogTitle">Sign in</h2>
+            <p id="accountPageTitle">Access your saved fields and analysis history.</p>
+          </div>
+          <form id="accountForm" class="dialog-form">
+            <label class="field" id="accountNameRow" hidden>
+              <span>Name</span><input name="name" autocomplete="name" />
+            </label>
+            <label class="field">
+              <span>Email</span><input name="email" type="email" autocomplete="email" required />
+            </label>
+            <label class="field">
+              <span>Password</span><input name="password" type="password" minlength="8" autocomplete="current-password" required />
+            </label>
+            <p id="accountDialogStatus" class="account-status" role="status" aria-live="polite"></p>
+            <button id="accountSubmitButton" class="button button-primary account-submit" type="submit">Sign in</button>
+          </form>
+          <div class="account-switch"><span id="accountSwitchPrompt">New to FieldShift?</span><button id="accountModeButton" class="button button-text" type="button">Create an account</button></div>
+          <p class="account-privacy">Your account lets you save field profiles and workflow history on this app.</p>
+        </section>
+      </div>
+    </section>
+
+    <dialog id="historyDialog" class="glass-card account-dialog">
+      <div class="card-heading">
+        <div>
+          <span class="step-label">SAVED WORK <span>HISTORY</span></span>
+          <h3>Analysis history</h3>
+        </div>
+        <button id="closeHistoryDialog" class="button button-quiet" type="button">Close</button>
+      </div>
+      <div id="historyList" class="history-list">
+        <p class="result-note">Sign in to view saved analyses.</p>
+      </div>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

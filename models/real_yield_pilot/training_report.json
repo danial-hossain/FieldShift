@@ -1,0 +1,349 @@
+{
+  "dataset_title": "ICRISAT Ethiopia crop-fertilizer field trial records",
+  "dataset_doi": "10.7910/DVN/ZXH0R8",
+  "dataset_url": "https://doi.org/10.7910/DVN/ZXH0R8",
+  "source_archive": "dataverse_files.zip",
+  "source_archive_sha256": "d2b6b16380cd4b657fee74dddcc9242ac5d72d13093bd2097888683e8af9719b",
+  "evidence_class": "observed_trial_record",
+  "data_status": "observed",
+  "country": "Ethiopia",
+  "target": "yield_t_ha",
+  "target_units": "tonnes per hectare (converted from source kg/ha)",
+  "retained_rows": 5062,
+  "site_groups": 11,
+  "crops": [
+    "Sorghum",
+    "Tef",
+    "Wheat"
+  ],
+  "years": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2019
+  ],
+  "features": [
+    "year",
+    "altitude_m",
+    "planting_day_of_year",
+    "crop",
+    "variety",
+    "region",
+    "crop_system",
+    "landscape_strata",
+    "treatment",
+    "soil_type"
+  ],
+  "excluded_features": [
+    "harvest date and post-harvest measurements (outcome leakage)",
+    "fertilizer numeric columns with inconsistent or undocumented units across files",
+    "rainfall field, which is blank in these workbooks"
+  ],
+  "limitations": [
+    "These are Ethiopian trial records, not Bangladesh farm data.",
+    "Dataset rows may share trial/site/treatment structure and are not independent farms.",
+    "Reported yield moisture basis and field measurement protocols vary or are not fully specified in the workbooks.",
+    "Location grouping is based on recorded administrative site names, not field GPS coordinates.",
+    "Metrics estimate transfer to held-out recorded sites within this dataset only; they do not validate Bangladesh predictions.",
+    "The archive does not include action-conditioned sequential transitions or repeated reward trajectories for RL.",
+    "Confirm the original dataset's current terms and attribution requirements before redistribution or commercial use."
+  ],
+  "workbooks": [
+    {
+      "archive_member": "Data/2014-2015_Wheat/001_2014-2015_Wheat_ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "a1b7fed6777dcf3d8abd68c666be3b9bc488c9b24700b357cc76355b8a17c004",
+      "rows_in_workbook": 550,
+      "rows_with_numeric_yield": 550,
+      "rows_retained": 550,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 550
+      }
+    },
+    {
+      "archive_member": "Data/2016_Wheat/002_2016_Wheat_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "ef1012b7b38c9bf919fff68a1dcf5581ca58e9fa99991b08b285ccedb11ce4ff",
+      "rows_in_workbook": 936,
+      "rows_with_numeric_yield": 936,
+      "rows_retained": 936,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 936
+      }
+    },
+    {
+      "archive_member": "Data/2017_SorghumTef/003_2017_Sorghum+Tef_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "c613278ee2a0628c475a6a57fe51e4acb4b4fec477af9b1d80a1c303078a2835",
+      "rows_in_workbook": 1368,
+      "rows_with_numeric_yield": 1368,
+      "rows_retained": 1368,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Sorghum": 720,
+        "Tef": 648
+      }
+    },
+    {
+      "archive_member": "Data/2019_Wheat/004_2019_Wheat_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "cd61f200e1b509eb96f5cec968740b6bb6d1cc7ab577b4fcda41c99c376dba39",
+      "rows_in_workbook": 2208,
+      "rows_with_numeric_yield": 2208,
+      "rows_retained": 2208,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 2208
+      }
+    }
+  ],
+  "normalized_csv": "data\\acquired\\icrisat_ethiopia\\observed_yield_records.csv",
+  "model_artifact": "models\\real_yield_pilot\\icrisat_ethiopia_yield_pipeline.joblib",
+  "model_name": "hist_gradient_boosting",
+  "evaluation": {
+    "evaluation_protocol": "GroupKFold by recorded country/region/district/village; out-of-fold predictions.",
+    "split_group": "group_site",
+    "split_count": 5,
+    "site_group_count": 11,
+    "row_count": 5062,
+    "target_units": "t/ha",
+    "metrics_are_bangladesh_validation": false,
+    "candidate_models": {
+      "mean_baseline": {
+        "mae_t_ha": 1.3725916934523406,
+        "rmse_t_ha": 1.7265464547622005,
+        "r2": -0.0700778091680947,
+        "folds": [
+          {
+            "held_out_sites": [
+              "Ethiopia|SNNP|Lemo|Lemo"
+            ],
+            "train_rows": 3421,
+            "test_rows": 1641,
+            "mae_t_ha": 1.4848128074973186,
+            "rmse_t_ha": 1.9827964344067492
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Oromia|Sinana|Sinana"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 1.153320829604559,
+            "rmse_t_ha": 1.4734775209292894
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Tehulederi|Hayk",
+              "Ethiopia|Oromia|Sinana|Selka"
+            ],
+            "train_rows": 4238,
+            "test_rows": 824,
+            "mae_t_ha": 1.4430319168552923,
+            "rmse_t_ha": 1.6566365718584077
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Goshe Bado",
+              "Ethiopia|Amhara|Gubalafto|Sirinka",
+              "Ethiopia|Tigray|Endamohoni|Tsibet"
+            ],
+            "train_rows": 4193,
+            "test_rows": 869,
+            "mae_t_ha": 1.463757054643994,
+            "rmse_t_ha": 1.7575502021087663
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Gudo Beret",
+              "Ethiopia|Amhara|BasonaWorana|Goshebado",
+              "Ethiopia|Amhara|Wereilu|Kabe",
+              "Ethiopia|Tigray|Endamehoni|Tsibet"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 1.2198483314813862,
+            "rmse_t_ha": 1.4499607166262811
+          }
+        ]
+      },
+      "ridge_regression": {
+        "mae_t_ha": 3.50984258919055,
+        "rmse_t_ha": 6.988990978227942,
+        "r2": -16.534273708285053,
+        "folds": [
+          {
+            "held_out_sites": [
+              "Ethiopia|SNNP|Lemo|Lemo"
+            ],
+            "train_rows": 3421,
+            "test_rows": 1641,
+            "mae_t_ha": 1.300207700856795,
+            "rmse_t_ha": 1.9307379599315453
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Oromia|Sinana|Sinana"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 1.2172265115583247,
+            "rmse_t_ha": 1.5214472377459487
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Tehulederi|Hayk",
+              "Ethiopia|Oromia|Sinana|Selka"
+            ],
+            "train_rows": 4238,
+            "test_rows": 824,
+            "mae_t_ha": 0.782050705571727,
+            "rmse_t_ha": 0.9826812399353266
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Goshe Bado",
+              "Ethiopia|Amhara|Gubalafto|Sirinka",
+              "Ethiopia|Tigray|Endamohoni|Tsibet"
+            ],
+            "train_rows": 4193,
+            "test_rows": 869,
+            "mae_t_ha": 1.0125645565240913,
+            "rmse_t_ha": 1.3785451690323431
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Gudo Beret",
+              "Ethiopia|Amhara|BasonaWorana|Goshebado",
+              "Ethiopia|Amhara|Wereilu|Kabe",
+              "Ethiopia|Tigray|Endamehoni|Tsibet"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 15.11246558145791,
+            "rmse_t_ha": 16.551479013652013
+          }
+        ]
+      },
+      "random_forest": {
+        "mae_t_ha": 1.2465540140804265,
+        "rmse_t_ha": 1.6833210066471602,
+        "r2": -0.01716804512187431,
+        "folds": [
+          {
+            "held_out_sites": [
+              "Ethiopia|SNNP|Lemo|Lemo"
+            ],
+            "train_rows": 3421,
+            "test_rows": 1641,
+            "mae_t_ha": 1.35877831338942,
+            "rmse_t_ha": 1.931043782040241
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Oromia|Sinana|Sinana"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 0.9238953933037825,
+            "rmse_t_ha": 1.1495563886528486
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Tehulederi|Hayk",
+              "Ethiopia|Oromia|Sinana|Selka"
+            ],
+            "train_rows": 4238,
+            "test_rows": 824,
+            "mae_t_ha": 0.8389972692850747,
+            "rmse_t_ha": 1.1033759312153473
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Goshe Bado",
+              "Ethiopia|Amhara|Gubalafto|Sirinka",
+              "Ethiopia|Tigray|Endamohoni|Tsibet"
+            ],
+            "train_rows": 4193,
+            "test_rows": 869,
+            "mae_t_ha": 0.9662835731107703,
+            "rmse_t_ha": 1.289907583634898
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Gudo Beret",
+              "Ethiopia|Amhara|BasonaWorana|Goshebado",
+              "Ethiopia|Amhara|Wereilu|Kabe",
+              "Ethiopia|Tigray|Endamehoni|Tsibet"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 2.026645153083857,
+            "rmse_t_ha": 2.3157900733479604
+          }
+        ]
+      },
+      "hist_gradient_boosting": {
+        "mae_t_ha": 1.2374593184828009,
+        "rmse_t_ha": 1.675569131058229,
+        "r2": -0.007821278153542277,
+        "folds": [
+          {
+            "held_out_sites": [
+              "Ethiopia|SNNP|Lemo|Lemo"
+            ],
+            "train_rows": 3421,
+            "test_rows": 1641,
+            "mae_t_ha": 1.2937178558046223,
+            "rmse_t_ha": 1.8352406081807209
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Oromia|Sinana|Sinana"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 0.9086041338619528,
+            "rmse_t_ha": 1.1408195989543284
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Tehulederi|Hayk",
+              "Ethiopia|Oromia|Sinana|Selka"
+            ],
+            "train_rows": 4238,
+            "test_rows": 824,
+            "mae_t_ha": 0.7847881374741307,
+            "rmse_t_ha": 1.027562357484816
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Goshe Bado",
+              "Ethiopia|Amhara|Gubalafto|Sirinka",
+              "Ethiopia|Tigray|Endamohoni|Tsibet"
+            ],
+            "train_rows": 4193,
+            "test_rows": 869,
+            "mae_t_ha": 0.9400913215082937,
+            "rmse_t_ha": 1.2546737407057318
+          },
+          {
+            "held_out_sites": [
+              "Ethiopia|Amhara|Basona Worana|Gudo Beret",
+              "Ethiopia|Amhara|BasonaWorana|Goshebado",
+              "Ethiopia|Amhara|Wereilu|Kabe",
+              "Ethiopia|Tigray|Endamehoni|Tsibet"
+            ],
+            "train_rows": 4198,
+            "test_rows": 864,
+            "mae_t_ha": 2.190265409095411,
+            "rmse_t_ha": 2.48191554295941
+          }
+        ]
+      }
+    },
+    "selected_model": "hist_gradient_boosting"
+  },
+  "model_training_scope": "Exploratory comparison only; not integrated into app predictions.",
+  "rl_training_status": "not_trained",
+  "rl_training_reason": "The dataset contains crop-treatment/yield observations, not ordered action-conditioned state transitions and repeated outcomes required to train or validate a sequential RL policy."
+}

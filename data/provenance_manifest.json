@@ -1,0 +1,371 @@
+{
+  "phase": "FieldShift Phase 32",
+  "generated_at": "2026-10-03T09:10:24Z",
+  "data_root": "data",
+  "files": [
+    {
+      "file_name": "acquisition_log.csv",
+      "file_path": "data/acquisition_log.csv",
+      "role": "acquisition_log",
+      "file_hash_sha256": "657f9b6deb4dcc58819b3bdab6817fa36c8a1181a20b0e2b6978c29b9efddc6c",
+      "evidence_class": "request_log",
+      "provenance_status": "request_tracking_only",
+      "actual_coverage": null,
+      "columns": [
+        "request_id",
+        "source_id",
+        "requested_product",
+        "request_date",
+        "contact_or_url",
+        "status",
+        "response_date",
+        "access_conditions",
+        "fees",
+        "license_or_agreement",
+        "coverage_confirmed",
+        "units_confirmed",
+        "notes",
+        "next_action"
+      ],
+      "record_count": 6,
+      "unknowns": [
+        "Acquisition log is not proof of a successful data retrieval without explicit verification flags."
+      ]
+    },
+    {
+      "file_name": "crop_knowledge.csv",
+      "file_path": "data/crops/crop_knowledge.csv",
+      "role": "crop",
+      "file_hash_sha256": "3e05fe33837489c727b6f25d9384879dff5428f11314b81f489c760bb4416002",
+      "evidence_class": "synthetic",
+      "provenance_status": "synthetic_demo_only",
+      "actual_coverage": null,
+      "columns": [
+        "crop",
+        "family",
+        "is_legume",
+        "water_requirement",
+        "duration_days",
+        "min_temperature",
+        "max_temperature",
+        "min_ph",
+        "max_ph",
+        "expected_yield",
+        "production_cost",
+        "market_price",
+        "nutrient_effect",
+        "soil_impact",
+        "source",
+        "data_status"
+      ],
+      "record_count": 7,
+      "unknowns": [
+        "Synthetic/demo values are not field observations or validated farm outcomes.",
+        "No independent calibration or legal reuse metadata is implied by the file itself."
+      ],
+      "data_status_summary": {
+        "status": "synthetic_demo_only",
+        "source_values": [
+          "demo"
+        ],
+        "data_status_values": [
+          "synthetic"
+        ]
+      },
+      "source_values": [
+        "demo"
+      ],
+      "data_status_values": [
+        "synthetic"
+      ]
+    },
+    {
+      "file_name": "demo_field_history.csv",
+      "file_path": "data/field_history/demo_field_history.csv",
+      "role": "field_history",
+      "file_hash_sha256": "b0bf9fae4f915c18acaac6333dd406190a0635280264a68a7323c80fcd58e703",
+      "evidence_class": "synthetic",
+      "provenance_status": "synthetic_demo_only",
+      "actual_coverage": null,
+      "columns": [
+        "field_id",
+        "year",
+        "season",
+        "crop",
+        "yield",
+        "irrigation",
+        "source",
+        "data_status"
+      ],
+      "record_count": 4,
+      "unknowns": [
+        "Synthetic/demo values are not field observations or validated farm outcomes.",
+        "No independent calibration or legal reuse metadata is implied by the file itself."
+      ],
+      "data_status_summary": {
+        "status": "synthetic_demo_only",
+        "source_values": [
+          "demo"
+        ],
+        "data_status_values": [
+          "synthetic"
+        ]
+      },
+      "source_values": [
+        "demo"
+      ],
+      "data_status_values": [
+        "synthetic"
+      ]
+    },
+    {
+      "file_name": "nasa_power_2025.csv",
+      "file_path": "data/nasa_power/nasa_power_2025.csv",
+      "role": "nasa_power",
+      "file_hash_sha256": "cdc8f1fefdf5d535c028d8a54e5564c1169ea664f4e8b5e1b1fc15ed86d8518c",
+      "evidence_class": "remote_observed",
+      "provenance_status": "partial_repository_evidence_only",
+      "actual_coverage": {
+        "start": "2025-01-01",
+        "end": "2025-12-31",
+        "count": 365
+      },
+      "columns": [
+        "date",
+        "temperature",
+        "temp_max",
+        "temp_min",
+        "rainfall",
+        "humidity",
+        "wind_speed",
+        "solar_radiation"
+      ],
+      "record_count": 365,
+      "unknowns": [
+        "Original request URL not stored in local CSV.",
+        "Retrieval timestamp not stored in local CSV.",
+        "Historical request metadata unavailable in the repository evidence."
+      ],
+      "reconstructed_coordinates": null
+    },
+    {
+      "file_name": "nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv",
+      "file_path": "data/nasa_power/nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv",
+      "role": "nasa_power",
+      "file_hash_sha256": "349178106c347583b8584364d76b4e7c38eda7f8c82c5143a04055e329f2fa88",
+      "evidence_class": "remote_observed",
+      "provenance_status": "filename_reconstruction_only",
+      "actual_coverage": {
+        "start": "2026-08-31",
+        "end": "2026-09-29",
+        "count": 30
+      },
+      "columns": [
+        "date",
+        "temperature",
+        "temp_max",
+        "temp_min",
+        "rainfall",
+        "humidity",
+        "wind_speed",
+        "solar_radiation"
+      ],
+      "record_count": 30,
+      "unknowns": [
+        "Original request URL not stored in local CSV.",
+        "Retrieval timestamp not stored in local CSV.",
+        "Historical request metadata unavailable in the repository evidence."
+      ],
+      "reconstructed_coordinates": {
+        "latitude": 23.8103,
+        "longitude": 90.4125,
+        "source": "filename_reconstruction",
+        "status": "reconstructed_only_not_original_request_metadata"
+      }
+    },
+    {
+      "file_name": "crop_seasons.csv",
+      "file_path": "data/pilot_templates/crop_seasons.csv",
+      "role": "crop",
+      "file_hash_sha256": "7ec29e9ad26ff33dd473926b5084b77998d152f78b472f572ecaf12b15808d23",
+      "evidence_class": null,
+      "provenance_status": "unknown",
+      "actual_coverage": null,
+      "columns": [],
+      "record_count": 0,
+      "unknowns": []
+    },
+    {
+      "file_name": "field_registry.csv",
+      "file_path": "data/pilot_templates/field_registry.csv",
+      "role": "unknown",
+      "file_hash_sha256": "85cad1ce4258a13029c6a51531d5e52cbc3f93307c7a8cb5b730ae1e55fcdbbb",
+      "evidence_class": null,
+      "provenance_status": "unknown",
+      "actual_coverage": null,
+      "columns": [],
+      "record_count": 0,
+      "unknowns": []
+    },
+    {
+      "file_name": "management_events.csv",
+      "file_path": "data/pilot_templates/management_events.csv",
+      "role": "unknown",
+      "file_hash_sha256": "b7e63dec72f02aed6a45e3a9d075ecfef098882f396534fb6c739793c066f2f0",
+      "evidence_class": null,
+      "provenance_status": "unknown",
+      "actual_coverage": null,
+      "columns": [],
+      "record_count": 0,
+      "unknowns": []
+    },
+    {
+      "file_name": "outcome_measurements.csv",
+      "file_path": "data/pilot_templates/outcome_measurements.csv",
+      "role": "unknown",
+      "file_hash_sha256": "911752535ff84a9700b01406d228ae6fea619960dd582f5e11aa3d91c5d09958",
+      "evidence_class": null,
+      "provenance_status": "unknown",
+      "actual_coverage": null,
+      "columns": [],
+      "record_count": 0,
+      "unknowns": []
+    },
+    {
+      "file_name": "soil_observations.csv",
+      "file_path": "data/pilot_templates/soil_observations.csv",
+      "role": "soil",
+      "file_hash_sha256": "d1fba0f7211c3b1bb832835fbcb641add3fd40fc09153787f42f49c19340f4de",
+      "evidence_class": null,
+      "provenance_status": "unknown",
+      "actual_coverage": null,
+      "columns": [],
+      "record_count": 0,
+      "unknowns": []
+    },
+    {
+      "file_name": "demo_smap.csv",
+      "file_path": "data/smap/demo_smap.csv",
+      "role": "smap",
+      "file_hash_sha256": "d52e376b1f9538778724f72b1389cec32c3fdbfe7f9a847670832f5801e42f86",
+      "evidence_class": "synthetic",
+      "provenance_status": "synthetic_demo_only",
+      "actual_coverage": {
+        "start": "2026-09-25",
+        "end": "2026-09-27",
+        "count": 3
+      },
+      "columns": [
+        "date",
+        "latitude",
+        "longitude",
+        "soil_moisture",
+        "source",
+        "data_status"
+      ],
+      "record_count": 3,
+      "unknowns": [
+        "Synthetic/demo values are not field observations or validated farm outcomes.",
+        "No independent calibration or legal reuse metadata is implied by the file itself."
+      ],
+      "data_status_summary": {
+        "status": "synthetic_demo_only",
+        "source_values": [
+          "demo"
+        ],
+        "data_status_values": [
+          "synthetic"
+        ]
+      },
+      "source_values": [
+        "demo"
+      ],
+      "data_status_values": [
+        "synthetic"
+      ]
+    },
+    {
+      "file_name": "demo_soil.csv",
+      "file_path": "data/soil/demo_soil.csv",
+      "role": "soil",
+      "file_hash_sha256": "28d15d8672a50eaf311ed749678b923ea18a5bbb2dd9fa129ab35c7b8eff15f0",
+      "evidence_class": "synthetic",
+      "provenance_status": "synthetic_demo_only",
+      "actual_coverage": {
+        "start": "2026-09-18",
+        "end": "2026-09-20",
+        "count": 2
+      },
+      "columns": [
+        "field_id",
+        "latitude",
+        "longitude",
+        "nitrogen",
+        "phosphorus",
+        "potassium",
+        "ph",
+        "organic_matter",
+        "texture",
+        "source",
+        "data_status",
+        "as_of_date"
+      ],
+      "record_count": 2,
+      "unknowns": [
+        "Synthetic/demo values are not field observations or validated farm outcomes.",
+        "No independent calibration or legal reuse metadata is implied by the file itself."
+      ],
+      "data_status_summary": {
+        "status": "synthetic_demo_only",
+        "source_values": [
+          "demo"
+        ],
+        "data_status_values": [
+          "synthetic"
+        ]
+      },
+      "source_values": [
+        "demo"
+      ],
+      "data_status_values": [
+        "synthetic"
+      ]
+    },
+    {
+      "file_name": "source_registry.csv",
+      "file_path": "data/source_registry.csv",
+      "role": "source_registry",
+      "file_hash_sha256": "33c269102bd01564f76536e5d35b4d6747c772ab3ae1ea3e2acc30c3609d0fcd",
+      "evidence_class": "metadata_manifest",
+      "provenance_status": "registry_reference_only",
+      "actual_coverage": null,
+      "columns": [
+        "source_id",
+        "provider",
+        "product_name",
+        "product_version",
+        "evidence_class",
+        "access_url",
+        "access_method",
+        "spatial_resolution",
+        "temporal_resolution",
+        "coverage_start",
+        "coverage_end",
+        "update_frequency",
+        "native_units",
+        "license",
+        "attribution",
+        "retrieved_at",
+        "validation_status",
+        "allowed_uses",
+        "known_limitations",
+        "verification_notes",
+        "last_reviewed"
+      ],
+      "record_count": 21,
+      "unknowns": [
+        "Source registry entries are not proof of data access or legal reuse rights."
+      ]
+    }
+  ]
+}

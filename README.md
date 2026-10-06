@@ -23,6 +23,7 @@ illustrative/demo assumptions are identified separately.
 | `src/knowledge/crops.py` | Structured crop knowledge and crop data loading. Economic values will be explicitly labelled illustrative/demo values unless sourced otherwise. |
 | `src/knowledge/agronomic_rules.py` | Transparent per-crop compatibility checks with compatible/incompatible/unknown results, independent of decision algorithms. |
 | `src/preprocessing/features.py` | Deterministic raw, derived, and temporal feature construction from FieldState and dated observations. |
+| `src/experiments/real_yield_training.py` | Provenance-preserving exploratory model comparison on uploaded ICRISAT Ethiopia observed trial yields; separate from app inference. |
 | `src/optimizer/milp.py` | PuLP-based long-term crop rotation planning with configurable farmer priorities. |
 | `src/rl/environment.py` | Sequential observation mechanics and proposed actions; no equipment control or farm-outcome reward. |
 | `src/rl/agent.py` | Deterministic baseline policy interface; no learning algorithm is implemented. |
@@ -44,10 +45,23 @@ illustrative/demo assumptions are identified separately.
 rotation; RL models sequential adaptive management as field conditions change.
 They share the dynamic field state but are not substitutes for one another.
 
+## Browser app and offline demo
+
+The repository includes a lightweight browser app in `app/` that serves a farmer-facing form and calls the existing FieldShift pipeline through the repository modules. The app runs using the standard library and intentionally keeps live NASA POWER access disabled by default.
+
+Start the app from the project root:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.server --host 127.0.0.1 --port 8765
+```
+
+Then open `http://127.0.0.1:8765/` in a browser. The interface supports browser geolocation, manual latitude/longitude entry, field details, and an offline workflow run using the existing synthetic demo data. It includes clear warnings when live NASA data is unavailable.
+
 ## Requirements
 
 - Python 3.10 or newer
-- Packages listed in `requirements.txt`: NumPy, pandas, Requests, and PuLP
+- Packages listed in `requirements.txt`: NumPy, pandas, Requests, PuLP,
+  openpyxl, and scikit-learn
 - PuLP is constrained to the 2.x/3.x API range so the installed package
   includes the compatible CBC solver interface used by this prototype.
 
@@ -1391,3 +1405,44 @@ RL training and empirical offline policy evaluation remain blocked. Caller
 data and declarations must be reviewed by their provider; the prototype does
 not independently authenticate them or establish causal effects, agronomic
 effectiveness, yield gains, water savings, or real-world policy performance.
+
+## Exploratory training with uploaded trial yields
+
+`src/experiments/real_yield_training.py` reads the four Ethiopia workbooks in
+`data/download/dataverse_files.zip`, retains observed yield and source
+provenance, converts yield from kg/ha to t/ha, and compares a mean baseline,
+Ridge, Random Forest, and HistGradientBoosting using five-fold cross-validation
+grouped by recorded site. Run it from the repository root:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.experiments.real_yield_training
+```
+
+The normalized records and dataset manifest are written to
+`data/acquired/icrisat_ethiopia/`; the separate model and evaluation report
+are written to `models/real_yield_pilot/`. This pilot uses Ethiopian trial
+data, not Bangladesh farm data, and its held-out-site metrics do not validate
+Bangladesh predictions. The artifact is not used by the browser app, which
+continues to use its existing synthetic demo estimate. Static trial records
+are not sequential action/outcome trajectories, so this dataset does not
+train the RL policy. The second uploaded New Zealand archive is excluded
+because its included terms restrict reuse pending permission. Verify the
+source dataset's current terms before redistribution or commercial use.
+
+## One-step treatment-ranking prototype
+
+`src/experiments/trial_contextual_bandit.py` fits a separate offline contextual
+bandit to observed treatment/yield rows. It is intentionally **not sequential
+RL**: the trial data do not record evolving field state, repeated management
+actions, or delayed outcomes. Train it after the yield-data step:
+
+```powershell
+.\.venv\Scripts\python.exe -m src.experiments.trial_contextual_bandit
+```
+
+It saves a separate artifact/report under `models/ethiopia_trial_bandit/`.
+Evaluation predicts yield for the treatment actually observed at held-out
+sites; it does not estimate counterfactual policy value or causal treatment
+effects. Treatment rankings are restricted to replicated treatments within
+the selected crop and source workbook. They are Ethiopian research outputs,
+not Bangladesh farm advice, and are not wired into the app.

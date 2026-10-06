@@ -1,0 +1,156 @@
+{
+  "phase": "FieldShift Phase 31",
+  "source_product_name": "NASA POWER Daily Point API",
+  "official_api_documentation_url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+  "files": [
+    {
+      "source_product_name": "NASA POWER Daily Point API",
+      "official_api_documentation_url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+      "local_csv_path": "C:\\FieldShift\\data\\nasa_power\\nasa_power_2025.csv",
+      "file_hash_sha256": "cdc8f1fefdf5d535c028d8a54e5564c1169ea664f4e8b5e1b1fc15ed86d8518c",
+      "latitude": null,
+      "longitude": null,
+      "actual_coverage": {
+        "start_date": "2025-01-01",
+        "end_date": "2025-12-31"
+      },
+      "requested_dates": {
+        "start_date": null,
+        "end_date": null,
+        "status": "not recorded in repository evidence"
+      },
+      "requested_parameters": [
+        "T2M",
+        "T2M_MAX",
+        "T2M_MIN",
+        "PRECTOTCORR",
+        "RH2M",
+        "WS2M",
+        "ALLSKY_SFC_SW_DWN"
+      ],
+      "documented_units": {
+        "temperature": "\u00b0C",
+        "temp_max": "\u00b0C",
+        "temp_min": "\u00b0C",
+        "rainfall": "mm/day",
+        "humidity": "%",
+        "wind_speed": "m/s",
+        "solar_radiation": "MJ/m2/day"
+      },
+      "temporal_aggregation": "daily",
+      "retrieval_timestamp": {
+        "value": null,
+        "status": "unknown; not recoverable from repository evidence"
+      },
+      "api_request_url": {
+        "value": null,
+        "status": "not recorded in repository evidence; use the documented daily point API endpoint when reproducing a request"
+      },
+      "missing_value_handling": {
+        "api_missing_marker": -999,
+        "project_cleaning": "converted to NaN in src.data.nasa_power._response_to_dataframe",
+        "local_csv_status": "blank cells and NaN values may remain depending on persistence"
+      },
+      "provenance_status": "partial_repository_evidence_only",
+      "unresolved_gaps": [
+        "Original request URL and exact API parameters are not stored in the local CSV.",
+        "Retrieval timestamp is not recorded in the repository evidence.",
+        "The local file does not prove the source request corresponds to a specific field or real-world observation record.",
+        "Coordinates remain unknown for this snapshot because the repository does not store them in the file or a companion metadata record."
+      ],
+      "reconstructed_metadata": {
+        "filename_coordinates": null,
+        "request_parameters_recovered_from_project_code": {
+          "community": "AG",
+          "format": "JSON",
+          "parameters": [
+            "T2M",
+            "T2M_MAX",
+            "T2M_MIN",
+            "PRECTOTCORR",
+            "RH2M",
+            "WS2M",
+            "ALLSKY_SFC_SW_DWN"
+          ]
+        }
+      }
+    },
+    {
+      "source_product_name": "NASA POWER Daily Point API",
+      "official_api_documentation_url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+      "local_csv_path": "C:\\FieldShift\\data\\nasa_power\\nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv",
+      "file_hash_sha256": "349178106c347583b8584364d76b4e7c38eda7f8c82c5143a04055e329f2fa88",
+      "latitude": 23.8103,
+      "longitude": 90.4125,
+      "actual_coverage": {
+        "start_date": "2026-08-31",
+        "end_date": "2026-09-29"
+      },
+      "requested_dates": {
+        "start_date": null,
+        "end_date": null,
+        "status": "not recorded in repository evidence"
+      },
+      "requested_parameters": [
+        "T2M",
+        "T2M_MAX",
+        "T2M_MIN",
+        "PRECTOTCORR",
+        "RH2M",
+        "WS2M",
+        "ALLSKY_SFC_SW_DWN"
+      ],
+      "documented_units": {
+        "temperature": "\u00b0C",
+        "temp_max": "\u00b0C",
+        "temp_min": "\u00b0C",
+        "rainfall": "mm/day",
+        "humidity": "%",
+        "wind_speed": "m/s",
+        "solar_radiation": "MJ/m2/day"
+      },
+      "temporal_aggregation": "daily",
+      "retrieval_timestamp": {
+        "value": null,
+        "status": "unknown; not recoverable from repository evidence"
+      },
+      "api_request_url": {
+        "value": null,
+        "status": "not recorded in repository evidence; use the documented daily point API endpoint when reproducing a request"
+      },
+      "missing_value_handling": {
+        "api_missing_marker": -999,
+        "project_cleaning": "converted to NaN in src.data.nasa_power._response_to_dataframe",
+        "local_csv_status": "blank cells and NaN values may remain depending on persistence"
+      },
+      "provenance_status": "filename_reconstruction_only",
+      "unresolved_gaps": [
+        "Original request URL and exact API parameters are not stored in the local CSV.",
+        "Retrieval timestamp is not recorded in the repository evidence.",
+        "The local file does not prove the source request corresponds to a specific field or real-world observation record.",
+        "Coordinates recovered from the filename are reconstructed metadata, not original request metadata."
+      ],
+      "reconstructed_metadata": {
+        "filename_coordinates": {
+          "latitude": 23.8103,
+          "longitude": 90.4125,
+          "source": "filename_reconstruction",
+          "status": "reconstructed_only_not_original_request_metadata"
+        },
+        "request_parameters_recovered_from_project_code": {
+          "community": "AG",
+          "format": "JSON",
+          "parameters": [
+            "T2M",
+            "T2M_MAX",
+            "T2M_MIN",
+            "PRECTOTCORR",
+            "RH2M",
+            "WS2M",
+            "ALLSKY_SFC_SW_DWN"
+          ]
+        }
+      }
+    }
+  ]
+}

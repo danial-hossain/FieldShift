@@ -1,4 +1,5 @@
 import unittest
+from datetime import date, timedelta
 from unittest.mock import Mock, patch
 
 import numpy as np
@@ -7,9 +8,14 @@ import requests
 
 from src.data.nasa_power import (
     DATA_COLUMNS,
+    DEFAULT_DATA_DIRECTORY,
+    KNOWN_UNIT_MAP,
+    build_nasa_power_manifest,
     fetch_nasa_power,
     get_latest_valid_date,
     save_nasa_power_data,
+    validate_nasa_power_manifest,
+    write_nasa_power_provenance_manifest,
 )
 
 
@@ -36,13 +42,13 @@ class NasaPowerTests(unittest.TestCase):
         self.response.json.return_value = sample_api_response()
 
     def test_latitude_validation(self):
-        for latitude in (-90.1, 90.1, "north"):
+        for latitude in (-90.1, 90.1, "north", True, np.nan, np.inf):
             with self.subTest(latitude=latitude):
                 with self.assertRaisesRegex(ValueError, "latitude"):
                     fetch_nasa_power(latitude, 0, "2026-09-27", "2026-09-29")
 
     def test_longitude_validation(self):
-        for longitude in (-180.1, 180.1, "east"):
+        for longitude in (-180.1, 180.1, "east", True, np.nan, np.inf):
             with self.subTest(longitude=longitude):
                 with self.assertRaisesRegex(ValueError, "longitude"):
                     fetch_nasa_power(0, longitude, "2026-09-27", "2026-09-29")
@@ -51,6 +57,7 @@ class NasaPowerTests(unittest.TestCase):
         invalid_ranges = [
             ("not-a-date", "2026-09-29"),
             ("2026-09-30", "2026-09-29"),
+            (date.today(), date.today() + timedelta(days=1)),
         ]
         for start, end in invalid_ranges:
             with self.subTest(start=start, end=end):
@@ -131,6 +138,21 @@ class NasaPowerTests(unittest.TestCase):
             fetch_nasa_power(0, 0, "2026-09-27", "2026-09-29")
 
     @patch("src.data.nasa_power.requests.get")
+    def test_timeout_is_reported_explicitly(self, get):
+        get.side_effect = requests.Timeout("slow response")
+
+        with self.assertRaisesRegex(RuntimeError, "timed out after 30 seconds"):
+            fetch_nasa_power(0, 0, "2026-09-27", "2026-09-29")
+
+    def test_timeout_configuration_must_be_positive_and_finite(self):
+        for timeout in (True, False, 0, -1, np.nan, np.inf, "30"):
+            with self.subTest(timeout=timeout):
+                with self.assertRaisesRegex(ValueError, "timeout"):
+                    fetch_nasa_power(
+                        0, 0, "2026-09-27", "2026-09-29", timeout=timeout
+                    )
+
+    @patch("src.data.nasa_power.requests.get")
     def test_invalid_json_is_reported(self, get):
         self.response.json.side_effect = ValueError("bad json")
         get.return_value = self.response
@@ -145,6 +167,41 @@ class NasaPowerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "missing expected parameter"):
             fetch_nasa_power(0, 0, "2026-09-27", "2026-09-29")
+
+    @patch("src.data.nasa_power.requests.get")
+    def test_malformed_and_out_of_range_measurements_are_rejected(self, get):
+        malformed = sample_api_response()
+        malformed["properties"]["parameter"]["T2M"]["20260927"] = "not-a-number"
+        self.response.json.return_value = malformed
+        get.return_value = self.response
+        with self.assertRaisesRegex(RuntimeError, "non-numeric value"):
+            fetch_nasa_power(0, 0, "2026-09-27", "2026-09-29")
+
+        out_of_range = sample_api_response()
+        out_of_range["properties"]["parameter"]["RH2M"]["20260927"] = 101.0
+        self.response.json.return_value = out_of_range
+        with self.assertRaisesRegex(RuntimeError, "physical range"):
+            fetch_nasa_power(0, 0, "2026-09-27", "2026-09-29")
+
+    @patch("src.data.nasa_power.requests.get")
+    def test_api_response_dates_must_stay_within_requested_range(self, get):
+        get.return_value = self.response
+        with self.assertRaisesRegex(RuntimeError, "outside the requested range"):
+            fetch_nasa_power(0, 0, "2026-09-28", "2026-09-29")
+
+    def test_required_nasa_parameters_and_units_are_declared(self):
+        self.assertEqual(
+            KNOWN_UNIT_MAP,
+            {
+                "temperature": "°C",
+                "temp_max": "°C",
+                "temp_min": "°C",
+                "rainfall": "mm/day",
+                "humidity": "%",
+                "wind_speed": "m/s",
+                "solar_radiation": "MJ/m2/day",
+            },
+        )
 
     @patch("src.data.nasa_power.requests.get")
     def test_empty_api_response_is_reported(self, get):
@@ -200,6 +257,41 @@ class NasaPowerTests(unittest.TestCase):
         make_directory.assert_called_once_with(parents=True, exist_ok=True)
         write_csv.assert_called_once()
         self.assertFalse(write_csv.call_args.kwargs["index"])
+
+    def test_build_manifest_records_known_and_unknown_metadata(self):
+        path = DEFAULT_DATA_DIRECTORY / "nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv"
+        manifest = build_nasa_power_manifest(path)
+
+        self.assertEqual(manifest["source_product_name"], "NASA POWER Daily Point API")
+        self.assertEqual(manifest["latitude"], 23.8103)
+        self.assertEqual(manifest["longitude"], 90.4125)
+        self.assertEqual(manifest["actual_coverage"]["start_date"], "2026-08-31")
+        self.assertIsNone(manifest["retrieval_timestamp"]["value"])
+        self.assertIn("not recorded", manifest["requested_dates"]["status"])
+
+    def test_manifest_rejects_date_mismatch(self):
+        path = DEFAULT_DATA_DIRECTORY / "nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv"
+        manifest = build_nasa_power_manifest(path)
+        manifest["actual_coverage"]["start_date"] = "2026-01-01"
+
+        errors = validate_nasa_power_manifest({"files": [manifest]})
+        self.assertTrue(any("actual coverage start" in error for error in errors))
+
+    def test_manifest_rejects_invalid_coordinates(self):
+        path = DEFAULT_DATA_DIRECTORY / "nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv"
+        manifest = build_nasa_power_manifest(path)
+        manifest["latitude"] = 100.0
+
+        errors = validate_nasa_power_manifest({"files": [manifest]})
+        self.assertTrue(any("invalid latitude" in error for error in errors))
+
+    def test_write_manifest_creates_file_for_each_checked_in_csv(self):
+        manifest_path = write_nasa_power_provenance_manifest()
+        self.assertTrue(manifest_path.exists())
+        data = manifest_path.read_text(encoding="utf-8")
+        self.assertIn('"files"', data)
+        self.assertIn("nasa_power_2025.csv", data)
+        self.assertIn("nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv", data)
 
 
 if __name__ == "__main__":

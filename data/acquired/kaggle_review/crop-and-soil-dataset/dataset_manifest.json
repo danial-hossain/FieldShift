@@ -1,0 +1,34 @@
+{
+  "dataset_title": "Crop and Soil DataSet",
+  "kaggle_ref": "shankarpriya2913/crop-and-soil-dataset",
+  "dataset_url": "https://www.kaggle.com/datasets/shankarpriya2913/crop-and-soil-dataset",
+  "creator": "shankar",
+  "license": "MIT",
+  "retrieved_at": "2026-10-04T12:50:32Z",
+  "file": "data_core.csv",
+  "file_sha256": "83282a4802a9ef212fa16259a1398262362e66813c6216b00572b0d326a6ed86",
+  "row_count": 8000,
+  "columns": [
+    "Temparature",
+    "Humidity",
+    "Moisture",
+    "Soil Type",
+    "Crop Type",
+    "Nitrogen",
+    "Potassium",
+    "Phosphorous",
+    "Fertilizer Name"
+  ],
+  "evidence_class": "unverified_kaggle_records",
+  "data_status": "provenance_unknown",
+  "allowed_uses": [
+    "Exploratory schema review",
+    "Clearly labelled educational classification baseline after data-quality review"
+  ],
+  "limitations": [
+    "No field, location, date, collection method, or measurement protocol is documented in the dataset metadata.",
+    "The Kaggle description does not establish that values are measured observations; do not label these as observed farm data.",
+    "No crop-rotation sequence, season-to-season transition, or yield outcome is provided.",
+    "Not suitable as real-world evidence or as an RL trajectory dataset."
+  ]
+}

@@ -16,6 +16,7 @@ from src.data.field_history import (
     normalize_field_history,
 )
 from src.knowledge.agronomic_rules import evaluate_crop_compatibility
+from src.optimizer.dynamic_agronomy import build_dynamic_crop_season_matrix
 
 DEFAULT_PLANNING_YEARS = 3
 DEFAULT_SEASONS_PER_YEAR = 2
@@ -310,6 +311,12 @@ def _objective_data(crops: pd.DataFrame) -> dict[str, dict[str, Optional[float]]
                 (float(bool(is_legume)) + nutrient_value + soil_impact) / 3.0
             )
 
+    component_status = {
+        "profit": "available" if all(v is not None for v in profit.values()) else "excluded_missing_metadata",
+        "water": "available" if all(v is not None for v in water.values()) else "excluded_missing_metadata",
+        "soil": "available" if all(v is not None for v in soil.values()) else "excluded_missing_metadata",
+    }
+
     return {
         "profit_raw": profit,
         "water_raw": water,
@@ -317,6 +324,7 @@ def _objective_data(crops: pd.DataFrame) -> dict[str, dict[str, Optional[float]]
         "profit_normalized": _normalized(profit, "maximize"),
         "water_normalized": _normalized(water, "minimize"),
         "soil_normalized": _normalized(soil, "maximize"),
+        "component_status": component_status,
     }
 
 
@@ -344,6 +352,7 @@ def build_milp_model(
     crops: Optional[pd.DataFrame] = None,
     features: Optional[Mapping[str, Any]] = None,
     field_history: Optional[Union[pd.DataFrame, str, Path]] = None,
+    environmental_history: Optional[pd.DataFrame] = None,
     planning_periods: Optional[Sequence[str]] = None,
     years: int = DEFAULT_PLANNING_YEARS,
     seasons_per_year: int = DEFAULT_SEASONS_PER_YEAR,
@@ -354,9 +363,8 @@ def build_milp_model(
 ):
     """Build and return a PuLP problem and its prepared model metadata.
 
-    Unknown Phase 6 compatibility results do not remove crop variables. Only
-    explicitly incompatible temperature, pH, or supplied seasonal-water rules
-    remove crops; family and legume constraints are modeled across periods.
+    Dynamic agronomic response computes seasonal thermal suitability, effective
+    rainfall, irrigation requirements, and soil impact per period.
     """
     if (
         isinstance(legume_interval_seasons, bool)
@@ -372,6 +380,15 @@ def build_milp_model(
     ).normalized()
     rule_results = _evaluate_rules(crop_frame, field_state, features, history)
 
+    # Dynamic seasonal agronomy engine
+    dynamic_data = build_dynamic_crop_season_matrix(
+        field_state=field_state,
+        crops=crop_frame,
+        environmental_history=environmental_history,
+        planning_periods=periods,
+    )
+    dyn_matrix = dynamic_data["crop_season_matrix"]
+
     eligibility = {}
     for _, crop in crop_frame.iterrows():
         result = rule_results[crop["crop"]]
@@ -383,24 +400,12 @@ def build_milp_model(
         eligibility[crop["crop"]] = not explicitly_incompatible
 
     objective = _objective_data(crop_frame)
-    included_components = []
-    component_status = {}
     candidate_names = list(crop_frame["crop"])
-    for component in OBJECTIVE_COMPONENTS:
-        key = f"{component}_normalized"
-        values = [objective[key][name] for name in candidate_names]
-        complete = all(value is not None for value in values)
-        if weights[component] == 0:
-            component_status[component] = "not_weighted"
-        elif complete:
-            included_components.append(component)
-            component_status[component] = "included"
-        else:
-            component_status[component] = "excluded_missing_metadata"
-    if not included_components:
-        raise ValueError(
-            "No positively weighted objective component has complete crop metadata."
-        )
+    included_components = [
+        component
+        for component, status in objective["component_status"].items()
+        if status == "available"
+    ]
     effective_weights = FarmerPriorityWeights(
         profit_weight, water_weight, soil_weight
     ).normalized(included_components)
@@ -431,6 +436,14 @@ def build_milp_model(
             problem += variables[(crop_name, period)] == 0, (
                 f"static_incompatibility_{candidate_names.index(crop_name)}_{periods.index(period)}"
             )
+
+    # Dynamic seasonal incompatibility enforcement (water deficit, thermal boundary)
+    for period_idx, period in enumerate(periods):
+        for crop_idx, crop_name in enumerate(candidate_names):
+            if not dyn_matrix[period][crop_name]["is_feasible"]:
+                problem += variables[(crop_name, period)] == 0, (
+                    f"dynamic_seasonal_infeasible_{crop_idx}_{period_idx}"
+                )
 
     previous_family = _previous_crop_family(field_state, history, crop_frame)
     first_period_blocked = []
@@ -518,11 +531,14 @@ def build_milp_model(
             )
         legume_window_count += 1
 
+    # Multi-objective optimization over dynamic seasonal metrics
     objective_expression = pulp.lpSum(
-        effective_weights[component]
-        * objective[f"{component}_normalized"][crop]
+        (
+            effective_weights["profit"] * dyn_matrix[period][crop]["normalized_profit_score"]
+            + effective_weights["water"] * dyn_matrix[period][crop]["normalized_water_score"]
+            + effective_weights["soil"] * dyn_matrix[period][crop]["normalized_soil_score"]
+        )
         * variables[(crop, period)]
-        for component in included_components
         for crop in candidate_names
         for period in periods
     )
@@ -533,11 +549,18 @@ def build_milp_model(
         "periods": periods,
         "variables": variables,
         "objective": objective,
+        "dynamic_agronomic_matrix": dynamic_data,
+        "seasonal_environments": dynamic_data["seasonal_environments"],
         "rule_results": rule_results,
         "weights": weights,
         "effective_weights": effective_weights,
         "included_components": included_components,
-        "component_status": component_status,
+        "component_status": {
+            component: "included"
+            if status == "available"
+            else "excluded_missing_metadata"
+            for component, status in objective["component_status"].items()
+        },
         "eligibility": eligibility,
         "excluded_static": excluded_static,
         "first_period_blocked": first_period_blocked,
@@ -638,6 +661,7 @@ def optimize_rotation(
     crops: Optional[pd.DataFrame] = None,
     features: Optional[Mapping[str, Any]] = None,
     field_history: Optional[Union[pd.DataFrame, str, Path]] = None,
+    environmental_history: Optional[pd.DataFrame] = None,
     planning_periods: Optional[Sequence[str]] = None,
     years: int = DEFAULT_PLANNING_YEARS,
     seasons_per_year: int = DEFAULT_SEASONS_PER_YEAR,
@@ -653,6 +677,7 @@ def optimize_rotation(
         crops=crops,
         features=features,
         field_history=field_history,
+        environmental_history=environmental_history,
         planning_periods=planning_periods,
         years=years,
         seasons_per_year=seasons_per_year,
@@ -694,18 +719,24 @@ def optimize_rotation(
             )
         selection[period] = selected[0]
 
-    objective = metadata["objective"]
-    selected_crops = list(selection.values())
+    dyn_matrix = metadata["dynamic_agronomic_matrix"]["crop_season_matrix"]
+    if metadata["component_status"].get("profit") == "included":
+        profit_component = float(sum(dyn_matrix[p][c]["dynamic_gross_margin_bdt_ha"] for p, c in selection.items()))
+        profit_norm_sum = float(sum(dyn_matrix[p][c]["normalized_profit_score"] for p, c in selection.items()))
+    else:
+        profit_component = None
+        profit_norm_sum = None
 
-    def total_if_available(component_values):
-        selected_values = [component_values[crop] for crop in selected_crops]
-        if any(value is None for value in selected_values):
-            return None
-        return float(sum(selected_values))
+    if metadata["component_status"].get("water") == "included":
+        water_component = float(sum(dyn_matrix[p][c]["normalized_water_score"] for p, c in selection.items()))
+    else:
+        water_component = None
 
-    profit_component = total_if_available(objective["profit_raw"])
-    water_component = total_if_available(objective["water_normalized"])
-    soil_component = total_if_available(objective["soil_normalized"])
+    if metadata["component_status"].get("soil") == "included":
+        soil_component = float(sum(dyn_matrix[p][c]["normalized_soil_score"] for p, c in selection.items()))
+    else:
+        soil_component = None
+
     constraints = {
         "one_crop_per_period": len(metadata["periods"]),
         "family_transition_constraints": metadata[
@@ -736,10 +767,12 @@ def optimize_rotation(
         "water_component": water_component,
         "soil_component": soil_component,
         "normalized_components": {
-            "profit": total_if_available(objective["profit_normalized"]),
+            "profit": profit_norm_sum,
             "water": water_component,
             "soil": soil_component,
         },
+        "dynamic_agronomic_matrix": metadata["dynamic_agronomic_matrix"],
+        "seasonal_environments": metadata["seasonal_environments"],
         "weights": {
             "requested": metadata["weights"],
             "effective": metadata["effective_weights"],

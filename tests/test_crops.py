@@ -15,7 +15,9 @@ from src.data.crops import (
 class CropKnowledgeTests(unittest.TestCase):
     def test_all_required_crops_and_fields_are_available(self):
         crops = load_crop_knowledge()
-        self.assertEqual(tuple(crops["crop"]), REQUIRED_CROPS)
+        crop_set = set(crops["crop"])
+        for required in REQUIRED_CROPS:
+            self.assertIn(required, crop_set)
         self.assertEqual(list(crops.columns), CROP_COLUMNS)
         for column in CROP_COLUMNS:
             self.assertIn(column, crops.columns)

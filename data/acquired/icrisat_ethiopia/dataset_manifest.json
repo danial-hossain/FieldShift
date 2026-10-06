@@ -1,0 +1,99 @@
+{
+  "dataset_title": "ICRISAT Ethiopia crop-fertilizer field trial records",
+  "dataset_doi": "10.7910/DVN/ZXH0R8",
+  "dataset_url": "https://doi.org/10.7910/DVN/ZXH0R8",
+  "source_archive": "dataverse_files.zip",
+  "source_archive_sha256": "d2b6b16380cd4b657fee74dddcc9242ac5d72d13093bd2097888683e8af9719b",
+  "evidence_class": "observed_trial_record",
+  "data_status": "observed",
+  "country": "Ethiopia",
+  "target": "yield_t_ha",
+  "target_units": "tonnes per hectare (converted from source kg/ha)",
+  "retained_rows": 5062,
+  "site_groups": 11,
+  "crops": [
+    "Sorghum",
+    "Tef",
+    "Wheat"
+  ],
+  "years": [
+    2014,
+    2015,
+    2016,
+    2017,
+    2019
+  ],
+  "features": [
+    "year",
+    "altitude_m",
+    "planting_day_of_year",
+    "crop",
+    "variety",
+    "region",
+    "crop_system",
+    "landscape_strata",
+    "treatment",
+    "soil_type"
+  ],
+  "excluded_features": [
+    "harvest date and post-harvest measurements (outcome leakage)",
+    "fertilizer numeric columns with inconsistent or undocumented units across files",
+    "rainfall field, which is blank in these workbooks"
+  ],
+  "limitations": [
+    "These are Ethiopian trial records, not Bangladesh farm data.",
+    "Dataset rows may share trial/site/treatment structure and are not independent farms.",
+    "Reported yield moisture basis and field measurement protocols vary or are not fully specified in the workbooks.",
+    "Location grouping is based on recorded administrative site names, not field GPS coordinates.",
+    "Metrics estimate transfer to held-out recorded sites within this dataset only; they do not validate Bangladesh predictions.",
+    "The archive does not include action-conditioned sequential transitions or repeated reward trajectories for RL.",
+    "Confirm the original dataset's current terms and attribution requirements before redistribution or commercial use."
+  ],
+  "workbooks": [
+    {
+      "archive_member": "Data/2014-2015_Wheat/001_2014-2015_Wheat_ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "a1b7fed6777dcf3d8abd68c666be3b9bc488c9b24700b357cc76355b8a17c004",
+      "rows_in_workbook": 550,
+      "rows_with_numeric_yield": 550,
+      "rows_retained": 550,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 550
+      }
+    },
+    {
+      "archive_member": "Data/2016_Wheat/002_2016_Wheat_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "ef1012b7b38c9bf919fff68a1dcf5581ca58e9fa99991b08b285ccedb11ce4ff",
+      "rows_in_workbook": 936,
+      "rows_with_numeric_yield": 936,
+      "rows_retained": 936,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 936
+      }
+    },
+    {
+      "archive_member": "Data/2017_SorghumTef/003_2017_Sorghum+Tef_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "c613278ee2a0628c475a6a57fe51e4acb4b4fec477af9b1d80a1c303078a2835",
+      "rows_in_workbook": 1368,
+      "rows_with_numeric_yield": 1368,
+      "rows_retained": 1368,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Sorghum": 720,
+        "Tef": 648
+      }
+    },
+    {
+      "archive_member": "Data/2019_Wheat/004_2019_Wheat_ ICRISAT-AR_ETH.xlsx",
+      "source_workbook_sha256": "cd61f200e1b509eb96f5cec968740b6bb6d1cc7ab577b4fcda41c99c376dba39",
+      "rows_in_workbook": 2208,
+      "rows_with_numeric_yield": 2208,
+      "rows_retained": 2208,
+      "rows_excluded_missing_target_crop_or_site": 0,
+      "crop_counts": {
+        "Wheat": 2208
+      }
+    }
+  ]
+}

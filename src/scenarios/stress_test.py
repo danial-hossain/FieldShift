@@ -385,6 +385,7 @@ def _run_optimizer(
     features,
     field_history,
     options: Mapping[str, Any],
+    environmental_history: Optional[pd.DataFrame] = None,
 ) -> dict[str, Any]:
     try:
         return optimize_rotation(
@@ -392,6 +393,7 @@ def _run_optimizer(
             crops=crops,
             features=features,
             field_history=field_history,
+            environmental_history=environmental_history,
             **options,
         )
     except ValueError as error:
@@ -524,6 +526,7 @@ def run_stress_tests(
     scenario_config: Optional[StressScenarioConfig] = None,
     scenarios: Optional[Sequence[str]] = None,
     run_milp: bool = True,
+    environmental_history: Optional[pd.DataFrame] = None,
 ) -> dict[str, Any]:
     """Re-evaluate compatibility and optionally MILP for controlled scenarios."""
     selected_scenarios = list(DEFAULT_SCENARIOS if scenarios is None else scenarios)
@@ -555,11 +558,29 @@ def run_stress_tests(
             baseline_features,
             field_history,
             options,
+            environmental_history=environmental_history,
         )
         if run_milp
         else None
     )
+    try:
+        from src.rl.crop_rotation_rl import run_reinforcement_learning_policy
+        baseline_rl = (
+            run_reinforcement_learning_policy(
+                field_state=field_state,
+                crops=crops,
+                features=baseline_features,
+                environmental_history=environmental_history,
+                priority=options.get("priority", "balanced") if isinstance(options, dict) else "balanced",
+            )
+            if crops is not None
+            else None
+        )
+    except Exception:
+        baseline_rl = None
+
     scenario_results = {}
+    settings = _config(scenario_config)
     for name in selected_scenarios:
         applied = apply_scenario(
             name,
@@ -580,6 +601,7 @@ def run_stress_tests(
         if name == "normal":
             scenario_compatibility = baseline_compatibility
             scenario_optimization = baseline_optimization
+            scenario_rl = baseline_rl
         else:
             scenario_compatibility = _evaluate_compatibility(
                 crops,
@@ -588,6 +610,23 @@ def run_stress_tests(
                 field_history,
                 agronomic,
             )
+            scenario_env = None
+            if environmental_history is not None:
+                scenario_env = environmental_history.copy()
+                if name == "heat":
+                    if "T2M" in scenario_env.columns:
+                        scenario_env["T2M"] = scenario_env["T2M"] + settings.heat_temperature_delta
+                    if "T2M_MAX" in scenario_env.columns:
+                        scenario_env["T2M_MAX"] = scenario_env["T2M_MAX"] + settings.heat_temperature_delta
+                    if "T2M_MIN" in scenario_env.columns:
+                        scenario_env["T2M_MIN"] = scenario_env["T2M_MIN"] + settings.heat_temperature_delta
+                elif name == "drought":
+                    if "PRECTOTCORR" in scenario_env.columns:
+                        scenario_env["PRECTOTCORR"] = scenario_env["PRECTOTCORR"] * 0.4
+                elif name == "low_water":
+                    if "PRECTOTCORR" in scenario_env.columns:
+                        scenario_env["PRECTOTCORR"] = scenario_env["PRECTOTCORR"] * settings.low_water_fraction
+
             scenario_optimization = (
                 _run_optimizer(
                     applied["state"],
@@ -595,10 +634,27 @@ def run_stress_tests(
                     applied["features"],
                     field_history,
                     options,
+                    environmental_history=scenario_env,
                 )
                 if run_milp
                 else None
             )
+            try:
+                from src.rl.crop_rotation_rl import run_reinforcement_learning_policy
+                scenario_rl = (
+                    run_reinforcement_learning_policy(
+                        field_state=applied["state"],
+                        crops=crops,
+                        features=applied["features"],
+                        environmental_history=scenario_env,
+                        priority=options.get("priority", "balanced") if isinstance(options, dict) else "balanced",
+                    )
+                    if crops is not None
+                    else None
+                )
+            except Exception:
+                scenario_rl = None
+
         result = _comparison_result(
             applied,
             field_state,
@@ -610,6 +666,19 @@ def run_stress_tests(
         if scenario_optimization is not None:
             result["optimizer_status"] = scenario_optimization["status"]
             result["scenario_optimizer_result"] = scenario_optimization
+        if scenario_rl is not None:
+            base_rot = baseline_rl.get("trajectory_summary", {}).get("rotation_sequence") if baseline_rl else None
+            scen_rot = scenario_rl.get("trajectory_summary", {}).get("rotation_sequence")
+            result["rl_policy_result"] = {
+                "rotation_sequence": scen_rot,
+                "rotation_changed": base_rot != scen_rot if base_rot else False,
+                "cumulative_reward": scenario_rl.get("trajectory_summary", {}).get("total_cumulative_reward"),
+                "profit_bdt_per_ha": scenario_rl.get("trajectory_summary", {}).get("total_profit_bdt_per_ha"),
+                "water_requirement_mm": scenario_rl.get("trajectory_summary", {}).get("total_water_requirement_mm"),
+                "final_soil_health": scenario_rl.get("trajectory_summary", {}).get("final_soil_health"),
+                "legume_fraction": scenario_rl.get("trajectory_summary", {}).get("legume_fraction"),
+                "crop_diversity_count": scenario_rl.get("trajectory_summary", {}).get("crop_diversity_count"),
+            }
         scenario_results[name] = result
     return {
         "status": "completed",

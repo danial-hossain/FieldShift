@@ -1,0 +1,215 @@
+{
+  "algorithm": "tabular_q_learning",
+  "data_status": "simulated",
+  "evaluation": {
+    "data_status": "simulated",
+    "episodes_per_scenario": 8,
+    "evidence_class": "synthetic",
+    "held_out_scenarios": [
+      "normal",
+      "drought",
+      "heat",
+      "low_water"
+    ],
+    "limitations": [
+      "Evaluation seeds are held out from the training seed range.",
+      "The reward and every state transition are simulator assumptions.",
+      "No field validation, causal agronomic effect, or real farm performance is established."
+    ],
+    "policy_label": "simulation-trained RL policy; not field validated",
+    "results_by_scenario": {
+      "drought": {
+        "baseline_no_intervention": {
+          "cumulative_reward_simulated": 0.4927059842081858,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.0,
+          "mean_heat_stress_simulated": 0.010030290801575295,
+          "mean_water_stress_simulated": 0.8300608857654753,
+          "water_use_mm_simulated": 0.0,
+          "yield_proxy_simulated": 1.7453200309575783
+        },
+        "difference_trained_minus_baseline": {
+          "cumulative_reward_simulated": 1.0874697518271588,
+          "intervention_frequency_simulated": 0.5225694444444444,
+          "mean_heat_stress_simulated": -0.000725259644741209,
+          "mean_water_stress_simulated": -0.43535106345211494,
+          "water_use_mm_simulated": 65.125,
+          "yield_proxy_simulated": 0.650982545248767
+        },
+        "evaluation_seeds": [
+          110037,
+          110038,
+          110039,
+          110040,
+          110041,
+          110042,
+          110043,
+          110044
+        ],
+        "trained_policy": {
+          "cumulative_reward_simulated": 1.5801757360353446,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.5225694444444444,
+          "mean_heat_stress_simulated": 0.009305031156834086,
+          "mean_water_stress_simulated": 0.3947098223133604,
+          "water_use_mm_simulated": 65.125,
+          "yield_proxy_simulated": 2.3963025762063452
+        }
+      },
+      "heat": {
+        "baseline_no_intervention": {
+          "cumulative_reward_simulated": 0.29218153111534234,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.0,
+          "mean_heat_stress_simulated": 0.1882784342179737,
+          "mean_water_stress_simulated": 0.7955580769481083,
+          "water_use_mm_simulated": 0.0,
+          "yield_proxy_simulated": 1.6267274722009841
+        },
+        "difference_trained_minus_baseline": {
+          "cumulative_reward_simulated": 1.1293937347757788,
+          "intervention_frequency_simulated": 0.4184027777777778,
+          "mean_heat_stress_simulated": -0.009681822686162134,
+          "mean_water_stress_simulated": -0.4662066511220768,
+          "water_use_mm_simulated": 68.0,
+          "yield_proxy_simulated": 0.6494890577447092
+        },
+        "evaluation_seeds": [
+          120037,
+          120038,
+          120039,
+          120040,
+          120041,
+          120042,
+          120043,
+          120044
+        ],
+        "trained_policy": {
+          "cumulative_reward_simulated": 1.4215752658911212,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.4184027777777778,
+          "mean_heat_stress_simulated": 0.17859661153181156,
+          "mean_water_stress_simulated": 0.3293514258260315,
+          "water_use_mm_simulated": 68.0,
+          "yield_proxy_simulated": 2.2762165299456933
+        }
+      },
+      "low_water": {
+        "baseline_no_intervention": {
+          "cumulative_reward_simulated": 0.8922918753494982,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.0,
+          "mean_heat_stress_simulated": 0.0032006898843700707,
+          "mean_water_stress_simulated": 0.7007511895126223,
+          "water_use_mm_simulated": 0.0,
+          "yield_proxy_simulated": 1.9458191770317077
+        },
+        "difference_trained_minus_baseline": {
+          "cumulative_reward_simulated": 1.125525837077071,
+          "intervention_frequency_simulated": 0.5121527777777778,
+          "mean_heat_stress_simulated": -0.00020395198782756797,
+          "mean_water_stress_simulated": -0.4298841000734324,
+          "water_use_mm_simulated": 49.0,
+          "yield_proxy_simulated": 0.6438800563093867
+        },
+        "evaluation_seeds": [
+          130037,
+          130038,
+          130039,
+          130040,
+          130041,
+          130042,
+          130043,
+          130044
+        ],
+        "trained_policy": {
+          "cumulative_reward_simulated": 2.0178177124265693,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.5121527777777778,
+          "mean_heat_stress_simulated": 0.0029967378965425027,
+          "mean_water_stress_simulated": 0.27086708943918986,
+          "water_use_mm_simulated": 49.0,
+          "yield_proxy_simulated": 2.5896992333410944
+        }
+      },
+      "normal": {
+        "baseline_no_intervention": {
+          "cumulative_reward_simulated": 2.74836230129686,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.0,
+          "mean_heat_stress_simulated": 0.002370836062438481,
+          "mean_water_stress_simulated": 0.0821650050797421,
+          "water_use_mm_simulated": 0.0,
+          "yield_proxy_simulated": 2.873387935963302
+        },
+        "difference_trained_minus_baseline": {
+          "cumulative_reward_simulated": -0.06393159144482974,
+          "intervention_frequency_simulated": 0.5694444444444444,
+          "mean_heat_stress_simulated": -0.00011051801316610318,
+          "mean_water_stress_simulated": -0.08075342255396893,
+          "water_use_mm_simulated": 91.875,
+          "yield_proxy_simulated": 0.12110538621434097
+        },
+        "evaluation_seeds": [
+          100037,
+          100038,
+          100039,
+          100040,
+          100041,
+          100042,
+          100043,
+          100044
+        ],
+        "trained_policy": {
+          "cumulative_reward_simulated": 2.6844307098520304,
+          "data_status": "simulated",
+          "evidence_class": "synthetic",
+          "held_out_episode_count": 8,
+          "intervention_frequency_simulated": 0.5694444444444444,
+          "mean_heat_stress_simulated": 0.0022603180492723777,
+          "mean_water_stress_simulated": 0.0014115825257731748,
+          "water_use_mm_simulated": 91.875,
+          "yield_proxy_simulated": 2.994493322177643
+        }
+      }
+    },
+    "status": "evaluated_synthetic_only"
+  },
+  "evidence_class": "synthetic",
+  "policy_artifact": "C:\\FieldShift\\models\\rl\\phase37_synthetic_q_policy.json",
+  "policy_label": "simulation-trained RL policy; not field validated",
+  "status": "trained_and_evaluated_synthetic_policy",
+  "training_completed_episodes": 240,
+  "training_configuration": {
+    "discount_factor": 0.95,
+    "episodes": 240,
+    "held_out_seed_start": 100037,
+    "learning_rate": 0.15,
+    "minimum_epsilon": 0.05,
+    "scenario_schedule": [
+      "normal",
+      "drought",
+      "heat",
+      "low_water"
+    ],
+    "seed": 37,
+    "training_seed_end": 1276,
+    "training_seed_start": 1037
+  },
+  "training_mean_cumulative_reward_simulated": 2.094870812847194,
+  "training_q_table_state_count": 1644
+}

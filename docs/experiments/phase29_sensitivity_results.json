@@ -1,0 +1,5226 @@
+{
+  "baseline_optimizer": {
+    "constraint_summary": {
+      "binary_decision_variables": 42,
+      "family_transition_constraints": 75,
+      "legume_interval_seasons": 3,
+      "legume_windows": 4,
+      "one_crop_per_period": 6,
+      "previous_family_exclusions": [],
+      "static_compatibility_exclusions": [],
+      "unknown_compatibility_allowed": true
+    },
+    "effective_weights": {
+      "profit": 0.5,
+      "soil": 0.2,
+      "water": 0.3
+    },
+    "feasible": true,
+    "independent_constraint_check": {
+      "family_rotation_checked": true,
+      "legume_window_seasons": 3,
+      "one_crop_per_period": true,
+      "passed": true,
+      "static_compatibility_checked": true,
+      "status": "checked",
+      "violations": []
+    },
+    "monetary_component_status": "illustrative/demo",
+    "normalized_components": {
+      "profit": 3.998266897746967,
+      "soil": 3.0,
+      "water": 5.333333333333333
+    },
+    "objective_component_status": {
+      "profit": "included",
+      "soil": "included",
+      "water": "included"
+    },
+    "objective_components": {
+      "profit": 669000.0,
+      "soil": 3.0,
+      "water": 5.333333333333333
+    },
+    "objective_value": 4.199133448873484,
+    "plan": {
+      "Y1_S1": "Potato",
+      "Y1_S2": "Lentil",
+      "Y2_S1": "Potato",
+      "Y2_S2": "Lentil",
+      "Y3_S1": "Potato",
+      "Y3_S2": "Lentil"
+    },
+    "provenance": {
+      "agronomic_rules": {
+        "data_status": "applied",
+        "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+      },
+      "crop_knowledge": {
+        "data_status": [
+          "synthetic"
+        ],
+        "economic_values_are_illustrative": true,
+        "source": [
+          "demo"
+        ]
+      },
+      "environment": {
+        "data_status": "synthetic",
+        "observation_date": null,
+        "source": "hypothetical_fixture"
+      },
+      "field_history": {
+        "data_status": [
+          "missing"
+        ],
+        "decision_date": "2026-09-29",
+        "source": [
+          "no_previous_crop_assumed"
+        ]
+      },
+      "soil": {
+        "as_of_date": null,
+        "data_status": "synthetic",
+        "source": "hypothetical_fixture"
+      },
+      "soil_moisture": {
+        "data_status": "synthetic",
+        "observation_date": null,
+        "source": "hypothetical_fixture"
+      }
+    },
+    "requested_weights": {
+      "profit": 0.5,
+      "soil": 0.2,
+      "water": 0.3
+    },
+    "solver_status": "Optimal",
+    "status": "optimal"
+  },
+  "configuration": {
+    "available_water_units": "hypothetical mm per planning season",
+    "baseline_available_water_mm": 1500.0,
+    "experiment_type": "one-at-a-time sensitivity around fixed baseline",
+    "legume_interval_seasons": 3,
+    "objective_weight_interpretation": "Illustrative prototype priorities; component values depend on the bundled crop catalog and are not measured farm outcomes.",
+    "objective_weights": {
+      "profit_weight": 0.5,
+      "soil_weight": 0.2,
+      "water_weight": 0.3
+    },
+    "planning_periods": [
+      "Y1_S1",
+      "Y1_S2",
+      "Y2_S1",
+      "Y2_S2",
+      "Y3_S1",
+      "Y3_S2"
+    ]
+  },
+  "created_at_utc": "2026-10-03T08:28:00.032984+00:00",
+  "data_boundary": {
+    "environmental_files_not_used_as_field_observations": [
+      "data/nasa_power/nasa_power_2025.csv",
+      "data/nasa_power/nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv"
+    ],
+    "rl_trained": false,
+    "synthetic_inputs": [
+      "hypothetical FieldState fixture",
+      "bundled demo crop knowledge",
+      "hypothetical available seasonal water"
+    ]
+  },
+  "dataset_audit": [
+    {
+      "columns": [
+        "date",
+        "temperature",
+        "temp_max",
+        "temp_min",
+        "rainfall",
+        "humidity",
+        "wind_speed",
+        "solar_radiation"
+      ],
+      "date_coverage": {
+        "column": "date",
+        "end": "2025-12-31",
+        "start": "2025-01-01"
+      },
+      "evidence_class": "remote_observed",
+      "file": "data/nasa_power/nasa_power_2025.csv",
+      "limitations": "Coordinates and original request/retrieval manifest absent",
+      "missing_counts": {},
+      "role": "NASA POWER-attributed; not independently authenticated",
+      "row_count": 365,
+      "units": "temperature: \u00b0C; rainfall: mm/day; humidity: %; wind_speed: m/s; solar_radiation unit not recorded"
+    },
+    {
+      "columns": [
+        "date",
+        "temperature",
+        "temp_max",
+        "temp_min",
+        "rainfall",
+        "humidity",
+        "wind_speed",
+        "solar_radiation"
+      ],
+      "date_coverage": {
+        "column": "date",
+        "end": "2026-09-29",
+        "start": "2026-08-31"
+      },
+      "evidence_class": "remote_observed",
+      "file": "data/nasa_power/nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv",
+      "limitations": "Point in filename is not a field boundary; solar_radiation has missing values",
+      "missing_counts": {
+        "solar_radiation": 2
+      },
+      "role": "NASA POWER-attributed; not independently authenticated",
+      "row_count": 30,
+      "units": "temperature: \u00b0C; rainfall: mm/day; humidity: %; wind_speed: m/s; solar_radiation unit not recorded"
+    },
+    {
+      "columns": [
+        "field_id",
+        "latitude",
+        "longitude",
+        "nitrogen",
+        "phosphorus",
+        "potassium",
+        "ph",
+        "organic_matter",
+        "texture",
+        "source",
+        "data_status",
+        "as_of_date"
+      ],
+      "date_coverage": {
+        "column": "as_of_date",
+        "end": "2026-09-20",
+        "start": "2026-09-18"
+      },
+      "evidence_class": "synthetic",
+      "file": "data/soil/demo_soil.csv",
+      "limitations": "Two rows; N and organic matter each missing once",
+      "missing_counts": {
+        "nitrogen": 1,
+        "organic_matter": 1
+      },
+      "role": "Bundled demo data; synthetic, not measured soil",
+      "row_count": 2,
+      "units": "N/P/K: mg/kg; pH: unitless; organic_matter: percent by mass; coordinates: degrees"
+    },
+    {
+      "columns": [
+        "crop",
+        "family",
+        "is_legume",
+        "water_requirement",
+        "duration_days",
+        "min_temperature",
+        "max_temperature",
+        "min_ph",
+        "max_ph",
+        "expected_yield",
+        "production_cost",
+        "market_price",
+        "nutrient_effect",
+        "soil_impact",
+        "source",
+        "data_status"
+      ],
+      "date_coverage": null,
+      "evidence_class": "synthetic",
+      "file": "data/crops/crop_knowledge.csv",
+      "limitations": "No local cultivar, method, citation, or uncertainty; values not validated",
+      "missing_counts": {},
+      "role": "Bundled demo crop knowledge; synthetic illustrative parameters",
+      "row_count": 7,
+      "units": "water_requirement: mm/growing season; duration: days; expected_yield: t/ha; production_cost: illustrative BDT/ha; market_price: illustrative BDT/t; temperature: \u00b0C; pH: unitless"
+    },
+    {
+      "columns": [
+        "field_id",
+        "year",
+        "season",
+        "crop",
+        "yield",
+        "irrigation",
+        "source",
+        "data_status"
+      ],
+      "date_coverage": {
+        "column": "year",
+        "end": "2025",
+        "start": "2024"
+      },
+      "evidence_class": "synthetic",
+      "file": "data/field_history/demo_field_history.csv",
+      "limitations": "Four rows; one yield missing; no event-level action linkage",
+      "missing_counts": {
+        "yield": 1
+      },
+      "role": "Bundled demo history; synthetic, not farm history",
+      "row_count": 4,
+      "units": "yield: t/ha; year: calendar year; irrigation: categorical demo label"
+    },
+    {
+      "columns": [
+        "date",
+        "latitude",
+        "longitude",
+        "soil_moisture",
+        "source",
+        "data_status"
+      ],
+      "date_coverage": {
+        "column": "date",
+        "end": "2026-09-27",
+        "start": "2026-09-25"
+      },
+      "evidence_class": "synthetic",
+      "file": "data/smap/demo_smap.csv",
+      "limitations": "Three rows; no satellite product/version or direct sensor method",
+      "missing_counts": {},
+      "role": "SMAP-like bundled demo; synthetic and not NASA SMAP",
+      "row_count": 3,
+      "units": "soil_moisture: m\u00b3/m\u00b3 per project documentation; coordinates: degrees"
+    }
+  ],
+  "inputs": {
+    "crop_data_status": [
+      "synthetic"
+    ],
+    "crop_file": "data/crops/crop_knowledge.csv",
+    "crop_rows": 7,
+    "features": {
+      "available_water_mm": 1500.0,
+      "available_water_source": "hypothetical_fixture",
+      "provenance": {
+        "available_water_mm": {
+          "data_status": "synthetic",
+          "source": "hypothetical_fixture"
+        }
+      }
+    },
+    "field_history": "empty controlled fixture; no prior crop asserted",
+    "state": {
+      "as_of_date": "2026-09-29",
+      "crop_source": "bundled_demo_crop_knowledge",
+      "data_status": {
+        "crop": "synthetic",
+        "environment": "synthetic",
+        "history": "missing",
+        "soil": "synthetic",
+        "soil_moisture": "synthetic"
+      },
+      "environment_observation_date": null,
+      "environment_source": "hypothetical_fixture",
+      "field_id": "hypothetical-benchmark-field",
+      "history_source": "no_previous_crop_assumed",
+      "humidity": 70.0,
+      "latitude": 23.8103,
+      "longitude": 90.4125,
+      "nitrogen": 40.0,
+      "organic_matter": 2.0,
+      "ph": 6.2,
+      "phosphorus": 15.0,
+      "potassium": 100.0,
+      "previous_crop": null,
+      "previous_crop_family": null,
+      "previous_crop_is_legume": null,
+      "previous_crop_season": null,
+      "previous_crop_year": null,
+      "previous_irrigation": null,
+      "previous_yield": NaN,
+      "rainfall": 4.0,
+      "soil_as_of_date": null,
+      "soil_moisture": 0.25,
+      "soil_moisture_observation_date": null,
+      "soil_moisture_source": "hypothetical_fixture",
+      "soil_source": "hypothetical_fixture",
+      "solar_radiation": 15.0,
+      "temp_max": 29.0,
+      "temp_min": 18.0,
+      "temperature": 23.0,
+      "texture": null,
+      "wind_speed": 2.0
+    }
+  },
+  "interpretation": "research-only hypothetical sensitivity study of software and optimizer behavior; not a forecast or field trial",
+  "phase": "FieldShift Phase 29",
+  "repeatability": {
+    "component_absolute_tolerance": 1e-09,
+    "components_within_tolerance": true,
+    "maximum_absolute_component_difference": 0.0,
+    "repeatable": true,
+    "repetitions": 2,
+    "runs": [
+      {
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "status": "optimal"
+      },
+      {
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "status": "optimal"
+      }
+    ],
+    "same_optimizer_status": true,
+    "same_plan": true
+  },
+  "reproducibility": {
+    "determinism_note": "No random draws are used. CBC is configured by the optimizer with one thread; solver-version/platform differences may alter tie-breaking.",
+    "random_seed": null,
+    "randomness_used": false,
+    "repeatability_tolerance": 1e-09,
+    "software": {
+      "pandas": "3.0.6",
+      "platform": "Windows-11-10.0.26300-SP0",
+      "pulp": "3.3.2",
+      "python": "3.13.1"
+    },
+    "solver": "PuLP CBC command-line solver",
+    "solver_threads": 1,
+    "solver_tolerance": "CBC default; no custom tolerance supplied"
+  },
+  "scenario_configuration": {
+    "baseline_available_water_mm": 1500.0,
+    "drought_soil_moisture_delta": -0.08,
+    "heat_temperature_delta": 5.0,
+    "low_water_fraction": 0.6,
+    "rainfall_limitation": "The existing scenario API has no rainfall-perturbation scenario.",
+    "rainfall_scenario_supported": false,
+    "scenarios": [
+      "normal",
+      "drought",
+      "heat",
+      "low_water"
+    ],
+    "supported_sensitivity_values": {
+      "baseline_available_water_mm": [
+        0.0,
+        300.0,
+        600.0,
+        900.0,
+        1200.0,
+        1500.0,
+        1800.0,
+        2400.0
+      ],
+      "drought_soil_moisture_delta": [
+        -0.04,
+        -0.08,
+        -0.12
+      ],
+      "heat_temperature_delta": [
+        2.0,
+        5.0,
+        8.0
+      ],
+      "low_water_fraction": [
+        0.8,
+        0.6,
+        0.4
+      ],
+      "objective_weight_fraction": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ]
+    }
+  },
+  "scenarios": {
+    "drought": {
+      "assumptions": {
+        "drought_soil_moisture_delta": -0.08
+      },
+      "baseline_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "changed_fields": {
+        "soil_moisture": {
+          "baseline": 0.25,
+          "baseline_provenance": {
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "scenario": 0.16999999999999998,
+          "scenario_provenance": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        }
+      },
+      "hypothetical": true,
+      "objective_component_delta": {
+        "profit": 0.0,
+        "soil": 0.0,
+        "water": 0.0
+      },
+      "provenance": {
+        "changed_fields": {
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        },
+        "unchanged_fields_preserved": true
+      },
+      "reason": "Applied the configured hypothetical drought perturbation.",
+      "rotation_changed": false,
+      "scenario": "drought",
+      "scenario_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "scenario"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "status": "completed"
+    },
+    "heat": {
+      "assumptions": {
+        "heat_temperature_delta": 5.0
+      },
+      "baseline_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "changed_fields": {
+        "temp_max": {
+          "baseline": 29.0,
+          "baseline_provenance": {
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "scenario": 34.0,
+          "scenario_provenance": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        },
+        "temp_min": {
+          "baseline": 18.0,
+          "baseline_provenance": {
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "scenario": 23.0,
+          "scenario_provenance": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        },
+        "temperature": {
+          "baseline": 23.0,
+          "baseline_provenance": {
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "scenario": 28.0,
+          "scenario_provenance": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        }
+      },
+      "hypothetical": true,
+      "objective_component_delta": {
+        "profit": -285000.0,
+        "soil": 0.6666666666666665,
+        "water": -0.33333333333333304
+      },
+      "provenance": {
+        "changed_fields": {
+          "temp_max": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          },
+          "temp_min": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          },
+          "temperature": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        },
+        "unchanged_fields_preserved": true
+      },
+      "reason": "Applied the configured hypothetical heat perturbation.",
+      "rotation_changed": true,
+      "scenario": "heat",
+      "scenario_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [
+            "Wheat",
+            "Mustard",
+            "Potato"
+          ],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 1.5285961871750433,
+          "soil": 3.6666666666666665,
+          "water": 5.0
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 384000.0,
+          "soil": 3.6666666666666665,
+          "water": 5.0
+        },
+        "objective_value": 2.997631426920855,
+        "plan": {
+          "Y1_S1": "Lentil",
+          "Y1_S2": "Maize",
+          "Y2_S1": "Lentil",
+          "Y2_S2": "Maize",
+          "Y3_S1": "Lentil",
+          "Y3_S2": "Maize"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "scenario"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "status": "completed"
+    },
+    "low_water": {
+      "assumptions": {
+        "low_water_fraction": 0.6
+      },
+      "baseline_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "changed_fields": {
+        "available_water_mm": {
+          "baseline": 1500.0,
+          "baseline_provenance": {
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "scenario": 900.0,
+          "scenario_provenance": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        }
+      },
+      "hypothetical": true,
+      "objective_component_delta": {
+        "profit": 0.0,
+        "soil": 0.0,
+        "water": 0.0
+      },
+      "provenance": {
+        "changed_fields": {
+          "available_water_mm": {
+            "data_status": "synthetic",
+            "source": "scenario"
+          }
+        },
+        "unchanged_fields_preserved": true
+      },
+      "reason": "Applied the configured hypothetical low_water perturbation.",
+      "rotation_changed": true,
+      "scenario": "low_water",
+      "scenario_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [
+            "Rice"
+          ],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Lentil",
+          "Y1_S2": "Potato",
+          "Y2_S1": "Lentil",
+          "Y2_S2": "Potato",
+          "Y3_S1": "Lentil",
+          "Y3_S2": "Potato"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "status": "completed"
+    },
+    "normal": {
+      "assumptions": {},
+      "baseline_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "changed_fields": {},
+      "hypothetical": true,
+      "objective_component_delta": {
+        "profit": 0.0,
+        "soil": 0.0,
+        "water": 0.0
+      },
+      "provenance": {
+        "changed_fields": {},
+        "unchanged_fields_preserved": true
+      },
+      "reason": "Baseline state and features copied without perturbation.",
+      "rotation_changed": false,
+      "scenario": "normal",
+      "scenario_optimizer": {
+        "constraint_summary": {
+          "binary_decision_variables": 42,
+          "family_transition_constraints": 75,
+          "legume_interval_seasons": 3,
+          "legume_windows": 4,
+          "one_crop_per_period": 6,
+          "previous_family_exclusions": [],
+          "static_compatibility_exclusions": [],
+          "unknown_compatibility_allowed": true
+        },
+        "effective_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "feasible": true,
+        "independent_constraint_check": {
+          "family_rotation_checked": true,
+          "legume_window_seasons": 3,
+          "one_crop_per_period": true,
+          "passed": true,
+          "static_compatibility_checked": true,
+          "status": "checked",
+          "violations": []
+        },
+        "monetary_component_status": "illustrative/demo",
+        "normalized_components": {
+          "profit": 3.998266897746967,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_component_status": {
+          "profit": "included",
+          "soil": "included",
+          "water": "included"
+        },
+        "objective_components": {
+          "profit": 669000.0,
+          "soil": 3.0,
+          "water": 5.333333333333333
+        },
+        "objective_value": 4.199133448873484,
+        "plan": {
+          "Y1_S1": "Potato",
+          "Y1_S2": "Lentil",
+          "Y2_S1": "Potato",
+          "Y2_S2": "Lentil",
+          "Y3_S1": "Potato",
+          "Y3_S2": "Lentil"
+        },
+        "provenance": {
+          "agronomic_rules": {
+            "data_status": "applied",
+            "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+          },
+          "crop_knowledge": {
+            "data_status": [
+              "synthetic"
+            ],
+            "economic_values_are_illustrative": true,
+            "source": [
+              "demo"
+            ]
+          },
+          "environment": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          },
+          "field_history": {
+            "data_status": [
+              "missing"
+            ],
+            "decision_date": "2026-09-29",
+            "source": [
+              "no_previous_crop_assumed"
+            ]
+          },
+          "soil": {
+            "as_of_date": null,
+            "data_status": "synthetic",
+            "source": "hypothetical_fixture"
+          },
+          "soil_moisture": {
+            "data_status": "synthetic",
+            "observation_date": null,
+            "source": "hypothetical_fixture"
+          }
+        },
+        "requested_weights": {
+          "profit": 0.5,
+          "soil": 0.2,
+          "water": 0.3
+        },
+        "solver_status": "Optimal",
+        "status": "optimal"
+      },
+      "status": "completed"
+    }
+  },
+  "sensitivity": {
+    "baseline_available_water_mm": [
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": null,
+          "soil": null,
+          "water": null
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "family_transition_constraints": 75,
+            "infeasibility_note": "Review candidate crop families, explicit compatibility exclusions, and the rolling legume interval constraints.",
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice",
+              "Wheat",
+              "Maize",
+              "Lentil",
+              "Mungbean",
+              "Mustard",
+              "Potato"
+            ]
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": false,
+          "independent_constraint_check": {
+            "passed": null,
+            "status": "not_evaluated_no_feasible_plan",
+            "violations": []
+          },
+          "monetary_component_status": null,
+          "normalized_components": null,
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": null,
+            "soil": null,
+            "water": null
+          },
+          "objective_value": null,
+          "plan": null,
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Infeasible",
+          "status": "infeasible"
+        },
+        "parameter_value": 0.0,
+        "rotation_changed": null,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": null,
+          "soil": null,
+          "water": null
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "family_transition_constraints": 75,
+            "infeasibility_note": "Review candidate crop families, explicit compatibility exclusions, and the rolling legume interval constraints.",
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice",
+              "Wheat",
+              "Maize",
+              "Mungbean",
+              "Mustard",
+              "Potato"
+            ]
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": false,
+          "independent_constraint_check": {
+            "passed": null,
+            "status": "not_evaluated_no_feasible_plan",
+            "violations": []
+          },
+          "monetary_component_status": null,
+          "normalized_components": null,
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": null,
+            "soil": null,
+            "water": null
+          },
+          "objective_value": null,
+          "plan": null,
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Infeasible",
+          "status": "infeasible"
+        },
+        "parameter_value": 300.0,
+        "rotation_changed": null,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Lentil",
+            "Y1_S2": "Potato",
+            "Y2_S1": "Lentil",
+            "Y2_S2": "Potato",
+            "Y3_S1": "Lentil",
+            "Y3_S2": "Potato"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 600.0,
+        "rotation_changed": true,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Lentil",
+            "Y1_S2": "Potato",
+            "Y2_S1": "Lentil",
+            "Y2_S2": "Potato",
+            "Y3_S1": "Lentil",
+            "Y3_S2": "Potato"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 900.0,
+        "rotation_changed": true,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 1200.0,
+        "rotation_changed": false,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 1500.0,
+        "rotation_changed": false,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 1800.0,
+        "rotation_changed": false,
+        "units": "hypothetical mm per planning season"
+      },
+      {
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 2400.0,
+        "rotation_changed": false,
+        "units": "hypothetical mm per planning season"
+      }
+    ],
+    "drought_soil_moisture_delta": [
+      {
+        "assumptions": {
+          "drought_soil_moisture_delta": -0.04
+        },
+        "changed_fields": {
+          "soil_moisture": {
+            "baseline": 0.25,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 0.21,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": -0.04,
+        "rotation_changed": false,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "drought_soil_moisture_delta": -0.08
+        },
+        "changed_fields": {
+          "soil_moisture": {
+            "baseline": 0.25,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 0.16999999999999998,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": -0.08,
+        "rotation_changed": false,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "drought_soil_moisture_delta": -0.12
+        },
+        "changed_fields": {
+          "soil_moisture": {
+            "baseline": 0.25,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 0.13,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": -0.12,
+        "rotation_changed": false,
+        "scenario_status": "completed"
+      }
+    ],
+    "heat_temperature_delta": [
+      {
+        "assumptions": {
+          "heat_temperature_delta": 2.0
+        },
+        "changed_fields": {
+          "temp_max": {
+            "baseline": 29.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 31.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temp_min": {
+            "baseline": 18.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 20.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temperature": {
+            "baseline": 23.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 25.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 2.0,
+        "rotation_changed": false,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "heat_temperature_delta": 5.0
+        },
+        "changed_fields": {
+          "temp_max": {
+            "baseline": 29.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 34.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temp_min": {
+            "baseline": 18.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 23.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temperature": {
+            "baseline": 23.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 28.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": -285000.0,
+          "soil": 0.6666666666666665,
+          "water": -0.33333333333333304
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Wheat",
+              "Mustard",
+              "Potato"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 1.5285961871750433,
+            "soil": 3.6666666666666665,
+            "water": 5.0
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 384000.0,
+            "soil": 3.6666666666666665,
+            "water": 5.0
+          },
+          "objective_value": 2.997631426920855,
+          "plan": {
+            "Y1_S1": "Lentil",
+            "Y1_S2": "Maize",
+            "Y2_S1": "Lentil",
+            "Y2_S2": "Maize",
+            "Y3_S1": "Lentil",
+            "Y3_S2": "Maize"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 5.0,
+        "rotation_changed": true,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "heat_temperature_delta": 8.0
+        },
+        "changed_fields": {
+          "temp_max": {
+            "baseline": 29.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 37.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temp_min": {
+            "baseline": 18.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 26.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          },
+          "temperature": {
+            "baseline": 23.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 31.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": -339000.0,
+          "soil": 0.6666666666666665,
+          "water": -0.5
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Wheat",
+              "Lentil",
+              "Mustard",
+              "Potato"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 1.0606585788561524,
+            "soil": 3.6666666666666665,
+            "water": 4.833333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 330000.0,
+            "soil": 3.6666666666666665,
+            "water": 4.833333333333333
+          },
+          "objective_value": 2.71366262276141,
+          "plan": {
+            "Y1_S1": "Maize",
+            "Y1_S2": "Mungbean",
+            "Y2_S1": "Maize",
+            "Y2_S2": "Mungbean",
+            "Y3_S1": "Maize",
+            "Y3_S2": "Mungbean"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "scenario"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 8.0,
+        "rotation_changed": true,
+        "scenario_status": "completed"
+      }
+    ],
+    "low_water_fraction": [
+      {
+        "assumptions": {
+          "low_water_fraction": 0.8
+        },
+        "changed_fields": {
+          "available_water_mm": {
+            "baseline": 1500.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 1200.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Potato",
+            "Y1_S2": "Lentil",
+            "Y2_S1": "Potato",
+            "Y2_S2": "Lentil",
+            "Y3_S1": "Potato",
+            "Y3_S2": "Lentil"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 0.8,
+        "rotation_changed": false,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "low_water_fraction": 0.6
+        },
+        "changed_fields": {
+          "available_water_mm": {
+            "baseline": 1500.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 900.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Lentil",
+            "Y1_S2": "Potato",
+            "Y2_S1": "Lentil",
+            "Y2_S2": "Potato",
+            "Y3_S1": "Lentil",
+            "Y3_S2": "Potato"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 0.6,
+        "rotation_changed": true,
+        "scenario_status": "completed"
+      },
+      {
+        "assumptions": {
+          "low_water_fraction": 0.4
+        },
+        "changed_fields": {
+          "available_water_mm": {
+            "baseline": 1500.0,
+            "baseline_provenance": {
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "scenario": 600.0,
+            "scenario_provenance": {
+              "data_status": "synthetic",
+              "source": "scenario"
+            }
+          }
+        },
+        "hypothetical": true,
+        "objective_component_delta": {
+          "profit": 0.0,
+          "soil": 0.0,
+          "water": 0.0
+        },
+        "optimizer": {
+          "constraint_summary": {
+            "binary_decision_variables": 42,
+            "family_transition_constraints": 75,
+            "legume_interval_seasons": 3,
+            "legume_windows": 4,
+            "one_crop_per_period": 6,
+            "previous_family_exclusions": [],
+            "static_compatibility_exclusions": [
+              "Rice"
+            ],
+            "unknown_compatibility_allowed": true
+          },
+          "effective_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "feasible": true,
+          "independent_constraint_check": {
+            "family_rotation_checked": true,
+            "legume_window_seasons": 3,
+            "one_crop_per_period": true,
+            "passed": true,
+            "static_compatibility_checked": true,
+            "status": "checked",
+            "violations": []
+          },
+          "monetary_component_status": "illustrative/demo",
+          "normalized_components": {
+            "profit": 3.998266897746967,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_component_status": {
+            "profit": "included",
+            "soil": "included",
+            "water": "included"
+          },
+          "objective_components": {
+            "profit": 669000.0,
+            "soil": 3.0,
+            "water": 5.333333333333333
+          },
+          "objective_value": 4.199133448873484,
+          "plan": {
+            "Y1_S1": "Lentil",
+            "Y1_S2": "Potato",
+            "Y2_S1": "Lentil",
+            "Y2_S2": "Potato",
+            "Y3_S1": "Lentil",
+            "Y3_S2": "Potato"
+          },
+          "provenance": {
+            "agronomic_rules": {
+              "data_status": "applied",
+              "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+            },
+            "crop_knowledge": {
+              "data_status": [
+                "synthetic"
+              ],
+              "economic_values_are_illustrative": true,
+              "source": [
+                "demo"
+              ]
+            },
+            "environment": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            },
+            "field_history": {
+              "data_status": [
+                "missing"
+              ],
+              "decision_date": "2026-09-29",
+              "source": [
+                "no_previous_crop_assumed"
+              ]
+            },
+            "soil": {
+              "as_of_date": null,
+              "data_status": "synthetic",
+              "source": "hypothetical_fixture"
+            },
+            "soil_moisture": {
+              "data_status": "synthetic",
+              "observation_date": null,
+              "source": "hypothetical_fixture"
+            }
+          },
+          "requested_weights": {
+            "profit": 0.5,
+            "soil": 0.2,
+            "water": 0.3
+          },
+          "solver_status": "Optimal",
+          "status": "optimal"
+        },
+        "parameter_value": 0.4,
+        "rotation_changed": true,
+        "scenario_status": "completed"
+      }
+    ],
+    "objective_weights": {
+      "profit_weight": [
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.0,
+              "soil": 0.4,
+              "water": 0.6
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "not_weighted",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "not_weighted",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 5.233333333333333,
+            "plan": {
+              "Y1_S1": "Lentil",
+              "Y1_S2": "Mustard",
+              "Y2_S1": "Lentil",
+              "Y2_S2": "Mustard",
+              "Y3_S1": "Lentil",
+              "Y3_S2": "Mustard"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.0,
+              "soil": 0.4,
+              "water": 0.6
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.0,
+          "requested_weights": {
+            "profit_weight": 0.0,
+            "soil_weight": 0.4,
+            "water_weight": 0.6
+          },
+          "rotation_changed": true
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.25,
+              "soil": 0.30000000000000004,
+              "water": 0.44999999999999996
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 4.3363951473136915,
+            "plan": {
+              "Y1_S1": "Lentil",
+              "Y1_S2": "Mustard",
+              "Y2_S1": "Lentil",
+              "Y2_S2": "Mustard",
+              "Y3_S1": "Lentil",
+              "Y3_S2": "Mustard"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.25,
+              "soil": 0.30000000000000004,
+              "water": 0.44999999999999996
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.25,
+          "requested_weights": {
+            "profit_weight": 0.25,
+            "soil_weight": 0.30000000000000004,
+            "water_weight": 0.44999999999999996
+          },
+          "rotation_changed": true
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.5,
+              "soil": 0.2,
+              "water": 0.3
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.199133448873484,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.5,
+              "soil": 0.2,
+              "water": 0.3
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.5,
+          "requested_weights": {
+            "profit_weight": 0.5,
+            "soil_weight": 0.2,
+            "water_weight": 0.3
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.75,
+              "soil": 0.1,
+              "water": 0.15
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.098700173310226,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.75,
+              "soil": 0.1,
+              "water": 0.15
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.75,
+          "requested_weights": {
+            "profit_weight": 0.75,
+            "soil_weight": 0.1,
+            "water_weight": 0.15
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 1.0,
+              "soil": 0.0,
+              "water": 0.0
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "not_weighted",
+              "water": "not_weighted"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 3.998266897746967,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 1.0,
+              "soil": 0.0,
+              "water": 0.0
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 1.0,
+          "requested_weights": {
+            "profit_weight": 1.0,
+            "soil_weight": 0.0,
+            "water_weight": 0.0
+          },
+          "rotation_changed": false
+        }
+      ],
+      "soil_weight": [
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.625,
+              "soil": 0.0,
+              "water": 0.37499999999999994
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "not_weighted",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.4989168110918545,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.625,
+              "soil": 0.0,
+              "water": 0.37499999999999994
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.0,
+          "requested_weights": {
+            "profit_weight": 0.625,
+            "soil_weight": 0.0,
+            "water_weight": 0.37499999999999994
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.46875,
+              "soil": 0.25,
+              "water": 0.28124999999999994
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.124187608318891,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.46875,
+              "soil": 0.25,
+              "water": 0.28124999999999994
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.25,
+          "requested_weights": {
+            "profit_weight": 0.46875,
+            "soil_weight": 0.25,
+            "water_weight": 0.28124999999999994
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.3125,
+              "soil": 0.5,
+              "water": 0.18749999999999997
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 3.7746606008087804,
+            "plan": {
+              "Y1_S1": "Lentil",
+              "Y1_S2": "Mustard",
+              "Y2_S1": "Lentil",
+              "Y2_S2": "Mustard",
+              "Y3_S1": "Lentil",
+              "Y3_S2": "Mustard"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.3125,
+              "soil": 0.5,
+              "water": 0.18749999999999997
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.5,
+          "requested_weights": {
+            "profit_weight": 0.3125,
+            "soil_weight": 0.5,
+            "water_weight": 0.18749999999999997
+          },
+          "rotation_changed": true
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.15625,
+              "soil": 0.75,
+              "water": 0.09374999999999999
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 4.053996967071058,
+            "plan": {
+              "Y1_S1": "Mustard",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Mustard",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Mustard",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.15625,
+              "soil": 0.75,
+              "water": 0.09374999999999999
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.75,
+          "requested_weights": {
+            "profit_weight": 0.15625,
+            "soil_weight": 0.75,
+            "water_weight": 0.09374999999999999
+          },
+          "rotation_changed": true
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -325500.0,
+            "soil": 1.333333333333333,
+            "water": 0.33333333333333304
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.0,
+              "soil": 1.0,
+              "water": 0.0
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "not_weighted",
+            "normalized_components": {
+              "profit": 1.1776429809358753,
+              "soil": 4.333333333333333,
+              "water": 5.666666666666666
+            },
+            "objective_component_status": {
+              "profit": "not_weighted",
+              "soil": "included",
+              "water": "not_weighted"
+            },
+            "objective_components": {
+              "profit": 343500.0,
+              "soil": 4.333333333333333,
+              "water": 5.666666666666666
+            },
+            "objective_value": 4.333333333333334,
+            "plan": {
+              "Y1_S1": "Mungbean",
+              "Y1_S2": "Mustard",
+              "Y2_S1": "Mungbean",
+              "Y2_S2": "Mustard",
+              "Y3_S1": "Mungbean",
+              "Y3_S2": "Mustard"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.0,
+              "soil": 1.0,
+              "water": 0.0
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 1.0,
+          "requested_weights": {
+            "profit_weight": 0.0,
+            "soil_weight": 1.0,
+            "water_weight": 0.0
+          },
+          "rotation_changed": true
+        }
+      ],
+      "water_weight": [
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.7142857142857143,
+              "soil": 0.28571428571428575,
+              "water": 0.0
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "not_weighted"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 3.713047784104977,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.7142857142857143,
+              "soil": 0.28571428571428575,
+              "water": 0.0
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.0,
+          "requested_weights": {
+            "profit_weight": 0.7142857142857143,
+            "soil_weight": 0.28571428571428575,
+            "water_weight": 0.0
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.5357142857142857,
+              "soil": 0.21428571428571433,
+              "water": 0.25
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.118119171412066,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.5357142857142857,
+              "soil": 0.21428571428571433,
+              "water": 0.25
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.25,
+          "requested_weights": {
+            "profit_weight": 0.5357142857142857,
+            "soil_weight": 0.21428571428571433,
+            "water_weight": 0.25
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": 0.0,
+            "soil": 0.0,
+            "water": 0.0
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.35714285714285715,
+              "soil": 0.14285714285714288,
+              "water": 0.5
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 3.998266897746967,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 669000.0,
+              "soil": 3.0,
+              "water": 5.333333333333333
+            },
+            "objective_value": 4.523190558719155,
+            "plan": {
+              "Y1_S1": "Potato",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Potato",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Potato",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.35714285714285715,
+              "soil": 0.14285714285714288,
+              "water": 0.5
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.5,
+          "requested_weights": {
+            "profit_weight": 0.35714285714285715,
+            "soil_weight": 0.14285714285714288,
+            "water_weight": 0.5
+          },
+          "rotation_changed": false
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.17857142857142858,
+              "soil": 0.07142857142857144,
+              "water": 0.75
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "illustrative/demo",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "included",
+              "soil": "included",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 4.978377486176446,
+            "plan": {
+              "Y1_S1": "Lentil",
+              "Y1_S2": "Mustard",
+              "Y2_S1": "Lentil",
+              "Y2_S2": "Mustard",
+              "Y3_S1": "Lentil",
+              "Y3_S2": "Mustard"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.17857142857142858,
+              "soil": 0.07142857142857144,
+              "water": 0.75
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 0.75,
+          "requested_weights": {
+            "profit_weight": 0.17857142857142858,
+            "soil_weight": 0.07142857142857144,
+            "water_weight": 0.75
+          },
+          "rotation_changed": true
+        },
+        {
+          "hypothetical": true,
+          "objective_component_delta": {
+            "profit": -271500.0,
+            "soil": 1.333333333333333,
+            "water": 0.5
+          },
+          "optimizer": {
+            "constraint_summary": {
+              "binary_decision_variables": 42,
+              "family_transition_constraints": 75,
+              "legume_interval_seasons": 3,
+              "legume_windows": 4,
+              "one_crop_per_period": 6,
+              "previous_family_exclusions": [],
+              "static_compatibility_exclusions": [],
+              "unknown_compatibility_allowed": true
+            },
+            "effective_weights": {
+              "profit": 0.0,
+              "soil": 0.0,
+              "water": 1.0
+            },
+            "feasible": true,
+            "independent_constraint_check": {
+              "family_rotation_checked": true,
+              "legume_window_seasons": 3,
+              "one_crop_per_period": true,
+              "passed": true,
+              "static_compatibility_checked": true,
+              "status": "checked",
+              "violations": []
+            },
+            "monetary_component_status": "not_weighted",
+            "normalized_components": {
+              "profit": 1.6455805892547661,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_component_status": {
+              "profit": "not_weighted",
+              "soil": "not_weighted",
+              "water": "included"
+            },
+            "objective_components": {
+              "profit": 397500.0,
+              "soil": 4.333333333333333,
+              "water": 5.833333333333333
+            },
+            "objective_value": 5.833333333333334,
+            "plan": {
+              "Y1_S1": "Mustard",
+              "Y1_S2": "Lentil",
+              "Y2_S1": "Mustard",
+              "Y2_S2": "Lentil",
+              "Y3_S1": "Mustard",
+              "Y3_S2": "Lentil"
+            },
+            "provenance": {
+              "agronomic_rules": {
+                "data_status": "applied",
+                "source": "src.knowledge.agronomic_rules.evaluate_crop_compatibility"
+              },
+              "crop_knowledge": {
+                "data_status": [
+                  "synthetic"
+                ],
+                "economic_values_are_illustrative": true,
+                "source": [
+                  "demo"
+                ]
+              },
+              "environment": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              },
+              "field_history": {
+                "data_status": [
+                  "missing"
+                ],
+                "decision_date": "2026-09-29",
+                "source": [
+                  "no_previous_crop_assumed"
+                ]
+              },
+              "soil": {
+                "as_of_date": null,
+                "data_status": "synthetic",
+                "source": "hypothetical_fixture"
+              },
+              "soil_moisture": {
+                "data_status": "synthetic",
+                "observation_date": null,
+                "source": "hypothetical_fixture"
+              }
+            },
+            "requested_weights": {
+              "profit": 0.0,
+              "soil": 0.0,
+              "water": 1.0
+            },
+            "solver_status": "Optimal",
+            "status": "optimal"
+          },
+          "parameter_value": 1.0,
+          "requested_weights": {
+            "profit_weight": 0.0,
+            "soil_weight": 0.0,
+            "water_weight": 1.0
+          },
+          "rotation_changed": true
+        }
+      ]
+    }
+  },
+  "status": "completed"
+}

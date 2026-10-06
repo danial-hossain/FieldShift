@@ -93,6 +93,7 @@ class FieldState:
     as_of_date: pd.Timestamp
     latitude: float
     longitude: float
+    field_size_ha: float = float("nan")
     temperature: float = float("nan")
     temp_max: float = float("nan")
     temp_min: float = float("nan")
@@ -139,6 +140,7 @@ class FieldState:
             raise ValueError("longitude must be between -180 and 180.")
 
         numeric_fields = (
+            "field_size_ha",
             "temperature",
             "temp_max",
             "temp_min",
@@ -156,6 +158,8 @@ class FieldState:
         )
         for name in numeric_fields:
             setattr(self, name, _optional_number(getattr(self, name), name))
+        if np.isfinite(self.field_size_ha) and self.field_size_ha <= 0:
+            raise ValueError("field_size_ha must be positive.")
         if np.isfinite(self.rainfall) and self.rainfall < 0:
             raise ValueError("rainfall cannot be negative.")
         if np.isfinite(self.soil_moisture) and not 0 <= self.soil_moisture <= 1:
@@ -344,6 +348,7 @@ def build_field_state(
     field_history_data: FrameInput = None,
     crop_knowledge: FrameInput = None,
     coordinate_tolerance: float = 0.0001,
+    field_size_ha: float = float("nan"),
 ) -> FieldState:
     """Combine normalized source tables into the field state known by a date.
 
@@ -449,6 +454,7 @@ def build_field_state(
         as_of_date=decision,
         latitude=latitude,
         longitude=longitude,
+        field_size_ha=_optional_number(field_size_ha, "field_size_ha"),
         **environment_values,
         soil_moisture=soil_moisture,
         **soil_values,

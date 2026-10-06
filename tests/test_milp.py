@@ -174,13 +174,12 @@ class MilpTests(unittest.TestCase):
             water_weight=0,
             soil_weight=0,
         )
-        margins = (
-            self.crops.set_index("crop")["expected_yield"]
-            * self.crops.set_index("crop")["market_price"]
-            - self.crops.set_index("crop")["production_cost"]
+        dyn_matrix = result.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
+        expected = sum(
+            dyn_matrix[p][crop]["dynamic_gross_margin_bdt_ha"]
+            for p, crop in result["selected_crop_by_period"].items()
         )
-        expected = sum(margins[crop] for crop in result["selected_crop_by_period"].values())
-        self.assertEqual(result["profit_component"], expected)
+        self.assertAlmostEqual(result["profit_component"], expected, places=2)
 
     def test_water_objective_component_is_normalized_water_saving(self):
         result = self.optimize(

@@ -7,6 +7,7 @@ event, changes FieldState, calls the optimizer, or maps objectives to rewards.
 from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass
+from numbers import Integral
 from types import MappingProxyType
 from typing import Any, Optional, Union
 
@@ -285,3 +286,193 @@ def add_planning_context(
     augmented = deepcopy(dict(observation))
     augmented["planning_context"] = context.to_dict()
     return augmented
+
+
+def _existing_safety_proposal(action_id: Any) -> dict[str, Any]:
+    """Translate simulated management actions to the existing safety schema."""
+    from src.rl.synthetic_environment import (
+        ACTION_IDS,
+        SyntheticEnvironmentConfig,
+    )
+
+    if isinstance(action_id, bool) or not isinstance(action_id, Integral):
+        raise ValueError("RL action must be a supported integer action ID.")
+    action_id = int(action_id)
+    if action_id == ACTION_IDS["no_intervention"]:
+        return {"action": "no_intervention"}
+    if action_id == ACTION_IDS["light_irrigation"]:
+        return {
+            "action": "irrigation_adjustment",
+            "amount_mm": SyntheticEnvironmentConfig.light_irrigation_mm,
+        }
+    if action_id == ACTION_IDS["moderate_irrigation"]:
+        return {
+            "action": "irrigation_adjustment",
+            "amount_mm": SyntheticEnvironmentConfig.moderate_irrigation_mm,
+        }
+    if action_id == ACTION_IDS["conservative_adaptation"]:
+        raise ValueError(
+            "conservative_adaptation has no matching action in the existing "
+            "FieldShift safety schema."
+        )
+    raise ValueError("RL action ID is outside the supported action set.")
+
+
+def select_safe_synthetic_action(
+    policy: Any,
+    observation: Mapping[str, Any],
+    milp_result: Optional[Union[MILPRotationContext, Mapping[str, Any]]],
+    safety_validator,
+) -> dict[str, Any]:
+    """Route one simulated RL action through the solved MILP and existing safety boundary.
+
+    The policy can choose only adaptive management actions; it cannot change
+    the crop rotation. Candidate actions are translated to the existing
+    FieldShift action schema and must pass its validator. Rejected actions,
+    absent/unsolved plans, and crop/plan mismatches use validated
+    ``no_intervention`` instead.
+    """
+    if not callable(safety_validator):
+        raise TypeError("safety_validator must be callable.")
+    context = (
+        milp_result
+        if isinstance(milp_result, MILPRotationContext)
+        else adapt_milp_result(milp_result)
+    )
+    fallback = {"action": "no_intervention"}
+    fallback_validated = safety_validator(fallback)
+    if not isinstance(fallback_validated, Mapping) or fallback_validated.get(
+        "action"
+    ) != "no_intervention":
+        raise RuntimeError("Existing safety boundary did not validate no_intervention.")
+
+    def safe_fallback(reason: str) -> dict[str, Any]:
+        from src.rl.synthetic_environment import ACTION_IDS, ACTION_NAMES, POLICY_LABEL
+
+        return {
+            "policy_label": POLICY_LABEL,
+            "evidence_class": "synthetic",
+            "action_provenance": {
+                "source": "simulation-trained-policy",
+                "evidence_class": "synthetic",
+                "data_status": "simulated",
+            },
+            "milp_status": context.status,
+            "proposed_action_id": None,
+            "proposed_action": None,
+            "validated_fieldshift_action": dict(fallback_validated),
+            "applied_action_id": ACTION_IDS["no_intervention"],
+            "applied_action": ACTION_NAMES[ACTION_IDS["no_intervention"]],
+            "safety_status": "safe_fallback_no_intervention",
+            "fallback_reason": reason,
+            "planning_context": context.to_dict(),
+        }
+    if not context.has_plan:
+        return safe_fallback("MILP plan is missing, unsolved, or invalid.")
+    if not isinstance(observation, Mapping):
+        raise TypeError("observation must be a mapping.")
+    state = observation.get("state")
+    if not isinstance(state, Mapping) or state.get("crop") not in set(
+        context.planned_rotation.values()
+    ):
+        return safe_fallback(
+            "Current simulated crop is not present in the solved MILP rotation."
+        )
+    augmented = add_planning_context(observation, context)
+    action_id = policy.select_action(augmented)
+    try:
+        proposal = _existing_safety_proposal(action_id)
+        validated = safety_validator(proposal)
+        if not isinstance(validated, Mapping) or validated.get("action") != proposal.get(
+            "action"
+        ):
+            raise ValueError("Safety validator returned an inconsistent action.")
+        if dict(validated) != proposal:
+            raise ValueError(
+                "Safety validator changed the RL proposal; no matching simulated "
+                "transition is defined."
+            )
+    except (TypeError, ValueError) as error:
+        return safe_fallback(f"Safety rejected the RL proposal: {error}")
+
+    from src.rl.synthetic_environment import ACTION_NAMES, POLICY_LABEL
+
+    return {
+        "policy_label": POLICY_LABEL,
+        "evidence_class": "synthetic",
+        "action_provenance": {
+            "source": "simulation-trained-policy",
+            "evidence_class": "synthetic",
+            "data_status": "simulated",
+        },
+        "milp_status": context.status,
+        "proposed_action_id": int(action_id),
+        "proposed_action": ACTION_NAMES[int(action_id)],
+        "validated_fieldshift_action": dict(validated),
+        "applied_action_id": int(action_id),
+        "applied_action": ACTION_NAMES[int(action_id)],
+        "safety_status": "passed_existing_fieldshift_validator",
+        "fallback_reason": None,
+        "planning_context": context.to_dict(),
+    }
+
+
+def run_synthetic_policy_step(
+    policy: Any,
+    milp_result: Optional[Union[MILPRotationContext, Mapping[str, Any]]],
+    safety_validator,
+    *,
+    scenario: str = "normal",
+    seed: int = 37,
+) -> dict[str, Any]:
+    """Run one synthetic transition after MILP context and existing safety validation."""
+    from src.rl.synthetic_environment import (
+        POLICY_LABEL,
+        SyntheticMultiSeasonEnvironment,
+    )
+
+    context = (
+        milp_result
+        if isinstance(milp_result, MILPRotationContext)
+        else adapt_milp_result(milp_result)
+    )
+    rotation = (
+        list(context.planned_rotation.values())
+        if context.has_plan
+        else ("Maize", "Wheat", "Lentil")
+    )
+    environment = SyntheticMultiSeasonEnvironment(
+        scenario=scenario,
+        seed=seed,
+        crop_rotation=rotation,
+    )
+    observation = environment.reset(seed=seed)
+    routing = select_safe_synthetic_action(
+        policy,
+        observation,
+        context,
+        safety_validator,
+    )
+    next_observation, reward, terminated, info = environment.step(
+        routing["applied_action_id"]
+    )
+    return {
+        **routing,
+        "status": "simulated_transition_completed",
+        "scenario": scenario,
+        "seed": seed,
+        "transition": {
+            "state_before": observation["state"],
+            "state_after": (
+                next_observation["state"]
+                if next_observation is not None
+                else environment.get_observation()["state"]
+            ),
+            "reward_simulated": reward,
+            "reward_components_simulated": info["reward_components_simulated"],
+            "transition_evidence_class": info["evidence_class"],
+            "transition_data_status": info["data_status"],
+            "terminated": terminated,
+        },
+        "policy_label": POLICY_LABEL,
+    }

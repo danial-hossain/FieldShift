@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from src.optimizer.milp import optimize_rotation
+from src.explainability.explanations import explain_milp_plan
 
 DEFAULT_PRIORITY_PROFILES = {
     "profit_focused": {"profit": 0.7, "water": 0.2, "soil": 0.1},
@@ -105,6 +106,7 @@ def _optimizer_arguments(optimizer_options: Optional[Mapping[str, Any]]) -> dict
         "profit_weight",
         "water_weight",
         "soil_weight",
+        "environmental_history",
     }
     conflict = reserved.intersection(optimizer_options)
     if conflict:
@@ -124,8 +126,10 @@ def _comparison_entry(name: str, result: Mapping[str, Any]) -> dict[str, Any]:
         "profit_component": result["profit_component"],
         "water_component": result["water_component"],
         "soil_component": result["soil_component"],
+        "objective_value": result.get("objective_value"),
         "status": result["status"],
         "solver_status": result["solver_status"],
+        "decision_explanation": result.get("decision_explanation"),
     }
 
 
@@ -138,6 +142,7 @@ def generate_rotation_strategies(
     planning_periods: Optional[Sequence[str]] = None,
     agronomic_config: Optional[Any] = None,
     optimizer_options: Optional[Mapping[str, Any]] = None,
+    environmental_history: Optional[pd.DataFrame] = None,
 ) -> dict[str, Any]:
     """Run Phase 7 once per ordered profile and compare objective trade-offs.
 
@@ -167,6 +172,7 @@ def generate_rotation_strategies(
                 profit_weight=weights["profit"],
                 water_weight=weights["water"],
                 soil_weight=weights["soil"],
+                environmental_history=environmental_history,
                 **options,
             )
         except ValueError as error:
@@ -219,6 +225,20 @@ def generate_rotation_strategies(
                 strategy["same_rotation_as"] = rotations_seen[rotation_key]
             else:
                 rotations_seen[rotation_key] = name
+
+        # Compute isolated per-strategy explainability rationale
+        if result.get("status") == "optimal" and rotation:
+            try:
+                strategy["decision_explanation"] = explain_milp_plan(
+                    result,
+                    field_state=field_state,
+                    crops=crops,
+                )
+            except Exception:
+                strategy["decision_explanation"] = None
+        else:
+            strategy["decision_explanation"] = None
+
         strategies[name] = strategy
         comparison[name] = _comparison_entry(name, strategy)
 

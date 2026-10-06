@@ -1,0 +1,1 @@
+event_id,field_id,season_id,event_datetime,event_type,material_or_operation,product_name,active_ingredient,quantity,quantity_unit,area_treated_ha,water_volume_m3,irrigation_source,irrigation_method,duration_min,operator_role,evidence_class,data_status,source_id,consent_record_id,record_method,recorded_by_role,recorded_at,missingness_reason,quality_flags

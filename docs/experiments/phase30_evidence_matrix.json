@@ -1,0 +1,171 @@
+{
+  "phase": "FieldShift Phase 30",
+  "title": "Public Data and Agronomic Evidence Verification",
+  "scope": [
+    "repository data inspection",
+    "source registry validation",
+    "official NASA POWER and SoilGrids documentation review",
+    "research-boundary audit"
+  ],
+  "verified_official_sources": [
+    {
+      "source_id": "nasa_power_daily_point_api",
+      "organization": "NASA POWER",
+      "official_url": "https://power.larc.nasa.gov/docs/services/api/",
+      "verified_claims": [
+        "Daily API exists for time-series analysis-ready data",
+        "CSV output is supported",
+        "Point requests are supported",
+        "Time standards include UTC and LST"
+      ],
+      "status": "officially_documented"
+    },
+    {
+      "source_id": "nasa_power_daily_api",
+      "organization": "NASA POWER",
+      "official_url": "https://power.larc.nasa.gov/docs/services/api/temporal/daily/",
+      "verified_claims": [
+        "The Daily API returns time-series analysis-ready meteorological and solar data",
+        "CSV format is supported",
+        "The API is meant for environmental data products, not crop outcomes"
+      ],
+      "status": "officially_documented"
+    },
+    {
+      "source_id": "soilgrids_global_predictions",
+      "organization": "ISRIC - World Soil Information",
+      "official_url": "https://isric.org/explore/soilgrids",
+      "verified_claims": [
+        "Global digital soil mapping at 250 m resolution",
+        "Fourteen soil properties and six standard depth intervals",
+        "Uncertainty quantified per pixel",
+        "CC BY 4.0 license"
+      ],
+      "status": "officially_documented_modelled_context"
+    }
+  ],
+  "repository_data_inventory": [
+    {
+      "source_id": "local_nasa_power_2025",
+      "file_path": "data/nasa_power/nasa_power_2025.csv",
+      "evidence_class": "remote_observed",
+      "status": "local_file_inspected",
+      "coverage_start": "2025-01-01",
+      "coverage_end": "2025-12-31",
+      "spatial_resolution": "point API; coordinates not stored in file",
+      "temporal_resolution": "daily",
+      "units": "not fully recorded in file",
+      "verification_status": "locally inspected; not independently authenticated",
+      "known_limitations": [
+        "No latitude/longitude metadata in file",
+        "No API request manifest",
+        "No retrieval timestamp",
+        "No complete unit manifest"
+      ]
+    },
+    {
+      "source_id": "local_nasa_power_2026_aug_sep",
+      "file_path": "data/nasa_power/nasa_power_lat23.8103_lon90.4125_20260831_20260929.csv",
+      "evidence_class": "remote_observed",
+      "status": "local_file_inspected",
+      "coverage_start": "2026-08-31",
+      "coverage_end": "2026-09-29",
+      "spatial_resolution": "point API; coordinate encoded in filename only",
+      "temporal_resolution": "daily",
+      "units": "not fully recorded in file",
+      "verification_status": "locally inspected; not independently authenticated",
+      "known_limitations": [
+        "Filename includes coordinates but file rows do not",
+        "No request/retrieval metadata",
+        "Two solar radiation values are blank"
+      ]
+    },
+    {
+      "source_id": "local_smap_demo_csv",
+      "file_path": "data/smap/demo_smap.csv",
+      "evidence_class": "synthetic",
+      "status": "verified_synthetic",
+      "coverage_start": "2026-09-25",
+      "coverage_end": "2026-09-27",
+      "spatial_resolution": "point",
+      "temporal_resolution": "daily",
+      "units": "m3/m3 (documented by project loader)",
+      "verification_status": "synthetic and not NASA SMAP",
+      "known_limitations": [
+        "Three-day demo series",
+        "No product/version or calibration metadata",
+        "Not an actual satellite observation"
+      ]
+    },
+    {
+      "source_id": "local_soil_demo_csv",
+      "file_path": "data/soil/demo_soil.csv",
+      "evidence_class": "synthetic",
+      "status": "verified_synthetic",
+      "coverage_start": "2026-09-18",
+      "coverage_end": "2026-09-20",
+      "spatial_resolution": "point",
+      "temporal_resolution": "snapshot",
+      "units": "N/P/K mg/kg; pH unitless; organic matter %",
+      "verification_status": "synthetic demo data only",
+      "known_limitations": [
+        "No laboratory method",
+        "No sampling depth protocol",
+        "No field verification"
+      ]
+    },
+    {
+      "source_id": "local_crop_knowledge_demo_csv",
+      "file_path": "data/crops/crop_knowledge.csv",
+      "evidence_class": "synthetic",
+      "status": "verified_synthetic",
+      "coverage_start": "n/a",
+      "coverage_end": "n/a",
+      "spatial_resolution": "not field-specific",
+      "temporal_resolution": "static",
+      "units": "water mm/season; duration days; temp C; pH unitless; yield t/ha; cost BDT/ha; price BDT/t",
+      "verification_status": "illustrative/demo only",
+      "known_limitations": [
+        "No citations",
+        "No locality or cultivar detail",
+        "No uncertainty metadata"
+      ]
+    },
+    {
+      "source_id": "local_field_history_demo_csv",
+      "file_path": "data/field_history/demo_field_history.csv",
+      "evidence_class": "synthetic",
+      "status": "verified_synthetic",
+      "coverage_start": "2024",
+      "coverage_end": "2025",
+      "spatial_resolution": "field labels",
+      "temporal_resolution": "year/season",
+      "units": "yield t/ha; irrigation categorical",
+      "verification_status": "illustrative/demo only",
+      "known_limitations": [
+        "No operation dates",
+        "No action linkage",
+        "No observed farm history"
+      ]
+    }
+  ],
+  "unverified_candidate_sources": [
+    "srdi_soil_information_portal",
+    "srdi_laboratory_route",
+    "barc_spatial_data_route",
+    "badc_irrigation_maps",
+    "badc_salinity_maps",
+    "bmd_station_data_candidate",
+    "bari_agronomic_references",
+    "brri_agronomic_references",
+    "dae_extension_material_candidate",
+    "farm_field_partner_route"
+  ],
+  "research_boundary": {
+    "optimizer_feasibility": "does not establish agronomic validity",
+    "nasa_power_data": "environmental context only, not crop yield or farm outcomes",
+    "synthetic_data": "not field measurements",
+    "ml_rl": "not approved for real-world recommendation without independent outcome evidence and evaluation design",
+    "status": "the current prototype measures model sensitivity under explicit assumptions"
+  }
+}
