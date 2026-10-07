@@ -280,9 +280,39 @@ class AppServerTest(unittest.TestCase):
         summary = payload["summary"]
         self.assertEqual(summary["mode"], "offline")
         self.assertEqual(summary["nasa_power"]["data_status"], "demo")
+        self.assertEqual(
+            summary["field_state"]["temperature_source"],
+            "bundled NASA POWER demo (synthetic)",
+        )
+        self.assertEqual(summary["field_state"]["available_water_source"], "unavailable")
         self.assertEqual(summary["planning"]["selected_priority"], "water_efficiency")
         self.assertEqual(summary["field_state"]["organic_matter_percent"], 2.5)
         self.assertIn("water_focused", summary["planning"]["all_strategies"])
+        ml_analysis = summary["ml"]["strategy_yield_analysis"]
+        self.assertEqual(
+            set(ml_analysis),
+            {"profit_focused", "water_focused", "soil_focused", "balanced"},
+        )
+        for strategy_analysis in ml_analysis.values():
+            self.assertEqual(len(strategy_analysis["seasons"]), 6)
+            for season_prediction in strategy_analysis["seasons"]:
+                self.assertEqual(
+                    season_prediction["features_used"][
+                        f"crop_is_{season_prediction['crop'].lower()}"
+                    ],
+                    1.0,
+                )
+                self.assertGreaterEqual(season_prediction["uncertainty_t_ha"], 0.0)
+        strategy_rotations = summary["planning"]["all_strategies"]
+        for left_name, left_plan in strategy_rotations.items():
+            for right_name, right_plan in strategy_rotations.items():
+                if left_plan["selected_crop_by_period"] == right_plan["selected_crop_by_period"]:
+                    left_predictions = ml_analysis[left_name]["seasons"]
+                    right_predictions = ml_analysis[right_name]["seasons"]
+                    self.assertEqual(
+                        [item["predicted_yield_t_ha"] for item in left_predictions],
+                        [item["predicted_yield_t_ha"] for item in right_predictions],
+                    )
         self.assertEqual(
             set(summary["stress_test"]["scenarios"]),
             {"normal", "drought", "heat", "low_water"},
@@ -294,6 +324,87 @@ class AppServerTest(unittest.TestCase):
         )
         json.dumps(payload, allow_nan=False)
         self.assertIsNotNone(summary["final_plan"]["rotation"])
+
+    def test_counterfactual_endpoint_runs_milp_and_propagates_rainfall_and_history_inputs(self):
+        status, result = self.fetch(
+            "/api/counterfactual/reoptimize",
+            method="POST",
+            payload={
+                "field_id": "demo",
+                "mode": "offline",
+                "latitude": 23.8103,
+                "longitude": 90.4125,
+                "field_size_ha": 10.0,
+                "soil_texture": "loam",
+                "organic_matter": 2.5,
+                "irrigation_capacity_mm": 90.0,
+                "priority": "balanced",
+                "start_date": "2026-08-31",
+                "end_date": "2026-09-29",
+                "counterfactual_rainfall_delta_mm": -10.0,
+                "include_history": False,
+                "include_previous_crop_history": False,
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(result["scenario"], "Custom Counterfactual")
+        self.assertEqual(result["status"], "completed")
+        self.assertEqual(result["solver"], "PuLP/CBC")
+        self.assertEqual(result["counterfactual_inputs"]["rainfall_delta_mm"], -10.0)
+        self.assertAlmostEqual(
+            result["counterfactual_inputs"]["rainfall_window_mm"],
+            result["baseline_inputs"]["rainfall_window_mm"] - 10.0,
+        )
+        self.assertAlmostEqual(
+            result["solver_inputs"]["environmental_history_rainfall_total_mm"],
+            result["counterfactual_inputs"]["rainfall_window_mm"],
+        )
+        self.assertEqual(
+            result["solver_inputs"]["irrigation_capacity_mm"],
+            result["baseline_inputs"]["irrigation_capacity_mm"],
+        )
+        self.assertTrue(result["provenance"]["irrigation_capacity_is_separate_from_rainfall"])
+        self.assertFalse(result["provenance"]["include_previous_crop_history"])
+        self.assertEqual(result["solver_inputs"]["previous_crop_history_rows"], 0)
+        self.assertEqual(len(result["baseline_rotation"]), 6)
+        self.assertEqual(len(result["counterfactual_rotation"]), 6)
+        self.assertEqual(result["provenance"]["validation"], "not field validated")
+
+    def test_counterfactual_zero_delta_preserves_rainfall_and_history_toggle(self):
+        status, result = self.fetch(
+            "/api/counterfactual/reoptimize",
+            method="POST",
+            payload={
+                "field_id": "demo",
+                "mode": "offline",
+                "latitude": 23.8103,
+                "longitude": 90.4125,
+                "field_size_ha": 10.0,
+                "soil_texture": "loam",
+                "organic_matter": 2.5,
+                "irrigation_capacity_mm": 90.0,
+                "priority": "balanced",
+                "start_date": "2026-08-31",
+                "end_date": "2026-09-29",
+                "counterfactual_rainfall_delta_mm": 0,
+                "include_history": True,
+                "include_previous_crop_history": True,
+                "previous_crop": "Lentil",
+                "previous_crop_year": 2024,
+            },
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(result["counterfactual_inputs"]["rainfall_delta_mm"], 0.0)
+        self.assertEqual(
+            result["counterfactual_inputs"]["rainfall_window_mm"],
+            result["baseline_inputs"]["rainfall_window_mm"],
+        )
+        self.assertEqual(
+            result["solver_inputs"]["environmental_history_rainfall_total_mm"],
+            result["baseline_inputs"]["rainfall_window_mm"],
+        )
+        self.assertTrue(result["provenance"]["include_previous_crop_history"])
+        self.assertGreaterEqual(result["solver_inputs"]["previous_crop_history_rows"], 1)
 
     def test_invalid_offline_location_returns_json_error_not_demo_fallback(self):
         status, payload = self.fetch_error(
@@ -334,6 +445,10 @@ class AppServerTest(unittest.TestCase):
         self.assertEqual(payload["mode"], "live")
         self.assertEqual(payload["summary"]["nasa_power"]["data_status"], "observed")
         self.assertEqual(payload["summary"]["nasa_power"]["source"], "NASA_POWER_Daily_Point_API")
+        self.assertEqual(
+            payload["summary"]["field_state"]["temperature_source"],
+            "NASA POWER observed input",
+        )
         fetch.assert_called_once()
 
     def test_login_required_for_persistence_and_authentication_round_trip(self):
@@ -390,4 +505,3 @@ class AppServerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

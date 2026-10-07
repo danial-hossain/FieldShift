@@ -49,14 +49,8 @@ Scope: Dashboard cleanup & restructuring, architectural separation of Overview v
   9. Footer Note (span 12):
      - Research prototype - not an agronomic recommendation. AI models and MILP allocations are for research evaluation.
 
-- Analysis Page Relocation & Sub-Navigation Architecture:
-  * Implemented 6 organized sub-tabs under Growth Analytics & Research Workspace (activeNav === 'analytics'):
-    - Tab 1 (overview): MILP Objective Function Radial Gauge, solver status, profit/water/soil components, period decision rationale (XAI), and active rotation sequence chips.
-    - Tab 2 (optimization): Full comparative MILP strategies matrix across priority profiles (profit, water, soil weights and optimal rotations).
-    - Tab 3 (ml_models): Synthetic ML yield benchmark metrics (MAE, RMSE, R2) and model-attributed feature contributors (XAI).
-    - Tab 4 (stress_testing): Hypothetical stress scenarios (normal, drought, heat, low water) and counterfactual rainfall sensitivity delta.
-    - Tab 5 (controls): Full Simulation & Workflow Controls form (Latitude, Longitude, dates, data source mode, optimizer priority pills, soil texture, organic matter, irrigation mm, rainfall delta, history switch, fertilizer application spectrum bar, and [ Run Simulation Pipeline ] button).
-    - Tab 6 (diagnostics): Full research provenance notice, research boundaries, limitations, and raw summary JSON code viewer.
+- Analysis & Research Workspace:
+  * Five analysis tabs remain: MILP Baseline Optimization, Synthetic ML Yield Analysis, Experimental RL Policy & Comparison, Stress Testing & MILP Re-Optimization, and Advanced Counterfactual Controls.
 
 - Verification & Automated Testing:
   * Production build: npm run build compiled client bundle in 200ms with 0 errors.

@@ -1,0 +1,302 @@
+[
+  {
+    "date": "2026-08-31",
+    "temperature": 28.23,
+    "temp_max": 31.14,
+    "temp_min": 26.24,
+    "rainfall": 4.78,
+    "humidity": 90.12,
+    "wind_speed": 3.07,
+    "solar_radiation": 12.73
+  },
+  {
+    "date": "2026-09-01",
+    "temperature": 27.72,
+    "temp_max": 30.23,
+    "temp_min": 25.69,
+    "rainfall": 8.83,
+    "humidity": 90.63,
+    "wind_speed": 3.0,
+    "solar_radiation": 10.62
+  },
+  {
+    "date": "2026-09-02",
+    "temperature": 27.54,
+    "temp_max": 30.86,
+    "temp_min": 25.69,
+    "rainfall": 19.3,
+    "humidity": 90.79,
+    "wind_speed": 2.38,
+    "solar_radiation": 12.19
+  },
+  {
+    "date": "2026-09-03",
+    "temperature": 26.54,
+    "temp_max": 27.9,
+    "temp_min": 25.24,
+    "rainfall": 15.14,
+    "humidity": 93.61,
+    "wind_speed": 2.33,
+    "solar_radiation": 13.91
+  },
+  {
+    "date": "2026-09-04",
+    "temperature": 27.59,
+    "temp_max": 31.17,
+    "temp_min": 25.05,
+    "rainfall": 9.49,
+    "humidity": 90.11,
+    "wind_speed": 2.11,
+    "solar_radiation": 18.98
+  },
+  {
+    "date": "2026-09-05",
+    "temperature": 27.95,
+    "temp_max": 31.38,
+    "temp_min": 25.54,
+    "rainfall": 6.26,
+    "humidity": 89.76,
+    "wind_speed": 1.99,
+    "solar_radiation": 14.22
+  },
+  {
+    "date": "2026-09-06",
+    "temperature": 27.4,
+    "temp_max": 30.44,
+    "temp_min": 25.81,
+    "rainfall": 19.48,
+    "humidity": 91.91,
+    "wind_speed": 1.35,
+    "solar_radiation": 10.11
+  },
+  {
+    "date": "2026-09-07",
+    "temperature": 28.63,
+    "temp_max": 32.43,
+    "temp_min": 25.21,
+    "rainfall": 4.76,
+    "humidity": 88.4,
+    "wind_speed": 1.31,
+    "solar_radiation": 17.54
+  },
+  {
+    "date": "2026-09-08",
+    "temperature": 29.19,
+    "temp_max": 32.64,
+    "temp_min": 26.85,
+    "rainfall": 6.92,
+    "humidity": 88.84,
+    "wind_speed": 1.15,
+    "solar_radiation": 15.3
+  },
+  {
+    "date": "2026-09-09",
+    "temperature": 28.39,
+    "temp_max": 30.69,
+    "temp_min": 27.03,
+    "rainfall": 5.59,
+    "humidity": 91.85,
+    "wind_speed": 1.31,
+    "solar_radiation": 17.65
+  },
+  {
+    "date": "2026-09-10",
+    "temperature": 29.23,
+    "temp_max": 33.28,
+    "temp_min": 26.23,
+    "rainfall": 5.89,
+    "humidity": 87.48,
+    "wind_speed": 1.27,
+    "solar_radiation": 18.65
+  },
+  {
+    "date": "2026-09-11",
+    "temperature": 27.78,
+    "temp_max": 31.35,
+    "temp_min": 25.79,
+    "rainfall": 4.91,
+    "humidity": 90.08,
+    "wind_speed": 1.46,
+    "solar_radiation": 20.33
+  },
+  {
+    "date": "2026-09-12",
+    "temperature": 28.29,
+    "temp_max": 32.05,
+    "temp_min": 25.06,
+    "rainfall": 3.68,
+    "humidity": 87.39,
+    "wind_speed": 1.2,
+    "solar_radiation": 17.48
+  },
+  {
+    "date": "2026-09-13",
+    "temperature": 29.04,
+    "temp_max": 32.9,
+    "temp_min": 25.26,
+    "rainfall": 3.09,
+    "humidity": 82.82,
+    "wind_speed": 0.67,
+    "solar_radiation": 20.77
+  },
+  {
+    "date": "2026-09-14",
+    "temperature": 29.6,
+    "temp_max": 33.65,
+    "temp_min": 25.99,
+    "rainfall": 1.41,
+    "humidity": 80.0,
+    "wind_speed": 0.73,
+    "solar_radiation": 15.84
+  },
+  {
+    "date": "2026-09-15",
+    "temperature": 29.71,
+    "temp_max": 34.04,
+    "temp_min": 25.65,
+    "rainfall": 1.17,
+    "humidity": 79.64,
+    "wind_speed": 0.99,
+    "solar_radiation": 19.92
+  },
+  {
+    "date": "2026-09-16",
+    "temperature": 29.31,
+    "temp_max": 33.4,
+    "temp_min": 26.04,
+    "rainfall": 2.4,
+    "humidity": 80.87,
+    "wind_speed": 1.26,
+    "solar_radiation": 14.42
+  },
+  {
+    "date": "2026-09-17",
+    "temperature": 28.41,
+    "temp_max": 32.28,
+    "temp_min": 25.42,
+    "rainfall": 2.09,
+    "humidity": 84.45,
+    "wind_speed": 1.4,
+    "solar_radiation": 10.77
+  },
+  {
+    "date": "2026-09-18",
+    "temperature": 29.0,
+    "temp_max": 33.34,
+    "temp_min": 24.87,
+    "rainfall": 0.63,
+    "humidity": 80.7,
+    "wind_speed": 0.89,
+    "solar_radiation": 20.46
+  },
+  {
+    "date": "2026-09-19",
+    "temperature": 30.3,
+    "temp_max": 34.83,
+    "temp_min": 25.57,
+    "rainfall": 2.44,
+    "humidity": 76.86,
+    "wind_speed": 0.9,
+    "solar_radiation": 21.02
+  },
+  {
+    "date": "2026-09-20",
+    "temperature": 28.51,
+    "temp_max": 31.32,
+    "temp_min": 25.63,
+    "rainfall": 5.33,
+    "humidity": 86.42,
+    "wind_speed": 1.25,
+    "solar_radiation": 10.23
+  },
+  {
+    "date": "2026-09-21",
+    "temperature": 29.82,
+    "temp_max": 34.51,
+    "temp_min": 24.58,
+    "rainfall": 2.75,
+    "humidity": 78.18,
+    "wind_speed": 0.96,
+    "solar_radiation": 21.32
+  },
+  {
+    "date": "2026-09-22",
+    "temperature": 29.62,
+    "temp_max": 33.77,
+    "temp_min": 26.22,
+    "rainfall": 5.14,
+    "humidity": 84.45,
+    "wind_speed": 1.22,
+    "solar_radiation": 11.82
+  },
+  {
+    "date": "2026-09-23",
+    "temperature": 29.24,
+    "temp_max": 33.02,
+    "temp_min": 26.09,
+    "rainfall": 6.17,
+    "humidity": 85.15,
+    "wind_speed": 1.39,
+    "solar_radiation": 13.65
+  },
+  {
+    "date": "2026-09-24",
+    "temperature": 28.16,
+    "temp_max": 32.22,
+    "temp_min": 25.43,
+    "rainfall": 7.98,
+    "humidity": 87.47,
+    "wind_speed": 1.8,
+    "solar_radiation": 6.04
+  },
+  {
+    "date": "2026-09-25",
+    "temperature": 27.59,
+    "temp_max": 30.49,
+    "temp_min": 25.47,
+    "rainfall": 2.45,
+    "humidity": 88.91,
+    "wind_speed": 1.71,
+    "solar_radiation": 14.75
+  },
+  {
+    "date": "2026-09-26",
+    "temperature": 28.48,
+    "temp_max": 32.74,
+    "temp_min": 24.86,
+    "rainfall": 1.37,
+    "humidity": 85.19,
+    "wind_speed": 1.46,
+    "solar_radiation": 19.09
+  },
+  {
+    "date": "2026-09-27",
+    "temperature": 28.91,
+    "temp_max": 33.15,
+    "temp_min": 24.53,
+    "rainfall": 0.64,
+    "humidity": 80.55,
+    "wind_speed": 0.83,
+    "solar_radiation": 19.44
+  },
+  {
+    "date": "2026-09-28",
+    "temperature": 29.12,
+    "temp_max": 33.16,
+    "temp_min": 25.41,
+    "rainfall": 0.33,
+    "humidity": 79.81,
+    "wind_speed": 0.94,
+    "solar_radiation": null
+  },
+  {
+    "date": "2026-09-29",
+    "temperature": 28.79,
+    "temp_max": 33.39,
+    "temp_min": 25.11,
+    "rainfall": 0.25,
+    "humidity": 81.53,
+    "wind_speed": 1.55,
+    "solar_radiation": null
+  }
+]

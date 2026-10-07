@@ -14,6 +14,7 @@ from src.experiments.synthetic_ml_demo import (
     generate_synthetic_yield_dataset,
     integrate_prediction_into_field_state,
     load_synthetic_yield_model,
+    predict_synthetic_crop_yield,
     predict_synthetic_yield,
     train_synthetic_yield_model,
 )
@@ -56,6 +57,7 @@ class SyntheticMlDemoTests(unittest.TestCase):
             self.assertTrue(artifact_path.exists())
             self.assertTrue(metadata_path.exists())
             self.assertEqual(model["data_boundary"], "synthetic_demo_only")
+            self.assertEqual(model["model_version"], 2)
             self.assertIn("test_r2", model["metrics"])
             self.assertTrue(model["metrics"]["test_r2"] > 0.8)
             reloaded = load_synthetic_yield_model(artifact_path)
@@ -67,6 +69,48 @@ class SyntheticMlDemoTests(unittest.TestCase):
                 model["evaluation_protocol"],
                 "Seeded random 80/20 holdout; normalization fitted on training rows only.",
             )
+
+    def test_crop_and_season_conditioned_predictions_use_model_features_and_rmse(self):
+        field_state = self._demo_field_state()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            model = train_synthetic_yield_model(seed=7, output_dir=Path(temp_dir))
+            chickpea = predict_synthetic_crop_yield(
+                field_state,
+                crop="Chickpea",
+                season_type="dry",
+                model=model,
+            )
+            sesame = predict_synthetic_crop_yield(
+                field_state,
+                crop="Sesame",
+                season_type="dry",
+                model=model,
+            )
+            wet_chickpea = predict_synthetic_crop_yield(
+                field_state,
+                crop="Chickpea",
+                season_type="wet",
+                model=model,
+            )
+
+        self.assertNotEqual(
+            chickpea["synthetic_demo_prediction"]["predicted_value"],
+            sesame["synthetic_demo_prediction"]["predicted_value"],
+        )
+        self.assertNotEqual(
+            chickpea["synthetic_demo_prediction"]["predicted_value"],
+            wet_chickpea["synthetic_demo_prediction"]["predicted_value"],
+        )
+        self.assertEqual(chickpea["features_used"]["crop_is_chickpea"], 1.0)
+        self.assertEqual(chickpea["features_used"]["season_is_wet"], 0.0)
+        self.assertEqual(wet_chickpea["features_used"]["season_is_wet"], 1.0)
+        self.assertAlmostEqual(
+            chickpea["synthetic_demo_prediction"]["uncertainty_t_ha"],
+            max(
+                model["metrics"]["test_rmse_t_ha"],
+                abs(chickpea["synthetic_demo_prediction"]["predicted_value"]) * 0.05,
+            ),
+        )
 
     def test_training_split_uses_row_positions_for_non_default_dataframe_index(self):
         dataset = generate_synthetic_yield_dataset(n_samples=40, seed=9)

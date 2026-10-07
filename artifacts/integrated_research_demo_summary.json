@@ -32,21 +32,37 @@
       "available_water_mm",
       "temperature_range",
       "heat_stress_indicator",
-      "water_stress_indicator"
+      "water_stress_indicator",
+      "season_is_wet",
+      "crop_is_rice",
+      "crop_is_wheat",
+      "crop_is_maize",
+      "crop_is_lentil",
+      "crop_is_mungbean",
+      "crop_is_mustard",
+      "crop_is_potato",
+      "crop_is_chickpea",
+      "crop_is_soybean",
+      "crop_is_sorghum",
+      "crop_is_sesame",
+      "crop_is_groundnut",
+      "crop_is_sunflower",
+      "crop_is_tomato",
+      "crop_is_jute"
     ],
     "metadata_path": "C:\\FieldShift\\models\\ml_demo\\synthetic_yield_demo_model.json",
     "metrics": {
-      "test_mae_t_ha": 0.035798658029652035,
-      "test_r2": 0.9990049090965534,
-      "test_rmse_t_ha": 0.05943873011513862,
-      "train_mae_t_ha": 0.03158517974765495,
-      "train_r2": 0.9991875925649399,
-      "train_rmse_t_ha": 0.05332629485624003
+      "test_mae_t_ha": 0.01761700697148263,
+      "test_r2": 0.9999221489963563,
+      "test_rmse_t_ha": 0.04618450138905329,
+      "train_mae_t_ha": 0.012727867763830643,
+      "train_r2": 0.999982785491822,
+      "train_rmse_t_ha": 0.020911389744924392
     },
     "model_name": "synthetic_yield_demo_model",
     "model_path": "C:\\FieldShift\\models\\ml_demo\\synthetic_yield_demo_model.pkl",
     "prediction_label": "synthetic_model_estimate_only",
-    "prediction_t_ha": 2.9293847820444574,
+    "prediction_t_ha": 2.8194350443966867,
     "target_name": "synthetic_yield_t_ha"
   },
   "nasa_power": {
@@ -255,8 +271,8 @@
       "constraints_unmodified": true,
       "data_boundary": "synthetic_demo_only",
       "estimate_source": "synthetic_yield_demo_model",
-      "estimated_yield_t_ha": 2.9293847820444574,
-      "uncertainty_t_ha": 0.14646923910222287
+      "estimated_yield_t_ha": 2.8194350443966867,
+      "uncertainty_t_ha": 0.14097175221983435
     },
     "planning_context_incidentally_used": true
   },
@@ -2216,14 +2232,14 @@
         },
         "reason": "Applied the configured hypothetical drought perturbation.",
         "rl_policy_result": {
-          "crop_diversity_count": 3,
-          "cumulative_reward": -435.68,
-          "final_soil_health": 82.0,
-          "legume_fraction": 0.33,
-          "profit_bdt_per_ha": 1255000.0,
+          "crop_diversity_count": 2,
+          "cumulative_reward": -415.47,
+          "final_soil_health": 94.0,
+          "legume_fraction": 0.5,
+          "profit_bdt_per_ha": 1207800.0,
           "rotation_changed": false,
-          "rotation_sequence": "Tomato -> Chickpea -> Tomato -> Chickpea -> Tomato -> Sorghum",
-          "water_requirement_mm": 2460.0
+          "rotation_sequence": "Chickpea -> Tomato -> Chickpea -> Tomato -> Chickpea -> Tomato",
+          "water_requirement_mm": 2490.0
         },
         "rotation_changed": false,
         "scenario": "drought",

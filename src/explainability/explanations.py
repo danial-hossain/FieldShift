@@ -25,12 +25,13 @@ def explain_ml_prediction(
     *,
     prediction: Mapping[str, Any] | None = None,
     model: Mapping[str, Any] | None = None,
+    extra_features: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Explain a synthetic ML prediction using the model's feature coefficients."""
-    if prediction is None:
-        prediction = predict_synthetic_yield(field_state, model=model)
+    """Explain a synthetic ML prediction using standard feature attribution on the actual model feature vector."""
     if model is None:
         model = load_synthetic_yield_model()
+    if prediction is None:
+        prediction = predict_synthetic_yield(field_state, extra_features=extra_features, model=model)
 
     feature_names = list(model.get("feature_names", []))
     feature_values = prediction.get("features_used", {})
@@ -38,14 +39,25 @@ def explain_ml_prediction(
     means = np.asarray(model.get("normalization_mean", [0.0] * len(feature_names)), dtype=float)
     stds = np.asarray(model.get("normalization_std", [1.0] * len(feature_names)), dtype=float)
 
-    ranked = []
+    all_attributions = []
     for index, name in enumerate(feature_names):
-        if name not in feature_values:
+        val = feature_values.get(name)
+        if val is None or not (isinstance(val, (int, float, np.number)) and np.isfinite(float(val))):
+            all_attributions.append({
+                "feature": name,
+                "value": "Unavailable",
+                "standardized_value": 0.0,
+                "coefficient": float(coefficients[index]),
+                "attributed_contribution": 0.0,
+                "direction": "neutral",
+                "is_available": False,
+            })
             continue
-        raw = float(feature_values.get(name, 0.0))
+
+        raw = float(val)
         standard = (raw - means[index]) / stds[index] if stds[index] else 0.0
         contribution = float(coefficients[index] * standard)
-        ranked.append(
+        all_attributions.append(
             {
                 "feature": name,
                 "value": raw,
@@ -53,24 +65,47 @@ def explain_ml_prediction(
                 "coefficient": float(coefficients[index]),
                 "attributed_contribution": contribution,
                 "direction": "positive" if contribution >= 0 else "negative",
+                "is_available": True,
             }
         )
 
-    ranked.sort(key=lambda item: abs(item["attributed_contribution"]), reverse=True)
-    contributors = ranked[:5]
-    upper = [item for item in contributors if item["direction"] == "positive"]
-    lower = [item for item in contributors if item["direction"] == "negative"]
-    uncertainty = estimate_prediction_uncertainty(field_state, prediction=prediction["synthetic_demo_prediction"]["predicted_value"], model=model)
+    # Sort all attributions by absolute contribution descending
+    all_attributions.sort(key=lambda item: abs(item["attributed_contribution"]) if item["is_available"] else -1, reverse=True)
+    top_contributors = [item for item in all_attributions if item["is_available"]][:5]
+
+    positives = [item for item in all_attributions if item["is_available"] and item["attributed_contribution"] >= 0]
+    negatives = [item for item in all_attributions if item["is_available"] and item["attributed_contribution"] < 0]
+
+    positives.sort(key=lambda item: item["attributed_contribution"], reverse=True)
+    negatives.sort(key=lambda item: item["attributed_contribution"])
+
+    top_positive_driver = positives[0] if positives else None
+    top_negative_driver = negatives[0] if negatives else None
+
+    pred_val = prediction["synthetic_demo_prediction"]["predicted_value"]
+    uncertainty = estimate_prediction_uncertainty(field_state, prediction=pred_val, model=model)
+
+    pos_desc = f"{top_positive_driver['feature'].replace('_', ' ')} (+{top_positive_driver['attributed_contribution']:.3f} t/ha)" if top_positive_driver else "none"
+    neg_desc = f"{top_negative_driver['feature'].replace('_', ' ')} ({top_negative_driver['attributed_contribution']:.3f} t/ha)" if top_negative_driver else "none"
+
+    model_interpretation = (
+        f"The predicted yield is most strongly boosted by {pos_desc} and most strongly reduced by {neg_desc}."
+    )
 
     return {
         "model_name": model.get("model_name", "unknown"),
         "explanation_type": "model_attribution",
+        "method": "Standardized Linear Attribution (SHAP-Equivalent)",
         "causal_claim": "This is a model-attributed explanation, not a causal agronomic explanation.",
-        "prediction_t_ha": prediction["synthetic_demo_prediction"]["predicted_value"],
+        "prediction_t_ha": pred_val,
         "uncertainty_t_ha": uncertainty["value_t_ha"],
-        "top_contributors": contributors,
-        "positive_influence": upper,
-        "negative_influence": lower,
+        "all_attributions": all_attributions,
+        "top_contributors": top_contributors,
+        "top_positive_driver": top_positive_driver,
+        "top_negative_driver": top_negative_driver,
+        "model_interpretation": model_interpretation,
+        "positive_influence": positives,
+        "negative_influence": negatives,
         "provenance": {
             "data_boundary": "synthetic_demo_only",
             "not_field_validated": True,

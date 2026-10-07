@@ -110,12 +110,11 @@ def main():
         time.sleep(0.8)
 
         tab_tests = [
-            ("overview", "Overview & Objectives", "MILP Objective Function"),
-            ("optimization", "MILP Strategies Matrix", "MILP Strategies Matrix"),
-            ("ml_models", "ML Models & Explainability", "Synthetic ML Yield Model"),
-            ("stress_testing", "Stress Testing & Scenarios", "Stress Testing"),
-            ("controls", "Field Profile & Controls Form", "Analysis & Simulation Parameters"),
-            ("diagnostics", "Diagnostics & Raw Provenance", "System Integrity"),
+            ("optimization", "1. MILP Baseline Optimization", "MILP Strategies Matrix"),
+            ("ml_models", "2. Synthetic ML Yield Analysis", "Synthetic ML Yield Model"),
+            ("rl_policy", "3. Experimental RL Policy & Comparison", "Experimental RL Policy"),
+            ("stress_testing", "4. Stress Testing & MILP Re-Optimization", "Stress Testing"),
+            ("controls", "5. Advanced Counterfactual Controls", "Counterfactual Simulation"),
         ]
 
         for tab_id, tab_label, heading_expected in tab_tests:

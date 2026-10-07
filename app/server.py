@@ -20,7 +20,7 @@ import time
 from datetime import date, datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import parse_qs, urlparse
 
 import requests
@@ -625,6 +625,7 @@ def _run_research_workflow(
     from src.experiments.synthetic_ml_demo import (
         MODEL_PATH,
         load_synthetic_yield_model,
+        predict_synthetic_crop_yield,
         predict_synthetic_yield,
     )
     from src.explainability.explanations import explain_milp_plan, explain_ml_prediction
@@ -882,6 +883,23 @@ def _run_research_workflow(
         field_history_data=history,
         crop_knowledge=crops,
     )
+    simulated_previous_crop = str(form.get("simulation_previous_crop") or "").strip()
+    if simulated_previous_crop:
+        simulated_crop = crops.loc[
+            crops["crop"].str.casefold() == simulated_previous_crop.casefold()
+        ]
+        if simulated_crop.empty:
+            raise ValueError("simulation_previous_crop must match a crop in the repository crop catalog.")
+        simulated_crop = simulated_crop.iloc[0]
+        state.previous_crop = str(simulated_crop["crop"])
+        state.previous_crop_family = str(simulated_crop["family"])
+        state.previous_crop_is_legume = bool(simulated_crop["is_legume"])
+        state.previous_crop_year = None
+        state.previous_crop_season = None
+        state.previous_yield = float("nan")
+        state.previous_irrigation = None
+        state.history_source = "simulated_rl_transition"
+        state.data_status["history"] = "simulated"
     farmer_inputs_applied = []
     if saved_field is not None and field_size is None and saved_field.get("area_ha") is not None:
         field_size = float(saved_field["area_ha"])
@@ -915,12 +933,16 @@ def _run_research_workflow(
         state.environment_source = "NASA POWER Daily Point API"
         state.data_status["environment"] = "observed"
 
-    custom_temp = finite_number("temperature_c") or finite_number("temperature")
+    custom_temp = finite_number("temperature_c")
+    if custom_temp is None:
+        custom_temp = finite_number("temperature")
     if custom_temp is not None:
         state.temperature = float(custom_temp)
         farmer_inputs_applied.append("temperature_c")
 
-    custom_ph = finite_number("soil_ph") or finite_number("ph")
+    custom_ph = finite_number("soil_ph")
+    if custom_ph is None:
+        custom_ph = finite_number("ph")
     if custom_ph is not None:
         state.ph = float(custom_ph)
         state.soil_source = "farmer_provided"
@@ -935,8 +957,6 @@ def _run_research_workflow(
         features["available_water_mm"] = available_water_calc
         features["available_water_source"] = "user_override"
 
-    if not MODEL_PATH.exists():
-        raise FileNotFoundError(f"Synthetic demo model artifact was not found: {MODEL_PATH}")
     model = load_synthetic_yield_model(MODEL_PATH)
     prediction = predict_synthetic_yield(state, model=model)
     strategies = generate_rotation_strategies(
@@ -950,6 +970,300 @@ def _run_research_workflow(
     )
     validation_diagnostics = audit_all_strategies(strategies, field_state=state, crops=crops)
     selected_plan = strategies["strategies"][selected_strategy_name]
+    if form.get("counterfactual_only"):
+        from copy import deepcopy
+
+        from src.optimizer.strategies import DEFAULT_PRIORITY_PROFILES
+
+        if field_size is None or field_size <= 0:
+            raise ValueError("field_area_ha must be available and greater than zero.")
+        try:
+            baseline_irrigation_capacity = float(state.irrigation_capacity_mm)
+        except (TypeError, ValueError):
+            baseline_irrigation_capacity = float("nan")
+        if not math.isfinite(baseline_irrigation_capacity):
+            raise ValueError(
+                "irrigation_capacity_mm is unavailable for the selected field; "
+                "no irrigation value was inferred."
+            )
+        if selected_plan.get("status") != "optimal":
+            raise RuntimeError(
+                "Baseline PuLP/CBC MILP is unavailable for the selected field and strategy."
+            )
+        rainfall_delta = finite_number(
+            "counterfactual_rainfall_delta_mm",
+            required=True,
+            minimum=-100000,
+            maximum=100000,
+        )
+        if "rainfall" not in power.columns:
+            raise ValueError("Baseline rainfall is unavailable from the configured weather source.")
+        rainfall_values = pd.to_numeric(power["rainfall"], errors="coerce")
+        valid_rainfall = rainfall_values.notna() & rainfall_values.ge(0)
+        if not valid_rainfall.any():
+            raise ValueError("Baseline rainfall is unavailable from the configured weather source.")
+        baseline_rainfall = float(rainfall_values.loc[valid_rainfall].sum())
+        counterfactual_rainfall = baseline_rainfall + rainfall_delta
+        if counterfactual_rainfall < 0:
+            raise ValueError("counterfactual_rainfall_mm cannot be less than zero.")
+
+        counterfactual_power = power.copy()
+        if baseline_rainfall > 0:
+            counterfactual_power.loc[valid_rainfall, "rainfall"] = (
+                rainfall_values.loc[valid_rainfall]
+                * (counterfactual_rainfall / baseline_rainfall)
+            )
+        elif rainfall_delta > 0:
+            counterfactual_power.loc[valid_rainfall, "rainfall"] = (
+                rainfall_values.loc[valid_rainfall]
+                + rainfall_delta / int(valid_rainfall.sum())
+            )
+
+        counterfactual_state = deepcopy(state)
+        latest_rainfall_index = rainfall_values.loc[valid_rainfall].index[-1]
+        counterfactual_state.rainfall = float(
+            counterfactual_power.loc[latest_rainfall_index, "rainfall"]
+        )
+        counterfactual_state.environment_source = (
+            f"counterfactual perturbation of {state.environment_source}"
+        )
+        counterfactual_state.data_status = dict(state.data_status)
+        counterfactual_state.data_status["environment"] = "synthetic"
+        counterfactual_features = build_features(
+            counterfactual_state,
+            environmental_history=counterfactual_power,
+        )
+        if "available_water_mm" in features:
+            counterfactual_features["available_water_mm"] = features["available_water_mm"]
+            counterfactual_features["available_water_source"] = features.get(
+                "available_water_source"
+            )
+
+        try:
+            counterfactual_strategies = generate_rotation_strategies(
+                field_state=counterfactual_state,
+                crops=crops,
+                features=counterfactual_features,
+                field_history=history,
+                priority_profiles={
+                    selected_strategy_name: DEFAULT_PRIORITY_PROFILES[
+                        selected_strategy_name
+                    ]
+                },
+                planning_periods=list(PLAN_PERIODS),
+                environmental_history=counterfactual_power,
+            )
+            counterfactual_plan = counterfactual_strategies["strategies"][
+                selected_strategy_name
+            ]
+        except Exception as error:
+            raise RuntimeError(
+                f"PuLP/CBC re-optimization failed: {error}"
+            ) from error
+
+        def counterfactual_metrics(plan):
+            rotation = plan.get("selected_crop_by_period") or {}
+            matrix = (
+                (plan.get("dynamic_agronomic_matrix") or {}).get(
+                    "crop_season_matrix"
+                )
+                or plan.get("dynamic_crop_matrix")
+                or {}
+            )
+            season_rows = []
+            for period in list(PLAN_PERIODS):
+                crop_name = rotation.get(period)
+                if not crop_name:
+                    continue
+                crop_metrics = matrix.get(period, {}).get(crop_name, {})
+                yield_value = crop_metrics.get("dynamic_yield_t_ha")
+                water = crop_metrics.get("water_balance", {}).get("crop_et_mm")
+                season_rows.append({
+                    "period": period,
+                    "crop": crop_name,
+                    "yield_t_ha": yield_value,
+                    "production_tons": (
+                        float(yield_value) * float(field_size)
+                        if yield_value is not None and field_size is not None
+                        else None
+                    ),
+                    "water_demand_mm": water,
+                })
+            production = [row["production_tons"] for row in season_rows]
+            water_values = [row["water_demand_mm"] for row in season_rows]
+            profit = plan.get("profit_component")
+            return {
+                "rotation": rotation,
+                "seasonal_production": season_rows,
+                "production_tons": (
+                    sum(production)
+                    if len(production) == len(PLAN_PERIODS)
+                    and all(value is not None for value in production)
+                    else None
+                ),
+                "gross_margin_bdt_per_ha": profit,
+                "gross_margin_bdt": (
+                    float(profit) * float(field_size)
+                    if profit is not None and field_size is not None
+                    else None
+                ),
+                "water_demand_mm": (
+                    sum(float(value) for value in water_values)
+                    if len(water_values) == len(PLAN_PERIODS)
+                    and all(value is not None for value in water_values)
+                    else None
+                ),
+                "water_efficiency_score": plan.get("water_component"),
+                "soil_metric": plan.get("soil_component"),
+                "objective_score": plan.get("objective_value"),
+                "solver_status": plan.get("solver_status") or plan.get("status"),
+            }
+
+        def finite_state_value(value):
+            try:
+                result = float(value)
+            except (TypeError, ValueError):
+                return None
+            return result if math.isfinite(result) else None
+
+        def seasonal_rainfall_by_period(plan):
+            environments = plan.get("seasonal_environments") or (
+                plan.get("dynamic_agronomic_matrix") or {}
+            ).get("seasonal_environments", {})
+            values = {}
+            for period, environment in environments.items():
+                rainfall = (
+                    environment.get("rainfall_mm")
+                    if isinstance(environment, Mapping)
+                    else getattr(environment, "rainfall_mm", None)
+                )
+                values[period] = finite_state_value(rainfall)
+            return values
+
+        baseline_metrics = counterfactual_metrics(selected_plan)
+        changed_metrics = counterfactual_metrics(counterfactual_plan)
+        counterfactual_solver_status = (
+            counterfactual_plan.get("solver_status")
+            or counterfactual_plan.get("status")
+        )
+        solver_status_text = str(counterfactual_solver_status).lower()
+        if solver_status_text in {"infeasible", "unsatisfiable"}:
+            counterfactual_status = "infeasible"
+        elif counterfactual_plan.get("status") == "optimal":
+            counterfactual_status = "completed"
+        else:
+            counterfactual_status = "failed"
+        metric_deltas = {
+            key: (
+                changed_metrics[key] - baseline_metrics[key]
+                if isinstance(changed_metrics.get(key), (int, float))
+                and isinstance(baseline_metrics.get(key), (int, float))
+                else None
+            )
+            for key in (
+                "production_tons",
+                "gross_margin_bdt_per_ha",
+                "gross_margin_bdt",
+                "water_demand_mm",
+                "water_efficiency_score",
+                "soil_metric",
+                "objective_score",
+            )
+        }
+        source_name = (
+            "PostgreSQL registered field"
+            if saved_field is not None
+            else "offline research demo"
+            if form.get("field_id") == "demo" or mode == "offline"
+            else "request-supplied field context"
+        )
+        weather_source = (
+            "NASA POWER Daily Point API"
+            if mode == "live"
+            else "bundled NASA POWER demo CSV"
+        )
+        counterfactual_result = {
+            "scenario": "Custom Counterfactual",
+            "status": counterfactual_status,
+            "selected_field": str(field_id),
+            "selected_strategy": selected_strategy_name,
+            "solver": "PuLP/CBC",
+            "solver_status": counterfactual_solver_status,
+            "baseline_inputs": {
+                "rainfall_window_mm": baseline_rainfall,
+                "irrigation_capacity_mm": baseline_irrigation_capacity,
+                "temperature_c": finite_state_value(state.temperature),
+                "soil_ph": finite_state_value(state.ph),
+                "organic_matter_pct": finite_state_value(state.organic_matter),
+                "weather_start_date": start.isoformat(),
+                "weather_end_date": end.isoformat(),
+                "field_area_ha": field_size,
+                "seasonal_rainfall_by_period": seasonal_rainfall_by_period(
+                    selected_plan
+                ),
+            },
+            "counterfactual_inputs": {
+                "rainfall_window_mm": counterfactual_rainfall,
+                "rainfall_delta_mm": rainfall_delta,
+                "irrigation_capacity_mm": baseline_irrigation_capacity,
+                "temperature_c": finite_state_value(state.temperature),
+                "soil_ph": finite_state_value(state.ph),
+                "organic_matter_pct": finite_state_value(state.organic_matter),
+                "weather_start_date": start.isoformat(),
+                "weather_end_date": end.isoformat(),
+                "field_area_ha": field_size,
+                "include_previous_crop_history": include_history,
+                "previous_crop_history_rows": int(len(history)) if include_history else 0,
+                "seasonal_rainfall_by_period": seasonal_rainfall_by_period(
+                    counterfactual_plan
+                ),
+            },
+            "baseline_rotation": baseline_metrics["rotation"],
+            "counterfactual_rotation": changed_metrics["rotation"],
+            "baseline_metrics": baseline_metrics,
+            "counterfactual_metrics": changed_metrics,
+            "metric_deltas": metric_deltas,
+            "solver_inputs": {
+                "counterfactual_rainfall_window_mm": counterfactual_rainfall,
+                "counterfactual_rainfall_delta_mm": rainfall_delta,
+                "environmental_history_rainfall_total_mm": float(
+                    pd.to_numeric(
+                        counterfactual_power.loc[valid_rainfall, "rainfall"],
+                        errors="coerce",
+                    ).sum()
+                ),
+                "irrigation_capacity_mm": baseline_irrigation_capacity,
+                "environmental_history_rainfall_column": "rainfall",
+                "environmental_history_row_count": int(len(counterfactual_power)),
+                "include_previous_crop_history": include_history,
+                "previous_crop_history_rows": int(len(history)) if include_history else 0,
+            },
+            "provenance": {
+                "field_source": source_name,
+                "environment_source": state.environment_source,
+                "weather_source": weather_source,
+                "weather_observations": int(len(power)),
+                "perturbation": {
+                    "variable": "rainfall",
+                    "type": "user-configured additive delta",
+                    "delta_mm": rainfall_delta,
+                    "baseline_window_total_mm": baseline_rainfall,
+                    "counterfactual_window_total_mm": counterfactual_rainfall,
+                },
+                "irrigation_capacity_is_separate_from_rainfall": True,
+                "include_previous_crop_history": include_history,
+                "history_source": state.history_source if include_history else "not applied",
+                "solver": "PuLP/CBC",
+                "scenario": "hypothetical/counterfactual",
+                "validation": "not field validated",
+            },
+        }
+        return {
+            "status": "ok",
+            "mode": mode,
+            "summary": {"counterfactual_milp": counterfactual_result},
+        }
+
     ml_explanation = explain_ml_prediction(state, prediction=prediction, model=model)
     milp_explanation = explain_milp_plan(selected_plan, field_state=state, crops=crops)
 
@@ -965,6 +1279,8 @@ def _run_research_workflow(
                 "cumulative_yield_t_ha": None,
                 "mean_yield_t_ha": None,
                 "total_harvest_tons": None,
+                "seasonal_production_breakdown": [],
+                "production_calculation": "sum(selected season dynamic_yield_t_ha × field_area_ha); one selected crop per planning period",
                 "annual_harvest_tons": None,
                 "profit_bdt_per_ha": plan_dict.get("profit_component"),
                 "total_profit_bdt": None,
@@ -986,18 +1302,44 @@ def _run_research_workflow(
         yields = []
         waters = []
         legumes = []
+        production_breakdown = []
         for p in sorted(rot.keys()):
             c = rot[p]
             if c not in crop_lookup:
                 continue
             dyn_info = dyn_matrix.get(p, {}).get(c, {})
-            y = float(dyn_info.get("dynamic_yield_t_ha", crop_lookup[c].get("expected_yield", 1.0)))
+            has_dynamic_yield = dyn_info.get("dynamic_yield_t_ha") is not None
+            y = float(
+                dyn_info["dynamic_yield_t_ha"]
+                if has_dynamic_yield
+                else crop_lookup[c].get("expected_yield", 1.0)
+            )
             wb = dyn_info.get("water_balance", {})
             w = float(wb.get("crop_et_mm", crop_lookup[c].get("water_requirement", 400.0)))
             is_leg = bool(crop_lookup[c].get("is_legume", False))
             yields.append(y)
             waters.append(w)
             legumes.append(is_leg)
+            production_breakdown.append({
+                "period": p,
+                "crop": c,
+                "base_yield_t_ha": dyn_info.get(
+                    "base_yield_t_ha",
+                    crop_lookup[c].get("expected_yield"),
+                ),
+                "is_feasible": dyn_info.get("is_feasible"),
+                "thermal_factor": dyn_info.get("thermal_factor"),
+                "soil_factor": dyn_info.get("soil_factor"),
+                "water_stress_factor": dyn_info.get("water_stress_factor"),
+                "yield_t_ha": round(y, 3),
+                "field_area_ha": area,
+                "production_tons": round(y * area, 3),
+                "yield_source": (
+                    "dynamic_agronomic_matrix"
+                    if has_dynamic_yield
+                    else "crop_knowledge_expected_yield_fallback"
+                ),
+            })
 
         total_yield_ha = sum(yields)
         mean_yield_ha = total_yield_ha / len(yields) if yields else 0.0
@@ -1012,6 +1354,8 @@ def _run_research_workflow(
             "cumulative_yield_t_ha": round(total_yield_ha, 2),
             "mean_yield_t_ha": round(mean_yield_ha, 2),
             "total_harvest_tons": round(total_harvest, 2),
+            "seasonal_production_breakdown": production_breakdown,
+            "production_calculation": "sum(selected season dynamic_yield_t_ha × field_area_ha); one selected crop per planning period",
             "annual_harvest_tons": round(ann_harvest, 2),
             "profit_bdt_per_ha": round(p_ha, 2),
             "total_profit_bdt": round(tot_profit, 2),
@@ -1031,6 +1375,105 @@ def _run_research_workflow(
     strategy_metrics_map = {
         name: compute_metrics(strat_item)
         for name, strat_item in strategies.get("strategies", {}).items()
+    }
+
+    period_keys = list(PLAN_PERIODS)
+
+    def compute_synthetic_yield_analysis(plan_dict):
+        rotation = plan_dict.get("selected_crop_by_period") or {}
+        dynamic = plan_dict.get("dynamic_agronomic_matrix") or {}
+        seasonal_environments = dynamic.get("seasonal_environments") or {}
+        area = float(field_size) if field_size is not None and field_size > 0 else None
+        seasons = []
+        for period in period_keys:
+            crop_name = rotation.get(period)
+            if not crop_name:
+                continue
+            seasonal_environment = seasonal_environments.get(period)
+            if isinstance(seasonal_environment, Mapping):
+                temperature = seasonal_environment.get("mean_temperature_c")
+                rainfall = seasonal_environment.get("rainfall_mm")
+            else:
+                temperature = getattr(seasonal_environment, "mean_temperature_c", None)
+                rainfall = getattr(seasonal_environment, "rainfall_mm", None)
+            index = period_keys.index(period)
+            season_type = "dry" if index % 2 == 0 else "wet"
+            prediction_for_crop = predict_synthetic_crop_yield(
+                state,
+                crop=crop_name,
+                season_type=season_type,
+                extra_features={
+                    **({"temperature": temperature} if temperature is not None else {}),
+                    **({"rainfall": rainfall} if rainfall is not None else {}),
+                    **({"available_water_mm": available_water_calc} if available_water_calc is not None else {}),
+                },
+                model=model,
+            )
+            prediction_data = prediction_for_crop["synthetic_demo_prediction"]
+            predicted_yield = float(prediction_data["predicted_value"])
+            uncertainty = float(prediction_data["uncertainty_t_ha"])
+            lower_yield = max(0.0, predicted_yield - uncertainty)
+            upper_yield = predicted_yield + uncertainty
+            seasons.append({
+                "period_key": period,
+                "crop": crop_name,
+                "season_type": season_type,
+                "predicted_yield_t_ha": predicted_yield,
+                "uncertainty_t_ha": uncertainty,
+                "lower_yield_t_ha": lower_yield,
+                "upper_yield_t_ha": upper_yield,
+                "production_tons": predicted_yield * area if area is not None else None,
+                "lower_production_tons": lower_yield * area if area is not None else None,
+                "upper_production_tons": upper_yield * area if area is not None else None,
+                "features_used": prediction_for_crop["features_used"],
+                "uncertainty_note": prediction_data["uncertainty_note"],
+            })
+
+        predicted_values = [season["predicted_yield_t_ha"] for season in seasons]
+        uncertainties = [season["uncertainty_t_ha"] for season in seasons]
+        total_production = (
+            sum(season["production_tons"] for season in seasons)
+            if seasons and area is not None
+            else None
+        )
+        lower_total = (
+            sum(season["lower_production_tons"] for season in seasons)
+            if seasons and area is not None
+            else None
+        )
+        upper_total = (
+            sum(season["upper_production_tons"] for season in seasons)
+            if seasons and area is not None
+            else None
+        )
+        return {
+            "seasons": seasons,
+            "metrics": {
+                "season_count": len(seasons),
+                "field_area_ha": area,
+                "total_production_tons": total_production,
+                "mean_yield_t_ha": (
+                    sum(predicted_values) / len(predicted_values)
+                    if predicted_values else None
+                ),
+                "production_envelope_tons": (
+                    {"lower": lower_total, "upper": upper_total}
+                    if lower_total is not None and upper_total is not None
+                    else None
+                ),
+                "mean_uncertainty_t_ha": (
+                    sum(uncertainties) / len(uncertainties)
+                    if uncertainties else None
+                ),
+                "envelope_note": (
+                    "Conservative sum of per-season synthetic RMSE bounds; not a confidence interval."
+                ),
+            },
+        }
+
+    strategy_yield_analysis = {
+        name: compute_synthetic_yield_analysis(plan_dict)
+        for name, plan_dict in strategies.get("strategies", {}).items()
     }
 
     # Compute optimization provenance
@@ -1216,6 +1659,16 @@ def _run_research_workflow(
     latest_date = power["date"].max()
     now_iso = utc_now_iso()
     run_id = f"run_{secrets.token_hex(6)}"
+    soil_data_source = "unavailable"
+    if state.soil_source == "farmer_provided":
+        soil_data_source = "user-supplied field metadata"
+    elif state.soil_source not in (None, "", "missing"):
+        soil_data_source = f"{state.data_status.get('soil', 'missing')} soil data ({state.soil_source})"
+    soil_ph_source = (
+        "user-supplied simulation assumption"
+        if custom_ph is not None
+        else soil_data_source if math.isfinite(state.ph) else "unavailable"
+    )
     summary = {
         "run_id": run_id,
         "timestamp": now_iso,
@@ -1238,7 +1691,47 @@ def _run_research_workflow(
             "area_ha": field_size,
             "soil_texture": state.texture,
             "organic_matter_percent": state.organic_matter if math.isfinite(state.organic_matter) else None,
+            "soil_data_source": soil_data_source,
             "irrigation_capacity_mm": irrigation_capacity,
+            "temperature_c": state.temperature if math.isfinite(state.temperature) else None,
+            "rainfall_mm": state.rainfall if math.isfinite(state.rainfall) else None,
+            "soil_moisture": state.soil_moisture if math.isfinite(state.soil_moisture) else None,
+            "soil_ph": state.ph if math.isfinite(state.ph) else None,
+            "available_water_mm": (
+                features.get("available_water_mm")
+                if features.get("available_water_mm") is not None
+                and math.isfinite(float(features["available_water_mm"]))
+                else None
+            ),
+            "available_water_source": (
+                "user_override"
+                if "available_water_mm" in form and form.get("available_water_mm") not in (None, "")
+                else "unavailable"
+            ),
+            "soil_health_score_proxy": (
+                max(20.0, min(85.0, 30.0 + state.organic_matter * 15.0))
+                if math.isfinite(state.organic_matter)
+                else None
+            ),
+            "soil_health_score_source": (
+                "synthetic proxy derived from organic matter"
+                if math.isfinite(state.organic_matter)
+                else "unavailable"
+            ),
+            "temperature_source": (
+                "user-supplied simulation assumption"
+                if custom_temp is not None
+                else "NASA POWER observed input"
+                if mode == "live"
+                else "bundled NASA POWER demo (synthetic)"
+            ),
+            "soil_ph_source": soil_ph_source,
+            "previous_crop": state.previous_crop,
+            "previous_crop_family": state.previous_crop_family,
+            "previous_crop_is_legume": state.previous_crop_is_legume,
+            "environment_source": state.environment_source,
+            "soil_moisture_source": state.soil_moisture_source,
+            "history_source": state.history_source,
             "data_status": state.data_status,
         },
         "input_application": {
@@ -1257,18 +1750,23 @@ def _run_research_workflow(
         "what_changed": what_changed,
         "ml": {
             "model_name": model["model_name"],
+            "model_version": model.get("model_version"),
+            "feature_names": model.get("feature_names", []),
+            "coefficients": model.get("coefficients", []),
+            "normalization_mean": model.get("normalization_mean", []),
+            "normalization_std": model.get("normalization_std", []),
             "baseline_yield_t_ha": round(float(prediction["synthetic_demo_prediction"]["predicted_value"]), 2),
             "prediction_t_ha": prediction["synthetic_demo_prediction"]["predicted_value"],
             "prediction_label": "Synthetic Benchmark - Simulation Only - Not Field Validated",
-            "disclaimer": "Synthetic benchmark estimate - generic field baseline, not crop-specific.",
+            "disclaimer": "Seasonal predictions are conditioned on each strategy's selected crop, season type, and available environmental features; the model is trained on synthetic-only rules.",
             "data_boundary": "synthetic_demo_only",
             "field_size_ha": field_size,
-            "total_production_tons": round(sum(
-                float((selected_plan.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {}).get(p, {}).get(c, {}).get("dynamic_yield_t_ha")) or 
-                (crops.loc[crops["crop"] == c, "expected_yield"].values[0] if ("crop" in crops and c in crops["crop"].values) else 1.0))
-                for p, c in (selected_plan.get("selected_crop_by_period") or {}).items()
-            ) * (field_size or 1.0), 2) if selected_plan.get("selected_crop_by_period") and field_size else None,
-            "total_production_note": "Multi-season rotation harvest production = sum(scheduled crop yield t/ha * field area ha).",
+            "total_production_tons": strategy_yield_analysis.get(selected_strategy_name, {}).get("metrics", {}).get("total_production_tons"),
+            "total_production_note": "Sum of crop- and season-conditioned synthetic ML estimates × field area; not field-validated.",
+            "strategy_yield_analysis": strategy_yield_analysis,
+            "selected_strategy_analysis": strategy_yield_analysis.get(selected_strategy_name),
+            "generation_rule": model.get("generation_rule"),
+            "uncertainty_source": "synthetic model held-out RMSE; not real-world confidence",
             "metrics": model["metrics"],
             "uncertainty": prediction["synthetic_demo_prediction"]["uncertainty_interval_t_ha"],
             "uncertainty_t_ha": prediction["synthetic_demo_prediction"]["uncertainty_t_ha"],
@@ -1877,6 +2375,21 @@ class FieldShiftWebHandler(BaseHTTPRequestHandler):
             except ValueError as error:
                 self._send_api_error(400, str(error))
             except RuntimeError as error:
+                self._send_api_error(502, str(error))
+            return
+        if parsed.path == "/api/counterfactual/reoptimize":
+            payload = _read_body(self)
+            try:
+                user = _require_auth(self)
+                payload["counterfactual_only"] = True
+                body = _demo_summary(payload, user)
+                result = (body.get("summary") or {}).get("counterfactual_milp")
+                if not isinstance(result, dict):
+                    raise RuntimeError("Counterfactual workflow returned no MILP result.")
+                self._send_json(*_json_response(result))
+            except ValueError as error:
+                self._send_api_error(400, str(error))
+            except (FileNotFoundError, RuntimeError) as error:
                 self._send_api_error(502, str(error))
             return
         if parsed.path in {"/api/demo", "/api/workflow"}:

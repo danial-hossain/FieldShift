@@ -230,7 +230,7 @@ def generate_rotation_strategies(
         if result.get("status") == "optimal" and rotation:
             try:
                 strategy["decision_explanation"] = explain_milp_plan(
-                    result,
+                    strategy,
                     field_state=field_state,
                     crops=crops,
                 )

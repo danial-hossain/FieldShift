@@ -74,7 +74,6 @@ try {
     const fakeSatelliteCanvas = document.querySelector('.satellite-canvas');
     const fakeSoilNutrientCard = Array.from(document.querySelectorAll('.dash-card')).find(c => c.textContent.includes('Soil Nutrient Status'));
     const formPanelOnDash = document.querySelector('.dashboard-clean-grid .form-panel-card');
-    const rawJsonOnDash = document.querySelector('.dashboard-clean-grid pre.code-block');
 
     const cleanHeader = document.querySelector('.dashboard-page-header');
     const fieldSelect = document.querySelector('.dashboard-field-select');
@@ -100,7 +99,6 @@ try {
       hasFakeSatelliteCanvas: !!fakeSatelliteCanvas,
       hasFakeSoilNutrientCard: !!fakeSoilNutrientCard,
       hasFormPanelOnDash: !!formPanelOnDash,
-      hasRawJsonOnDash: !!rawJsonOnDash,
 
       hasCleanHeader: !!cleanHeader,
       hasFieldSelect: !!fieldSelect,

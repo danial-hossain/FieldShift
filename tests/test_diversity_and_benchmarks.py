@@ -55,6 +55,18 @@ class DiversityAndBenchmarksTest(unittest.TestCase):
         # Strategy divergence
         self.assertTrue(res["divergence_analysis"]["has_divergence"])
 
+    def test_benchmark_explanations_match_each_strategy(self):
+        res = run_benchmark_scenario("A")
+        expected_titles = {
+            "profit_focused": "Profit Focused",
+            "water_focused": "Water Efficiency",
+            "soil_focused": "Soil Health & Regeneration",
+            "balanced": "Balanced Multi-Objective",
+        }
+        for strategy_id, title in expected_titles.items():
+            explanation = res["strategies"][strategy_id]["decision_explanation"]
+            self.assertIn(f"Active Strategy: {title}", explanation["strategy_summary"])
+
     def test_scenario_b_water_constraint_enforcement(self):
         res = run_benchmark_scenario("B")
         crops = load_crop_knowledge()
@@ -157,6 +169,37 @@ class DiversityAndBenchmarksTest(unittest.TestCase):
         
         metrics_1ha = res_1ha["summary"]["field_metrics"]
         metrics_5ha = res_5ha["summary"]["field_metrics"]
+        breakdown = metrics_5ha["seasonal_production_breakdown"]
+
+        self.assertEqual(len(breakdown), 6)
+        self.assertEqual(len({row["period"] for row in breakdown}), 6)
+        self.assertEqual([row["period"] for row in breakdown], [
+            "Y1_S1", "Y1_S2", "Y2_S1", "Y2_S2", "Y3_S1", "Y3_S2",
+        ])
+        for row in breakdown:
+            self.assertAlmostEqual(row["production_tons"], row["yield_t_ha"] * 5.0, places=3)
+            self.assertEqual(row["field_area_ha"], 5.0)
+            self.assertEqual(row["yield_source"], "dynamic_agronomic_matrix")
+            if row["is_feasible"]:
+                self.assertAlmostEqual(
+                    row["yield_t_ha"],
+                    round(
+                        row["base_yield_t_ha"]
+                        * row["thermal_factor"]
+                        * row["soil_factor"]
+                        * row["water_stress_factor"],
+                        3,
+                    ),
+                    places=3,
+                )
+            else:
+                self.assertEqual(row["yield_t_ha"], 0.0)
+        self.assertAlmostEqual(
+            sum(row["production_tons"] for row in breakdown),
+            metrics_5ha["total_harvest_tons"],
+            places=2,
+        )
+        self.assertIn("one selected crop per planning period", metrics_5ha["production_calculation"])
         
         self.assertAlmostEqual(
             metrics_5ha["total_harvest_tons"],
@@ -257,4 +300,3 @@ class DiversityAndBenchmarksTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

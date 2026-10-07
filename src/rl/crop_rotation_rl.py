@@ -58,7 +58,7 @@ class RLStepDecision:
 def _get_crop_actions(
     crops_df: pd.DataFrame,
     env_state: dict[str, Any],
-    soil_ph: float,
+    soil_ph: float | None,
 ) -> list[SeasonalCropAction]:
     """Evaluate candidate crops for a given seasonal environment."""
     temp_c = float(env_state.get("temperature", 25.0))
@@ -69,17 +69,17 @@ def _get_crop_actions(
         crop_name = str(row["crop"]).strip()
         family = str(row.get("family", "Other")).strip()
         yield_t = float(row.get("expected_yield", 2.0))
-        price_bdt = float(row.get("selling_price", 25000.0))
-        cost_bdt = float(row.get("cost_per_ha", 40000.0))
+        price_bdt = float(row.get("market_price", row.get("selling_price", 25000.0)))
+        cost_bdt = float(row.get("production_cost", row.get("cost_per_ha", 40000.0)))
         margin = yield_t * price_bdt - cost_bdt
         water_req = float(row.get("water_requirement", 350.0))
         is_legume = bool(row.get("is_legume", False))
 
         # Feasibility check
-        temp_min = float(row.get("temp_min", 10.0))
-        temp_max = float(row.get("temp_max", 38.0))
-        ph_min = float(row.get("ph_min", 5.0))
-        ph_max = float(row.get("ph_max", 8.5))
+        temp_min = float(row.get("min_temperature", row.get("temp_min", 10.0)))
+        temp_max = float(row.get("max_temperature", row.get("temp_max", 38.0)))
+        ph_min = float(row.get("min_ph", row.get("ph_min", 5.0)))
+        ph_max = float(row.get("max_ph", row.get("ph_max", 8.5)))
 
         feasibility_notes = []
         is_feasible = True
@@ -87,7 +87,7 @@ def _get_crop_actions(
         if temp_c < temp_min or temp_c > temp_max:
             is_feasible = False
             feasibility_notes.append(f"Temperature {temp_c:.1f}°C outside tolerance [{temp_min:.0f}-{temp_max:.0f}°C]")
-        if soil_ph < ph_min or soil_ph > ph_max:
+        if soil_ph is not None and (soil_ph < ph_min or soil_ph > ph_max):
             is_feasible = False
             feasibility_notes.append(f"Soil pH {soil_ph:.1f} outside tolerance [{ph_min:.1f}-{ph_max:.1f}]")
         if water_req > avail_water * 1.5:
@@ -111,13 +111,234 @@ def _get_crop_actions(
     return actions
 
 
+SEQUENTIAL_RL_CROPS = (
+    "Sesame",
+    "Groundnut",
+    "Chickpea",
+    "Lentil",
+    "Mungbean",
+    "Sorghum",
+    "Tomato",
+    "Soybean",
+)
+
+SEQUENTIAL_REWARD_CONFIGURATION = {
+    "formula": "(profit_weight × normalized_profit + water_weight × normalized_water + soil_weight × normalized_soil) × 10 − agronomic_penalties",
+    "normalization": {
+        "profit_scale_bdt_ha": 350000.0,
+        "water_denominator_floor_mm": 350.0,
+        "score_cap": 10.0,
+        "soil_health_scale": 100.0,
+    },
+    "penalties": {
+        "infeasible_crop": 120.0,
+        "repeated_crop": 55.0,
+        "repeated_family": 30.0,
+        "legume_break": 20.0,
+    },
+    "lookahead": {
+        "soil_value_scale": 1.5,
+        "legume_value": 8.0,
+        "discount_factor": 0.95,
+    },
+}
+
+
+def run_sequential_policy_step(
+    state: Mapping[str, Any],
+    crops: pd.DataFrame,
+    *,
+    weights: Mapping[str, float],
+    season_index: int,
+    field_area_ha: float | None,
+    applied_crop: str | None = None,
+    baseline_crop: str | None = None,
+) -> dict[str, Any]:
+    """Evaluate one policy action or execute one fixed baseline crop transition."""
+    if not isinstance(state, Mapping):
+        raise TypeError("state must be a mapping.")
+    if isinstance(season_index, bool) or not isinstance(season_index, int) or not 0 <= season_index < 6:
+        raise ValueError("season_index must be an integer from 0 through 5.")
+    required = ("temperature_c", "available_water_mm", "soil_health_score")
+    missing = [name for name in required if state.get(name) is None]
+    if missing:
+        raise ValueError("Required RL state is unavailable: " + ", ".join(missing))
+    try:
+        temperature = float(state["temperature_c"])
+        available_water = float(state["available_water_mm"])
+        soil_health = float(state["soil_health_score"])
+        soil_ph = float(state["soil_ph"]) if state.get("soil_ph") is not None else None
+        if not all(math.isfinite(value) for value in (temperature, available_water, soil_health)):
+            raise ValueError
+        if soil_ph is not None and not math.isfinite(soil_ph):
+            raise ValueError
+    except (TypeError, ValueError) as error:
+        raise ValueError("RL state values must be finite numbers or null.") from error
+    if available_water < 0 or not 0 <= soil_health <= 100:
+        raise ValueError("available_water_mm must be non-negative and soil_health_score must be 0-100.")
+    if not isinstance(weights, Mapping) or set(weights) != {"profit", "water", "soil"}:
+        raise ValueError("weights must contain profit, water, and soil.")
+    normalized_weights = {key: float(value) for key, value in weights.items()}
+    if any(not math.isfinite(value) or value < 0 for value in normalized_weights.values()):
+        raise ValueError("strategy weights must be finite and non-negative.")
+    if not math.isclose(sum(normalized_weights.values()), 1.0, abs_tol=0.011):
+        raise ValueError("strategy weights must sum to 1.")
+
+    candidate_data = (
+        crops.copy()
+        if baseline_crop is not None
+        else crops.loc[crops["crop"].isin(SEQUENTIAL_RL_CROPS)].copy()
+    )
+    if baseline_crop is None and set(candidate_data["crop"]) != set(SEQUENTIAL_RL_CROPS):
+        raise ValueError("Crop knowledge is missing one or more canonical RL actions.")
+    env_state = {
+        "temperature": temperature,
+        "available_water_mm": available_water,
+    }
+    actions = _get_crop_actions(candidate_data, env_state, soil_ph)
+    if baseline_crop is not None:
+        actions = [action for action in actions if action.crop == baseline_crop]
+        if not actions:
+            raise ValueError(f"Selected MILP baseline crop is not available in crop knowledge: {baseline_crop}")
+    prior_crop = state.get("previous_crop")
+    prior_family = state.get("previous_crop_family")
+    raw_seasons_since_legume = state.get("seasons_since_legume")
+    if raw_seasons_since_legume is None:
+        seasons_since_legume = None
+    elif isinstance(raw_seasons_since_legume, bool):
+        raise ValueError("seasons_since_legume must be a non-negative integer or null.")
+    else:
+        try:
+            numeric_seasons_since_legume = float(raw_seasons_since_legume)
+        except (TypeError, ValueError) as error:
+            raise ValueError("seasons_since_legume must be a non-negative integer or null.") from error
+        if (
+            not math.isfinite(numeric_seasons_since_legume)
+            or numeric_seasons_since_legume < 0
+            or not numeric_seasons_since_legume.is_integer()
+        ):
+            raise ValueError("seasons_since_legume must be a non-negative integer or null.")
+        seasons_since_legume = int(numeric_seasons_since_legume)
+    evaluations = []
+    remaining = 5 - season_index
+    for action in actions:
+        reward, soil_delta, soil_after, components = _compute_reward(
+            action,
+            env_state,
+            soil_health,
+            prior_crop,
+            prior_family,
+            seasons_since_legume,
+            normalized_weights,
+        )
+        future_value = 0.0
+        if remaining > 0:
+            lookahead = SEQUENTIAL_REWARD_CONFIGURATION["lookahead"]
+            future_value = (
+                (soil_after / 10.0)
+                * remaining
+                * lookahead["discount_factor"]
+                * lookahead["soil_value_scale"]
+            )
+            if action.is_legume:
+                future_value += lookahead["legume_value"] * lookahead["discount_factor"]
+        evaluations.append({
+            "crop": action.crop,
+            "family": action.family,
+            "is_legume": action.is_legume,
+            "is_feasible": action.is_feasible,
+            "feasibility_notes": action.feasibility_notes,
+            "expected_yield_t_ha": action.expected_yield_t_ha,
+            "gross_margin_bdt_ha": action.gross_margin_bdt_ha,
+            "water_requirement_mm": action.water_requirement_mm,
+            "soil_health_delta": soil_delta,
+            "soil_health_after": soil_after,
+            "immediate_reward": round(reward, 2),
+            "q_value": round(reward + future_value, 2),
+            "reward_components": components,
+        })
+    evaluations.sort(key=lambda item: item["q_value"], reverse=True)
+    proposed = evaluations[0]
+    runner_up = evaluations[1] if baseline_crop is None and len(evaluations) > 1 else None
+    applied = proposed
+    decision_source = "milp_baseline" if baseline_crop is not None else "rl_policy"
+    if baseline_crop is not None:
+        applied = proposed
+    elif applied_crop is not None:
+        applied = next((item for item in evaluations if item["crop"] == applied_crop), None)
+        if applied is None:
+            raise ValueError(f"Unsupported manual crop override: {applied_crop}")
+        decision_source = "user_override"
+
+    area = float(field_area_ha) if field_area_ha is not None else None
+    if area is not None and (not math.isfinite(area) or area <= 0):
+        raise ValueError("field_area_ha must be positive and finite when supplied.")
+    state_after_crop = {
+        **dict(state),
+        "available_water_mm": max(0.0, available_water - applied["water_requirement_mm"]),
+        "available_water_source": "simulation-derived crop-season water transition",
+        "soil_health_score": applied["soil_health_after"],
+        "soil_health_score_source": "simulation-derived soil-health proxy transition",
+        "soil_moisture": None,
+        "previous_crop": applied["crop"],
+        "previous_crop_family": applied["family"],
+        "seasons_since_legume": (
+            0 if applied["is_legume"]
+            else seasons_since_legume + 1 if seasons_since_legume is not None
+            else None
+        ),
+    }
+    return {
+        "status": "completed",
+        "season_index": season_index,
+        "policy_label": POLICY_LABEL,
+        "evidence_class": EVIDENCE_CLASS,
+        "data_status": DATA_STATUS,
+        "reward_configuration": {
+            **SEQUENTIAL_REWARD_CONFIGURATION,
+            "strategy_weights": normalized_weights,
+        },
+        "rl_proposed_action": None if baseline_crop is not None else proposed["crop"],
+        "rl_policy_score": None if baseline_crop is not None else proposed["q_value"],
+        "decision_reason": None if baseline_crop is not None else {
+            "runner_up_action": runner_up["crop"] if runner_up else None,
+            "runner_up_score": runner_up["q_value"] if runner_up else None,
+            "score_margin": round(proposed["q_value"] - runner_up["q_value"], 2) if runner_up else None,
+            "reward_components": proposed["reward_components"],
+            "state_used": {
+                "temperature_c": temperature,
+                "available_water_mm": available_water,
+                "soil_health_score": soil_health,
+                "previous_crop": prior_crop,
+            },
+        },
+        "applied_action": applied["crop"],
+        "decision_source": decision_source,
+        "applied_policy_score": applied["q_value"],
+        "candidate_actions": [] if baseline_crop is not None else evaluations,
+        "outcome": {
+            "crop": applied["crop"],
+            "expected_yield_t_ha": applied["expected_yield_t_ha"],
+            "production_tons": applied["expected_yield_t_ha"] * area if area is not None else None,
+            "water_use_mm": applied["water_requirement_mm"],
+            "gross_margin_bdt_ha": applied["gross_margin_bdt_ha"],
+            "soil_health_delta": applied["soil_health_delta"],
+            "soil_health_after": applied["soil_health_after"],
+            "reward": applied["immediate_reward"],
+            "reward_components": applied["reward_components"],
+            "yield_evidence": "synthetic crop-knowledge estimate; not field validated",
+        },
+        "state_after_crop": state_after_crop,
+    }
+
+
 def _compute_reward(
     action: SeasonalCropAction,
     env_state: dict[str, Any],
     current_soil_health: float,
     prior_crop: str | None,
     prior_family: str | None,
-    seasons_since_legume: int,
+    seasons_since_legume: int | None,
     weights: dict[str, float],
 ) -> tuple[float, float, float, dict[str, float]]:
     """Compute step reward and state transition updates."""
@@ -128,10 +349,21 @@ def _compute_reward(
     avail_water = max(100.0, float(env_state.get("available_water_mm", 400.0)))
     
     # 1. Economic component (normalized 0-10 scale)
-    norm_profit = min(10.0, max(0.0, (action.gross_margin_bdt_ha / 350000.0) * 10.0))
+    normalization = SEQUENTIAL_REWARD_CONFIGURATION["normalization"]
+    norm_profit = min(
+        normalization["score_cap"],
+        max(0.0, (action.gross_margin_bdt_ha / normalization["profit_scale_bdt_ha"]) * normalization["score_cap"]),
+    )
 
     # 2. Water efficiency component (normalized 0-10 scale)
-    norm_water = max(0.0, min(10.0, (1.0 - (action.water_requirement_mm / max(avail_water, 350.0))) * 10.0))
+    norm_water = max(
+        0.0,
+        min(
+            normalization["score_cap"],
+            (1.0 - (action.water_requirement_mm / max(avail_water, normalization["water_denominator_floor_mm"])))
+            * normalization["score_cap"],
+        ),
+    )
 
     # 3. Soil health delta & score
     if action.is_legume:
@@ -144,18 +376,18 @@ def _compute_reward(
         soil_delta = -6.0
 
     soil_after = max(10.0, min(100.0, current_soil_health + soil_delta))
-    norm_soil = (soil_after / 100.0) * 10.0
+    norm_soil = (soil_after / normalization["soil_health_scale"]) * normalization["score_cap"]
 
     # 4. Agronomic rotation penalties
     penalty = 0.0
     if not action.is_feasible:
-        penalty += 120.0  # Major penalty for incompatible crop
+        penalty += SEQUENTIAL_REWARD_CONFIGURATION["penalties"]["infeasible_crop"]
     if prior_crop and action.crop.lower() == prior_crop.lower():
-        penalty += 55.0  # Monoculture disease buildup penalty
+        penalty += SEQUENTIAL_REWARD_CONFIGURATION["penalties"]["repeated_crop"]
     elif prior_family and action.family == prior_family and action.family != "Other":
-        penalty += 30.0  # Same botanical family consecutive penalty
-    if not action.is_legume and seasons_since_legume >= 2:
-        penalty += 20.0  # Legume break frequency penalty
+        penalty += SEQUENTIAL_REWARD_CONFIGURATION["penalties"]["repeated_family"]
+    if not action.is_legume and seasons_since_legume is not None and seasons_since_legume >= 2:
+        penalty += SEQUENTIAL_REWARD_CONFIGURATION["penalties"]["legume_break"]
 
     immediate_reward = (w_p * norm_profit + w_w * norm_water + w_s * norm_soil) * 10.0 - penalty
 

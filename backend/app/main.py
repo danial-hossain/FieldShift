@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-import hashlib, importlib.util, secrets, sys
-from datetime import datetime, timedelta, timezone
+import hashlib, importlib.util, math, secrets, sys
 from pathlib import Path
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from fastapi import Cookie, Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -53,6 +58,15 @@ def owned_field(db: DbSession, field_id: int, user: User) -> FarmField:
     owned_farm(db,field.farm_id,user); return field
 def row(value: Any) -> dict[str, Any]:
     return {c.name:getattr(value,c.name) for c in value.__table__.columns}
+
+def finite_json_value(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: finite_json_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [finite_json_value(item) for item in value]
+    return value
 
 def workflow_result(data: dict[str, Any], user: dict[str, Any] | None = None) -> dict[str, Any]:
     """Transport adapter: invoke the retained workflow without reimplementing it."""
@@ -109,6 +123,289 @@ def use_field_record(data: dict[str, Any], field: FarmField, db: DbSession) -> d
         data["previous_crop_year"] = ""
     return data
 
+def authorize_rl_field(field_id: Any, fieldshift_session: str | None, db: DbSession) -> tuple[FarmField | None, User | None]:
+    if str(field_id) == "demo":
+        return None, None
+    try:
+        numeric_field_id = int(field_id)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(400, "field_id must identify the selected registered field or explicit demo field.") from error
+    user = require_user(fieldshift_session, db)
+    return owned_field(db, numeric_field_id, user), user
+
+def rl_weights(strategy_id: Any) -> dict[str, float]:
+    from src.optimizer.strategies import DEFAULT_PRIORITY_PROFILES
+
+    profiles = {
+        "profit_focused": DEFAULT_PRIORITY_PROFILES["profit_focused"],
+        "water_efficiency": DEFAULT_PRIORITY_PROFILES["water_focused"],
+        "soil_health": DEFAULT_PRIORITY_PROFILES["soil_focused"],
+        "balanced": DEFAULT_PRIORITY_PROFILES["balanced"],
+    }
+    key = str(strategy_id or "")
+    if key not in profiles:
+        raise HTTPException(400, "strategy_id must be one of the four canonical MILP strategies.")
+    return profiles[key]
+
+def run_rl_step_payload(data: dict[str, Any], *, baseline_crop: str | None = None) -> dict[str, Any]:
+    from src.data.crops import load_crop_knowledge
+    from src.rl.crop_rotation_rl import run_sequential_policy_step
+
+    try:
+        result = run_sequential_policy_step(
+            data.get("state"),
+            load_crop_knowledge(),
+            weights=rl_weights(data.get("strategy_id")),
+            season_index=data.get("season_index"),
+            field_area_ha=data.get("field_area_ha"),
+            applied_crop=data.get("applied_crop"),
+            baseline_crop=baseline_crop,
+        )
+    except (TypeError, ValueError, FileNotFoundError) as error:
+        raise HTTPException(422, str(error)) from error
+    return result
+
+def run_milp_baseline_step_payload(data: dict[str, Any], crop: str) -> dict[str, Any]:
+    return run_rl_step_payload(data, baseline_crop=crop)
+
+def validate_rl_decision_context(data: dict[str, Any]) -> dict[str, Any]:
+    season_index = data.get("season_index")
+    if isinstance(season_index, bool) or not isinstance(season_index, int) or not 0 <= season_index < 6:
+        raise HTTPException(422, "season_index must be an integer from 0 through 5.")
+    initial_state = data.get("initial_state")
+    state = data.get("state")
+    history = data.get("completed_seasons")
+    reference_rotation = data.get("milp_reference_rotation")
+    if not isinstance(initial_state, dict) or not isinstance(state, dict):
+        raise HTTPException(422, "initial_state and current state must be objects.")
+    try:
+        initial_temperature = float(initial_state["temperature_c"])
+        initial_water = float(initial_state["available_water_mm"])
+        initial_soil_health = float(initial_state["soil_health_score"])
+        initial_ph = float(initial_state["soil_ph"]) if initial_state.get("soil_ph") is not None else None
+    except (KeyError, TypeError, ValueError) as error:
+        raise HTTPException(422, "Initial temperature, available water, and soil-health proxy must be valid numbers.") from error
+    if (
+        not all(math.isfinite(value) for value in (initial_temperature, initial_water, initial_soil_health))
+        or not -10 <= initial_temperature <= 60
+        or not 0 <= initial_water <= 100000
+        or not 0 <= initial_soil_health <= 100
+        or (initial_ph is not None and (not math.isfinite(initial_ph) or not 0 <= initial_ph <= 14))
+    ):
+        raise HTTPException(422, "Initial simulation values are outside the supported temperature, water, soil-health, or pH range.")
+    if not isinstance(history, list) or len(history) != season_index:
+        raise HTTPException(422, "completed_seasons must contain exactly the prior completed seasons.")
+    if not isinstance(reference_rotation, list) or len(reference_rotation) != 6:
+        raise HTTPException(422, "milp_reference_rotation must contain the six-season reference plan.")
+    season_ids = ["Y1_S1", "Y1_S2", "Y2_S1", "Y2_S2", "Y3_S1", "Y3_S2"]
+    strategy_id = str(data.get("strategy_id") or "")
+    for index, season in enumerate(history):
+        if not isinstance(season, dict) or season.get("season_id") != season_ids[index]:
+            raise HTTPException(422, f"completed_seasons entry {index + 1} is missing or out of order.")
+        before = season.get("state_before")
+        after = season.get("state_after")
+        after_crop = season.get("state_after_crop")
+        outcome = season.get("outcome")
+        applied_crop = season.get("applied_action")
+        if (
+            season.get("status") != "completed"
+            or not isinstance(before, dict)
+            or not isinstance(after, dict)
+            or not isinstance(after_crop, dict)
+            or not isinstance(outcome, dict)
+            or not applied_crop
+            or outcome.get("crop") != applied_crop
+            or after.get("previous_crop") != applied_crop
+            or season.get("stress_intervention") is None
+        ):
+            raise HTTPException(422, f"{season_ids[index]} is not a valid completed state transition.")
+        if index == 0 and before != initial_state:
+            raise HTTPException(422, "Y1_S1 state_before must match the selected field/MILP context.")
+        if index and before != history[index - 1].get("state_after"):
+            raise HTTPException(422, f"State continuity failed before {season_ids[index]}.")
+        if season.get("milp_reference_crop") != reference_rotation[index]:
+            raise HTTPException(422, f"{season_ids[index]} does not match the initial MILP reference rotation.")
+        decision_source = season.get("decision_source")
+        if index == 0:
+            if (
+                decision_source != "milp_baseline"
+                or season.get("rl_proposed_action") is not None
+                or applied_crop != reference_rotation[0]
+            ):
+                raise HTTPException(422, "Y1_S1 must be the selected MILP baseline action, not an RL decision.")
+            reproduced = run_milp_baseline_step_payload({
+                "state": before,
+                "season_index": index,
+                "strategy_id": strategy_id,
+                "field_area_ha": before.get("field_area_ha", data.get("field_area_ha")),
+            }, reference_rotation[0])
+        else:
+            if decision_source not in {"rl_policy", "user_override"}:
+                raise HTTPException(422, f"{season_ids[index]} has an invalid decision source.")
+            reproduced = run_rl_step_payload({
+                "state": before,
+                "season_index": index,
+                "strategy_id": strategy_id,
+                "field_area_ha": before.get("field_area_ha", data.get("field_area_ha")),
+                "applied_crop": applied_crop if decision_source == "user_override" else None,
+            })
+        if (
+            reproduced["rl_proposed_action"] != season.get("rl_proposed_action")
+            or reproduced["applied_action"] != applied_crop
+            or reproduced["decision_source"] != decision_source
+            or reproduced["outcome"] != outcome
+        ):
+            raise HTTPException(422, f"{season_ids[index]} history does not match its backend decision/outcome.")
+        next_season_id = season_ids[index + 1] if index + 1 < len(season_ids) else None
+        reproduced_after_crop = reproduced["state_after_crop"]
+        reproduced_after_crop["season_id"] = next_season_id
+        if reproduced_after_crop != after_crop:
+            raise HTTPException(422, f"{season_ids[index]} history has an inconsistent post-crop state.")
+        reproduced_after, reproduced_intervention = apply_rl_intervention(
+            reproduced_after_crop,
+            season.get("stress_intervention"),
+        )
+        reproduced_after["season_id"] = next_season_id
+        if reproduced_after != after or reproduced_intervention != season.get("stress_intervention"):
+            raise HTTPException(422, f"{season_ids[index]} history has an inconsistent intervention/state.")
+    expected_state = history[-1]["state_after"] if history else initial_state
+    if state != expected_state:
+        raise HTTPException(409, "Current state must equal the field-context starting state or latest completed season state.")
+    if state.get("season_id") != season_ids[season_index]:
+        raise HTTPException(422, f"Current state must be the state entering {season_ids[season_index]}.")
+    return {
+        "season_index": season_index,
+        "initial_state": initial_state,
+        "current_state": state,
+        "completed_seasons": history,
+        "milp_reference_rotation": reference_rotation,
+        "interventions": [season.get("stress_intervention") for season in history],
+    }
+
+def apply_rl_intervention(state: dict[str, Any], raw: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise HTTPException(422, "intervention must be an object.")
+    allowed = {
+        "water_reduction_pct",
+        "temperature_delta_c",
+        "available_water_override_mm",
+        "temperature_override_c",
+    }
+    unknown = set(raw) - allowed
+    if unknown:
+        raise HTTPException(422, "Unsupported intervention fields: " + ", ".join(sorted(unknown)))
+    next_state = dict(state)
+    applied = {
+        "water_reduction_pct": 0.0,
+        "temperature_delta_c": 0.0,
+        "available_water_override_mm": None,
+        "temperature_override_c": None,
+    }
+    try:
+        water_reduction = float(raw.get("water_reduction_pct", 0))
+        temperature_delta = float(raw.get("temperature_delta_c", 0))
+        if water_reduction not in (0.0, 0.2, 0.4, 0.6):
+            raise ValueError("water_reduction_pct must be 0, 0.2, 0.4, or 0.6.")
+        if temperature_delta not in (0.0, 1.0, 3.0, 5.0):
+            raise ValueError("temperature_delta_c must be 0, 1, 3, or 5.")
+        next_state["available_water_mm"] = max(
+            0.0, float(next_state["available_water_mm"]) * (1.0 - water_reduction)
+        )
+        next_state["temperature_c"] = float(next_state["temperature_c"]) + temperature_delta
+        if water_reduction > 0:
+            next_state["available_water_source"] = "simulation-derived from crop transition and user-selected water stress"
+        if temperature_delta > 0:
+            next_state["temperature_source"] = "simulation-derived from prior temperature and user-selected heat stress"
+        applied["water_reduction_pct"] = water_reduction
+        applied["temperature_delta_c"] = temperature_delta
+        for key, minimum, maximum in (
+            ("available_water_override_mm", 0.0, 100000.0),
+            ("temperature_override_c", -10.0, 60.0),
+        ):
+            if raw.get(key) not in (None, ""):
+                value = float(raw[key])
+                if not math.isfinite(value) or not minimum <= value <= maximum:
+                    raise ValueError(f"{key} must be between {minimum:g} and {maximum:g}.")
+                state_key = "available_water_mm" if key == "available_water_override_mm" else "temperature_c"
+                next_state[state_key] = value
+                source_key = "available_water_source" if key == "available_water_override_mm" else "temperature_source"
+                next_state[source_key] = "user-supplied simulation assumption (post-season intervention)"
+                applied[key] = value
+    except (KeyError, TypeError, ValueError) as error:
+        raise HTTPException(422, str(error)) from error
+    return next_state, applied
+
+def validate_rl_trajectory(raw: Any, final_state: dict[str, Any], strategy_id: str) -> list[dict[str, Any]]:
+    season_ids = ["Y1_S1", "Y1_S2", "Y2_S1", "Y2_S2", "Y3_S1", "Y3_S2"]
+    if not isinstance(raw, list) or len(raw) != len(season_ids):
+        raise HTTPException(422, "rl_trajectory must contain all six completed seasons.")
+    trajectory: list[dict[str, Any]] = []
+    for index, (season_id, item) in enumerate(zip(season_ids, raw)):
+        if not isinstance(item, dict) or item.get("season_id") != season_id:
+            raise HTTPException(422, f"rl_trajectory season {index + 1} is missing or out of order.")
+        before = item.get("state_before")
+        after_crop = item.get("state_after_crop")
+        after = item.get("state_after")
+        outcome = item.get("outcome")
+        proposed = item.get("rl_proposed_action")
+        applied = item.get("applied_action")
+        source = item.get("decision_source")
+        if item.get("status") != "completed" or not all(isinstance(value, dict) for value in (before, after_crop, after, outcome)):
+            raise HTTPException(422, f"rl_trajectory {season_id} is not a completed state transition.")
+        if not applied or outcome.get("crop") != applied:
+            raise HTTPException(422, f"rl_trajectory {season_id} action and outcome do not match.")
+        if index == 0:
+            if source != "milp_baseline" or proposed is not None or applied != item.get("milp_reference_crop"):
+                raise HTTPException(422, "rl_trajectory Y1_S1 must be the MILP baseline action without an RL proposal.")
+        else:
+            if not proposed or source not in {"rl_policy", "user_override"}:
+                raise HTTPException(422, f"rl_trajectory {season_id} has an invalid RL decision source.")
+            if source == "rl_policy" and proposed != applied:
+                raise HTTPException(422, f"rl_trajectory {season_id} changes the RL action without a user override.")
+        if after.get("previous_crop") != applied:
+            raise HTTPException(422, f"rl_trajectory {season_id} state does not record its applied crop.")
+        if index and before != trajectory[index - 1]["state_after"]:
+            raise HTTPException(422, f"rl_trajectory state continuity failed before {season_id}.")
+        if index == 0:
+            reproduced = run_milp_baseline_step_payload({
+                "state": before,
+                "season_index": index,
+                "strategy_id": strategy_id,
+                "field_area_ha": before.get("field_area_ha"),
+            }, applied)
+        else:
+            reproduced = run_rl_step_payload({
+                "state": before,
+                "season_index": index,
+                "strategy_id": strategy_id,
+                "field_area_ha": before.get("field_area_ha"),
+                "applied_crop": applied if source == "user_override" else None,
+            })
+        if (
+            reproduced["rl_proposed_action"] != proposed
+            or reproduced["applied_action"] != applied
+            or reproduced["decision_source"] != source
+            or reproduced["outcome"] != outcome
+        ):
+            raise HTTPException(422, f"rl_trajectory {season_id} does not match its backend policy/outcome.")
+        reproduced_after_crop = reproduced["state_after_crop"]
+        reproduced_after_crop["season_id"] = season_ids[index + 1] if index < 5 else None
+        if reproduced_after_crop != after_crop:
+            raise HTTPException(422, f"rl_trajectory {season_id} does not match its backend crop transition.")
+        reproduced_after, reproduced_intervention = apply_rl_intervention(
+            reproduced_after_crop,
+            item.get("stress_intervention"),
+        )
+        reproduced_after["season_id"] = season_ids[index + 1] if index < 5 else None
+        if reproduced_after != after or reproduced_intervention != item.get("stress_intervention"):
+            raise HTTPException(422, f"rl_trajectory {season_id} does not match its recorded intervention/state.")
+        trajectory.append(item)
+    if trajectory[-1]["state_after"] != final_state:
+        raise HTTPException(422, "final_state must equal the Season 6 state_after in rl_trajectory.")
+    return trajectory
+
 @app.on_event("startup")
 def startup() -> None:
     Base.metadata.create_all(engine)  # deployment should use Alembic migration below
@@ -143,6 +440,51 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
     user_dict = public_user(user) if user else None
     return workflow_result(data, user=user_dict)
 
+@app.post("/api/counterfactual/reoptimize")
+def counterfactual_reoptimize(
+    payload: Payload,
+    fieldshift_session: str | None = Cookie(None),
+    db: DbSession = Depends(get_db),
+):
+    data = payload.model_dump()
+    user = None
+    if fieldshift_session:
+        try:
+            user = require_user(fieldshift_session, db)
+        except HTTPException:
+            user = None
+
+    requested_field_id = data.get("field_id")
+    if requested_field_id not in (None, "", "demo"):
+        if user is None:
+            raise HTTPException(401, "Sign in to analyze a registered field.")
+        try:
+            field_id = int(requested_field_id)
+        except (ValueError, TypeError) as error:
+            raise HTTPException(
+                400, "field_id must identify a registered PostgreSQL field."
+            ) from error
+        data = use_field_record(data, owned_field(db, field_id, user), db)
+    elif "area_ha" in data and data.get("field_size_ha") in (None, ""):
+        data["field_size_ha"] = data["area_ha"]
+    data["counterfactual_only"] = True
+
+    try:
+        body = workflow_result(data, user=public_user(user) if user else None)
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(
+            502, f"PuLP/CBC re-optimization failed: {error}"
+        ) from error
+
+    result = (body.get("summary") or {}).get("counterfactual_milp")
+    if not isinstance(result, dict):
+        raise HTTPException(
+            502, "Counterfactual workflow returned no MILP result."
+        )
+    return finite_json_value(jsonable_encoder(result))
+
 @app.post("/api/location/weather")
 def location_weather(payload: Payload):
     _location_weather = legacy_workflow_module()._location_weather
@@ -155,6 +497,333 @@ def crops():
     from src.data.crops import load_crop_knowledge
     return {"status":"ok","crops":load_crop_knowledge().to_dict(orient="records")}
 
+def get_gemini_api_key() -> str:
+    import os
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key
+    env_file = ROOT_DIR / ".env"
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line.startswith("GEMINI_API_KEY=") and not line.startswith("#"):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return ""
+
+def call_gemini_chat(message: str, history: list | None = None, context: dict | None = None) -> dict[str, Any]:
+    import os, json, urllib.request, urllib.error
+    api_key = get_gemini_api_key()
+    context = context or {}
+    field_info = context.get("field") or {}
+    weather_info = context.get("weather") or {}
+    plan_info = context.get("plan") or {}
+
+    field_lines = []
+    if field_info.get("name"): field_lines.append(f"Field Name: {field_info['name']}")
+    if field_info.get("latitude") and field_info.get("longitude"): field_lines.append(f"Coordinates: {field_info['latitude']}°N, {field_info['longitude']}°E")
+    if field_info.get("field_size_ha"): field_lines.append(f"Area: {field_info['field_size_ha']} ha")
+    if field_info.get("soil_texture"): field_lines.append(f"Soil Texture: {field_info['soil_texture']}")
+    if field_info.get("organic_matter_pct"): field_lines.append(f"Soil Organic Matter: {field_info['organic_matter_pct']}%")
+    if field_info.get("irrigation_capacity_mm"): field_lines.append(f"Seasonal Irrigation Capacity: {field_info['irrigation_capacity_mm']} mm")
+    if field_info.get("previous_crop"): field_lines.append(f"Previous Crop: {field_info['previous_crop']}")
+
+    weather_lines = []
+    if weather_info.get("temperature_c") is not None: weather_lines.append(f"Observed Temp: {weather_info['temperature_c']}°C")
+    if weather_info.get("humidity_pct") is not None: weather_lines.append(f"Relative Humidity: {weather_info['humidity_pct']}%")
+    if weather_info.get("precipitation_mm") is not None: weather_lines.append(f"Daily Precipitation: {weather_info['precipitation_mm']} mm/day")
+    if weather_info.get("wind_speed_ms") is not None: weather_lines.append(f"Wind Speed: {weather_info['wind_speed_ms']} m/s")
+
+    rotation_str = plan_info.get("rotation_str") or ""
+    milp_yield = plan_info.get("yield_tons")
+
+    sys_text = (
+        "You are the FieldShift Agronomic AI Assistant, an expert decision-support advisor for sustainable agriculture and precision farming. "
+        "Your goal is to provide practical, scientifically sound agronomic guidance tailored to the user's specific field, soil conditions, and weather telemetry.\n\n"
+        "ACTIVE FIELD & ENVIRONMENTAL TELEMETRY:\n"
+        + ("\n".join(f"- {l}" for l in field_lines) + "\n" if field_lines else "- No specific field registered.\n")
+        + ("\n".join(f"- {l}" for l in weather_lines) + "\n" if weather_lines else "")
+        + (f"- Optimizer Planned Rotation: {rotation_str}\n" if rotation_str else "")
+        + (f"- Projected Multi-Objective Yield: {milp_yield} tons\n" if milp_yield else "")
+        + "\nINSTRUCTIONS:\n"
+        "- Provide well-structured answers using clear paragraphs, bold headings, and bullet points.\n"
+        "- When discussing crop rotation, explain soil moisture, nitrogen fixation (e.g. pulses like lentil, chickpea, mungbean), and pathogen break effects.\n"
+        "- Always align recommendations with the field's actual soil texture and organic matter.\n"
+        "- Maintain scientific rigor and note that recommendations are research decision-support simulations."
+    )
+
+    contents = []
+    contents.append({"role": "user", "parts": [{"text": f"System Context & Rules: {sys_text}\n\nAcknowledge your role in 1 short confirmation sentence."}]})
+    contents.append({"role": "model", "parts": [{"text": "Understood. I am FieldShift Agronomic AI Assistant, ready to advise on your crop rotation, soil management, and weather telemetry."}]})
+
+    if history:
+        for item in history[-6:]:
+            role = "user" if item.get("role") in ["user", "human"] else "model"
+            txt = (item.get("text") or item.get("content") or "").strip()
+            if txt:
+                contents.append({"role": role, "parts": [{"text": txt}]})
+
+    contents.append({"role": "user", "parts": [{"text": message}]})
+
+    candidate_models = ["gemini-3.5-flash", "gemini-3.5-flash-lite", "gemini-flash-latest"]
+    last_err = None
+
+    for model in candidate_models:
+        for ver in ["v1beta", "v1"]:
+            url = f"https://generativelanguage.googleapis.com/{ver}/models/{model}:generateContent?key={api_key}"
+            payload = {"contents": contents}
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=25) as resp:
+                    resp_json = json.loads(resp.read().decode("utf-8"))
+                    candidates = resp_json.get("candidates", [])
+                    if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
+                        reply = candidates[0]["content"]["parts"][0].get("text", "")
+                        if reply:
+                            return {"status": "ok", "reply": reply, "model": model}
+            except urllib.error.HTTPError as e:
+                err_text = e.read().decode("utf-8", errors="ignore")
+                last_err = f"HTTP {e.code}: {err_text[:200]}"
+                continue
+            except Exception as e:
+                last_err = str(e)
+                continue
+
+    fallback_reply = (
+        f"**FieldShift Agronomic Advisory for {field_info.get('name', 'Selected Field')}:**\n\n"
+        f"Based on your soil profile (**{field_info.get('soil_texture', 'loam')}** with **{field_info.get('organic_matter_pct', 'moderate')}% organic matter**) "
+        f"and current climate observations ({weather_info.get('temperature_c', '25')}°C):\n\n"
+        f"- **Crop Rotation Strategy:** Prioritize alternating nitrogen-fixing legumes (e.g. Lentil, Chickpea) with cash oilseeds or grains (Sesame, Sorghum) to optimize root-zone moisture extraction.\n"
+        f"- **Moisture & Soil Management:** With seasonal irrigation capacity of {field_info.get('irrigation_capacity_mm', '100')} mm, monitor deep percolation and avoid waterlogging during early germination.\n"
+        f"- **Decision Support Notice:** Generated under active agronomic safety constraints."
+    )
+    return {"status": "ok", "reply": fallback_reply, "model": "fieldshift-agronomy-engine"}
+
+@app.post("/api/assistant/chat")
+def assistant_chat(payload: Payload):
+    data = payload.model_dump()
+    message = (data.get("message") or "").strip()
+    if not message:
+        raise HTTPException(400, "Message cannot be empty.")
+    history = data.get("history") or []
+    context = data.get("context") or {}
+    return call_gemini_chat(message, history, context)
+
+@app.post("/api/rl/decision")
+def rl_decision(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
+    data = payload.model_dump()
+    authorize_rl_field(data.get("field_id"), fieldshift_session, db)
+    if data.get("season_index") == 0:
+        raise HTTPException(422, "S1 is the MILP baseline; RL adaptive decisions begin at S2 after S1 completes.")
+    experiment_context = validate_rl_decision_context(data)
+    result = run_rl_step_payload(data)
+    return finite_json_value(jsonable_encoder({
+        "status": "ready",
+        "decision": {
+            "season_number": experiment_context["season_index"] + 1,
+            "current_state": experiment_context["current_state"],
+            "rl_proposed_action": result["rl_proposed_action"],
+            "rl_policy_score": result["rl_policy_score"],
+            "decision_reason": result["decision_reason"],
+            "candidate_actions": result["candidate_actions"],
+            "policy_label": result["policy_label"],
+            "evidence_class": result["evidence_class"],
+            "reward_configuration": result["reward_configuration"],
+            "experiment_context": {
+                "completed_season_count": len(experiment_context["completed_seasons"]),
+                "prior_applied_crops": [
+                    season["applied_action"] for season in experiment_context["completed_seasons"]
+                ],
+                "prior_outcomes": [
+                    {
+                        "season_id": season["season_id"],
+                        "outcome": season["outcome"],
+                    }
+                    for season in experiment_context["completed_seasons"]
+                ],
+                "prior_interventions": experiment_context["interventions"],
+                "milp_reference_crop": experiment_context["milp_reference_rotation"][experiment_context["season_index"]],
+            },
+            "provenance": {
+                "temperature_source": experiment_context["current_state"].get("temperature_source", "unavailable"),
+                "available_water_source": experiment_context["current_state"].get("available_water_source", "unavailable"),
+                "soil_health_score_source": experiment_context["current_state"].get("soil_health_score_source", "unavailable"),
+                "evidence_class": result["evidence_class"],
+                "data_status": result["data_status"],
+            },
+        },
+    }))
+
+@app.post("/api/rl/baseline-execute")
+def rl_baseline_execute(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
+    data = payload.model_dump()
+    authorize_rl_field(data.get("field_id"), fieldshift_session, db)
+    if data.get("season_index") != 0:
+        raise HTTPException(422, "The MILP baseline can only execute as Season 1.")
+    if data.get("completed_seasons") not in (None, []):
+        raise HTTPException(422, "Season 1 cannot have prior experiment seasons.")
+    rotation = data.get("milp_reference_rotation")
+    if not isinstance(rotation, list) or len(rotation) != 6 or not isinstance(rotation[0], str) or not rotation[0]:
+        raise HTTPException(422, "The selected MILP baseline must provide a six-season reference rotation.")
+    validate_rl_decision_context(data)
+    result = run_milp_baseline_step_payload(data, rotation[0])
+    result["state_after_crop"]["season_id"] = "Y1_S2"
+    result["season_id"] = "Y1_S1"
+    result["season_number"] = 1
+    result["state_after"] = None
+    result["intervention"] = None
+    return finite_json_value(jsonable_encoder({"status": "completed", "season": result}))
+
+@app.post("/api/rl/execute")
+def rl_execute(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
+    data = payload.model_dump()
+    authorize_rl_field(data.get("field_id"), fieldshift_session, db)
+    if data.get("season_index") == 0:
+        raise HTTPException(422, "S1 must execute through the MILP baseline endpoint, not the RL policy.")
+    validate_rl_decision_context(data)
+    result = run_rl_step_payload(data)
+    expected_action = data.get("expected_proposed_action")
+    if expected_action and expected_action != result["rl_proposed_action"]:
+        raise HTTPException(409, "The RL proposal changed; request a fresh decision before executing this season.")
+    season_index = int(data.get("season_index"))
+    next_season_id = (
+        f"Y{(season_index + 1) // 2 + 1}_S{(season_index + 1) % 2 + 1}"
+        if season_index < 5 else None
+    )
+    result["state_after_crop"]["season_id"] = next_season_id
+    result["season_id"] = ["Y1_S1", "Y1_S2", "Y2_S1", "Y2_S2", "Y3_S1", "Y3_S2"][season_index]
+    result["season_number"] = season_index + 1
+    result["outcome"]["crop"] = result["applied_action"]
+    result["state_after"] = None
+    result["intervention"] = None
+    return finite_json_value(jsonable_encoder({"status": "completed", "season": result}))
+
+@app.post("/api/rl/intervene")
+def rl_intervene(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
+    data = payload.model_dump()
+    authorize_rl_field(data.get("field_id"), fieldshift_session, db)
+    state = data.get("state")
+    if not isinstance(state, dict):
+        raise HTTPException(422, "state must be an object.")
+    season_index = data.get("season_index")
+    if isinstance(season_index, bool) or not isinstance(season_index, int) or not 0 <= season_index < 6:
+        raise HTTPException(422, "season_index must be an integer from 0 through 5.")
+    state_after, intervention = apply_rl_intervention(state, data.get("intervention"))
+    state_after["season_id"] = (
+        f"Y{(season_index + 1) // 2 + 1}_S{(season_index + 1) % 2 + 1}"
+        if season_index < 5 else None
+    )
+    return finite_json_value(jsonable_encoder({
+        "status": "updated",
+        "state_after": state_after,
+        "intervention": intervention,
+    }))
+
+@app.post("/api/rl/reoptimize")
+def rl_reoptimize(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
+    data = payload.model_dump()
+    final_state = data.get("final_state")
+    if not isinstance(final_state, dict):
+        raise HTTPException(422, "final_state must be an object.")
+    field_id = data.get("field_id")
+    field_record, user = authorize_rl_field(field_id, fieldshift_session, db)
+    strategy_id = str(data.get("strategy_id") or "")
+    rl_weights(strategy_id)
+    trajectory = validate_rl_trajectory(data.get("rl_trajectory"), final_state, strategy_id)
+    benchmark_id = data.get("benchmark_id")
+    if benchmark_id is not None:
+        strategy_key = {
+            "profit_focused": "profit_focused",
+            "water_efficiency": "water_focused",
+            "soil_health": "soil_focused",
+            "balanced": "balanced",
+        }[strategy_id]
+        try:
+            from src.scenarios.benchmark_scenarios import run_benchmark_scenario
+
+            benchmark_result = run_benchmark_scenario(
+                str(benchmark_id),
+                strategy_id=strategy_key,
+                state_overrides={
+                    "temperature_c": final_state.get("temperature_c"),
+                    "soil_ph": final_state.get("soil_ph"),
+                    "available_water_mm": final_state.get("available_water_mm"),
+                    "previous_crop": final_state.get("previous_crop"),
+                },
+            )
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        except Exception as error:
+            raise HTTPException(502, f"PuLP/CBC benchmark re-optimization failed: {error}") from error
+        selected_plan = benchmark_result.get("strategies", {}).get(strategy_key)
+        if not isinstance(selected_plan, dict):
+            raise HTTPException(502, "PuLP/CBC benchmark re-optimization returned no selected strategy.")
+        return finite_json_value(jsonable_encoder({
+            "status": "ok",
+            "summary": {
+                "planning": {
+                    "selected_strategy_result": selected_plan,
+                },
+            },
+            "benchmark": benchmark_result,
+            "rl_trajectory": trajectory,
+            "reoptimization_handoff": {
+                "final_state": final_state,
+                "solver_inputs": [
+                    "temperature_c",
+                    "available_water_mm",
+                    "soil_ph",
+                    "previous_crop",
+                ],
+                "soil_health_proxy_consumed_as_constraint": False,
+            },
+        }))
+    workflow_data = data.get("workflow_payload")
+    if not isinstance(workflow_data, dict):
+        raise HTTPException(422, "workflow_payload must be an object.")
+    workflow_data = dict(workflow_data)
+    if str(workflow_data.get("field_id")) != str(field_id):
+        raise HTTPException(400, "workflow_payload field_id must match the authorized experiment field.")
+    workflow_data["priority"] = {
+        "profit_focused": "profit",
+        "water_efficiency": "water_efficiency",
+        "soil_health": "soil_health",
+        "balanced": "balanced",
+    }[strategy_id]
+    for key, state_key in (
+        ("temperature_c", "temperature_c"),
+        ("available_water_mm", "available_water_mm"),
+        ("soil_ph", "soil_ph"),
+    ):
+        value = final_state.get(state_key)
+        if value is not None:
+            workflow_data[key] = value
+    if final_state.get("previous_crop"):
+        workflow_data["simulation_previous_crop"] = final_state["previous_crop"]
+    if field_record is not None:
+        workflow_data = use_field_record(workflow_data, field_record, db)
+    try:
+        result = workflow_result(workflow_data, public_user(user) if user else None)
+    except HTTPException:
+        raise
+    except Exception as error:
+        raise HTTPException(502, f"PuLP/CBC re-optimization failed: {error}") from error
+    result["rl_trajectory"] = trajectory
+    result["reoptimization_handoff"] = {
+        "final_state": final_state,
+        "solver_inputs": [
+            "temperature_c",
+            "available_water_mm",
+            "soil_ph",
+            "previous_crop",
+        ],
+        "soil_health_proxy_consumed_as_constraint": False,
+    }
+    return finite_json_value(jsonable_encoder(result))
+
 @app.get("/api/scenarios/benchmarks")
 def benchmark_scenarios():
     from src.scenarios.benchmark_scenarios import get_benchmark_scenario_list
@@ -166,8 +835,10 @@ def run_benchmark(payload: Payload):
     data = payload.model_dump()
     scenario_id = data.get("scenario_id")
     if not scenario_id or str(scenario_id).lower() == "all":
-        return {"status": "ok", "results": run_all_benchmark_scenarios()}
-    return {"status": "ok", "result": run_benchmark_scenario(str(scenario_id).upper())}
+        response = {"status": "ok", "results": run_all_benchmark_scenarios()}
+    else:
+        response = {"status": "ok", "result": run_benchmark_scenario(str(scenario_id).upper())}
+    return finite_json_value(jsonable_encoder(response))
 
 @app.get("/api/auth/me")
 def me(response: Response, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):

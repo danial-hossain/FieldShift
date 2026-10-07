@@ -1,8 +1,8 @@
-"""Synthetic-only ML demonstration for FieldShift.
+"""Crop-conditioned synthetic-only ML demonstration for FieldShift.
 
 This module intentionally does not claim real agronomic validity. It trains a
-small deterministic linear model on synthetic rules only and stores the model
-artifact under ``models/ml_demo``. The output is for reproducible software
+deterministic linear model on synthetic crop/season rules only and stores the
+model artifact under ``models/ml_demo``. The output is for reproducible software
 integration checks and research-boundary documentation, not for real-world crop
 yield forecasting.
 """
@@ -22,7 +22,27 @@ MODEL_DIR = PROJECT_ROOT / "models" / "ml_demo"
 MODEL_PATH = MODEL_DIR / "synthetic_yield_demo_model.pkl"
 METADATA_PATH = MODEL_DIR / "synthetic_yield_demo_model.json"
 TARGET_NAME = "synthetic_yield_t_ha"
-FEATURE_COLUMNS = (
+SYNTHETIC_CROP_LEVELS = (
+    "Rice",
+    "Wheat",
+    "Maize",
+    "Lentil",
+    "Mungbean",
+    "Mustard",
+    "Potato",
+    "Chickpea",
+    "Soybean",
+    "Sorghum",
+    "Sesame",
+    "Groundnut",
+    "Sunflower",
+    "Tomato",
+    "Jute",
+)
+CROP_FEATURE_COLUMNS = tuple(
+    f"crop_is_{crop.lower()}" for crop in SYNTHETIC_CROP_LEVELS
+)
+BASE_FEATURE_COLUMNS = (
     "temperature",
     "rainfall",
     "soil_moisture",
@@ -37,6 +57,7 @@ FEATURE_COLUMNS = (
     "heat_stress_indicator",
     "water_stress_indicator",
 )
+FEATURE_COLUMNS = (*BASE_FEATURE_COLUMNS, "season_is_wet", *CROP_FEATURE_COLUMNS)
 
 
 def _safe_float(value: Any, default: float = float("nan")) -> float:
@@ -56,12 +77,29 @@ def generate_synthetic_yield_dataset(
     n_samples: int = 512,
     seed: int = 42,
 ) -> pd.DataFrame:
-    """Generate a deterministic synthetic dataset using explicit simulation rules."""
+    """Generate a crop- and season-conditioned synthetic benchmark dataset."""
     if isinstance(n_samples, bool) or not isinstance(n_samples, int) or n_samples < 10:
         raise ValueError("n_samples must be an integer >= 10.")
+    from src.data.crops import load_crop_knowledge
+
+    crop_frame = load_crop_knowledge()
+    crop_yields = {
+        str(row["crop"]): float(row["expected_yield"])
+        for _, row in crop_frame.iterrows()
+        if str(row["crop"]) in SYNTHETIC_CROP_LEVELS
+        and pd.notna(row["expected_yield"])
+    }
+    missing_crops = set(SYNTHETIC_CROP_LEVELS) - set(crop_yields)
+    if missing_crops:
+        raise ValueError(
+            "Crop catalog is missing synthetic yield baselines: "
+            + ", ".join(sorted(missing_crops))
+        )
     rng = np.random.default_rng(seed)
     rows = []
     for _ in range(n_samples):
+        crop = str(rng.choice(SYNTHETIC_CROP_LEVELS))
+        season_is_wet = int(rng.integers(0, 2))
         temperature = float(rng.uniform(18.0, 34.0))
         rainfall = float(rng.uniform(200.0, 1400.0))
         soil_moisture = float(rng.uniform(0.12, 0.50))
@@ -75,35 +113,39 @@ def generate_synthetic_yield_dataset(
         temperature_range = float(rng.uniform(3.0, 18.0))
         heat_stress_indicator = 1.0 if temperature > 30.0 else 0.0
         water_stress_indicator = 1.0 if soil_moisture < 0.25 else 0.0
-        target = (
-            1.4
-            + 0.0025 * available_water_mm
-            + 2.5 * soil_moisture
-            + 0.045 * nitrogen
-            + 0.025 * previous_yield
-            + 0.06 * organic_matter
-            - 0.10 * max(0.0, temperature - 30.0)
-            - 1.5 * water_stress_indicator
-            - 0.2 * max(0.0, 7.5 - ph)
+        environment_adjustment = (
+            0.0008 * (available_water_mm - 1075.0)
+            + 0.8 * (soil_moisture - 0.31)
+            + 0.008 * (nitrogen - 62.5)
+            + 0.004 * (previous_yield - 4.5)
+            + 0.025 * (organic_matter - 3.5)
+            - 0.04 * max(0.0, temperature - 30.0)
+            - 0.35 * water_stress_indicator
+            - 0.08 * max(0.0, 7.5 - ph)
+            + 0.08 * season_is_wet
         )
-        rows.append(
-            {
-                "temperature": temperature,
-                "rainfall": rainfall,
-                "soil_moisture": soil_moisture,
-                "nitrogen": nitrogen,
-                "phosphorus": phosphorus,
-                "potassium": potassium,
-                "ph": ph,
-                "organic_matter": organic_matter,
-                "previous_yield": previous_yield,
-                "available_water_mm": available_water_mm,
-                "temperature_range": temperature_range,
-                "heat_stress_indicator": heat_stress_indicator,
-                "water_stress_indicator": water_stress_indicator,
-                TARGET_NAME: float(target),
-            }
-        )
+        row = {
+            "temperature": temperature,
+            "rainfall": rainfall,
+            "soil_moisture": soil_moisture,
+            "nitrogen": nitrogen,
+            "phosphorus": phosphorus,
+            "potassium": potassium,
+            "ph": ph,
+            "organic_matter": organic_matter,
+            "previous_yield": previous_yield,
+            "available_water_mm": available_water_mm,
+            "temperature_range": temperature_range,
+            "heat_stress_indicator": heat_stress_indicator,
+            "water_stress_indicator": water_stress_indicator,
+            "season_is_wet": season_is_wet,
+            TARGET_NAME: float(max(0.05, crop_yields[crop] + environment_adjustment)),
+        }
+        row.update({
+            feature: float(crop == crop_name)
+            for feature, crop_name in zip(CROP_FEATURE_COLUMNS, SYNTHETIC_CROP_LEVELS)
+        })
+        rows.append(row)
     return pd.DataFrame(rows, columns=[*FEATURE_COLUMNS, TARGET_NAME])
 
 
@@ -168,6 +210,7 @@ def train_synthetic_yield_model(
 
     model = {
         "model_name": "synthetic_yield_demo_model",
+        "model_version": 2,
         "model_kind": "linear_regression",
         "feature_names": list(FEATURE_COLUMNS),
         "target_name": TARGET_NAME,
@@ -186,7 +229,7 @@ def train_synthetic_yield_model(
         "normalization_mean": mean.astype(float).tolist(),
         "normalization_std": std.astype(float).tolist(),
         "data_boundary": "synthetic_demo_only",
-        "generation_rule": "Explicit synthetic simulation rules, not field-validated agronomic evidence.",
+        "generation_rule": "Synthetic crop-catalog baselines plus explicit environmental and season rules; not field-validated agronomic evidence.",
         "metrics": {
             "train_mae_t_ha": _mae(y_train, train_predictions),
             "test_mae_t_ha": _mae(y_test, test_predictions),
@@ -209,6 +252,11 @@ def train_synthetic_yield_model(
             "temperature_range": "synthetic demo feature",
             "heat_stress_indicator": "synthetic demo feature",
             "water_stress_indicator": "synthetic demo feature",
+            "season_is_wet": "synthetic dry/wet season indicator",
+            **{
+                feature: "synthetic crop identity derived from the crop catalog"
+                for feature in CROP_FEATURE_COLUMNS
+            },
         },
     }
 
@@ -220,6 +268,7 @@ def train_synthetic_yield_model(
         json.dumps(
             {
                 "model_name": model["model_name"],
+                "model_version": model["model_version"],
                 "model_kind": model["model_kind"],
                 "feature_names": model["feature_names"],
                 "target_name": model["target_name"],
@@ -247,9 +296,18 @@ def train_synthetic_yield_model(
 def load_synthetic_yield_model(path: Optional[Union[str, Path]] = None) -> dict[str, Any]:
     artifact_path = Path(path) if path is not None else MODEL_PATH
     if not artifact_path.exists():
-        raise FileNotFoundError(f"Synthetic model artifact not found: {artifact_path}")
+        if path is not None and artifact_path != MODEL_PATH:
+            raise FileNotFoundError(f"Synthetic model artifact not found: {artifact_path}")
+        train_synthetic_yield_model(output_dir=MODEL_DIR)
     with artifact_path.open("rb") as handle:
-        return pickle.load(handle)
+        model = pickle.load(handle)
+    if model.get("model_version") != 2 or model.get("feature_names") != list(FEATURE_COLUMNS):
+        if path is not None and artifact_path.resolve() != MODEL_PATH.resolve():
+            raise ValueError(
+                "Synthetic model artifact uses an incompatible feature schema; retrain it before loading."
+            )
+        model = train_synthetic_yield_model(output_dir=MODEL_DIR)
+    return model
 
 
 def estimate_prediction_uncertainty(
@@ -272,7 +330,9 @@ def estimate_prediction_uncertainty(
     metric_block = model.get("metrics", {}) or {}
     rmse = float(metric_block.get("test_rmse_t_ha", 0.0))
     if not np.isfinite(rmse) or rmse <= 0.0:
-        rmse = 0.25
+        raise ValueError(
+            "Synthetic model must provide a positive held-out test RMSE for uncertainty reporting."
+        )
     if prediction is None:
         prediction = predict_synthetic_yield(field_state, model=model)[
             "synthetic_demo_prediction"
@@ -355,11 +415,43 @@ def _feature_map_from_field_state(
         "temperature_range": temperature_range,
         "heat_stress_indicator": 1.0 if temperature > 30.0 else 0.0,
         "water_stress_indicator": 1.0 if soil_moisture < 0.25 else 0.0,
+        "season_is_wet": 0.0,
+        **{feature: 0.0 for feature in CROP_FEATURE_COLUMNS},
     }
     for key, value in extra_features.items():
         if key in features:
             features[key] = _safe_float(value, default=features[key])
+    crop = extra_features.get("crop")
+    if crop is not None:
+        crop_key = f"crop_is_{str(crop).strip().lower()}"
+        if crop_key not in CROP_FEATURE_COLUMNS:
+            raise ValueError(f"Unsupported synthetic ML crop: {crop}")
+        for feature in CROP_FEATURE_COLUMNS:
+            features[feature] = float(feature == crop_key)
+    season = str(extra_features.get("season_type", "")).strip().lower()
+    if season:
+        if season not in {"dry", "rabi", "wet", "kharif"}:
+            raise ValueError("season_type must be dry/rabi or wet/kharif.")
+        features["season_is_wet"] = float(season in {"wet", "kharif"})
     return features
+
+
+def predict_synthetic_crop_yield(
+    field_state: Any,
+    *,
+    crop: str,
+    season_type: str,
+    extra_features: Optional[Mapping[str, Any]] = None,
+    model: Optional[Mapping[str, Any]] = None,
+) -> dict[str, Any]:
+    """Return a synthetic ML prediction conditioned on a selected crop and season."""
+    features = dict(extra_features or {})
+    features.update({"crop": crop, "season_type": season_type})
+    return predict_synthetic_yield(
+        field_state,
+        extra_features=features,
+        model=model,
+    )
 
 
 def predict_synthetic_yield(
