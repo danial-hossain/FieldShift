@@ -520,6 +520,31 @@ def health(db: DbSession = Depends(get_db)):
         ]
     }
 
+@app.get("/api/geo/environmental-profiles")
+def get_environmental_profiles():
+    import json
+    srtm_path = ROOT_DIR / "data" / "srtm" / "field_elevations.json"
+    grace_path = ROOT_DIR / "data" / "grace" / "grace_bangladesh_trends.json" 
+    srtm = {}
+    grace = {}
+    if srtm_path.exists():
+        try:
+            with open(srtm_path, "r", encoding="utf-8") as f:
+                srtm = json.load(f)
+        except Exception:
+            pass
+    if grace_path.exists():
+        try:
+            with open(grace_path, "r", encoding="utf-8") as f:
+                grace = json.load(f)
+        except Exception:
+            pass
+    return {
+        "status": "ok",
+        "srtm": srtm,
+        "grace": grace
+    }
+
 _PLANNING_CACHE: dict = {}
 
 @app.post("/api/workflow")

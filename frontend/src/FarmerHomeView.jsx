@@ -216,6 +216,8 @@ export function FarmerHomeView({
       <TwoFieldComparisonModal
         isOpen={twoFieldOpen}
         onClose={() => setTwoFieldOpen(false)}
+        activeField={activeField}
+        userFields={userFields}
         lang={lang}
       />
 
