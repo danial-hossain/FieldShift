@@ -686,6 +686,11 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
   const waterSmsBn = waterSavingsMm > 0 ? `সেচ সাশ্রয় ~${waterSavingsMm}মিমি` : (waterSavingsMm === 0 ? `সেচ সমান (${planIrrigationMm}মিমি)` : `সেচ +${Math.abs(waterSavingsMm)}মিমি`);
   const smsText = `FieldShift: ${activeField?.name || 'খামার'} (${activeField?.district || 'বগুড়ার'}) পরামর্শ: ${rotationTextBn}। ${waterSmsBn}, ${profitSmsBn}। স্থানীয় SAAO-র সাথে যাচাই করুন।`;
 
+  const isCoastalSaline = Boolean(
+    activeField?.coastal_saline ||
+    ['satkhira', 'khulna', 'bagerhat', 'patuakhali', 'barguna', "cox's bazar", 'bhola', 'noakhali', 'chittagong', 'feni', 'lakshmipur', 'pirojpur', 'jhalokati'].includes((district || '').toLowerCase())
+  );
+
   const handleCopySms = () => {
     try {
       navigator.clipboard.writeText(smsText);
@@ -874,6 +879,34 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
             </div>
           </div>
         </div>
+
+        {/* Coastal Saline Assessment Notice for Satkhira / Coastal districts */}
+        {isCoastalSaline && (
+          <div style={{
+            marginTop: 16,
+            background: 'rgba(56, 189, 248, 0.08)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: 12,
+            padding: '14px 18px',
+            fontSize: 12.5,
+            color: 'var(--text)',
+            lineHeight: 1.6
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontWeight: 700, color: '#38bdf8' }}>
+              <span>🌊</span>
+              <span>
+                {lang === 'bn'
+                  ? 'উপকূলীয় লবণাক্ত অঞ্চল মূল্যায়ন (সাতক্ষীরা/উপকূলীয় ডেল্টা)'
+                  : 'Coastal Saline Zone Assessment (Satkhira / Coastal Delta)'}
+              </span>
+            </div>
+            <p style={{ margin: 0, color: 'var(--text-2)' }}>
+              {lang === 'bn'
+                ? 'উপকূলীয় লবণাক্ত অঞ্চলে শীতকালীন রবি মৌসুমে উচ্চ লবণাক্ততা (EC > ৪ dS/m) ও দীর্ঘ শুষ্ক আবহাওয়ায় সেচ পাম্পিং খরচ অনেক বেশি থাকে, যার ফলে প্রচলিত বোরো একফসলি চাষে চরম ঝুঁকি বা ক্ষতি (-৮,৬১২ ৳/হেক্টর) দেখা দেয়। ফিল্ডশিফটের অপ্টিমাইজেশনে রবিতে সংবেদনশীল ডালের বদলে লবণ-সহনশীল তেলবীজ (সূর্যমুখী / সরিষা) এবং খরিফ-২ বর্ষায় বন্যা ও লবণাক্ততা সহনশীল আমন ধান নির্বাচন করা হয়েছে, যা মাটির লবণাক্ততা রোধ করে এবং উচ্চ পাম্পিং খরচের ঝুঁকি কমায়।'
+                : 'In coastal saline districts during the Rabi dry season, elevated topsoil salinity (EC > 4 dS/m) and high evaporative demand drive prohibitive irrigation pumping costs, causing traditional monoculture Boro to operate at acute loss (-8,612 BDT/ha). FieldShift optimization selects salt-tolerant oilseeds (Sunflower / Mustard) for Rabi instead of sensitive pulses, and salt/flood-tolerant T. Aman Rice for Kharif-2, conserving soil health and reducing pumping risk even if conservative planning tempers short-term margins.'}
+            </p>
+          </div>
+        )}
       </div>
 
             {/* P2.3 Traffic-Light Risk Chips */}
