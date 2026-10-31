@@ -4,7 +4,8 @@
 // Features: FAO-56 hydrological water balance, FAO-33 yield stress penalty, 3D lysimeter bucket model,
 // soil profile root-zone stratification, and alternate wetting & drying (AWD) scheduling.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { request } from './apiClient.js';
 import { WaterBalance3D } from './research3d/WaterBalance3D.jsx';
 import { SoilProfile3D } from './research3d/SoilProfile3D.jsx';
 import { formatNumber } from './marketUtils.js';
@@ -22,6 +23,20 @@ export function WaterIrrigationView({
   const { t } = useTranslation(lang);
   const [subTab, setSubTab] = useState(initialSubTab); // 'balance' | 'optimization' | 'profile' | 'stress'
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
+  const [liveWaterData, setLiveWaterData] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const dist = activeField?.district || 'bogura';
+    request(`/api/water/plan?district=${encodeURIComponent(dist)}`)
+      .then(data => {
+        if (isMounted && data?.status === 'ok') {
+          setLiveWaterData(data);
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, [activeField?.district]);
 
   // Field soil & irrigation parameters
   const soilTexture = activeField?.soil_texture || 'loam';
@@ -118,15 +133,35 @@ export function WaterIrrigationView({
 
   const rawMm = Math.round(tawMm * soilWaterSpecs.p);
 
-  // Active season water metrics from MILP plan
-  const activeRotation = plan?.summary?.strategies?.water_efficiency?.rotation || plan?.summary?.strategies?.balanced?.rotation || {};
-  const waterUsageMm = plan?.summary?.strategies?.water_efficiency?.water_component != null
-    ? Math.round(plan.summary.strategies.water_efficiency.water_component)
-    : 1850;
-  const baselineWaterMm = plan?.summary?.strategies?.profit_focused?.water_component != null
-    ? Math.round(plan.summary.strategies.profit_focused.water_component)
-    : 2450;
-  const waterSavedPct = baselineWaterMm > 0 ? Math.round(((baselineWaterMm - waterUsageMm) / baselineWaterMm) * 100) : 24;
+  // Active season water metrics from MILP plan and FAO-56 backend
+  const planningData = plan?.summary?.planning || summary?.planning;
+  const bComp = planningData?.baseline_comparison || {};
+
+  const baselineWaterMm = planningData?.baseline_irrigation_mm != null
+    ? Math.round(planningData.baseline_irrigation_mm)
+    : (bComp.baseline_irrigation_mm != null
+      ? Math.round(bComp.baseline_irrigation_mm)
+      : (liveWaterData?.economic_and_conservation?.conventional_flood_demand_m3 != null
+        ? Math.round(liveWaterData.economic_and_conservation.conventional_flood_demand_m3 / 10)
+        : 1400));
+
+  const waterUsageMm = planningData?.plan_irrigation_mm != null
+    ? Math.round(planningData.plan_irrigation_mm)
+    : (bComp.plan_irrigation_mm != null
+      ? Math.round(bComp.plan_irrigation_mm)
+      : (liveWaterData?.water_balance_summary?.net_irrigation_requirement_mm != null
+        ? Math.round(liveWaterData.water_balance_summary.net_irrigation_requirement_mm)
+        : 600));
+
+  const waterSavingsMm = planningData?.water_savings_mm != null
+    ? Math.round(planningData.water_savings_mm)
+    : (bComp.water_savings_mm != null
+      ? Math.round(bComp.water_savings_mm)
+      : (baselineWaterMm - waterUsageMm));
+
+  const waterSavedPct = baselineWaterMm > 0
+    ? Math.round((waterSavingsMm / baselineWaterMm) * 100)
+    : 0;
 
   const subTabs = [
     { id: 'balance', labelBn: 'পানি ব্যালেন্স (FAO-56)', labelEn: '1. Water Balance', icon: '💧' },
@@ -361,8 +396,8 @@ export function WaterIrrigationView({
           <span style={{ fontSize: 11, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {lang === 'bn' ? 'সেচ সাশ্রয়ী অপ্টিমাইজেশন' : 'Water-Saving Rotation'}
           </span>
-          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--accent)', marginTop: 4 }}>
-            {waterSavedPct > 0 ? `-${waterSavedPct}%` : 'Optimal'}
+          <div style={{ fontSize: 24, fontWeight: 800, color: waterSavedPct >= 0 ? 'var(--accent)' : 'var(--sun)', marginTop: 4 }}>
+            {waterSavedPct > 0 ? `-${waterSavedPct}%` : (waterSavedPct === 0 ? '0% (Equal)' : `+${Math.abs(waterSavedPct)}%`)}
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
             {waterUsageMm} mm vs {baselineWaterMm} mm baseline
