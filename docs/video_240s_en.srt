@@ -84,11 +84,11 @@ Anyone—a farmer, an extension officer, or a judge—understands the result in 
 
 22
 00:02:01,000 --> 00:02:07,000
-The answer header states: You save ~320 mm irrigation water, add 45 kg soil nitrogen,
+The answer header states: You save ~809 mm irrigation water, add 35 kg soil nitrogen,
 
 23
 00:02:07,000 --> 00:02:12,500
-and gain an estimated +24,000 BDT extra profit.
+and gain an estimated +155,000 BDT extra profit.
 
 24
 00:02:12,500 --> 00:02:18,000
@@ -108,7 +108,7 @@ In Sunamganj haor basin, 3-meter monsoon floods make Kharif farming impossible;
 
 28
 00:02:36,500 --> 00:02:43,000
-receding winter beels provide 1,200 mm surface water, making single-season Boro rice highly profitable.
+receding winter beels provide 1,104 mm surface water, making single-season Boro rice viable with 49,200 BDT margin.
 
 29
 00:02:43,000 --> 00:02:49,500

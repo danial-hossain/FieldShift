@@ -164,15 +164,19 @@ Action 12.1: Navigate to "অ্যাকাউন্ট ও সেটিংস"
 ================================================================================
 INVARIANT VERIFICATION: RAJSHAHI VS. SUNAMGANJ PLANNING DIVERGENCE
 ================================================================================
-Test: Compare PuLP MILP planning outputs for Rajshahi (Barind) vs Sunamganj (Haor)
-- Rajshahi Output:
-    Water Score Component: 5.1984
-    Gross Margin Profit:    ৳270,129 BDT
-    Assigned Rotation:     Mustard -> Groundnut -> Fallow -> Lentil -> Sesame -> Fallow
-- Sunamganj Output:
-    Water Score Component: 5.3810
-    Gross Margin Profit:    ৳285,956 BDT
-    Assigned Rotation:     Mustard -> Groundnut -> Fallow -> Lentil -> Sesame -> Fallow
+Test: Compare PuLP MILP planning outputs for Bogura (Barind/Floodplain) vs Sunamganj (Haor)
+- Bogura Output (Balanced Strategy, 10 ha):
+    Baseline Irrigation:   1408.9 mm/yr (Boro -> Fallow -> Aman)
+    Plan Irrigation:       599.6 mm/yr (Sunflower -> Soybean -> Aman -> Chickpea -> Sesame -> Aman)
+    Water Savings:         +809.3 mm/yr
+    Gross Margin Delta:    +৳155,389 BDT/ha (Plan Profit: ৳136,823 BDT vs Baseline: -৳18,566 BDT)
+    Soil Nitrogen Delta:   +35.0 kg N/ha/yr
+- Sunamganj Output (Balanced Strategy, 1 ha):
+    Baseline Irrigation:   1104.0 mm/yr (Boro -> Fallow -> Aman assumed)
+    Plan Irrigation:       1104.0 mm/yr (Y1: Boro -> Fallow -> Fallow; Y2: Boro -> Mungbean -> Fallow)
+    Water Savings:         0.0 mm/yr (matches surface water availability from receding beels)
+    Net Margin Profit:     ৳49,200 BDT/ha
+    Soil Nitrogen Delta:   +17.5 kg N/ha/yr
 - Reason for Divergence:
     Sunamganj has substantially higher monsoon rainfall (>900 mm in Kharif-2) and lower
     aquifer stress than the arid Barind tract in Rajshahi, driving higher water scores

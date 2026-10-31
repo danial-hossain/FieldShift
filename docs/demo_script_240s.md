@@ -51,14 +51,14 @@ Presenter advances to **Step 5: Explain-the-Result Layer**. Screen highlights th
 - *Click path:* Press `->` -> Step 5.
 
 **Voiceover (1:40 – 2:05):**  
-*"Step 5: Transparent, plain-language answers. Anyone—a farmer, an extension officer, or a judge—understands the result in 3 seconds. The answer-first header states: 'By switching from Boro–Fallow–Aman to Mustard–Mungbean–Aman on your 1.0 ha parcel in Rajshahi, you save ~320 mm of irrigation water, add 45 kg of organic soil nitrogen, and gain an estimated +৳ 24,000 extra profit'."*
+*"Step 5: Transparent, plain-language answers. Anyone—a farmer, an extension officer, or a judge—understands the result in 3 seconds. The answer-first header states: 'By switching from Boro–Fallow–Aman to Sunflower–Soybean–Aman on your 10.0 ha parcel in Bogura, you save ~809 mm of irrigation water, add 35 kg of organic soil nitrogen, and gain an estimated +৳ 155,000 extra profit (illustrative)'."*
 
 **Visual (2:05 – 2:40):**  
 Presenter advances to **Step 6: Two-Field Regional Divergence** and clicks the **"দুই জমি তুলনা (2-Field Comparison)"** button. The interactive side-by-side modal opens: **Rajshahi (Barind Terrace)** on the left vs **Sunamganj (Haor Basin)** on the right.
 - *Click path:* Press `->` -> Step 6 -> Click **"দুই জমি তুলনা"**.
 
 **Voiceover (2:05 – 2:40):**  
-*"Step 6: The ultimate proof of honest data: Two-Field Regional Divergence. Watch how FieldShift's recommendation flips between regions! In drought-prone Rajshahi, GRACE depletion (-1.07 cm/yr) and terrace clay force a low-water Mustard rotation. But in Sunamganj's haor basin, 3-meter deep monsoon floods make Kharif farming impossible; instead, winter receding beels provide 1,200 mm of cheap surface water, making single-season Boro rice the only profitable and sensible choice (+৳ 145,000 net profit). One algorithm, two completely different regional realities—pure physics, zero hardcoding."*
+*"Step 6: The ultimate proof of honest data: Two-Field Regional Divergence. Watch how FieldShift's recommendation flips between regions! In drought-prone Rajshahi, GRACE depletion (-1.07 cm/yr) and terrace clay force a low-water Mustard rotation. But in Sunamganj's haor basin, 3-meter deep monsoon floods make Kharif farming impossible; instead, winter receding beels provide 1,200 mm of cheap surface water, making single-season Boro rice the only profitable and sensible choice (49,200 BDT/ha net profit with zero groundwater deficit). One algorithm, two completely different regional realities—pure physics, zero hardcoding."*
 
 ---
 

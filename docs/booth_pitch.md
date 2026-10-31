@@ -11,7 +11,7 @@
 >
 > *We built **FieldShift**. A farmer selects any field in Bangladesh, and within seconds receives an honest, NASA-backed crop rotation plan for the entire year. By combining 25 years of NASA POWER climatology, NASA GPM IMERG satellite rainfall, and SoilGrids, our optimization model tells the farmer exactly what to plant across 6 consecutive seasons.*
 >
-> *In drought-prone Rajshahi, it replaces groundwater-thirsty Boro rice with mustard and pulses, saving ~320 mm of irrigation water. In flooded Sunamganj haor, it leverages receding winter floodwaters for high-yield Boro. Accessible via web, printable cards, and rural SMS, 100% offline. FieldShift turns NASA data into food security."*
+> *In drought-prone Rajshahi, it replaces groundwater-thirsty Boro rice with mustard and pulses, saving ~809 mm of irrigation water and boosting net margins. In flooded Sunamganj haor, it leverages receding winter floodwaters for high-yield Boro. Accessible via web, printable cards, and rural SMS, 100% offline. FieldShift turns NASA data into food security."*
 
 ---
 
@@ -54,4 +54,4 @@
 *"FieldShift uses a three-tier delivery pipeline tailored for rural realities:*
 1. ***Sub-Assistant Agriculture Officers (SAAO):*** *There are over 14,000 SAAOs across Bangladesh visiting farmers daily. They use the FieldShift offline tablet app to input coordinates and generate plans.*
 2. ***Printable Farmer Card (A4 Print):*** *A clean, visual single-page schedule showing the 12-month calendar, watering dates, and fertilizer tips that can be printed at any union digital center (UDC).*
-3. ***Plain-Text SMS Gateway:*** *With one click, our 'SMS কপি করুন' feature generates a compressed, Banglish-free SMS message (e.g. 'FieldShift: Rajshahi parcel advice: Mustard -> Mungbean -> Aman. Water savings ~320mm, extra margin ~24,000 BDT. Verify with local SAAO'). This reaches any $15 basic feature phone."*
+3. ***Plain-Text SMS Gateway:*** *With one click, our 'SMS কপি করুন' feature generates a compressed, Banglish-free SMS message (e.g. 'FieldShift: Bogura parcel advice: Sunflower -> Soybean -> Aman. Water savings ~809mm, extra margin ~155,000 BDT. Verify with local SAAO'). This reaches any $15 basic feature phone."*
