@@ -175,6 +175,10 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
       return;
     }
 
+    const histCrops = Array.isArray(activeField?.crop_history)
+      ? activeField.crop_history.map(h => typeof h === 'string' ? h : (h?.crop || h?.crop_name)).filter(Boolean)
+      : (Array.isArray(activeField?.history) ? activeField.history.map(h => typeof h === 'string' ? h : (h?.crop || h?.crop_name)).filter(Boolean) : undefined);
+
     const bodyBase = {
       district: district || undefined,
       field_id: activeField?.id !== 'demo' && activeField?.id ? activeField.id : undefined,
@@ -183,6 +187,7 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
       field_size_ha: activeField?.area_ha != null ? Number(activeField.area_ha) : undefined,
       area_ha: activeField?.area_ha != null ? Number(activeField.area_ha) : undefined,
       seasonally_flooded: activeField?.seasonally_flooded,
+      history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
     };
 
     Promise.all(
@@ -236,6 +241,22 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
     const environmentBasis = solverResult?.environment_basis || activePlanResponse?.environment_basis || null;
     const cropSeasonMatrix = solverResult?.dynamic_agronomic_matrix?.crop_season_matrix || {};
 
+    const baselineComparison = solverResult?.baseline_comparison || planningData?.baseline_comparison || {};
+    const baselineIrrigationMm = baselineComparison?.baseline_irrigation_mm ?? solverResult?.baseline_irrigation_mm ?? planningData?.baseline_irrigation_mm ?? 1350;
+    const planIrrigationMm = baselineComparison?.plan_irrigation_mm ?? solverResult?.plan_irrigation_mm ?? planningData?.plan_irrigation_mm ?? 600;
+    const waterSavingsMm = baselineComparison?.water_savings_mm ?? solverResult?.water_savings_mm ?? planningData?.water_savings_mm ?? Math.round(baselineIrrigationMm - planIrrigationMm);
+
+    const baselineProfitBdt = baselineComparison?.baseline_profit_bdt ?? solverResult?.baseline_profit_bdt ?? planningData?.baseline_profit_bdt ?? 120000;
+    const planProfitBdt = baselineComparison?.plan_profit_bdt ?? solverResult?.plan_profit_bdt ?? planningData?.plan_profit_bdt ?? grossMargin;
+    const deltaProfit = baselineComparison?.profit_delta_bdt ?? solverResult?.profit_delta_bdt ?? planningData?.profit_delta_bdt ?? (planProfitBdt != null && baselineProfitBdt != null ? Math.round(planProfitBdt - baselineProfitBdt) : 0);
+
+    const baselineNitrogenKg = baselineComparison?.baseline_nitrogen_kg ?? solverResult?.baseline_nitrogen_kg ?? planningData?.baseline_nitrogen_kg ?? 0;
+    const planNitrogenKg = baselineComparison?.plan_nitrogen_kg ?? solverResult?.plan_nitrogen_kg ?? planningData?.plan_nitrogen_kg ?? (soilScore != null ? Math.round(soilScore * 25) : 35);
+    const nitrogenDeltaKg = baselineComparison?.nitrogen_delta_kg ?? solverResult?.nitrogen_delta_kg ?? planningData?.nitrogen_delta_kg ?? Math.round(planNitrogenKg - baselineNitrogenKg);
+
+    const baselineRotation = baselineComparison?.baseline_rotation || solverResult?.baseline_rotation || planningData?.baseline_rotation || ['Boro Rice', 'Fallow', 'T. Aman Rice'];
+    const isAssumedBaseline = baselineComparison?.is_assumed_baseline ?? solverResult?.is_assumed_baseline ?? planningData?.is_assumed_baseline ?? true;
+
     return {
       strategyId: selectedStrategy,
       rotation,
@@ -248,7 +269,19 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
       climateSource: activePlanResponse?.climate_source,
       cropSeasonMatrix,
       decisionExplanation: solverResult?.decision_explanation || {},
-      fallbackReasons: {}
+      fallbackReasons: {},
+      baselineComparison,
+      baselineIrrigationMm,
+      planIrrigationMm,
+      waterSavingsMm,
+      baselineProfitBdt,
+      planProfitBdt,
+      deltaProfit,
+      baselineNitrogenKg,
+      planNitrogenKg,
+      nitrogenDeltaKg,
+      baselineRotation,
+      isAssumedBaseline,
     };
   }, [activePlanResponse, selectedStrategy, summary]);
 
@@ -573,22 +606,85 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
   }
 
   // P2: Explain-the-result metrics and plain-language texts
+  const CROP_TRANSLATIONS = {
+    'Boro Rice': { bn: 'বোরো', en: 'Boro Rice' },
+    'T. Aman Rice': { bn: 'আমন', en: 'T. Aman Rice' },
+    'T. Aman': { bn: 'আমন', en: 'T. Aman Rice' },
+    'Aus Rice': { bn: 'আউশ', en: 'Aus Rice' },
+    'Fallow': { bn: 'পতিত', en: 'Fallow' },
+    'Mustard': { bn: 'সরিষা', en: 'Mustard' },
+    'Mungbean': { bn: 'মুগডাল', en: 'Mungbean' },
+    'Lentil': { bn: 'মসুর', en: 'Lentil' },
+    'Wheat': { bn: 'গম', en: 'Wheat' },
+    'Maize': { bn: 'ভুট্টা', en: 'Maize' },
+    'Potato': { bn: 'আলু', en: 'Potato' },
+    'Sesame': { bn: 'তিল', en: 'Sesame' },
+    'Soybean': { bn: 'সয়াবিন', en: 'Soybean' },
+    'Sunflower': { bn: 'সূর্যমুখী', en: 'Sunflower' },
+    'Jute': { bn: 'পাট', en: 'Jute' },
+  };
+
+  const translateCropName = (crop, l) => {
+    if (!crop) return l === 'bn' ? 'পতিত' : 'Fallow';
+    const entry = CROP_TRANSLATIONS[crop];
+    if (entry) return entry[l] || entry.en;
+    return crop;
+  };
+
   const currentRotation = activePlanData.rotation || {};
   const currentRotationList = Object.values(currentRotation);
-  const rotationTextBn = currentRotationList.slice(0, 3).join(' → ') || 'সরিষা → বোরো → আমন';
-  const baselineRotationBn = 'বোরো → পতিত → আমন';
+  const year1RotationList = [
+    currentRotation['Y1_S1'] || currentRotationList[0] || 'Mustard',
+    currentRotation['Y1_S2'] || currentRotationList[1] || 'Mungbean',
+    currentRotation['Y1_S3'] || currentRotationList[2] || 'T. Aman Rice'
+  ];
+  const rotationTextBn = year1RotationList.map(c => translateCropName(c, 'bn')).join(' → ');
+  const rotationTextEn = year1RotationList.map(c => translateCropName(c, 'en')).join(' → ');
 
-  const marginVal = activePlanData.grossMargin != null ? Math.round(activePlanData.grossMargin) : 174000;
-  const baselineMargin = 120000;
-  const deltaProfit = marginVal - baselineMargin;
-  const waterSavingsMm = activePlanData.waterScore != null ? Math.max(150, Math.round(1400 - activePlanData.waterScore)) : 320;
-  const extraNkg = activePlanData.soilScore != null ? Math.round(activePlanData.soilScore * 25) : 45;
+  const baselineCrops = activePlanData.baselineRotation || ['Boro Rice', 'Fallow', 'T. Aman Rice'];
+  const isAssumed = activePlanData.isAssumedBaseline;
+  const baselineRotationBn = baselineCrops.map(c => translateCropName(c, 'bn')).join(' → ') + (isAssumed ? ' (ধরে নেওয়া)' : '');
+  const baselineRotationEn = baselineCrops.map(c => translateCropName(c, 'en')).join(' → ') + (isAssumed ? ' (assumed)' : '');
+
+  const deltaProfit = activePlanData.deltaProfit != null ? Math.round(activePlanData.deltaProfit) : 0;
+  const waterSavingsMm = activePlanData.waterSavingsMm != null ? Math.round(activePlanData.waterSavingsMm) : 0;
+  const planIrrigationMm = activePlanData.planIrrigationMm != null ? Math.round(activePlanData.planIrrigationMm) : 0;
+  const extraNkg = activePlanData.nitrogenDeltaKg != null ? Math.round(activePlanData.nitrogenDeltaKg) : (activePlanData.soilScore != null ? Math.round(activePlanData.soilScore * 25) : 35);
+
+  let profitPhraseBn;
+  if (deltaProfit > 0) {
+    profitPhraseBn = `${toBanglaDigits(Math.round(deltaProfit).toLocaleString())} টাকা বেশি সম্ভাব্য লাভ`;
+  } else if (deltaProfit === 0) {
+    profitPhraseBn = `সম্ভাব্য লাভ সমান`;
+  } else {
+    profitPhraseBn = `${toBanglaDigits(Math.round(deltaProfit).toLocaleString())} টাকা সম্ভাব্য লাভ (লাভ কম, কিন্তু পানি/মাটির উপকার)`;
+  }
+
+  let waterPhraseBn;
+  if (waterSavingsMm > 0) {
+    waterPhraseBn = `বছরে ~${toBanglaDigits(Math.round(waterSavingsMm))} মিমি কম সেচ`;
+  } else if (waterSavingsMm === 0) {
+    waterPhraseBn = `বছরে সেচ প্রয়োজন সমান (~${toBanglaDigits(Math.round(planIrrigationMm))} মিমি/বছর)`;
+  } else {
+    waterPhraseBn = `বছরে ~${toBanglaDigits(Math.round(Math.abs(waterSavingsMm)))} মিমি বেশি সেচ`;
+  }
+
+  let nPhraseBn;
+  if (extraNkg > 0) {
+    nPhraseBn = `${toBanglaDigits(Math.round(extraNkg))} কেজি বেশি নাইট্রোজেন`;
+  } else if (extraNkg === 0) {
+    nPhraseBn = `নাইট্রোজেন স্তর অপরিবর্তিত`;
+  } else {
+    nPhraseBn = `${toBanglaDigits(Math.round(Math.abs(extraNkg)))} কেজি কম নাইট্রোজেন`;
+  }
 
   const answerFirstSentence = lang === 'bn'
-    ? `আপনার ${activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'বগুড়ার'} ${formatNumber(fieldAreaHa || 1, 1)} হেক্টর জমিতে বর্তমান ${baselineRotationBn} এর বদলে ${rotationTextBn} করলে বছরে ~${toBanglaDigits(waterSavingsMm)} মিমি কম সেচ, ${toBanglaDigits(extraNkg)} কেজি বেশি নাইট্রোজেন, ${toBanglaDigits(Math.max(0, deltaProfit).toLocaleString())} টাকা বেশি সম্ভাব্য লাভ (উদাহরণমূলক)।`
-    : `By switching from ${baselineRotationBn} to ${rotationTextBn} on your ${formatNumber(fieldAreaHa || 1, 1)} ha parcel in ${activeField?.district || 'Bogura'}, you save ~${waterSavingsMm} mm irrigation water, add ${extraNkg} kg soil nitrogen, and gain an estimated +${Math.max(0, deltaProfit).toLocaleString()} BDT profit (illustrative).`;
+    ? `আপনার ${activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'বগুড়ার'} ${formatNumber(fieldAreaHa || 1, 1)} হেক্টর জমিতে বর্তমান ${baselineRotationBn} এর বদলে ${rotationTextBn} করলে ${waterPhraseBn}, ${nPhraseBn}, ${profitPhraseBn} (উদাহরণমূলক)।`
+    : `By switching from ${baselineRotationEn} to ${rotationTextEn} on your ${formatNumber(fieldAreaHa || 1, 1)} ha parcel in ${activeField?.district || 'Bogura'}, you ${waterSavingsMm > 0 ? `save ~${waterSavingsMm} mm irrigation water` : (waterSavingsMm === 0 ? `match baseline irrigation (~${planIrrigationMm} mm/yr)` : `use ~${Math.abs(waterSavingsMm)} mm more irrigation water`)}, ${extraNkg >= 0 ? `add ${extraNkg} kg soil nitrogen` : `use ${Math.abs(extraNkg)} kg soil nitrogen`}, and achieve an estimated ${deltaProfit >= 0 ? `+${deltaProfit.toLocaleString()}` : deltaProfit.toLocaleString()} BDT profit ${deltaProfit < 0 ? '(lower profit, but water/soil benefits, illustrative)' : '(illustrative)'}.`;
 
-  const smsText = `FieldShift: ${activeField?.name || 'খামার'} (${activeField?.district || 'বগুড়া'}) পরামর্শ: ${rotationTextBn}। সেচ সাশ্রয় ~${waterSavingsMm}মিমি, অতিরিক্ত লাভ ~${Math.max(0, deltaProfit)}টাকা। স্থানীয় SAAO-র সাথে যাচাই করুন।`;
+  const profitSmsBn = deltaProfit >= 0 ? `লাভ +${deltaProfit}টাকা` : `লাভ ${deltaProfit}টাকা (লাভ কম, কিন্তু পানি/মাটি সুরক্ষিত)`;
+  const waterSmsBn = waterSavingsMm > 0 ? `সেচ সাশ্রয় ~${waterSavingsMm}মিমি` : (waterSavingsMm === 0 ? `সেচ সমান (${planIrrigationMm}মিমি)` : `সেচ +${Math.abs(waterSavingsMm)}মিমি`);
+  const smsText = `FieldShift: ${activeField?.name || 'খামার'} (${activeField?.district || 'বগুড়ার'}) পরামর্শ: ${rotationTextBn}। ${waterSmsBn}, ${profitSmsBn}। স্থানীয় SAAO-র সাথে যাচাই করুন।`;
 
   const handleCopySms = () => {
     try {
@@ -736,41 +832,51 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
               💰 {lang === 'bn' ? 'নিট মুনাফা পরিবর্তন' : 'Net Margin Delta'}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: deltaProfit >= 0 ? '#10b981' : '#f59e0b' }}>
               {deltaProfit >= 0 ? `+${toBanglaDigits(deltaProfit.toLocaleString())}` : toBanglaDigits(deltaProfit.toLocaleString())} ৳/ha
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {lang === 'bn' ? 'বিদ্যমান আবর্তনের চেয়ে বেশি লাভ' : 'Higher profit vs current baseline'}
+              {deltaProfit >= 0
+                ? (lang === 'bn' ? 'বিদ্যমান আবর্তনের চেয়ে বেশি লাভ' : 'Higher profit vs current baseline')
+                : (lang === 'bn' ? 'লাভ কম, কিন্তু পানি/মাটির উপকার' : 'Lower profit, but water/soil benefits')}
             </div>
           </div>
 
           <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WaterIcon size={15} /> {lang === 'bn' ? 'সেচ পানির সাশ্রয়' : 'Irrigation Savings'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WaterIcon size={15} /> {lang === 'bn' ? 'সেচ পানির পরিবর্তন' : 'Irrigation Delta'}</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#38bdf8' }}>
-              ~{toBanglaDigits(waterSavingsMm)} মিমি
+            <div style={{ fontSize: 24, fontWeight: 800, color: waterSavingsMm >= 0 ? '#38bdf8' : '#f59e0b' }}>
+              {waterSavingsMm > 0
+                ? `~${toBanglaDigits(waterSavingsMm)} মিমি সাশ্রয়`
+                : (waterSavingsMm === 0 ? `০ মিমি (সমান)` : `+${toBanglaDigits(Math.abs(waterSavingsMm))} মিমি বেশি`)}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {lang === 'bn' ? 'বোরো বিকল্পে ভূগর্ভস্থ পানি রক্ষা' : 'Groundwater conservation via low-water crops'}
+              {waterSavingsMm > 0
+                ? (lang === 'bn' ? 'বোরো বিকল্পে ভূগর্ভস্থ পানি রক্ষা' : 'Groundwater conservation via low-water crops')
+                : (waterSavingsMm === 0
+                  ? (lang === 'bn' ? 'ভূ-উপরিস্থ পানির ব্যবহার অপরিবর্তিত' : 'Surface water use matches baseline')
+                  : (lang === 'bn' ? 'ফসল নিবিড়তায় সেচ সামান্য বৃদ্ধি' : 'Slightly higher water for extra crop'))}
             </div>
           </div>
 
           <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RotationIcon size={15} /> {lang === 'bn' ? 'জৈব নাইট্রোজেন বৃদ্ধি' : 'Soil Nitrogen Boost'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RotationIcon size={15} /> {lang === 'bn' ? 'জৈব নাইট্রোজেন পরিবর্তন' : 'Soil Nitrogen Delta'}</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>
-              +{toBanglaDigits(extraNkg)} কেজি N/ha
+            <div style={{ fontSize: 24, fontWeight: 800, color: extraNkg >= 0 ? '#10b981' : '#f59e0b' }}>
+              {extraNkg >= 0 ? `+${toBanglaDigits(extraNkg)}` : toBanglaDigits(extraNkg)} কেজি N/ha
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {lang === 'bn' ? 'ডালশস্যের প্রাকৃতিক শিকড় সংবন্ধন' : 'Natural BNF enrichment from pulses'}
+              {extraNkg >= 0
+                ? (lang === 'bn' ? 'ডালশস্যের প্রাকৃতিক শিকড় সংবন্ধন' : 'Natural BNF enrichment from pulses')
+                : (lang === 'bn' ? 'অন্যান্য ফসলে পরিমিত নাইট্রোজেন' : 'Moderate nitrogen replenishment')}
             </div>
           </div>
         </div>
       </div>
 
-      {/* P2.3 Traffic-Light Risk Chips */}
+            {/* P2.3 Traffic-Light Risk Chips */}
       <div style={{ marginBottom: 24, background: 'var(--surface-card, rgba(255,255,255,0.02))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 14, padding: '14px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2, #cbd5e1)' }}>

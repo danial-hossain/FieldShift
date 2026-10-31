@@ -547,3 +547,148 @@ def build_dynamic_crop_season_matrix(
         "profit_bounds": {"min_bdt_ha": min_m, "max_bdt_ha": max_m},
         "environment_basis": first_period_basis,
     }
+
+
+def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops: Optional[Sequence[str]] = None) -> dict[str, Any]:
+    """Compute real water, profit, and nitrogen comparison between existing rotation and recommended plan."""
+    selection = milp_res.get("selected_crop_by_period") or {}
+    matrix = milp_res.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
+    periods = list(milp_res.get("planning_periods") or ["Y1_S1", "Y1_S2", "Y1_S3", "Y2_S1", "Y2_S2", "Y2_S3"])
+    available_crops = set(matrix.get(periods[0], {}).keys()) if periods and periods[0] in matrix else set()
+
+    def match_crop(name: Any) -> str:
+        if not name:
+            return "Fallow"
+        n = str(name).lower().strip()
+        if "boro" in n:
+            return "Boro Rice" if "Boro Rice" in available_crops else "Rice"
+        if "aus" in n:
+            return "Aus Rice" if "Aus Rice" in available_crops else "Rice"
+        if "aman" in n or "rice" in n or "ধান" in n:
+            return "Rice"
+        if "mustard" in n or "সরিষা" in n:
+            return "Mustard"
+        if "lentil" in n or "মসুর" in n:
+            return "Lentil"
+        if "mung" in n or "মুগ" in n:
+            return "Mungbean"
+        if "potato" in n or "আলু" in n:
+            return "Potato"
+        if "wheat" in n or "গম" in n:
+            return "Wheat"
+        if "maize" in n or "ভুট্টা" in n:
+            return "Maize"
+        if "jute" in n or "পাট" in n:
+            return "Jute"
+        if "sunflower" in n or "সূর্যমুখী" in n:
+            return "Sunflower"
+        if "soybean" in n or "সয়াবিন" in n:
+            return "Soybean"
+        if "sesame" in n or "তিল" in n:
+            return "Sesame"
+        if "groundnut" in n or "বাদাম" in n:
+            return "Groundnut"
+        if "fallow" in n or "পতিত" in n:
+            return "Fallow"
+        for c in available_crops:
+            if c.lower() == n:
+                return c
+        return "Fallow"
+
+    is_assumed = True
+    if field_history_crops and len(field_history_crops) >= 2:
+        b_s1 = match_crop(field_history_crops[0])
+        b_s2 = match_crop(field_history_crops[1])
+        b_s3 = match_crop(field_history_crops[2]) if len(field_history_crops) > 2 else "Rice"
+        is_assumed = False
+    else:
+        b_s1 = match_crop("Boro Rice")
+        b_s2 = match_crop("Fallow")
+        b_s3 = match_crop("Rice")
+        is_assumed = True
+
+    b_map = {"S1": b_s1, "S2": b_s2, "S3": b_s3}
+
+    b_irrig_list, b_profit_list, b_n_list = [], [], []
+    p_irrig_list, p_profit_list, p_n_list = [], [], []
+
+    for p in periods:
+        s_code = "S1" if "S1" in p else ("S2" if "S2" in p else "S3")
+        b_c = b_map[s_code]
+        p_c = selection.get(p, "Fallow")
+
+        b_entry = matrix.get(p, {}).get(b_c, {})
+        p_entry = matrix.get(p, {}).get(p_c, {})
+
+        b_wb = b_entry.get("water_balance", {})
+        p_wb = p_entry.get("water_balance", {})
+
+        b_irrig_list.append(float(b_wb.get("irrigation_required_mm", 0.0)))
+        p_irrig_list.append(float(p_wb.get("irrigation_required_mm", 0.0)))
+
+        b_profit_list.append(float(b_entry.get("dynamic_gross_margin_bdt_ha", 0.0)))
+        p_profit_list.append(float(p_entry.get("dynamic_gross_margin_bdt_ha", 0.0)))
+
+        b_n_list.append(35.0 if b_entry.get("is_legume") else 0.0)
+        p_n_list.append(35.0 if p_entry.get("is_legume") else 0.0)
+
+    num_years = max(1.0, len(periods) / 3.0)
+    base_irrig = round(sum(b_irrig_list) / num_years, 1)
+    plan_irrig = round(sum(p_irrig_list) / num_years, 1)
+    water_saving = round(base_irrig - plan_irrig, 1)
+
+    base_profit = round(sum(b_profit_list) / num_years, 0)
+    plan_profit = round(sum(p_profit_list) / num_years, 0)
+    profit_delta = round(plan_profit - base_profit, 0)
+
+    base_n = round(sum(b_n_list) / num_years, 1)
+    plan_n = round(sum(p_n_list) / num_years, 1)
+    n_delta = round(plan_n - base_n, 1)
+
+    crop_names_bn = {
+        "Boro Rice": "বোরো ধান",
+        "Rice": "আমন ধান",
+        "Aus Rice": "আউশ ধান",
+        "Mustard": "সরিষা",
+        "Lentil": "মসুর ডাল",
+        "Mungbean": "মুগ ডাল",
+        "Potato": "আলু",
+        "Wheat": "গম",
+        "Maize": "ভুট্টা",
+        "Jute": "পাট",
+        "Sunflower": "সূর্যমুখী",
+        "Soybean": "সয়াবিন",
+        "Sesame": "তিল",
+        "Groundnut": "চীনাবাদাম",
+        "Tomato": "টমেটো",
+        "Chickpea": "ছোলা",
+        "Fallow": "পতিত",
+    }
+    b_s1_bn = crop_names_bn.get(b_s1, b_s1)
+    b_s2_bn = crop_names_bn.get(b_s2, b_s2)
+    b_s3_bn = crop_names_bn.get(b_s3, b_s3)
+    baseline_rotation_text_bn = f"{b_s1_bn} → {b_s2_bn} → {b_s3_bn}"
+    if is_assumed:
+        baseline_rotation_text_bn += " (ধরে নেওয়া)"
+
+    baseline_rotation_text_en = f"{b_s1} -> {b_s2} -> {b_s3}"
+    if is_assumed:
+        baseline_rotation_text_en += " (assumed)"
+
+    return {
+        "baseline_rotation": [b_s1, b_s2, b_s3],
+        "baseline_rotation_text_bn": baseline_rotation_text_bn,
+        "baseline_rotation_text_en": baseline_rotation_text_en,
+        "is_assumed_baseline": is_assumed,
+        "baseline_label_bn": "ধরে নেওয়া" if is_assumed else "সংরক্ষিত ইতিহাস",
+        "baseline_label_en": "Assumed" if is_assumed else "Saved History",
+        "baseline_irrigation_mm": base_irrig,
+        "plan_irrigation_mm": plan_irrig,
+        "water_savings_mm": water_saving,
+        "baseline_profit_bdt": base_profit,
+        "plan_profit_bdt": plan_profit,
+        "profit_delta_bdt": profit_delta,
+        "baseline_nitrogen_kg": base_n,
+        "plan_nitrogen_kg": plan_n,
+        "nitrogen_delta_kg": n_delta,
+    }

@@ -19,7 +19,10 @@ from src.data.field_history import (
     normalize_field_history,
 )
 from src.knowledge.agronomic_rules import evaluate_crop_compatibility
-from src.optimizer.dynamic_agronomy import build_dynamic_crop_season_matrix
+from src.optimizer.dynamic_agronomy import (
+    build_dynamic_crop_season_matrix,
+    compute_rotation_comparison,
+)
 
 DEFAULT_PLANNING_YEARS = 2
 DEFAULT_SEASONS_PER_YEAR = 3
@@ -878,6 +881,7 @@ def optimize_rotation(
     allow_kharif2_fallow: bool = False,
     min_cereals_per_year: int = 1,
     seasonally_flooded: Optional[bool] = None,
+    field_history_crops: Optional[Sequence[str]] = None,
     solver: Optional[pulp.LpSolver] = None,
 ) -> dict[str, Any]:
     """Optimize a long-term rotation for the supplied periods and priorities."""
@@ -982,7 +986,7 @@ def optimize_rotation(
         for crop, result in metadata["rule_results"].items()
     }
     data_status = _result_data_status(field_state, metadata)
-    return {
+    res_dict = {
         "status": "optimal",
         "solver_status": solver_status,
         "planning_periods": metadata["periods"],
@@ -1021,6 +1025,14 @@ def optimize_rotation(
             else metadata["component_status"]["profit"]
         ),
     }
+    hist_crops = field_history_crops
+    if not hist_crops and metadata.get("history") is not None and hasattr(metadata["history"], "empty") and not metadata["history"].empty:
+        if "crop" in metadata["history"].columns:
+            hist_crops = [str(x) for x in metadata["history"]["crop"].dropna()]
+    comparison = compute_rotation_comparison(res_dict, field_history_crops=hist_crops)
+    res_dict["baseline_comparison"] = comparison
+    res_dict.update(comparison)
+    return res_dict
 
 
 def _empty_result(
@@ -1063,6 +1075,16 @@ def _empty_result(
         },
         "data_status": _result_data_status(field_state, metadata),
         "compatibility_by_crop": metadata["rule_results"],
+        "baseline_comparison": {},
+        "water_savings_mm": None,
+        "profit_delta_bdt": None,
+        "nitrogen_delta_kg": None,
+        "baseline_irrigation_mm": None,
+        "plan_irrigation_mm": None,
+        "baseline_profit_bdt": None,
+        "plan_profit_bdt": None,
+        "baseline_nitrogen_kg": None,
+        "plan_nitrogen_kg": None,
         "provenance": _result_provenance(
             field_state, metadata["crops"], history
         ),

@@ -182,6 +182,7 @@ def use_field_record(data: dict[str, Any], field: FarmField, db: DbSession) -> d
         data["previous_crop"] = histories[0].crop or ""
         data["previous_crop_year"] = histories[0].year or ""
         data["season"] = histories[0].season or data.get("season", "dry")
+        data["history_crops"] = [h.crop for h in histories if h.crop]
     else:
         data["previous_crop"] = ""
         data["previous_crop_year"] = ""
@@ -631,6 +632,8 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
         from src.optimizer.dynamic_agronomy import COASTAL_SALINE_DISTRICTS
         f_state.coastal_saline = dist_key in COASTAL_SALINE_DISTRICTS
 
+        allow_k2_fallow = bool(data.get("allow_kharif2_fallow", is_haor))
+        hist_crops_param = data.get("history_crops") or data.get("crop_history") or None
         cache_key = (
             dist_key,
             priority,
@@ -640,8 +643,9 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             str(data.get("soil_texture") or getattr(f_state, "texture", "loam")),
             bool(is_haor),
             bool(f_state.coastal_saline),
-            bool(data.get("allow_kharif2_fallow", False)),
+            bool(allow_k2_fallow),
             int(data.get("min_cereals_per_year", 1)),
+            str(hist_crops_param),
         )
         if cache_key in _PLANNING_CACHE:
             return _PLANNING_CACHE[cache_key]
@@ -654,9 +658,10 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             water_weight=w_wt,
             soil_weight=s_wt,
             national_need_weight=n_wt,
-            allow_kharif2_fallow=bool(data.get("allow_kharif2_fallow", False)),
+            allow_kharif2_fallow=allow_k2_fallow,
             min_cereals_per_year=int(data.get("min_cereals_per_year", 1)),
             seasonally_flooded=bool(is_haor),
+            field_history_crops=hist_crops_param,
         )
         env_basis = milp_res.get("environment_basis")
         if not env_basis:
@@ -691,6 +696,18 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "milp_status": milp_res,
                     "environment_basis": env_basis,
                     "selected_strategy_result": milp_res,
+                    "baseline_comparison": milp_res.get("baseline_comparison", {}),
+                    "baseline_irrigation_mm": milp_res.get("baseline_irrigation_mm"),
+                    "plan_irrigation_mm": milp_res.get("plan_irrigation_mm"),
+                    "water_savings_mm": milp_res.get("water_savings_mm"),
+                    "baseline_profit_bdt": milp_res.get("baseline_profit_bdt"),
+                    "plan_profit_bdt": milp_res.get("plan_profit_bdt"),
+                    "profit_delta_bdt": milp_res.get("profit_delta_bdt"),
+                    "baseline_nitrogen_kg": milp_res.get("baseline_nitrogen_kg"),
+                    "plan_nitrogen_kg": milp_res.get("plan_nitrogen_kg"),
+                    "nitrogen_delta_kg": milp_res.get("nitrogen_delta_kg"),
+                    "baseline_rotation": milp_res.get("baseline_rotation"),
+                    "is_assumed_baseline": milp_res.get("is_assumed_baseline"),
                 }
             }
         }))
