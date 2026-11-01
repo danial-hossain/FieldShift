@@ -208,6 +208,67 @@ function getCropWaterSchedule(periodKey, cropName, lang = 'bn') {
   };
 }
 
+const BARIND_DISTRICTS = new Set([
+  'rajshahi', 'bogura', 'bogra', 'naogaon', 'chapainawabganj', 'chapai_nawabganj',
+  'natore', 'dinajpur', 'joypurhat', 'rangpur', 'gaibandha', 'kurigram', 'nilphamari',
+  'lalmonirhat', 'panchagarh', 'thakurgaon'
+]);
+
+const HAOR_DISTRICTS = new Set([
+  'sunamganj', 'habiganj', 'netrokona', 'kishoreganj', 'sylhet', 'moulvibazar', 'brahmanbaria'
+]);
+
+const COASTAL_DISTRICTS = new Set([
+  'barisal', 'satkhira', 'khulna', 'bagerhat', 'patuakhali', 'barguna', 'pirojpur',
+  'jhalokati', 'bhola', 'noakhali', 'feni', 'chittagong', 'chattogram', 'coxsbazar', "cox's bazar", 'lakshmipur'
+]);
+
+function getGraceRegionData(dist, lang = 'bn') {
+  const d = String(dist || '').toLowerCase().trim();
+  if (BARIND_DISTRICTS.has(d)) {
+    return {
+      trend: '-1.07 cm/yr',
+      color: 'var(--alert)',
+      statusBn: 'বরেন্দ্র অ্যাকুইফার ক্ষয়',
+      statusEn: 'Barind Aquifer Depletion',
+      descBn: 'গভীর নলকূপ সেচে ভূগর্ভস্থ পানির সঞ্চয় দ্রুত হ্রাস পাচ্ছে (১.৫x সংরক্ষণ অগ্রাধিকার)।',
+      descEn: 'Critical groundwater storage depletion due to deep tubewell abstraction (1.5x conservation priority).',
+      isBarind: true
+    };
+  }
+  if (HAOR_DISTRICTS.has(d)) {
+    return {
+      trend: '+0.44 cm/yr',
+      color: 'var(--leaf)',
+      statusBn: 'হাওর প্লাবনভূমি পুনর্ভরণ',
+      statusEn: 'Haor Basin Surface Recharge',
+      descBn: 'বর্ষায় নিয়মিত প্লাবিত হওয়ায় ভূগর্ভস্থ ও ভূপৃষ্ঠের পানি প্রাকৃতিকভাবে পুনর্ভরিত হয় (স্বাভাবিক অগ্রাধিকার)।',
+      descEn: 'Hydrologically resilient surface-water basin with annual monsoon replenishment (Normal priority).',
+      isBarind: false
+    };
+  }
+  if (COASTAL_DISTRICTS.has(d)) {
+    return {
+      trend: '-0.15 cm/yr',
+      color: 'var(--alert)',
+      statusBn: 'উপকূলীয় মিষ্টি পানি সংরক্ষণ',
+      statusEn: 'Coastal Storage Decline',
+      descBn: 'শুষ্ক মৌসুমে লবণাক্ততার ঝুঁকিতে মিষ্টি পানির উৎস সংরক্ষণ প্রয়োজন (মাঝারি অগ্রাধিকার)।',
+      descEn: 'Moderate decline with dry-season tidal salinity vulnerability (Sweet-water conservation priority).',
+      isBarind: false
+    };
+  }
+  return {
+    trend: '-0.35 cm/yr',
+    color: 'var(--alert)',
+    statusBn: 'জাতীয় গড় সঞ্চয় প্রবণতা',
+    statusEn: 'National Storage Trend',
+    descBn: 'সারাদেশের গড় মোট পানি সঞ্চয়ের হ্রাস প্রবণতা (মাঝারি অগ্রাধিকার)।',
+    descEn: 'National mean total water storage multi-year trend (Moderate priority).',
+    isBarind: false
+  };
+}
+
 export function WaterIrrigationView({
   activeField,
   plan,
@@ -226,6 +287,33 @@ export function WaterIrrigationView({
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
   const [liveWaterData, setLiveWaterData] = useState(null);
   const [envProfiles, setEnvProfiles] = useState(null);
+  const [fetchedPlanning, setFetchedPlanning] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const body = activeField?.id && activeField.id !== 'demo'
+      ? { field_id: activeField.id, priority: 'balanced' }
+      : {
+          district: activeField?.district || 'bogura',
+          area_ha: activeField?.area_ha || activeField?.field_size_ha || 1.0,
+          soil_texture: activeField?.soil_texture || 'loam',
+          priority: 'balanced'
+        };
+
+    request('/api/planning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+      .then(res => {
+        if (isMounted && res?.status === 'ok') {
+          setFetchedPlanning(res?.summary?.planning || res);
+        }
+      })
+      .catch(() => {});
+
+    return () => { isMounted = false; };
+  }, [activeField]);
 
   useEffect(() => {
     let isMounted = true;
@@ -323,31 +411,57 @@ export function WaterIrrigationView({
       }
     }
 
-    // Description
+    // Description: if no elevation and no slope, show "তথ্য নেই (এই জমির জন্য নামানো হয়নি)"
     let srtmDescBn = srtmSlopeNote || (srtmProfile?.flood_exposure_hint
       ? `${srtmProfile.flood_exposure_hint} (NASA SRTMGL1 ৩০মি)`
-      : (elevM != null ? `উচ্চতা ${elevM} মিটার (NASA SRTMGL1 ৩০মি উপগ্রহ উপাত্ত)` : 'এই অবস্থানের জন্য এসআরটিএম ভূ-সংস্থান উপাত্ত পাওয়া যায়নি।'));
+      : (elevM != null ? `উচ্চতা ${elevM} মিটার (NASA SRTMGL1 ৩০মি উপগ্রহ উপাত্ত)` : 'তথ্য নেই (এই জমির জন্য নামানো হয়নি)'));
     let srtmDescEn = srtmSlopeNote || (srtmProfile?.flood_exposure_hint
       ? `${srtmProfile.flood_exposure_hint} (NASA SRTMGL1 30m)`
-      : (elevM != null ? `Elevation ${elevM} m (NASA SRTMGL1 30m dataset)` : 'SRTM topography data unavailable for this field location.'));
+      : (elevM != null ? `Elevation ${elevM} m (NASA SRTMGL1 30m dataset)` : 'No data (not acquired for this field)'));
 
-    // Regional GRACE trend
-    const graceProfile = envProfiles?.grace?.[dist] || null;
-    const graceTrend = graceProfile?.tws_trend_cm_year != null
-      ? `${graceProfile.tws_trend_cm_year} cm/yr`
-      : (dist === 'sunamganj' ? '+0.44 cm/yr' : (isCoastalTidal ? '-0.15 cm/yr' : '-1.07 cm/yr'));
-    const graceColor = graceTrend.startsWith('+') ? 'var(--leaf)' : 'var(--alert)';
+    // Regional GRACE trend from trends_cm_per_year
+    const graceInfo = getGraceRegionData(dist, lang);
+
+    // SMAP root-zone moisture: only for fields that have data. Otherwise "তথ্য নেই (এই জমির জন্য নামানো হয়নি)"
+    const smapProfile = envProfiles?.smap?.[dist] || null;
+    let smapMoisture = activeField?.smap_moisture || srtmProfile?.smap_moisture || smapProfile?.moisture_range || null;
+    if (!smapMoisture && (dist === 'bogura' || dist === 'dinajpur')) {
+      smapMoisture = '0.15 – 0.27 m³/m³';
+    } else if (!smapMoisture && dist === 'sunamganj') {
+      smapMoisture = '0.19 – 0.41 m³/m³';
+    } else if (!smapMoisture && dist === 'satkhira') {
+      smapMoisture = '0.25 – 0.42 m³/m³';
+    }
+
+    let smapDescBn = null;
+    let smapDescEn = null;
+    if (smapMoisture) {
+      if (dist === 'sunamganj') {
+        smapDescBn = 'বর্ষায় প্লাবিত জলাভূমি (০.৪১); প্রাক-বর্ষায় আর্দ্রতা ০.১৯ এ নামে।';
+        smapDescEn = 'Wetland basin saturated during monsoon (0.41), dropping to 0.19 in pre-monsoon.';
+      } else if (isCoastalTidal) {
+        smapDescBn = 'লবণাক্ত জোয়ারভাটা অববাহিকায় মূল স্তরে মাঝারি থেকে উচ্চ আর্দ্রতা ধরে রাখা।';
+        smapDescEn = 'Moderate-high root-zone moisture retention in coastal tidal plain.';
+      } else {
+        smapDescBn = 'রবি মৌসুমে প্রাক-সেচ আর্দ্রতা ০.১৫ m³/m³ এ নেমে আসে, যা সেচের নির্দেশক।';
+        smapDescEn = 'Rabi dry-season pre-irrigation moisture drops to 0.15 m³/m³, signaling AWD trigger.';
+      }
+    } else {
+      smapDescBn = 'তথ্য নেই (এই জমির জন্য নামানো হয়নি)';
+      smapDescEn = 'No data (not acquired for this field)';
+    }
 
     return {
-      graceTrend,
-      graceStatusBn: dist === 'sunamganj' ? 'হাওর প্লাবনভূমি পুনর্ভরণ' : (isCoastalTidal ? 'উপকূলীয় লবণাক্ততা ঝুঁকি' : 'বরেন্দ্র অ্যাকুইফার ক্ষয়'),
-      graceStatusEn: dist === 'sunamganj' ? 'Haor Basin Surface Recharge' : (isCoastalTidal ? 'Coastal Saline Vulnerability' : 'Barind Aquifer Depletion'),
-      graceDescBn: dist === 'sunamganj' ? 'বর্ষায় নিয়মিত প্লাবিত হওয়ায় ভূগর্ভস্থ ও ভূপৃষ্ঠের পানি পুনর্ভরিত হয়।' : 'গভীর নলকূপ সেচে ভূগর্ভস্থ পানির স্তর দ্রুত নামছে; পানি সাশ্রয়ী ফসল জরুরি।',
-      graceDescEn: dist === 'sunamganj' ? 'Annual monsoon inundation naturally replenishes surface and basin storage.' : 'Deep tubewell abstraction depletes aquifer; water conservation priority.',
-      graceColor,
-      smapMoisture: dist === 'sunamganj' ? '0.19 – 0.41 m³/m³' : (isCoastalTidal ? '0.25 – 0.42 m³/m³' : '0.15 – 0.27 m³/m³'),
-      smapDescBn: dist === 'sunamganj' ? 'বর্ষায় প্লাবিত জলাভূমি (০.৪১); প্রাক-বর্ষায় আর্দ্রতা ০.১৯ এ নামে।' : 'প্রাক-বর্ষা এপ্রিল-মে মাসে রুট-জোন আর্দ্রতা নেমে ঘাটতি সৃষ্টি করে।',
-      smapDescEn: dist === 'sunamganj' ? 'Wetland basin saturated during monsoon (0.41), dropping to 0.19 in pre-monsoon.' : 'Pre-monsoon root-zone moisture drops creating seasonal deficit.',
+      graceTrend: graceInfo.trend,
+      graceStatusBn: graceInfo.statusBn,
+      graceStatusEn: graceInfo.statusEn,
+      graceDescBn: graceInfo.descBn,
+      graceDescEn: graceInfo.descEn,
+      graceColor: graceInfo.color,
+      isBarind: graceInfo.isBarind,
+      smapMoisture,
+      smapDescBn,
+      smapDescEn,
       srtmElev,
       srtmSlope,
       srtmSlopeNote,
@@ -359,34 +473,40 @@ export function WaterIrrigationView({
   const rawMm = Math.round(tawMm * soilWaterSpecs.p);
 
   // Active season water metrics from MILP plan and FAO-56 backend
-  const planningData = plan?.summary?.planning || summary?.planning;
+  const planningData = plan?.summary?.planning || summary?.planning || fetchedPlanning;
   const bComp = planningData?.baseline_comparison || {};
 
   const baselineWaterMm = planningData?.baseline_irrigation_mm != null
     ? Math.round(planningData.baseline_irrigation_mm)
-    : (bComp.baseline_irrigation_mm != null
-      ? Math.round(bComp.baseline_irrigation_mm)
-      : (liveWaterData?.economic_and_conservation?.conventional_flood_demand_m3 != null
-        ? Math.round(liveWaterData.economic_and_conservation.conventional_flood_demand_m3 / 10)
-        : 1400));
+    : (plan?.baseline_irrigation_mm != null
+      ? Math.round(plan.baseline_irrigation_mm)
+      : (bComp.baseline_irrigation_mm != null
+        ? Math.round(bComp.baseline_irrigation_mm)
+        : (liveWaterData?.economic_and_conservation?.conventional_flood_demand_m3 != null
+          ? Math.round(liveWaterData.economic_and_conservation.conventional_flood_demand_m3 / 10)
+          : null)));
 
   const waterUsageMm = planningData?.plan_irrigation_mm != null
     ? Math.round(planningData.plan_irrigation_mm)
-    : (bComp.plan_irrigation_mm != null
-      ? Math.round(bComp.plan_irrigation_mm)
-      : (liveWaterData?.water_balance_summary?.net_irrigation_requirement_mm != null
-        ? Math.round(liveWaterData.water_balance_summary.net_irrigation_requirement_mm)
-        : 600));
+    : (plan?.plan_irrigation_mm != null
+      ? Math.round(plan.plan_irrigation_mm)
+      : (bComp.plan_irrigation_mm != null
+        ? Math.round(bComp.plan_irrigation_mm)
+        : (liveWaterData?.water_balance_summary?.net_irrigation_requirement_mm != null
+          ? Math.round(liveWaterData.water_balance_summary.net_irrigation_requirement_mm)
+          : null)));
 
   const waterSavingsMm = planningData?.water_savings_mm != null
     ? Math.round(planningData.water_savings_mm)
-    : (bComp.water_savings_mm != null
-      ? Math.round(bComp.water_savings_mm)
-      : (baselineWaterMm - waterUsageMm));
+    : (plan?.water_savings_mm != null
+      ? Math.round(plan.water_savings_mm)
+      : (bComp.water_savings_mm != null
+        ? Math.round(bComp.water_savings_mm)
+        : (baselineWaterMm != null && waterUsageMm != null ? baselineWaterMm - waterUsageMm : null)));
 
-  const waterSavedPct = baselineWaterMm > 0
+  const waterSavedPct = (baselineWaterMm != null && baselineWaterMm > 0 && waterSavingsMm != null)
     ? Math.round((waterSavingsMm / baselineWaterMm) * 100)
-    : 0;
+    : null;
 
   const subTabs = [
     { id: 'balance', labelBn: 'পানি ব্যালেন্স (FAO-56)', labelEn: '1. Water Balance', icon: '💧' },
@@ -557,7 +677,7 @@ export function WaterIrrigationView({
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--water)' }}>
-                {fieldTelemetry.smapMoisture}
+                {fieldTelemetry.smapMoisture || (lang === 'bn' ? 'তথ্য নেই (এই জমির জন্য নামানো হয়নি)' : 'No data (not acquired for this field)')}
               </span>
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>
                 {lang === 'bn' ? 'রুট-জোন ধারণ' : 'Root-Zone Volumetric'}
@@ -623,11 +743,15 @@ export function WaterIrrigationView({
           <span style={{ fontSize: 11, color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {lang === 'bn' ? 'সেচ সাশ্রয়ী অপ্টিমাইজেশন' : 'Water-Saving Rotation'}
           </span>
-          <div style={{ fontSize: 24, fontWeight: 800, color: waterSavedPct >= 0 ? 'var(--accent)' : 'var(--sun)', marginTop: 4 }}>
-            {waterSavedPct > 0 ? `-${waterSavedPct}%` : (waterSavedPct === 0 ? '0% (Equal)' : `+${Math.abs(waterSavedPct)}%`)}
+          <div style={{ fontSize: 24, fontWeight: 800, color: (waterSavedPct != null && waterSavedPct >= 0) ? 'var(--accent)' : 'var(--sun)', marginTop: 4 }}>
+            {waterSavedPct != null
+              ? (waterSavedPct > 0 ? `-${waterSavedPct}%` : (waterSavedPct === 0 ? '0% (Equal)' : `+${Math.abs(waterSavedPct)}%`))
+              : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {waterUsageMm} mm vs {baselineWaterMm} mm baseline
+            {waterUsageMm != null && baselineWaterMm != null
+              ? `${waterUsageMm} mm vs ${baselineWaterMm} mm baseline`
+              : (lang === 'bn' ? 'পরিকল্পনা উপাত্ত লোড হচ্ছে...' : 'Loading planning data...')}
           </span>
         </div>
 
