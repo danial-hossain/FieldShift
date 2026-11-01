@@ -71,6 +71,7 @@ export function NasaPlantingAdvisoryView({
   const districtsList = [
     { id: 'rajshahi', nameBn: 'রাজশাহী', nameEn: 'Rajshahi', icon: '🏛️' },
     { id: 'bogura', nameBn: 'বগুড়া', nameEn: 'Bogura', icon: '🌾' },
+    { id: 'barisal', nameBn: 'বরিশাল', nameEn: 'Barisal', icon: '🌊' },
     { id: 'rangpur', nameBn: 'রংপুর', nameEn: 'Rangpur', icon: '🌱' },
     { id: 'mymensingh', nameBn: 'ময়মনসিংহ', nameEn: 'Mymensingh', icon: '🌿' },
     { id: 'jashore', nameBn: 'যশোর', nameEn: 'Jashore', icon: '🌻' },
@@ -116,11 +117,11 @@ export function NasaPlantingAdvisoryView({
 
       {/* Header */}
       <PageHeader
-        eyebrow={lang === 'bn' ? 'নাসা এগ্রো-মেটিওরোলজি' : 'NASA Agro-Meteorology'}
+        eyebrow={lang === 'bn' ? 'NASA POWER (তাপমাত্রা) + GPM IMERG (বৃষ্টি)' : 'NASA POWER (Temperature) + GPM IMERG (Rainfall)'}
         title={lang === 'bn' ? 'নাসা ধান রোপণ উপদেষ্টা ২০২৬' : 'NASA Planting Window Advisory 2026'}
-        subtitle={lang === 'bn' ? '২৫ বছরের নাসা পাওয়ার পর্যবেক্ষণ (২০০১–২০২৫) ও বৃষ্টিপাত অনসেট বিশ্লেষণ' : '25-Year NASA POWER daily reanalysis & Mann-Whitney U test'}
+        subtitle={lang === 'bn' ? 'NASA POWER (তাপমাত্রা) + GPM IMERG (বৃষ্টি) ২৫ বছরের উপাত্ত বিশ্লেষণ' : 'NASA POWER (Temperature) + GPM IMERG (Rainfall) 25-Year Observation Analysis'}
         actions={
-          <DataSourceTag source="NASA POWER" mode={prov?.data_mode || 'cache'} period="2001-2025" />
+          <DataSourceTag source="NASA POWER + GPM IMERG" mode={prov?.data_mode || 'cache'} period="2001-2025" />
         }
       />
 
@@ -183,6 +184,11 @@ export function NasaPlantingAdvisoryView({
                 </Pill>
               );
             })()}
+            {(comp?.censored_fraction > 0.30 || comp?.status === 'unreliable_window_censored') && (
+              <Pill tone="warning">
+                {lang === 'bn' ? 'বিআরআরআই (BRRI) জেলা ক্যালেন্ডার' : 'BRRI District Calendar'}
+              </Pill>
+            )}
           </div>
           <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }}>
             {district.toUpperCase()} · {crop.toUpperCase()}

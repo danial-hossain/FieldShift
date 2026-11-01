@@ -738,31 +738,27 @@ def generate_recommendation(
 
         if is_window_censored:
             headline_bn = (
-                f"এই অঞ্চলে জুনের শুরুতেই সাধারণত বর্ষার বৃষ্টি শুরু হয়ে থাকে। "
-                f"১৫ জুন থেকে ১৫ জুলাইয়ের মধ্যে খরা বা অনাবৃষ্টির (টানা ৭ দিন বা তার বেশি < ২ মিমি) ঝুঁকি {dry_pct_bn}% (নাসা জিপিএম আইমার্জ স্যাটেলাইট পর্যবেক্ষণ)। "
-                f"তাই দুই কিস্তিতে বীজতলা ফেলুন: প্রথম কিস্তি ২০-২৫ মে, দ্বিতীয় কিস্তি ৫-১০ জুন।"
+                f"এই অঞ্চলে জুনের শুরুতেই সাধারণত বর্ষার বৃষ্টি শুরু হয়ে থাকে। বর্ষা শুরুর উপাত্ত ৩০% এর বেশি সেন্সরড হওয়ায় স্থানীয় বিআরআরআই (BRRI) ক্রপ ক্যালেন্ডার অনুযায়ী বীজতলা বপনের সময়: {sowing_window_bn} (চারা রোপণ: {transplant_window_bn})। ১৫ জুন থেকে ১৫ জুলাই খরা/অনাবৃষ্টির ঝুঁকি {dry_pct_bn}% (নাসা জিপিএম আইমার্জ)।"
             )
             headline_en = (
-                f"Rain is usually already falling by early June in this region. "
-                f"The probability of a dry spell (>= 7 days with < 2 mm) between 15 June and 15 July is {dry_spell_pct}% based on NASA GPM IMERG satellite observations. "
-                f"Sow nursery seedbeds in two batches: May 20-25 and June 5-10."
+                f"Rain is usually already falling by early June in this region. Rainfall onset is >30% censored; sowing dates are based on the standard BRRI crop calendar for {district_en}: Nursery sowing {sowing_window_en}, transplanting {transplant_window_en}. 15 Jun–15 Jul dry spell risk is {dry_spell_pct}% (NASA GPM IMERG)."
             )
-            sms_bn = f"{district_bn} আমন: জুনের শুরুতেই বৃষ্টি শুরু হয়। ১৫ জুন-১৫ জুলাই খরার ঝুঁকি {dry_pct_bn}%। দুই কিস্তিতে বীজতলা ফেলুন (২০-২৫ মে, ৫-১০ জুন)।"
+            sms_bn = f"{district_bn} আমন: উপাত্ত সেন্সরড, বিআরআরআই (BRRI) ক্যালেন্ডার অনুযায়ী বীজতলা: {sowing_window_bn}, চারা রোপণ: {transplant_window_bn}। খরার ঝুঁকি {dry_pct_bn}%।"
         else:
             headline_bn = (
                 f"গত ২৪ বছরে বর্ষা শুরুর তারিখ সাধারণত {p25_bn}–{p75_bn} এর মধ্যে; "
-                f"{late_clause_bn}। তাই দুই কিস্তিতে বীজতলা ফেলুন: প্রথম কিস্তি ২০-২৫ মে, দ্বিতীয় কিস্তি ৫-১০ জুন।"
+                f"{late_clause_bn}। বীজতলা বপনের প্রস্তাবিত সময়: {sowing_window_bn} (চারা রোপণ: {transplant_window_bn})।"
             )
             headline_en = (
                 f"Over the last 24 years, monsoon onset typically begins between {p25_en} and {p75_en}; "
-                f"{late_clause_en}. Sow nursery seedbeds in two batches: May 20-25 and June 5-10."
+                f"{late_clause_en}. Suggested nursery sowing: {sowing_window_en} (transplanting: {transplant_window_en})."
             )
             if prob_late_30 > 0.25:
                 headline_bn += " দেরিতে বর্ষা শুরুর ঝুঁকি থাকায় স্বল্পমেয়াদী জাত (ব্রি ধান৭৫ / ব্রি ধান৮৭) নির্বাচন করুন।"
                 headline_en += " Due to late onset risk, select short-duration varieties (BRRI dhan75 / BRRI dhan87)."
-                sms_bn = f"{district_bn} আমন: বর্ষা সাধারণত {p25_bn}–{p75_bn} এ শুরু। দুই কিস্তিতে বীজতলা ফেলুন (মে শেষ ও জুনের শুরুতে)। স্বল্পমেয়াদী ব্রি ধান৭৫/৮৭ লাগান।"
+                sms_bn = f"{district_bn} আমন: বর্ষা সাধারণত {p25_bn}–{p75_bn} এ শুরু ({late_sms_bn})। বীজতলা: {sowing_window_bn}, চারা রোপণ: {transplant_window_bn}। ব্রি ধান৭৫/৮৭ লাগান।"
             else:
-                sms_bn = f"{district_bn} আমন: বর্ষা সাধারণত {p25_bn}–{p75_bn} এ শুরু হয় ({late_sms_bn})। দুই কিস্তিতে বীজতলা ফেলুন (২০-২৫ মে ও ৫-১০ জুন)।"
+                sms_bn = f"{district_bn} আমন: বর্ষা সাধারণত {p25_bn}–{p75_bn} এ শুরু ({late_sms_bn})। বীজতলা: {sowing_window_bn}, চারা রোপণ: {transplant_window_bn}।"
 
     elif risk_context and crop_key == "aus":
         evidence_level = "not_significant"
