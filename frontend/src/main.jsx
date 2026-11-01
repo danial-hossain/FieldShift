@@ -4027,8 +4027,6 @@ export function App() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
 
             {/* Optional Developer Command Telemetry behind ?debug=1 */}
             {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (

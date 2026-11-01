@@ -1,13 +1,15 @@
 // frontend/src/MyFarmWorkspaceView.jsx
-// My Farm & Parcel Workspace for FieldShift 2026
-// Sub-navigation: Farm Overview, Field Parcels, Field Map, Soil Information, Field History.
+// My Farm Workspace for FieldShift 2026 (P2 / M5 / M6 / M7)
+// Sub-navigation: 1. আমার জমিগুলো, 2. জমির বিবরণ, 3. মাটি, 4. ফসল ও ইতিহাস.
 
-import React, { useState, useEffect } from 'react';
-import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
-import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast } from './ui/index.js';
+import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceChip, Skeleton } from './ui/index.js';
+import { tonPerHaToMaundPerBigha, maundPerBighaToTonPerHa } from './utils/conversions.js';
+import { computeSaxtonRawls } from './utils/saxtonRawls.js';
+import { SOIL_TEXTURE_DATA, getSoilClassData } from './utils/soilClasses.js';
 
 const RABI_OPTIONS = [
   'Boro Rice', 'Wheat', 'Potato', 'Mustard', 'Lentil',
@@ -62,6 +64,63 @@ function normalizeRotation(rot, prevCrop) {
   return { rabi, kharif1, kharif2 };
 }
 
+// Calculate data completeness checklist for a field (P2)
+function calculateCompleteness(f) {
+  if (!f) return { score: 0, filledCount: 0, totalCount: 5, missing: [] };
+  const checks = [
+    {
+      id: 'rotation',
+      label: 'বর্তমান ফসল আবর্তন',
+      labelEn: 'Current Rotation',
+      desc: 'বর্তমান আবর্তন দিলে তুলনা সঠিক হবে',
+      descEn: 'Provides baseline benchmark against optimizer',
+      tab: 'history',
+      filled: !!(f.existing_rotation && f.existing_rotation.rabi && f.existing_rotation.rabi !== 'Fallow')
+    },
+    {
+      id: 'ph',
+      label: 'মাটির অম্লতা (pH)',
+      labelEn: 'Soil pH',
+      desc: 'মাটির পিএইচ (pH) সঠিক সার সুপারিশে সহায়ক',
+      descEn: 'Ensures nutrient uptake accuracy',
+      tab: 'soil',
+      filled: f.soil_ph != null || f.soilgrids_ph != null
+    },
+    {
+      id: 'om',
+      label: 'জৈব পদার্থ (OM)',
+      labelEn: 'Organic Matter (OM)',
+      desc: 'জৈব পদার্থ নাইট্রোজেন ও মাটির পুষ্টি নির্ধারণ করে',
+      descEn: 'Calibrates soil carbon & nitrogen availability',
+      tab: 'soil',
+      filled: f.organic_matter != null || f.organic_matter_pct != null || f.soilgrids_soc != null
+    },
+    {
+      id: 'irrigation',
+      label: 'সেচ সক্ষমতা / শ্রেণি',
+      labelEn: 'Irrigation Capacity',
+      desc: 'সেচ সক্ষমতা পানির ঘাটতি ও ভূগর্ভস্থ চাপ পরিমাপে জরুরি',
+      descEn: 'Crucial for groundwater extraction limit',
+      tab: 'details',
+      filled: f.irrigation_capacity_mm != null || f.irrigation_class != null
+    },
+    {
+      id: 'texture',
+      label: 'মাটির গঠন ও পুষ্টি বিশ্লেষণ',
+      labelEn: 'Soil Texture Class',
+      desc: 'মাটির গঠন সঠিক সেচ ও ফসল উপযোগিতা নিশ্চিত করে',
+      descEn: 'Determines hydraulic conductivity and drainage',
+      tab: 'soil',
+      filled: !!(f.soil_texture && f.soil_texture !== 'unknown')
+    }
+  ];
+  const filledCount = checks.filter(c => c.filled).length;
+  const totalCount = checks.length;
+  const score = Math.round((filledCount / totalCount) * 100);
+  const missing = checks.filter(c => !c.filled);
+  return { score, filledCount, totalCount, missing };
+}
+
 export function MyFarmWorkspaceView({
   activeField,
   user,
@@ -74,16 +133,44 @@ export function MyFarmWorkspaceView({
   request,
   lang = 'bn',
   onNavigate,
-  initialSubTab = 'overview',
+  initialSubTab = 'all_fields',
 }) {
   const { t } = useTranslation(lang);
-  const [subTab, setSubTab] = useState(initialSubTab);
+
+  // Normalize subTab IDs
+  const resolveSubTab = (st) => {
+    if (st === 'parcels' || st === 'overview' || st === 'all_fields') return 'all_fields';
+    if (st === 'map' || st === 'details') return 'details';
+    if (st === 'soil') return 'soil';
+    if (st === 'history') return 'history';
+    return 'all_fields';
+  };
+
+  const [subTab, setSubTab] = useState(() => resolveSubTab(initialSubTab));
 
   useEffect(() => {
-    if (initialSubTab) setSubTab(initialSubTab);
+    if (initialSubTab) setSubTab(resolveSubTab(initialSubTab));
   }, [initialSubTab]);
 
-  // A1: Existing Rotation Baseline State
+  // Search filter for all fields
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Toast notification state
+  const [mapToast, setMapToast] = useState(null);
+
+  // Trigger plan updated Toast with jump link
+  const triggerPlanUpdatedToast = useCallback(() => {
+    setMapToast({
+      type: 'success',
+      message: lang === 'bn' ? 'পরিকল্পনা আপডেট হয়েছে — দেখুন' : 'Plan updated — View',
+      action: {
+        label: lang === 'bn' ? 'পরিকল্পনায় যান →' : 'Open Planner →',
+        onClick: () => onNavigate && onNavigate('farm_planning')
+      }
+    });
+  }, [lang, onNavigate]);
+
+  // A1 / M5: Existing Rotation Baseline State
   const [existingRotation, setExistingRotation] = useState(() =>
     normalizeRotation(activeField?.existing_rotation, activeField?.previous_crop)
   );
@@ -93,9 +180,117 @@ export function MyFarmWorkspaceView({
   useEffect(() => {
     setExistingRotation(normalizeRotation(activeField?.existing_rotation, activeField?.previous_crop));
   }, [activeField?.id, activeField?.existing_rotation, activeField?.previous_crop]);
-  const [mapToast, setMapToast] = useState(null);
-  const [isUpdatingCoords, setIsUpdatingCoords] = useState(false);
 
+  // Tab 2: Inline Edit State for Selected Field Details
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [isSavingDetails, setIsSavingDetails] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    district: 'bogura',
+    area_ha: 1.0,
+    soil_texture: 'loam',
+    irrigation_capacity_mm: 400,
+    seasonally_flooded: false,
+  });
+
+  useEffect(() => {
+    if (activeField) {
+      setEditForm({
+        name: activeField.name || '',
+        district: activeField.district || 'bogura',
+        area_ha: activeField.area_ha != null ? activeField.area_ha : 1.0,
+        soil_texture: activeField.soil_texture || 'loam',
+        irrigation_capacity_mm: activeField.irrigation_capacity_mm != null ? activeField.irrigation_capacity_mm : 400,
+        seasonally_flooded: Boolean(activeField.seasonally_flooded),
+      });
+    }
+  }, [activeField?.id, activeField]);
+
+  // Handle Save Inline Field Details
+  const handleSaveDetails = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!activeField?.id || activeField.id === 'demo' || isSavingDetails) return;
+    setIsSavingDetails(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+
+      const payload = {
+        name: editForm.name.trim() || activeField.name,
+        district: editForm.district,
+        area_ha: parseFloat(editForm.area_ha) || activeField.area_ha || 1.0,
+        soil_texture: editForm.soil_texture,
+        irrigation_capacity_mm: parseFloat(editForm.irrigation_capacity_mm) || 0,
+        seasonally_flooded: editForm.seasonally_flooded,
+      };
+
+      const res = await reqFn(`/api/fields/${activeField.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+
+      const updated = res?.field || { ...activeField, ...payload };
+      if (typeof onSelectField === 'function') {
+        onSelectField(updated);
+      }
+      setIsEditingDetails(false);
+      triggerPlanUpdatedToast();
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn' ? `সংরক্ষণে ত্রুটি: ${err.message}` : `Save error: ${err.message}`
+      });
+    } finally {
+      setIsSavingDetails(false);
+    }
+  };
+
+  // Re-Enrich field (POST /api/fields/{id}/enrich)
+  const [isEnriching, setIsEnriching] = useState(false);
+  const handleReEnrich = async () => {
+    if (!activeField?.id || activeField.id === 'demo' || isEnriching) return;
+    setIsEnriching(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+
+      await reqFn(`/api/fields/${activeField.id}/enrich`, {
+        method: 'POST',
+        body: JSON.stringify({
+          latitude: activeField.latitude,
+          longitude: activeField.longitude,
+          area_ha: activeField.area_ha,
+        })
+      });
+
+      // Reload field
+      const fieldsRes = await reqFn('/api/fields');
+      const found = fieldsRes?.fields?.find(f => f.id === activeField.id);
+      if (found && typeof onSelectField === 'function') {
+        onSelectField(found);
+      }
+
+      setMapToast({
+        type: 'success',
+        message: lang === 'bn' ? 'নাসা ও মাটির তথ্য সফলভাবে সমৃদ্ধ করা হয়েছে।' : 'NASA & soil telemetry enriched successfully.'
+      });
+      triggerPlanUpdatedToast();
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn' ? `তথ্য আনতে ত্রুটি: ${err.message}` : `Enrichment error: ${err.message}`
+      });
+    } finally {
+      setIsEnriching(false);
+    }
+  };
+
+  // Moving map pin saves and re-enriches (P2)
+  const [isUpdatingCoords, setIsUpdatingCoords] = useState(false);
   const handleUpdateCoords = async (newLat, newLng) => {
     if (!activeField || activeField.id === 'demo' || isUpdatingCoords) return;
     setIsUpdatingCoords(true);
@@ -107,8 +302,8 @@ export function MyFarmWorkspaceView({
       await reqFn(`/api/fields/${activeField.id}`, {
         method: 'PUT',
         body: JSON.stringify({
-          latitude: newLat,
-          longitude: newLng,
+          latitude: Number(newLat),
+          longitude: Number(newLng),
           name: activeField.name,
           area_ha: activeField.area_ha,
           soil_texture: activeField.soil_texture,
@@ -117,20 +312,19 @@ export function MyFarmWorkspaceView({
       await reqFn(`/api/fields/${activeField.id}/enrich`, {
         method: 'POST',
         body: JSON.stringify({
-          latitude: newLat,
-          longitude: newLng,
+          latitude: Number(newLat),
+          longitude: Number(newLng),
           area_ha: activeField.area_ha
         })
       });
+
+      // Reload field
+      const fieldsRes = await reqFn('/api/fields');
+      const found = fieldsRes?.fields?.find(f => f.id === activeField.id) || { ...activeField, latitude: Number(newLat), longitude: Number(newLng) };
       if (typeof onSelectField === 'function') {
-        onSelectField({ ...activeField, latitude: newLat, longitude: newLng });
+        onSelectField(found);
       }
-      setMapToast({
-        type: 'success',
-        message: lang === 'bn'
-          ? `স্থানাঙ্ক আপডেট ও উপাত্ত সমৃদ্ধ করা হয়েছে (${newLat.toFixed(4)}°N, ${newLng.toFixed(4)}°E)`
-          : `Coordinates updated and data enriched (${newLat.toFixed(4)}°N, ${newLng.toFixed(4)}°E).`
-      });
+      triggerPlanUpdatedToast();
     } catch (err) {
       setMapToast({
         type: 'error',
@@ -141,6 +335,7 @@ export function MyFarmWorkspaceView({
     }
   };
 
+  // Save Baseline Rotation (M5)
   const handleSaveBaseline = async () => {
     if (!activeField || activeField.id === 'demo' || isSavingBaseline) return;
     setIsSavingBaseline(true);
@@ -166,12 +361,7 @@ export function MyFarmWorkspaceView({
       }
       setBaselineSaved(true);
       setTimeout(() => setBaselineSaved(false), 3000);
-      setMapToast({
-        type: 'success',
-        message: lang === 'bn'
-          ? 'বিদ্যমান ফসল চক্র সফলভাবে সংরক্ষণ করা হয়েছে।'
-          : 'Existing rotation baseline saved successfully.'
-      });
+      triggerPlanUpdatedToast();
     } catch (err) {
       setMapToast({
         type: 'error',
@@ -184,61 +374,230 @@ export function MyFarmWorkspaceView({
     }
   };
 
+  // M6: Authentic Baseline Agro-Ecological Diagnostics from /api/planning
+  const [baselinePlanning, setBaselinePlanning] = useState(null);
+  const [isLoadingBaseline, setIsLoadingBaseline] = useState(false);
+
+  useEffect(() => {
+    if (!activeField?.id || activeField.id === 'demo') {
+      setBaselinePlanning(null);
+      return;
+    }
+    let isCancelled = false;
+    setIsLoadingBaseline(true);
+    const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+      const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+      return res.json();
+    });
+    reqFn('/api/planning', {
+      method: 'POST',
+      body: JSON.stringify({
+        field_id: activeField.id,
+        district: activeField.district || 'bogura',
+        area_ha: activeField.area_ha || 1.0,
+        existing_rotation: existingRotation,
+      })
+    }).then(res => {
+      if (!isCancelled && res?.summary?.planning) {
+        setBaselinePlanning(res.summary.planning);
+      }
+    }).catch(err => {
+      console.warn('Failed to fetch baseline planning diagnostics:', err);
+    }).finally(() => {
+      if (!isCancelled) setIsLoadingBaseline(false);
+    });
+
+    return () => { isCancelled = true; };
+  }, [activeField?.id, existingRotation.rabi, existingRotation.kharif1, existingRotation.kharif2, request]);
+
+  // M6: Authentic Field History from /api/fields/{id}/history
+  const [fieldHistory, setFieldHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  const fetchHistory = useCallback(async () => {
+    if (!activeField || !activeField.id || activeField.id === 'demo') {
+      setFieldHistory([]);
+      return;
+    }
+    setIsLoadingHistory(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+      const data = await reqFn(`/api/fields/${activeField.id}/history`);
+      if (data && Array.isArray(data.history)) {
+        setFieldHistory(data.history);
+      } else {
+        setFieldHistory([]);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch field history:', err);
+      setFieldHistory([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, [activeField?.id, request]);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+
+  // M6: Form state to add past seasonal record
+  const [newHistorySeason, setNewHistorySeason] = useState('রবি');
+  const [newHistoryYear, setNewHistoryYear] = useState('2024');
+  const [newHistoryCrop, setNewHistoryCrop] = useState('');
+  const [newHistoryYield, setNewHistoryYield] = useState('');
+  const [newHistoryYieldUnit, setNewHistoryYieldUnit] = useState('maund_bigha');
+  const [newHistoryWater, setNewHistoryWater] = useState('');
+  const [newHistoryNotes, setNewHistoryNotes] = useState('');
+  const [isSubmittingHistory, setIsSubmittingHistory] = useState(false);
+
+  const handleAddHistory = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!activeField?.id || !newHistoryCrop.trim() || !newHistoryYield || isSubmittingHistory) return;
+    setIsSubmittingHistory(true);
+    try {
+      const yieldVal = parseFloat(newHistoryYield);
+      const yieldTonHa = newHistoryYieldUnit === 'ton_ha'
+        ? yieldVal
+        : maundPerBighaToTonPerHa(yieldVal);
+
+      const waterVal = newHistoryWater.trim() ? parseFloat(newHistoryWater) : null;
+      const yearVal = parseInt(newHistoryYear, 10) || new Date().getFullYear();
+
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+
+      await reqFn(`/api/fields/${activeField.id}/history`, {
+        method: 'POST',
+        body: JSON.stringify({
+          season: newHistorySeason,
+          year: yearVal,
+          crop: newHistoryCrop.trim(),
+          yield_ton_per_ha: yieldTonHa,
+          water_applied_mm: waterVal,
+          notes: newHistoryNotes.trim() || null
+        })
+      });
+
+      setNewHistoryCrop('');
+      setNewHistoryYield('');
+      setNewHistoryWater('');
+      setNewHistoryNotes('');
+
+      await fetchHistory();
+
+      setMapToast({
+        type: 'success',
+        message: lang === 'bn'
+          ? 'বিগত মৌসুমের রেকর্ড সফলভাবে যোগ করা হয়েছে।'
+          : 'Historical season record saved successfully.'
+      });
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn'
+          ? `রেকর্ড সংরক্ষণে ত্রুটি: ${err.message}`
+          : `Failed to save history: ${err.message}`
+      });
+    } finally {
+      setIsSubmittingHistory(false);
+    }
+  };
+
+  // Filtered fields for Tab 1
+  const filteredFields = useMemo(() => {
+    if (!searchQuery.trim()) return userFields;
+    const q = searchQuery.toLowerCase();
+    return userFields.filter(f =>
+      (f.name && f.name.toLowerCase().includes(q)) ||
+      (f.district && f.district.toLowerCase().includes(q))
+    );
+  }, [userFields, searchQuery]);
+
+  // Selected Field Completeness
+  const activeCompleteness = useMemo(() => calculateCompleteness(activeField), [activeField]);
+
+  // Soil diagnostics calculation (M7)
+  const soilClass = useMemo(() => getSoilClassData(activeField?.soil_texture), [activeField?.soil_texture]);
+  const hasRealSoilGrids = activeField?.soilgrids_sand != null && activeField?.soilgrids_clay != null;
+  const sandVal = hasRealSoilGrids ? activeField.soilgrids_sand : soilClass.sand;
+  const siltVal = hasRealSoilGrids ? activeField.soilgrids_silt : soilClass.silt;
+  const clayVal = hasRealSoilGrids ? activeField.soilgrids_clay : soilClass.clay;
+  const phVal = activeField?.soil_ph != null ? activeField.soil_ph : (activeField?.soilgrids_ph != null ? activeField.soilgrids_ph : 6.5);
+  const omVal = activeField?.organic_matter != null ? activeField.organic_matter : (activeField?.soilgrids_soc != null ? (activeField.soilgrids_soc * 1.724).toFixed(1) : 1.8);
+
+  // Saxton-Rawls calculation (M7)
+  const saxtonRes = useMemo(() => {
+    if (sandVal != null && clayVal != null) {
+      return computeSaxtonRawls(sandVal, clayVal, omVal);
+    }
+    return null;
+  }, [sandVal, clayVal, omVal]);
+
+  const fcDisplay = hasRealSoilGrids && saxtonRes ? saxtonRes.fc : soilClass.fc;
+  const pwpDisplay = hasRealSoilGrids && saxtonRes ? saxtonRes.pwp : soilClass.pwp;
 
   const fallbackText = lang === 'bn' ? 'তথ্য নেই' : 'No data';
-
   const areaHa = activeField?.area_ha != null ? Number(activeField.area_ha) : null;
-  const areaBigha = areaHa != null ? (areaHa * 7.47).toFixed(1) : null;
+  const areaBigha = areaHa != null ? (areaHa * (10000 / 1337.8)).toFixed(1) : null;
   const areaDisplay = areaHa != null
     ? `${formatNumber(areaHa, 2)} ${lang === 'bn' ? 'হেক্টর' : 'ha'} (${areaBigha} ${lang === 'bn' ? 'বিঘা' : 'bigha'})`
     : fallbackText;
 
-  const soilTexture = activeField?.soil_texture || 'loam';
-
+  // Canonical 4 Tabs (Bangla first, no English shouting, no emoji in headings) (P2)
   const subTabs = [
-    { id: 'overview', label: lang === 'bn' ? 'খামারের সারসংক্ষেপ' : '1. Overview', icon: '🏠' },
-    { id: 'parcels', label: lang === 'bn' ? 'জমির তালিকা' : '2. Parcels', icon: '📋' },
-    { id: 'map', label: lang === 'bn' ? 'স্যাটেলাইট ম্যাপ' : '3. Field Map', icon: '🗺️' },
-    { id: 'soil', label: lang === 'bn' ? 'মাটির বৈশিষ্ট্য' : '4. Soil Info', icon: '🌱' },
-    { id: 'history', label: lang === 'bn' ? 'ফসলের ইতিহাস' : '5. History', icon: '📜' },
+    { id: 'all_fields', label: lang === 'bn' ? 'আমার জমিগুলো' : 'My Fields', icon: '📋' },
+    { id: 'details', label: lang === 'bn' ? 'জমির বিবরণ' : 'Field Details', icon: '📍' },
+    { id: 'soil', label: lang === 'bn' ? 'মাটি' : 'Soil', icon: '🌱' },
+    { id: 'history', label: lang === 'bn' ? 'ফসল ও ইতিহাস' : 'Crop & History', icon: '📜' },
   ];
-
-  const SOIL_TEXTURE_DATA = {
-    clay_loam: { label: 'Clay Loam (এটেল দোআঁশ)', fc: '32%', pwp: '18%', sand: 32, silt: 34, clay: 34, cond: '0.8 cm/hr' },
-    loam: { label: 'Medium Loam (পলি দোআঁশ)', fc: '28%', pwp: '14%', sand: 40, silt: 40, clay: 20, cond: '1.5 cm/hr' },
-    silty_loam: { label: 'Silty Loam (সিল্ট দোআঁশ)', fc: '31%', pwp: '15%', sand: 20, silt: 65, clay: 15, cond: '1.2 cm/hr' },
-    sandy_loam: { label: 'Sandy Loam (বেলে দোআঁশ)', fc: '21%', pwp: '9%', sand: 65, silt: 25, clay: 10, cond: '3.2 cm/hr' },
-    clay: { label: 'Heavy Clay (ভারী এটেল)', fc: '36%', pwp: '22%', sand: 10, silt: 45, clay: 45, cond: '0.2 cm/hr' },
-  };
-
-  const currentSoil = SOIL_TEXTURE_DATA[soilTexture] || SOIL_TEXTURE_DATA.loam;
 
   return (
     <div className="my-farm-workspace" style={{ padding: '8px 0 32px 0', maxWidth: 1400, margin: '0 auto' }}>
       
-      {/* Top Banner & Sub-Navigation */}
+      {/* Top Header Card */}
       <Card variant="glass" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 26 }}>🗺️🌱</span>
-              <Pill tone="leaf">FIELD PARCEL &amp; SOIL REGISTRY</Pill>
-              <Pill tone={activeField ? 'water' : 'neutral'}>
-                {activeField?.name || (lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected')}
-              </Pill>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <span style={{ fontSize: 22 }}>🌾</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary, #10b981)' }}>
+                {lang === 'bn' ? 'জমি ব্যবস্থাপনা' : 'Farm Parcel Registry'}
+              </span>
+              {activeField && (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 600 }}>
+                  {activeField.name}
+                </span>
+              )}
             </div>
             <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'আমার জমি ও মাটির তথ্য' : 'My Farm: Parcels & Soil Diagnostics'}
+              {lang === 'bn' ? 'আমার জমি ও ফসল আবর্তন' : 'My Farm & Seasonal Crop Rotation'}
             </h1>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.5, maxWidth: 840 }}>
               {lang === 'bn'
-                ? 'জমির অবস্থান, মাটির ধরন ও বৈশিষ্ট্য (SoilGrids), সেচ সক্ষমতা এবং ঐতিহাসিক ফসল আবর্তন তথ্য।'
-                : 'Field locations, soil properties (ISRIC SoilGrids), irrigation capacity, and crop rotation history.'}
+                ? 'খামারের সকল জমি, স্যাটেলাইট স্থানাঙ্ক, মাটির বৈশিষ্ট্য এবং বিগত মৌসুমসমূহের ইতিহাস।'
+                : 'Registered field parcels, satellite boundaries, SoilGrids diagnostics, and seasonal history.'}
             </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onAddField}
+              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <span>+</span>
+              <span>{lang === 'bn' ? 'নতুন জমি' : 'Add New Field'}</span>
+            </Button>
           </div>
         </div>
 
-        {/* Sub-Navigation Pills */}
+        {/* 4 Tabs Bar */}
         <div style={{ marginTop: 18, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
           <Tabs
             tabs={subTabs}
@@ -248,229 +607,786 @@ export function MyFarmWorkspaceView({
         </div>
       </Card>
 
-      {/* SUB-TAB 1: FARM OVERVIEW */}
-      {subTab === 'overview' && !activeField && (
+      {/* ========================================================================= */}
+      {/* TAB 1: আমার জমিগুলো (ALL FIELDS MAP & CARDS) (P2)                          */}
+      {/* ========================================================================= */}
+      {subTab === 'all_fields' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Map with ALL fields as markers */}
+          <Card variant="glass">
+            <CardHeader
+              title={lang === 'bn' ? 'স্যাটেলাইট মানচিত্রে আমার জমিগুলো' : 'Satellite Map with All Field Parcels'}
+              subtitle={lang === 'bn' ? 'মানচিত্রের যেকোনো জমিতে ক্লিক করে সেটি সক্রিয় নির্বাচন করুন' : 'Click any parcel pin on the map to select as active field'}
+            />
+            <div style={{ borderRadius: 12, overflow: 'hidden', marginTop: 12, border: '1px solid var(--line)' }}>
+              <GoogleFieldMapPicker
+                fields={userFields}
+                selectedFieldId={activeField?.id}
+                onSelectField={(f) => {
+                  if (onSelectField) onSelectField(f);
+                }}
+                height="320px"
+              />
+            </div>
+          </Card>
+
+          {/* Search Bar & Stats */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 260 }}>
+              <input
+                type="text"
+                placeholder={lang === 'bn' ? 'জমি বা জেলার নাম দিয়ে খুঁজুন...' : 'Search by field or district...'}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  maxWidth: 360,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  border: '1px solid var(--line)',
+                  background: 'var(--surface-2, rgba(255,255,255,0.03))'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', fontSize: 12 }}
+                >
+                  {lang === 'bn' ? 'মুছুন' : 'Clear'}
+                </button>
+              )}
+            </div>
+
+            <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
+              {lang === 'bn' ? 'মোট জমি:' : 'Total fields:'} <strong style={{ color: 'var(--text)' }}>{userFields.length}</strong> {lang === 'bn' ? 'টি' : ''} •
+              {' '} {lang === 'bn' ? 'মোট আয়তন:' : 'Total area:'} <strong style={{ color: 'var(--text)' }}>{(userFields.reduce((sum, f) => sum + (Number(f.area_ha) || 0), 0) * (10000 / 1337.8)).toFixed(1)}</strong> {lang === 'bn' ? 'বিঘা' : 'bigha'}
+            </div>
+          </div>
+
+          {/* Field Cards Grid */}
+          {filteredFields.length === 0 ? (
+            <Card variant="glass" style={{ padding: 36, textAlign: 'center' }}>
+              <EmptyState
+                icon="🚜"
+                title={lang === 'bn' ? 'কোনো জমি পাওয়া যায়নি' : 'No fields found'}
+                description={searchQuery
+                  ? (lang === 'bn' ? 'আপনার অনুসন্ধানের সাথে মিল রেখে কোনো জমি পাওয়া যায়নি।' : 'No fields match your search query.')
+                  : (lang === 'bn' ? 'এখনো কোনো জমি যোগ করা হয়নি। "+ নতুন জমি" বোতামে ক্লিক করুন।' : 'No fields added yet. Click "+ Add New Field" to begin.')
+                }
+                action={
+                  <Button variant="primary" size="sm" onClick={onAddField}>
+                    {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add New Field'}
+                  </Button>
+                }
+              />
+            </Card>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+              {filteredFields.map(f => {
+                const isSelected = activeField && String(f.id) === String(f.id === activeField.id ? activeField.id : f.id) && String(f.id) === String(activeField.id);
+                const comp = calculateCompleteness(f);
+                const bigha = ((Number(f.area_ha) || 0) * (10000 / 1337.8)).toFixed(1);
+                const soilInfo = getSoilClassData(f.soil_texture);
+                const rotText = f.existing_rotation
+                  ? [f.existing_rotation.rabi, f.existing_rotation.kharif1, f.existing_rotation.kharif2].filter(Boolean).join(' → ')
+                  : (lang === 'bn' ? 'বোরো → পতিত → আমন (ধরে নেওয়া)' : 'Boro -> Fallow -> Aman (assumed)');
+
+                return (
+                  <Card
+                    key={f.id}
+                    variant="glass"
+                    style={{
+                      border: isSelected ? '1px solid var(--primary, #10b981)' : '1px solid var(--line)',
+                      background: isSelected ? 'rgba(16, 185, 129, 0.04)' : undefined,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      {/* Top Row: Name & Completeness Chip */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                              {f.name}
+                            </h3>
+                            <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', color: 'var(--text-3)' }}>
+                              #{f.id}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                            {f.district ? f.district.toUpperCase() : 'BOGURA'} • {formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E
+                          </div>
+                        </div>
+
+                        {/* Completeness Chip */}
+                        <span
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            background: comp.score >= 80 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            color: comp.score >= 80 ? '#4ade80' : '#fbbf24',
+                            border: `1px solid ${comp.score >= 80 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {lang === 'bn' ? `তথ্য পূর্ণতা: ${comp.score}%` : `Data: ${comp.score}%`}
+                        </span>
+                      </div>
+
+                      {/* Specs Row */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12.5, margin: '12px 0', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
+                        <div>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'আয়তন:' : 'Area:'}</span>
+                          <strong style={{ color: 'var(--text)' }}>{bigha} {lang === 'bn' ? 'বিঘা' : 'bigha'}</strong>
+                          <span style={{ fontSize: 11, color: 'var(--text-3)' }}> ({f.area_ha || 1.0} ha)</span>
+                        </div>
+                        <div>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'মাটি:' : 'Soil:'}</span>
+                          <strong style={{ color: 'var(--text)' }}>{soilInfo.nameBn}</strong>
+                        </div>
+                        <div style={{ gridColumn: 'span 2' }}>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'বর্তমান আবর্তন:' : 'Current Rotation:'}</span>
+                          <span style={{ color: 'var(--leaf, #10b981)', fontWeight: 600 }}>{rotText}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                      <div>
+                        {isSelected ? (
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary, #10b981)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span>✓</span>
+                            <span>{lang === 'bn' ? 'সক্রিয় জমি' : 'Active Field'}</span>
+                          </span>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="xs"
+                            onClick={() => onSelectField && onSelectField(f)}
+                          >
+                            {lang === 'bn' ? 'নির্বাচন' : 'Select'}
+                          </Button>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <Button
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => {
+                            if (onSelectField) onSelectField(f);
+                            setIsEditingDetails(true);
+                            setSubTab('details');
+                          }}
+                        >
+                          {lang === 'bn' ? 'সম্পাদনা' : 'Edit'}
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="xs"
+                          onClick={() => {
+                            if (onArchiveField) onArchiveField(f);
+                            else if (onDeleteField) onDeleteField(f);
+                          }}
+                        >
+                          {lang === 'bn' ? 'মুছুন' : 'Delete'}
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB 2: জমির বিবরণ (SELECTED FIELD DETAILS & DYNAMICS) (P2)                 */}
+      {/* ========================================================================= */}
+      {subTab === 'details' && !activeField && (
         <Card variant="glass" style={{ padding: 36, textAlign: 'center' }}>
           <EmptyState
-            icon="🗺️"
+            icon="📍"
             title={lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected'}
-            description={lang === 'bn' ? 'কার্যক্রম শুরু করতে একটি ডেমো খামার লোড করুন অথবা আপনার নতুন জমি যুক্ত করুন।' : 'Load a demo farm or register a new field parcel to begin.'}
+            description={lang === 'bn' ? 'জমির বিস্তারিত তথ্য দেখতে প্রথমে "আমার জমিগুলো" ট্যাব থেকে একটি জমি নির্বাচন করুন।' : 'Please select a field from "My Fields" tab to view details.'}
             action={
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 16 }}>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => {
-                    const demo = userFields.find(f => f.id === 'demo' || f.name?.includes('ডেমো') || f.name?.includes('Demo')) || {
-                      id: 'demo',
-                      name: lang === 'bn' ? 'বগুড়া পরীক্ষামূলক খামার' : 'Bogura Demo Field',
-                      district: 'bogura',
-                      area_ha: 10.0,
-                      soil_texture: 'loam',
-                      soil_ph: 6.5,
-                      organic_matter_pct: 1.8,
-                      irrigation_capacity_mm: 450
-                    };
-                    if (onSelectField) onSelectField(demo);
-                  }}
-                >
-                  {lang === 'bn' ? 'ডেমো খামার লোড করুন' : 'Load Demo Farm'}
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSubTab('parcels')}
-                >
-                  {lang === 'bn' ? 'নতুন জমি যোগ করুন' : 'Add New Field'}
-                </Button>
-              </div>
+              <Button variant="primary" size="sm" onClick={() => setSubTab('all_fields')}>
+                {lang === 'bn' ? 'জমি নির্বাচন করুন →' : 'Select Field →'}
+              </Button>
             }
           />
         </Card>
       )}
 
-      {/* SUB-TAB 1: FARM OVERVIEW (ACTIVE FIELD) */}
-      {subTab === 'overview' && activeField && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-          <Card variant="glass">
-            <CardHeader
-              icon="🌱"
-              title={lang === 'bn' ? 'সক্রিয় জমির প্রোফাইল' : 'Active Field Profile'}
-              subtitle={lang === 'bn' ? 'প্রাকৃতিক বৈশিষ্ট্য ও স্থানাঙ্ক' : 'Physical characteristics & location'}
-            />
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 8 }}>
-              <Stat
-                label={lang === 'bn' ? 'জমির নাম' : 'Field Name'}
-                value={activeField?.name || fallbackText}
-                tone="leaf"
-              />
-              <Stat
-                label={lang === 'bn' ? 'আয়তন (হেক্টর ও বিঘা)' : 'Area (ha & bigha)'}
-                value={areaDisplay}
-                tone="accent"
-              />
-              <Stat
-                label={lang === 'bn' ? 'ভৌগোলিক স্থানাঙ্ক' : 'Coordinates'}
-                value={activeField?.latitude != null && activeField?.longitude != null
-                  ? `${activeField.latitude}° N, ${activeField.longitude}° E`
-                  : fallbackText}
-                tone="water"
-              />
-              <Stat
-                label={lang === 'bn' ? 'মাটির গঠন' : 'Soil Texture'}
-                value={activeField?.soil_texture ? currentSoil.label : fallbackText}
-                tone="sun"
-              />
-              <Stat
-                label={lang === 'bn' ? 'মাটির অম্লতা (pH)' : 'Soil pH'}
-                value={activeField?.soil_ph != null ? activeField.soil_ph : fallbackText}
-                sub={activeField?.soil_ph != null ? (activeField.soil_ph < 6 ? 'Acidic' : activeField.soil_ph > 7.5 ? 'Alkaline' : 'Neutral') : undefined}
-                tone="neutral"
-              />
-              <Stat
-                label={lang === 'bn' ? 'জৈব পদার্থ (OM)' : 'Organic Matter'}
-                value={activeField?.organic_matter != null ? `${activeField.organic_matter}%` : fallbackText}
-                sub={activeField?.organic_matter != null ? 'BARI target >= 2.0%' : undefined}
-                tone="leaf"
-              />
-            </div>
-          </Card>
-
-          <Card variant="glass">
-            <CardHeader
-              icon="⚡"
-              title={lang === 'bn' ? 'দ্রুত পদক্ষেপ' : 'Quick Actions'}
-              subtitle={lang === 'bn' ? 'সরাসরি সম্পাদন ও বিশ্লেষণ' : 'Direct editing and navigation'}
-            />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
-              <Button
-                variant="secondary"
-                onClick={() => setSubTab('map')}
-                style={{ width: '100%', justifyContent: 'flex-start' }}
-              >
-                <span>🗺️</span>
-                <span>{lang === 'bn' ? 'স্যাটেলাইট ম্যাপে পিন ও সীমানা পরিবর্তন করুন ➔' : 'Update Satellite Pin & Boundary ➔'}</span>
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => setSubTab('parcels')}
-                style={{ width: '100%', justifyContent: 'flex-start' }}
-              >
-                <span>📋</span>
-                <span>{lang === 'bn' ? 'নতুন জমি যোগ বা সম্পাদনা করুন (PostgreSQL CRUD) ➔' : 'Manage & Add Field Parcels ➔'}</span>
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => onNavigate && onNavigate('crop_advice')}
-                style={{ width: '100%', justifyContent: 'flex-start' }}
-              >
-                <span>🌾</span>
-                <span>{lang === 'bn' ? 'এই জমির জন্য নাসা রোপণ পরামর্শ দেখুন ➔' : 'View NASA Planting Advisory ➔'}</span>
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {/* SUB-TAB 2: PARCELS CRUD */}
-      {subTab === 'parcels' && (
-        <FieldParcelManagerView
-          activeField={activeField}
-          user={user}
-          userFields={userFields}
-          onSelectField={onSelectField}
-          onAddField={onAddField}
-          onEditField={onEditField}
-          onArchiveField={onArchiveField || onDeleteField}
-          onDeleteField={onArchiveField || onDeleteField}
-          lang={lang}
-        />
-      )}
-
-      {/* SUB-TAB 3: GOOGLE FIELD MAP PICKER */}
-      {subTab === 'map' && (
-        <Card variant="glass">
-          <CardHeader
-            icon="🗺️"
-            title={lang === 'bn' ? 'গুগল স্যাটেলাইট ম্যাপ পিকার ও স্থানাঙ্ক নির্বাচন' : 'Google Satellite Field Map & Coordinate Picker'}
-            subtitle={lang === 'bn' ? 'মার্কার টেনে স্থানাঙ্ক নির্ধারণ করুন, নাসার টেলিমিতি স্বয়ংক্রিয় আপডেট হবে' : 'Click or drag marker to update field coordinates. Two-way binding updates live NASA telemetry.'}
-          />
-          {activeField?.latitude != null && activeField?.longitude != null ? (
-            <div style={{ height: 460, borderRadius: 14, overflow: 'hidden', marginTop: 12, border: '1px solid var(--line)' }}>
-              <GoogleFieldMapPicker
-                latitude={Number(activeField.latitude)}
-                longitude={Number(activeField.longitude)}
-                onChange={(lat, lng) => {
-                  handleUpdateCoords(lat, lng);
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{ padding: 36 }}>
-              <EmptyState
-                icon="🗺️"
-                title={lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected'}
-                description={lang === 'bn' ? 'ম্যাপে স্থানাঙ্ক দেখতে ও পরিবর্তন করতে প্রথমে একটি জমি নির্বাচন করুন।' : 'Select or add a field parcel first to view and edit coordinates on the map.'}
+      {subTab === 'details' && activeField && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 18, alignItems: 'start' }}>
+          {/* Left Column: Details & Edit Form + Map Picker */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <Card variant="glass">
+              <CardHeader
+                title={lang === 'bn' ? 'জমির বিবরণ ও ভৌগোলিক অবস্থান' : 'Field Characteristics & Location'}
+                subtitle={lang === 'bn' ? 'অবস্থান, আয়তন এবং আবহাওয়া গ্রিড সেল কোড' : 'Coordinates, area, and environmental grid cell IDs'}
                 action={
-                  <Button variant="secondary" size="sm" onClick={() => setSubTab('parcels')}>
-                    {lang === 'bn' ? 'জমির তালিকা দেখুন' : 'View Parcels'}
+                  <Button
+                    variant={isEditingDetails ? 'secondary' : 'primary'}
+                    size="xs"
+                    onClick={() => setIsEditingDetails(!isEditingDetails)}
+                  >
+                    {isEditingDetails ? (lang === 'bn' ? 'বাতিল' : 'Cancel') : (lang === 'bn' ? 'সম্পাদনা করুন' : 'Edit Field')}
                   </Button>
                 }
               />
-            </div>
-          )}
-        </Card>
+
+              {/* Inline Edit Form */}
+              {isEditingDetails ? (
+                <form onSubmit={handleSaveDetails} style={{ marginTop: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                        {lang === 'bn' ? 'জমির নাম' : 'Field Name'} *
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                        {lang === 'bn' ? 'জেলা' : 'District'} *
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.district}
+                        onChange={e => setEditForm({ ...editForm, district: e.target.value })}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                        {lang === 'bn' ? 'আয়তন (হেক্টর)' : 'Area (ha)'} *
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        value={editForm.area_ha}
+                        onChange={e => setEditForm({ ...editForm, area_ha: e.target.value })}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                        {lang === 'bn' ? 'মাটির গঠন' : 'Soil Texture'}
+                      </label>
+                      <select
+                        value={editForm.soil_texture}
+                        onChange={e => setEditForm({ ...editForm, soil_texture: e.target.value })}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                      >
+                        <option value="loam">দোআঁশ (Loam)</option>
+                        <option value="silty_loam">পলি দোআঁশ (Silty Loam)</option>
+                        <option value="clay_loam">এঁটেল দোআঁশ (Clay Loam)</option>
+                        <option value="clay">এঁটেল (Clay)</option>
+                        <option value="sandy_loam">বেলে দোআঁশ (Sandy Loam)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                        {lang === 'bn' ? 'সেচ সক্ষমতা (মিমি)' : 'Irrigation Cap (mm)'}
+                      </label>
+                      <input
+                        type="number"
+                        step="50"
+                        value={editForm.irrigation_capacity_mm}
+                        onChange={e => setEditForm({ ...editForm, irrigation_capacity_mm: e.target.value })}
+                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 18 }}>
+                      <input
+                        type="checkbox"
+                        id="haor_toggle"
+                        checked={editForm.seasonally_flooded}
+                        onChange={e => setEditForm({ ...editForm, seasonally_flooded: e.target.checked })}
+                      />
+                      <label htmlFor="haor_toggle" style={{ fontSize: 12.5, color: 'var(--text)', cursor: 'pointer' }}>
+                        {lang === 'bn' ? 'হাওর / নিচু জলাভূমি (মৌসুমি প্লাবিত)' : 'Haor / seasonally flooded basin'}
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      type="button"
+                      onClick={() => setIsEditingDetails(false)}
+                    >
+                      {lang === 'bn' ? 'বাতিল' : 'Cancel'}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      type="submit"
+                      disabled={isSavingDetails}
+                    >
+                      {isSavingDetails ? '...' : (lang === 'bn' ? 'সংরক্ষণ করুন' : 'Save Changes')}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                /* Display Mode */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginTop: 14 }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'অবস্থান ও জেলা:' : 'District & Location:'}</span>
+                    <strong style={{ fontSize: 14, color: 'var(--text)' }}>
+                      {activeField.district ? activeField.district.toUpperCase() : 'BOGURA'}
+                    </strong>
+                    <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                      {formatNumber(activeField.latitude, 4)}°N, {formatNumber(activeField.longitude, 4)}°E
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'জেলা সদর থেকে দূরত্ব:' : 'Distance to District Centre:'}</span>
+                    <strong style={{ fontSize: 14, color: 'var(--text)' }}>
+                      {activeField.nearest_district_distance_km != null ? `${activeField.nearest_district_distance_km.toFixed(1)} কিমি` : '২.৫ কিমি'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'মোট আয়তন:' : 'Total Area:'}</span>
+                    <strong style={{ fontSize: 14, color: 'var(--text)' }}>{areaDisplay}</strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'সেচ সক্ষমতা:' : 'Irrigation Capacity:'}</span>
+                    <strong style={{ fontSize: 14, color: 'var(--water, #38bdf8)' }}>
+                      {activeField.irrigation_capacity_mm != null ? `${activeField.irrigation_capacity_mm} মিমি` : '৪০০ মিমি (সীমিত সেচ)'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>NASA POWER Cell ID:</span>
+                    <code style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                      {activeField.power_cell || `power_cell_${(Math.round((activeField.latitude||24)*2)/2).toFixed(1)}_${(Math.round((activeField.longitude||89)*2)/2).toFixed(1)}`}
+                    </code>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>GPM IMERG Cell ID:</span>
+                    <code style={{ fontSize: 12, color: 'var(--text-2)' }}>
+                      {activeField.imerg_cell || 'imerg_0.10deg_precip'}
+                    </code>
+                  </div>
+                  <div style={{ gridColumn: 'span 2' }}>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'হাওর অঞ্চল স্ট্যাটাস:' : 'Haor Basin Status:'}</span>
+                    <span style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: activeField.seasonally_flooded ? '#f59e0b' : 'var(--text-2)'
+                    }}>
+                      {activeField.seasonally_flooded
+                        ? (lang === 'bn' ? '⚠️ হাওর / মৌসুমি প্লাবিত জলাভূমি (একফসলি বোরো ঝুঁকি অঞ্চল)' : 'Haor / seasonally waterlogged basin (Single-crop Boro flood risk)')
+                        : (lang === 'bn' ? '✓ সাধারণ উঁচু ও সমতল কৃষি জমি (বহুফসলি আবর্তন উপযোগী)' : 'Standard arable agricultural land')
+                      }
+                    </span>
+                  </div>
+                </div>
+              )}
+            </Card>
+
+            {/* Interactive Satellite Pin Mover */}
+            <Card variant="glass">
+              <CardHeader
+                title={lang === 'bn' ? 'স্যাটেলাইট পিন সমন্বয়' : 'Satellite Pin Coordinate Adjustment'}
+                subtitle={lang === 'bn' ? 'মানচিত্রে পিন সরিয়ে নতুন স্থানাঙ্ক নির্ধারণ করুন, নাসার টেলিমিতি স্বয়ংক্রিয় হালনাগাদ হবে' : 'Move marker to update exact coordinates. Automatically re-enriches environmental data.'}
+              />
+              <div style={{ height: 280, borderRadius: 12, overflow: 'hidden', marginTop: 12, border: '1px solid var(--line)' }}>
+                <GoogleFieldMapPicker
+                  latitude={activeField.latitude}
+                  longitude={activeField.longitude}
+                  onChange={handleUpdateCoords}
+                  height="280px"
+                />
+              </div>
+            </Card>
+          </div>
+
+          {/* Right Column: 3 Dynamic Cards (Completeness, Enrich, Planner Mini) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* 1. Data Completeness Card (P2) */}
+            <Card variant="glass">
+              <CardHeader
+                title={lang === 'bn' ? 'উপাত্ত পূর্ণতা সূচক' : 'Data Completeness Index'}
+                subtitle={lang === 'bn' ? 'সঠিক পরিকল্পনা ও সার সুপারিশের জন্য প্রয়োজনীয় উপাত্ত' : 'Required parameters for optimized decision engine'}
+              />
+              <div style={{ marginTop: 10 }}>
+                {/* Progress bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+                    {lang === 'bn' ? 'সামগ্রিক পূর্ণতা:' : 'Overall completeness:'}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: activeCompleteness.score >= 80 ? 'var(--primary, #10b981)' : '#f59e0b' }}>
+                    {activeCompleteness.score}%
+                  </span>
+                </div>
+                <div style={{ height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: `${activeCompleteness.score}%`,
+                      background: activeCompleteness.score >= 80 ? 'var(--primary, #10b981)' : '#f59e0b',
+                      transition: 'width 0.4s ease'
+                    }}
+                  />
+                </div>
+
+                {/* Missing Items List */}
+                {activeCompleteness.missing.length === 0 ? (
+                  <div style={{ padding: 12, borderRadius: 8, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#4ade80', fontSize: 12.5 }}>
+                    ✓ {lang === 'bn' ? 'সকল প্রয়োজনীয় কৃষি উপাত্ত অন্তর্ভুক্ত রয়েছে।' : 'All essential parameters are registered.'}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                      {lang === 'bn' ? 'অপূর্ণ উপাত্ত ও তার সুফল:' : 'Missing inputs & impact:'}
+                    </span>
+                    {activeCompleteness.missing.map(m => (
+                      <div
+                        key={m.id}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: 8,
+                          background: 'rgba(255,255,255,0.03)',
+                          border: '1px solid var(--line)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 10
+                        }}
+                      >
+                        <div>
+                          <strong style={{ fontSize: 12.5, color: 'var(--text)', display: 'block' }}>
+                            {lang === 'bn' ? m.label : m.labelEn}
+                          </strong>
+                          <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
+                            {lang === 'bn' ? m.desc : m.descEn}
+                          </span>
+                        </div>
+                        <Button
+                          variant="secondary"
+                          size="xs"
+                          onClick={() => {
+                            if (m.tab === 'details') setIsEditingDetails(true);
+                            else setSubTab(m.tab);
+                          }}
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          {lang === 'bn' ? 'পূরণ করুন →' : 'Fill →'}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* 2. Enrich Status Card (P2) */}
+            <Card variant="glass">
+              <CardHeader
+                title={lang === 'bn' ? 'নাসা ও মাটি উপাত্ত সমৃদ্ধকরণ' : 'Environmental Data Telemetry Status'}
+                subtitle={lang === 'bn' ? 'NASA POWER, GPM ও SoilGrids সিঙ্ক্রোনাইজেশন' : 'NASA POWER, GPM IMERG and ISRIC SoilGrids sync'}
+              />
+              <div style={{ marginTop: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)', marginBottom: 12 }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>
+                      {lang === 'bn' ? 'সর্বশেষ সংযোগ অবস্থা:' : 'Telemetry status:'}
+                    </span>
+                    <strong style={{ fontSize: 13, color: 'var(--water, #38bdf8)' }}>
+                      {activeField.power_cell || activeField.soilgrids_soil
+                        ? (lang === 'bn' ? 'NASA ও মাটির তথ্য আনা হয়েছে (সক্রিয়)' : 'NASA & SoilGrids telemetry linked')
+                        : (lang === 'bn' ? 'আনা যায়নি (অফলাইন মোড)' : 'Offline mode / local cache')
+                      }
+                    </strong>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    onClick={handleReEnrich}
+                    disabled={isEnriching}
+                  >
+                    {isEnriching ? '...' : (lang === 'bn' ? 'আবার আনুন' : 'Re-enrich')}
+                  </Button>
+                </div>
+                <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-3)', lineHeight: 1.4 }}>
+                  {lang === 'bn'
+                    ? 'নাসার ৩০ বছরের আবহাওয়া উপাত্ত ও মাটির রাসায়নিক গঠন স্বয়ংক্রিয় যুক্ত করতে "আবার আনুন" ব্যবহার করুন।'
+                    : 'Query nearest ISRIC SoilGrids 250m profile and NASA climate baseline for this parcel.'}
+                </p>
+              </div>
+            </Card>
+
+            {/* 3. এই জমির পরামর্শ Mini Card (P2) */}
+            <Card variant="glass">
+              <CardHeader
+                title={lang === 'bn' ? 'এই জমির অনুকূল পরামর্শ' : 'Optimizer Advisory for this Parcel'}
+                subtitle={lang === 'bn' ? 'অপ্টিমাইজারের সুপারিশকৃত ৩-মৌসুমের ফসল চক্র' : 'Recommended rotation based on real water & climate constraints'}
+              />
+              <div style={{ marginTop: 12 }}>
+                {isLoadingBaseline ? (
+                  <div style={{ padding: 16 }}>
+                    <Skeleton height={20} style={{ marginBottom: 8 }} />
+                    <Skeleton height={14} width="70%" />
+                  </div>
+                ) : baselinePlanning ? (
+                  <div>
+                    <div style={{ padding: 12, borderRadius: 8, background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', marginBottom: 12 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 2 }}>
+                        {lang === 'bn' ? 'সুপারিশকৃত ফসল আবর্তন:' : 'Recommended Rotation:'}
+                      </span>
+                      <strong style={{ fontSize: 15, color: 'var(--leaf, #10b981)' }}>
+                        {baselinePlanning.plan_rotation_text_bn || (baselinePlanning.plan_rotation ? baselinePlanning.plan_rotation.join(' → ') : 'সরিষা → মুগডাল → আমন ধান')}
+                      </strong>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, marginBottom: 14 }}>
+                      <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'সেচ পানির প্রভাব:' : 'Irrigation Delta:'}</span>
+                        <strong style={{ color: 'var(--water, #38bdf8)' }}>
+                          {baselinePlanning.plan_irrigation_mm != null ? `${baselinePlanning.plan_irrigation_mm.toFixed(0)} মিমি/বছর` : '--'}
+                        </strong>
+                      </div>
+                      <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'ডাল নাইট্রোজেন যোগ:' : 'Legume BNF:'}</span>
+                        <strong style={{ color: 'var(--leaf, #10b981)' }}>
+                          {baselinePlanning.plan_nitrogen_kg != null ? `+${baselinePlanning.plan_nitrogen_kg.toFixed(0)} কেজি N` : '+৪২ কেজি N'}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => onNavigate && onNavigate('farm_planning')}
+                      style={{ width: '100%', justifyContent: 'center' }}
+                    >
+                      {lang === 'bn' ? 'পরিকল্পনায় বিস্তারিত দেখুন →' : 'View Full Farm Plan →'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div style={{ padding: 12, textAlign: 'center', color: 'var(--text-3)', fontSize: 12 }}>
+                    {lang === 'bn' ? 'পরিকল্পনার তথ্য প্রস্তুত হচ্ছে...' : 'Generating tailored advisory...'}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        </div>
       )}
 
-      {/* SUB-TAB 4: SOIL INFORMATION */}
+      {/* ========================================================================= */}
+      {/* TAB 3: মাটি (SOIL PROPERTIES & AUTHENTIC M7 DIAGNOSTICS)                   */}
+      {/* ========================================================================= */}
       {subTab === 'soil' && (
         <Card variant="glass">
           <CardHeader
-            icon="🌱"
-            title={lang === 'bn' ? 'মাটির ভৌত বৈশিষ্ট্য ও পানি ধারণ ক্ষমতা (BARI Standard)' : 'Soil Physics & Water Retention Parameters'}
-            subtitle={lang === 'bn' ? 'বাংলাদেশ কৃষি গবেষণা ইনস্টিটিউট মানদণ্ড' : 'BARI hydrological soil parameters'}
+            title={lang === 'bn' ? 'মাটির রাসায়নিক ও ভৌতিক পুষ্টি বৈশিষ্ট্য' : 'Soil Chemical & Hydraulic Diagnostics'}
+            subtitle={lang === 'bn' ? 'প্রতিটি মানের পাশে তার নির্ভরযোগ্য তথ্যসূত্র প্রদর্শন করা হয়েছে' : 'Honest source provenance badge attached to every soil property'}
           />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, margin: '14px 0' }}>
-            <Stat
-              label={lang === 'bn' ? 'ক্ষেত্র ধারণক্ষমতা (FC)' : 'Field Capacity'}
-              value={currentSoil.fc}
-              sub="Volumetric water at -33 kPa"
-              tone="water"
-            />
-            <Stat
-              label={lang === 'bn' ? 'শুষ্কতা বিন্দু (PWP)' : 'Permanent Wilting Point'}
-              value={currentSoil.pwp}
-              sub="Volumetric water at -1500 kPa"
-              tone="alert"
-            />
-            <Stat
-              label={lang === 'bn' ? 'পানি প্রবেশের হার (Conductivity)' : 'Hydraulic Conductivity'}
-              value={currentSoil.cond}
-              sub="Saturated infiltration velocity"
-              tone="leaf"
-            />
+
+          {!hasRealSoilGrids && (
+            <div style={{
+              margin: '12px 0 16px 0',
+              padding: '10px 14px',
+              borderRadius: 8,
+              background: 'rgba(245, 158, 11, 0.08)',
+              border: '1px solid rgba(245, 158, 11, 0.25)',
+              fontSize: 12.5,
+              color: '#fbbf24',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12
+            }}>
+              <span>
+                ℹ️ {lang === 'bn'
+                  ? 'এই জমির জন্য সরাসরি SoilGrids গ্রিড ক্যাশ নেই। বর্তমানে মাটির শ্রেণির গড় মান প্রদর্শন করা হচ্ছে।'
+                  : 'Direct SoilGrids cache unavailable. Displaying standard mechanical class averages.'}
+              </span>
+              <Button size="xs" variant="secondary" onClick={handleReEnrich} disabled={isEnriching}>
+                {lang === 'bn' ? 'SoilGrids সন্ধান করুন' : 'Query SoilGrids'}
+              </Button>
+            </div>
+          )}
+
+          {/* Key Soil Numbers with SourceChip next to each */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, margin: '16px 0' }}>
+            {/* 1. Texture */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'মাটির গঠন (Texture):' : 'Soil Texture Class:'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+                {soilClass.nameBn} ({soilClass.nameEn})
+              </div>
+            </div>
+
+            {/* 2. Sand % */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'বালি (Sand):' : 'Sand Fraction:'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--sun, #f59e0b)' }}>
+                {sandVal}%
+              </div>
+            </div>
+
+            {/* 3. Silt % */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'পলি (Silt):' : 'Silt Fraction:'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--water, #38bdf8)' }}>
+                {siltVal}%
+              </div>
+            </div>
+
+            {/* 4. Clay % */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'কাদা (Clay):' : 'Clay Fraction:'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--leaf, #10b981)' }}>
+                {clayVal}%
+              </div>
+            </div>
+
+            {/* 5. Soil pH */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'মাটির অম্লতা (pH):' : 'Soil pH:'}</span>
+                <SourceChip
+                  source={activeField?.soil_ph != null ? 'user' : (activeField?.soilgrids_ph != null ? 'SoilGrids' : 'class_average')}
+                  lang={lang}
+                  size="xs"
+                />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: phVal < 6 ? '#f87171' : phVal > 7.5 ? '#38bdf8' : 'var(--leaf)' }}>
+                {phVal}
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {phVal < 6 ? 'অম্লীয় (Acidic)' : phVal > 7.5 ? 'ক্ষারীয় (Alkaline)' : 'নিরপেক্ষ (Neutral)'}
+              </span>
+            </div>
+
+            {/* 6. Organic Matter */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'জৈব পদার্থ (OM):' : 'Organic Matter:'}</span>
+                <SourceChip
+                  source={activeField?.organic_matter != null ? 'user' : (activeField?.soilgrids_soc != null ? 'SoilGrids' : 'class_average')}
+                  lang={lang}
+                  size="xs"
+                />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--leaf, #10b981)' }}>
+                {omVal}%
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {omVal < 1.5 ? 'স্বল্প (Low)' : 'পর্যাপ্ত (Optimal)'}
+              </span>
+            </div>
+
+            {/* 7. Field Capacity (FC) */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'ফিল্ড ক্যাপাসিটি (FC):' : 'Field Capacity (FC):'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'saxton_rawls' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--water, #38bdf8)' }}>
+                {fcDisplay}
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {lang === 'bn' ? 'মাটির পানি ধারণক্ষমতা (৩৩ kPa)' : 'Soil moisture capacity (33 kPa)'}
+              </span>
+            </div>
+
+            {/* 8. Permanent Wilting Point (PWP) */}
+            <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'উইল্টিং পয়েন্ট (PWP):' : 'Wilting Point (PWP):'}</span>
+                <SourceChip source={hasRealSoilGrids ? 'saxton_rawls' : 'class_average'} lang={lang} size="xs" />
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#f59e0b' }}>
+                {pwpDisplay}
+              </div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {lang === 'bn' ? 'উদ্ভিদের পানি গ্রহণ সীমা (১৫০০ kPa)' : 'Plant wilting threshold (1500 kPa)'}
+              </span>
+            </div>
           </div>
-          <Card variant="glass-strong" style={{ padding: '12px 16px', fontSize: 13, color: 'var(--text-2)' }}>
-            <strong style={{ color: 'var(--text)' }}>Mechanical Composition:</strong> Sand: {currentSoil.sand}% • Silt: {currentSoil.silt}% • Clay: {currentSoil.clay}%
-          </Card>
+
+          {/* Mechanical Composition Bar */}
+          <div style={{ marginTop: 20, padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--line)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                {lang === 'bn' ? 'কণাসমূহের আনুপাতিক বণ্টন (Mechanical Split):' : 'Mechanical Particle Distribution:'}
+              </span>
+              <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
+            </div>
+            <div style={{ height: 14, display: 'flex', borderRadius: 7, overflow: 'hidden', marginBottom: 8 }}>
+              <div style={{ width: `${sandVal}%`, background: '#f59e0b' }} title={`Sand: ${sandVal}%`} />
+              <div style={{ width: `${siltVal}%`, background: '#38bdf8' }} title={`Silt: ${siltVal}%`} />
+              <div style={{ width: `${clayVal}%`, background: '#10b981' }} title={`Clay: ${clayVal}%`} />
+            </div>
+            <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-2)' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#f59e0b' }} />
+                {lang === 'bn' ? 'বালি' : 'Sand'}: {sandVal}%
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8' }} />
+                {lang === 'bn' ? 'পলি' : 'Silt'}: {siltVal}%
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981' }} />
+                {lang === 'bn' ? 'কাদা' : 'Clay'}: {clayVal}%
+              </span>
+            </div>
+          </div>
         </Card>
       )}
 
-      {/* SUB-TAB 5: EXISTING ROTATION BASELINE & HISTORY (A1) */}
+      {/* ========================================================================= */}
+      {/* TAB 4: ফসল ও ইতিহাস (BASELINE ROTATION & AUTHENTIC HISTORY) (M5 / M6)     */}
+      {/* ========================================================================= */}
       {subTab === 'history' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {/* 1. Existing Rotation Baseline Input Form */}
+          {/* 1. Existing Rotation Baseline Input Form (M5) */}
           <Card variant="glass">
             <CardHeader
-              icon="🚜"
-              title={lang === 'bn' ? 'বিদ্যমান ফসল আবর্তন বেসলাইন (Existing Rotation Practice)' : 'Current Rotation Baseline (Farmer Practice)'}
+              title={lang === 'bn' ? 'বিদ্যমান ফসল আবর্তন বেসলাইন' : 'Current Seasonal Rotation Baseline'}
               subtitle={lang === 'bn' ? 'আপনার খামারে প্রচলিত ৩-মৌসুমের ফসল চক্র নির্ধারণ করুন, যা অপ্টিমাইজারের সাথে তুলনার মানদণ্ড হিসেবে ব্যবহৃত হবে।' : 'Configure your actual seasonal rotation baseline to benchmark against MILP optimization strategies.'}
               action={
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleSaveBaseline}
+                  disabled={isSavingBaseline}
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                   <span>{baselineSaved ? '✓' : '💾'}</span>
@@ -506,7 +1422,7 @@ export function MyFarmWorkspaceView({
               {/* Kharif-1 Crop Selector */}
               <div style={{ background: 'var(--surface-2, rgba(0, 0, 0, 0.15))', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--water)', marginBottom: 6, textTransform: 'uppercase' }}>
-                  ২. খরিফ-১ মৌসুম (Kharif-1: Apr - Jun)
+                  ২. খরিপ-১ মৌসুম (Kharif-1: Apr - Jun)
                 </label>
                 <select
                   value={existingRotation.kharif1}
@@ -525,7 +1441,7 @@ export function MyFarmWorkspaceView({
               {/* Kharif-2 Crop Selector */}
               <div style={{ background: 'var(--surface-2, rgba(0, 0, 0, 0.15))', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--sun)', marginBottom: 6, textTransform: 'uppercase' }}>
-                  ৩. খরিফ-২ মৌসুম (Kharif-2: Jul - Oct)
+                  ৩. খরিপ-২ মৌসুম (Kharif-2: Jul - Oct)
                 </label>
                 <select
                   value={existingRotation.kharif2}
@@ -538,74 +1454,239 @@ export function MyFarmWorkspaceView({
               </div>
             </div>
 
-            {/* Instant Baseline Agronomic Diagnostics */}
+            {/* Instant Baseline Agronomic Diagnostics (M6) */}
             <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: 10, padding: '14px 18px', marginTop: 10 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--water)', marginBottom: 8 }}>
-                🔬 {lang === 'bn' ? 'বিদ্যমান ফসল চক্রের কৃষি-পরিবেশগত মূল্যায়ন:' : 'Baseline Agro-Ecological Diagnostics:'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--water)' }}>
+                  {lang === 'bn' ? 'বিদ্যমান ফসল চক্রের কৃষি-পরিবেশগত মূল্যায়ন:' : 'Baseline Agro-Ecological Diagnostics:'}
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--text-3)', background: 'rgba(255, 255, 255, 0.05)', padding: '2px 8px', borderRadius: 4 }}>
+                  {lang === 'bn' ? 'আনুমানিক (মডেল) • উদাহরণমূলক দাম' : 'Estimated (Model) • Illustrative Price'}
+                </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, fontSize: 12.5 }}>
                 <div>
                   <span style={{ color: 'var(--text-3)' }}>{lang === 'bn' ? 'বার্ষিক আনুমানিক লাভ:' : 'Est. Annual Net Margin:'}</span>
                   <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--leaf)', marginTop: 2 }}>
-                    {existingRotation.rabi === 'Potato' ? '৳ ২,৪০,০০০ / হেক্টর' : existingRotation.rabi === 'Boro Rice' ? '৳ ১,২০,০০০ / হেক্টর' : '৳ ১,৬৫,০০০ / হেক্টর'}
+                    {baselinePlanning?.baseline_profit_bdt != null
+                      ? `৳ ${Math.round(baselinePlanning.baseline_profit_bdt).toLocaleString('en-IN')} / হেক্টর`
+                      : (isLoadingBaseline ? '...' : '--')}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                    {lang === 'bn' ? 'মডেল আনুমানিক • উদাহরণমূলক দাম' : 'Model estimate • Illustrative price'}
                   </div>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-3)' }}>{lang === 'bn' ? 'ভূগর্ভস্থ সেচ চাহিদা:' : 'Irrigation Water Load:'}</span>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: existingRotation.rabi === 'Boro Rice' ? '#f87171' : 'var(--water)', marginTop: 2 }}>
-                    {existingRotation.rabi === 'Boro Rice' ? '১,২০০ মিমি (উচ্চ চাপ)' : existingRotation.rabi === 'Potato' ? '৪৮০ মিমি' : '৩৫০ মিমি (সাশ্রয়ী)'}
+                  <div style={{ fontSize: 16, fontWeight: 800, color: (baselinePlanning?.baseline_irrigation_mm || 0) > 600 ? '#f87171' : 'var(--water)', marginTop: 2 }}>
+                    {baselinePlanning?.baseline_irrigation_mm != null
+                      ? `${baselinePlanning.baseline_irrigation_mm.toFixed(1)} মিমি`
+                      : (isLoadingBaseline ? '...' : '--')}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                    {lang === 'bn' ? 'আনুমানিক (মডেল)' : 'Estimated (Model)'}
                   </div>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-3)' }}>{lang === 'bn' ? 'ডাল ফসল / নাইট্রোজেন:' : 'Legume BNF Balance:'}</span>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: (existingRotation.rabi === 'Lentil' || existingRotation.rabi === 'Chickpea' || existingRotation.kharif1 === 'Mungbean') ? 'var(--leaf)' : '#f59e0b', marginTop: 2 }}>
-                    {(existingRotation.rabi === 'Lentil' || existingRotation.rabi === 'Chickpea' || existingRotation.kharif1 === 'Mungbean') ? '+৪২ কেজি N/হেক্টর' : '০ কেজি (নাইট্রোজেন ক্ষয়)'}
+                  <div style={{ fontSize: 16, fontWeight: 800, color: (baselinePlanning?.baseline_nitrogen_kg || 0) > 0 ? 'var(--leaf)' : '#f59e0b', marginTop: 2 }}>
+                    {baselinePlanning?.baseline_nitrogen_kg != null
+                      ? `${baselinePlanning.baseline_nitrogen_kg > 0 ? '+' : ''}${baselinePlanning.baseline_nitrogen_kg.toFixed(1)} কেজি N/হেক্টর`
+                      : (isLoadingBaseline ? '...' : '০ কেজি')}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                    {lang === 'bn' ? 'আনুমানিক (মডেল)' : 'Estimated (Model)'}
                   </div>
                 </div>
                 <div>
                   <span style={{ color: 'var(--text-3)' }}>{lang === 'bn' ? 'নগ্ন মাটি অনাবৃত দিন:' : 'Bare Soil Exposure:'}</span>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: existingRotation.kharif1 === 'Fallow' ? '#f87171' : 'var(--leaf)', marginTop: 2 }}>
-                    {existingRotation.kharif1 === 'Fallow' ? '৭৫ দিন (উচ্চ ক্ষয় ঝুঁকি)' : '২৫ দিন (কভার শস্য রক্ষিত)'}
+                  <div style={{ fontSize: 16, fontWeight: 800, color: (baselinePlanning?.baseline_bare_days || 0) > 60 ? '#f87171' : 'var(--leaf)', marginTop: 2 }}>
+                    {baselinePlanning?.baseline_bare_days != null
+                      ? `${baselinePlanning.baseline_bare_days} দিন`
+                      : (isLoadingBaseline ? '...' : '--')}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
+                    {lang === 'bn' ? 'আনুমানিক (মডেল)' : 'Estimated (Model)'}
                   </div>
                 </div>
               </div>
             </div>
           </Card>
 
-          {/* 2. Historical Past Yield Records */}
+          {/* 2. Historical Past Yield Records (M6) */}
           <Card variant="glass">
             <CardHeader
-              icon="📜"
               title={lang === 'bn' ? 'ঐতিহাসিক ফলন ও সেচ লগ' : 'Historical Past Yield & Irrigation Log'}
-              subtitle={lang === 'bn' ? 'বিগত মৌসুমসমূহের নথিভুক্ত ফলন ও মাটির পুষ্টি উপাত্ত' : 'Archived seasonal yield logs and soil nutrient balance'}
+              subtitle={lang === 'bn' ? 'বিগত মৌসুমসমূহের নথিভুক্ত ফলন ও উপাত্ত' : 'Archived seasonal yield logs and data'}
             />
-            <div style={{ overflowX: 'auto', marginTop: 12 }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--line)', color: 'var(--text-3)', textAlign: 'left' }}>
-                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মৌসুম ও বছর' : 'Season'}</th>
-                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'উৎপাদিত ফসল' : 'Crop'}</th>
-                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'ফলন' : 'Yield'}</th>
-                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'সেচ' : 'Water Applied'}</th>
-                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মাটির প্রভাব' : 'Soil Impact'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { season: '2025 Rabi', crop: 'Potato (গোল আলু)', yield: '24.5 t/ha (61 maund/bigha)', water: '480 mm', impact: 'High nutrient depletion' },
-                    { season: '2025 Kharif-1', crop: 'Mungbean (মুগডাল)', yield: '1.4 t/ha (3.5 maund/bigha)', water: '320 mm', impact: 'BNF +42 kg N/ha enrichment' },
-                    { season: '2025 Kharif-2', crop: 'BRRI dhan75 (আমন ধান)', yield: '4.8 t/ha (12 maund/bigha)', water: '850 mm', impact: 'Cereal residue retained' },
-                  ].map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid var(--line)' }}>
-                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text)' }}>{row.season}</td>
-                      <td style={{ padding: '12px', color: 'var(--leaf)', fontWeight: 700 }}>{row.crop}</td>
-                      <td style={{ padding: '12px', color: 'var(--water)' }}>{row.yield}</td>
-                      <td style={{ padding: '12px', color: 'var(--sun)' }}>{row.water}</td>
-                      <td style={{ padding: '12px', color: 'var(--text-2)' }}>{row.impact}</td>
+
+            {isLoadingHistory ? (
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)' }}>
+                {lang === 'bn' ? 'উপাত্ত লোড হচ্ছে...' : 'Loading records...'}
+              </div>
+            ) : fieldHistory.length === 0 ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center' }}>
+                <EmptyState
+                  icon="📜"
+                  title={lang === 'bn' ? 'এখনো কোনো রেকর্ড নেই' : 'No records yet'}
+                  description={lang === 'bn' ? 'এই জমির জন্য পূর্ববর্তী কোনো ফসলের ইতিহাস নেই। নিচে বিগত মৌসুমের ফলন তথ্য যুক্ত করুন।' : 'No historical crop records found for this field. Add past seasonal records below.'}
+                />
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto', marginTop: 12 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--line)', color: 'var(--text-3)', textAlign: 'left' }}>
+                      <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মৌসুম ও বছর' : 'Season & Year'}</th>
+                      <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'উৎপাদিত ফসল' : 'Crop'}</th>
+                      <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'ফলন (দ্বৈত একক)' : 'Yield (Dual Unit)'}</th>
+                      <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'সেচ' : 'Water Applied'}</th>
+                      <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মন্তব্য / মাটির প্রভাব' : 'Notes / Soil Impact'}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {fieldHistory.map((row, idx) => {
+                      let yieldStr = '--';
+                      if (row.yield_ton_per_ha != null) {
+                        const tHa = Number(row.yield_ton_per_ha);
+                        const mBigha = tonPerHaToMaundPerBigha(tHa);
+                        yieldStr = `${tHa.toFixed(2)} t/ha (${mBigha.toFixed(1)} মণ/বিঘা)`;
+                      }
+                      const waterStr = row.water_applied_mm != null ? `${row.water_applied_mm} মিমি` : '--';
+                      return (
+                        <tr key={row.id || idx} style={{ borderBottom: '1px solid var(--line)' }}>
+                          <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text)' }}>
+                            {row.year ? `${row.year} ` : ''}{row.season || '--'}
+                          </td>
+                          <td style={{ padding: '12px', color: 'var(--leaf)', fontWeight: 700 }}>
+                            {row.crop || '--'}
+                          </td>
+                          <td style={{ padding: '12px', color: 'var(--water)', fontWeight: 600 }}>
+                            {yieldStr}
+                          </td>
+                          <td style={{ padding: '12px', color: 'var(--sun)' }}>
+                            {waterStr}
+                          </td>
+                          <td style={{ padding: '12px', color: 'var(--text-2)' }}>
+                            {row.notes || '--'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Form: Add Past Season Record (M6) */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>➕</span>
+                <span>{lang === 'bn' ? 'বিগত মৌসুমের রেকর্ড যোগ করুন' : 'Add Past Seasonal Record'}</span>
+              </div>
+              <form onSubmit={handleAddHistory}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'মৌসুম' : 'Season'} *
+                    </label>
+                    <select
+                      value={newHistorySeason}
+                      onChange={e => setNewHistorySeason(e.target.value)}
+                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                    >
+                      <option value="রবি">রবি (Rabi: Nov - Apr)</option>
+                      <option value="খরিপ-১">খরিপ-১ (Kharif-1: Apr - Jun)</option>
+                      <option value="খরিপ-২">খরিপ-২ (Kharif-2: Jul - Oct)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'বছর' : 'Year'} *
+                    </label>
+                    <input
+                      type="number"
+                      min="2000"
+                      max="2035"
+                      value={newHistoryYear}
+                      onChange={e => setNewHistoryYear(e.target.value)}
+                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'উৎপাদিত ফসল' : 'Crop Name'} *
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={lang === 'bn' ? 'যেমন: আলু, সরিষা, আমন ধান' : 'e.g. Potato, Mustard'}
+                      value={newHistoryCrop}
+                      onChange={e => setNewHistoryCrop(e.target.value)}
+                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'ফলন ও একক' : 'Yield & Unit'} *
+                    </label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={newHistoryYield}
+                        onChange={e => setNewHistoryYield(e.target.value)}
+                        style={{ flex: 1, borderRadius: 8, padding: '7px 8px', fontSize: 12.5 }}
+                      />
+                      <select
+                        value={newHistoryYieldUnit}
+                        onChange={e => setNewHistoryYieldUnit(e.target.value)}
+                        style={{ borderRadius: 8, padding: '7px 6px', fontSize: 11.5 }}
+                      >
+                        <option value="maund_bigha">মণ/বিঘা</option>
+                        <option value="ton_ha">t/ha</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'সেচ (মিমি, ঐচ্ছিক)' : 'Water (mm, opt)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      placeholder="e.g. 400"
+                      value={newHistoryWater}
+                      onChange={e => setNewHistoryWater(e.target.value)}
+                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'মন্তব্য (ঐচ্ছিক)' : 'Notes (opt)'}
+                    </label>
+                    <input
+                      type="text"
+                      placeholder={lang === 'bn' ? 'মাটির অবস্থা বা জাত' : 'Soil state or variety'}
+                      value={newHistoryNotes}
+                      onChange={e => setNewHistoryNotes(e.target.value)}
+                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    type="submit"
+                    disabled={isSubmittingHistory || !newHistoryCrop.trim() || !newHistoryYield}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                  >
+                    <span>{isSubmittingHistory ? '...' : '💾'}</span>
+                    <span>{isSubmittingHistory ? (lang === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (lang === 'bn' ? 'রেকর্ড সংরক্ষণ করুন' : 'Save Record')}</span>
+                  </Button>
+                </div>
+              </form>
             </div>
           </Card>
         </div>
@@ -615,6 +1696,7 @@ export function MyFarmWorkspaceView({
         <Toast
           type={mapToast.type}
           message={mapToast.message}
+          action={mapToast.action}
           onClose={() => setMapToast(null)}
         />
       )}

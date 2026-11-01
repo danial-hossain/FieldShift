@@ -24,4 +24,5 @@ export { Modal } from './Modal.jsx';
 export { SegmentedControl } from './SegmentedControl.jsx';
 export { SliderWithLabels } from './SliderWithLabels.jsx';
 export { ChartCard } from './ChartCard.jsx';
+export { SourceChip } from './SourceChip.jsx';
 export * from './Icons.jsx';

@@ -14,12 +14,17 @@ export function GoogleFieldMapPicker({
   longitude,
   onChange,
   onLocationNameChange,
-  readOnly = false
+  readOnly = false,
+  fields = [],
+  selectedFieldId = null,
+  onSelectField = null,
+  height = '260px'
 }) {
   const mapContainerRef = useRef(null);
   const searchInputRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerInstanceRef = useRef(null);
+  const extraMarkersRef = useRef([]);
 
   const [mapStatus, setMapStatus] = useState('loading'); // 'loading' | 'ready' | 'fallback_interactive'
   const [statusMessage, setStatusMessage] = useState('');
@@ -169,6 +174,26 @@ export function GoogleFieldMapPicker({
         if (markerInstanceRef.current) {
           markerInstanceRef.current.setPosition(center);
         }
+      }
+
+      // Render extra markers if fields array provided
+      if (fields && fields.length > 0 && MarkerConstructor) {
+        extraMarkersRef.current.forEach(m => m && m.setMap && m.setMap(null));
+        extraMarkersRef.current = [];
+        fields.forEach(f => {
+          const fLat = Number(f.latitude);
+          const fLng = Number(f.longitude);
+          if (!Number.isFinite(fLat) || !Number.isFinite(fLng)) return;
+          const fm = new MarkerConstructor({
+            position: { lat: fLat, lng: fLng },
+            map: mapInstanceRef.current,
+            title: f.name || 'Field'
+          });
+          fm.addListener('click', () => {
+            if (onSelectField) onSelectField(f);
+          });
+          extraMarkersRef.current.push(fm);
+        });
       }
 
       setMapStatus('ready');
@@ -428,24 +453,24 @@ export function GoogleFieldMapPicker({
           className="google-map-element"
           style={{
             width: '100%',
-            height: '250px',
+            height: height || '260px',
             display: mapStatus === 'fallback_interactive' ? 'none' : 'block'
           }}
         />
 
         {/* Fallback Interactive Map (when Google CDN is unreachable) */}
-        {mapStatus === 'fallback_interactive' && !hasCoordinates && (
-          <div className="fallback-interactive-map" style={{ width: '100%', height: 250, display: 'grid', placeItems: 'center', color: '#bbb' }}>
+        {mapStatus === 'fallback_interactive' && !hasCoordinates && (!fields || fields.length === 0) && (
+          <div className="fallback-interactive-map" style={{ width: '100%', height: height || 260, display: 'grid', placeItems: 'center', color: '#bbb' }}>
             {readOnly ? 'Coordinates not registered' : 'Choose a preset, search for a location, or use GPS to set coordinates.'}
           </div>
         )}
-        {mapStatus === 'fallback_interactive' && hasCoordinates && (
+        {mapStatus === 'fallback_interactive' && (hasCoordinates || (fields && fields.length > 0)) && (
           <div
             className="fallback-interactive-map"
             onClick={handleFallbackCanvasClick}
             style={{
               width: '100%',
-              height: '250px',
+              height: height || '260px',
               position: 'relative',
               background: 'radial-gradient(ellipse at center, #1b3826 0%, #0d1e14 100%)',
               cursor: readOnly ? 'default' : 'crosshair',
@@ -475,46 +500,103 @@ export function GoogleFieldMapPicker({
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6
+                gap: 6,
+                zIndex: 2
               }}
             >
               <span>🛰️ Satellite Agriculture Grid</span>
-              <span style={{ color: '#bbb', fontSize: 10 }}>· Click map to set pin</span>
+              <span style={{ color: '#bbb', fontSize: 10 }}>· {fields && fields.length > 0 ? `${fields.length} Fields on Map` : 'Click map to set pin'}</span>
             </div>
 
-            {/* Centered Marker Pin */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -100%)',
-                pointerEvents: 'none',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center'
-              }}
-            >
+            {/* If multiple fields provided: render markers for all fields */}
+            {fields && fields.length > 0 ? (
+              fields.map(f => {
+                const fLat = Number(f.latitude);
+                const fLng = Number(f.longitude);
+                if (!Number.isFinite(fLat) || !Number.isFinite(fLng)) return null;
+                // Bangladesh bounds: lat 20.5 to 26.7, lng 88.0 to 92.7
+                const topPct = Math.max(8, Math.min(88, ((26.7 - fLat) / 6.2) * 80 + 10));
+                const leftPct = Math.max(8, Math.min(88, ((fLng - 88.0) / 4.7) * 80 + 10));
+                const isSelected = selectedFieldId && String(f.id) === String(selectedFieldId);
+                return (
+                  <div
+                    key={f.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onSelectField) onSelectField(f);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: `${topPct}%`,
+                      left: `${leftPct}%`,
+                      transform: 'translate(-50%, -100%)',
+                      cursor: 'pointer',
+                      zIndex: isSelected ? 12 : 5,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      transition: 'transform 0.15s ease'
+                    }}
+                    title={`${f.name} (${fLat.toFixed(4)}°N, ${fLng.toFixed(4)}°E)`}
+                  >
+                    <div
+                      style={{
+                        background: isSelected ? 'var(--primary, #10b981)' : 'rgba(0,0,0,0.8)',
+                        color: isSelected ? '#ffffff' : '#e2e8f0',
+                        padding: '2px 7px',
+                        borderRadius: 10,
+                        fontSize: 10.5,
+                        fontWeight: 700,
+                        whiteSpace: 'nowrap',
+                        marginBottom: 2,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                        border: isSelected ? '1px solid #fff' : '1px solid rgba(255,255,255,0.2)'
+                      }}
+                    >
+                      {f.name}
+                    </div>
+                    <svg width={isSelected ? "28" : "22"} height={isSelected ? "28" : "22"} viewBox="0 0 24 24" fill={isSelected ? "#10b981" : "#38bdf8"} stroke="#ffffff" strokeWidth="1.5">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                      <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
+                    </svg>
+                  </div>
+                );
+              })
+            ) : (
+              /* Centered Marker Pin for single field */
               <div
                 style={{
-                  background: '#e74c3c',
-                  color: '#fff',
-                  padding: '3px 8px',
-                  borderRadius: 12,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                  whiteSpace: 'nowrap',
-                  marginBottom: 2
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -100%)',
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center'
                 }}
               >
-                {hasCoordinates ? `${Number(currentLat).toFixed(4)}° N, ${Number(currentLng).toFixed(4)}° E` : 'Coordinates not set'}
+                <div
+                  style={{
+                    background: '#e74c3c',
+                    color: '#fff',
+                    padding: '3px 8px',
+                    borderRadius: 12,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    whiteSpace: 'nowrap',
+                    marginBottom: 2
+                  }}
+                >
+                  {hasCoordinates ? `${Number(currentLat).toFixed(4)}° N, ${Number(currentLng).toFixed(4)}° E` : 'Coordinates not set'}
+                </div>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="#e74c3c" stroke="#ffffff" strokeWidth="1.5">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
+                </svg>
               </div>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="#e74c3c" stroke="#ffffff" strokeWidth="1.5">
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
-              </svg>
-            </div>
+            )}
           </div>
         )}
 
