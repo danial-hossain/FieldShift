@@ -260,8 +260,8 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
             </div>
             <p style={{ margin: '0 0 16px', fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>
               {lang === 'bn'
-                ? 'আইপিসিসি এসএসপি ক্লাইমেট মডেলের ভিত্তিতে তাপমাত্রা বৃদ্ধি ও বৃষ্টিপাতের পরিবর্তন প্রয়োগ করে ৪টি কৌশল পরীক্ষা করুন:'
-                : 'Perturb field seasonal climate to evaluate financial and hydrological robustness:'}
+                ? 'সহজ পরিস্থিতি পরীক্ষা: বৃষ্টি ±২০%, তাপমাত্রা +০-২°C প্রয়োগ করে কৌশলসমূহের আচরণ দেখুন:'
+                : 'Simple sensitivity test: rainfall ±20%, temperature +0 to +2°C perturbation:'}
             </p>
 
             {/* Slider 1: Rainfall (-20% to +20%) */}

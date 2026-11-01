@@ -655,13 +655,22 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
         if "soil_ph" in data and data["soil_ph"] is not None:
             f_state.ph = float(data["soil_ph"])
 
-        p_wt, w_wt, s_wt, n_wt = 0.25, 0.25, 0.25, 0.25
-        if priority == "profit":
-            p_wt, w_wt, s_wt, n_wt = 1.0, 0.0, 0.0, 0.0
-        elif priority == "water":
-            p_wt, w_wt, s_wt, n_wt = 0.0, 1.0, 0.0, 0.0
-        elif priority == "soil":
-            p_wt, w_wt, s_wt, n_wt = 0.0, 0.0, 1.0, 0.0
+        p_wt, w_wt, s_wt, n_wt = 0.34, 0.33, 0.33, 0.0
+        custom_w = data.get("weights")
+        if isinstance(custom_w, dict) and any(k in custom_w for k in ("profit", "water", "soil")):
+            p_wt = float(custom_w.get("profit", 0.34))
+            w_wt = float(custom_w.get("water", 0.33))
+            s_wt = float(custom_w.get("soil", 0.33))
+            n_wt = float(custom_w.get("national_need", 0.0))
+            tot = p_wt + w_wt + s_wt + n_wt
+            if tot > 0:
+                p_wt, w_wt, s_wt, n_wt = p_wt / tot, w_wt / tot, s_wt / tot, n_wt / tot
+        elif priority in {"profit", "profit_focused"}:
+            p_wt, w_wt, s_wt, n_wt = 0.70, 0.20, 0.10, 0.0
+        elif priority in {"water", "water_efficiency"}:
+            p_wt, w_wt, s_wt, n_wt = 0.20, 0.60, 0.20, 0.0
+        elif priority in {"soil", "soil_health"}:
+            p_wt, w_wt, s_wt, n_wt = 0.20, 0.20, 0.60, 0.0
         elif priority in {"national_need", "দেশের চাহিদা", "demand"}:
             p_wt, w_wt, s_wt, n_wt = 0.20, 0.15, 0.15, 0.50
 

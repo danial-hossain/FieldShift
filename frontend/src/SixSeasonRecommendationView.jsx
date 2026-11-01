@@ -107,33 +107,48 @@ export function SixSeasonRecommendationView({
   const [errorMessage, setErrorMessage] = useState('');
 
   // A5: Farmer Priorities and Resource Constraints State
-  const [waterAvailability, setWaterAvailability] = useState('full'); // 'full' | 'limited' | 'none'
+  const defaultWaterAvailability = useMemo(() => {
+    if (activeField?.irrigation_capacity_mm != null) {
+      const cap = Number(activeField.irrigation_capacity_mm);
+      if (cap === 0) return 'none';
+      if (cap <= 500) return 'limited';
+      return 'full';
+    }
+    const src = String(activeField?.irrigation_source || '').toLowerCase();
+    if (src === 'none' || src === 'rainfed' || src.includes('বৃষ্টি') || src.includes('নেই')) return 'none';
+    if (src.includes('সীমিত') || src.includes('limited')) return 'limited';
+    return 'full';
+  }, [activeField]);
+
+  const [waterAvailability, setWaterAvailability] = useState(defaultWaterAvailability);
+
+  useEffect(() => {
+    setWaterAvailability(defaultWaterAvailability);
+  }, [defaultWaterAvailability]);
+
   const [noPowerTiller, setNoPowerTiller] = useState(false);
   const [labourShortage, setLabourShortage] = useState(false);
   const [marketPreferences, setMarketPreferences] = useState(['Mustard', 'Lentil', 'Potato', 'Maize']);
-  const [customWeights, setCustomWeights] = useState({ profit: 40, water: 30, soil: 20, national_need: 10 });
   const [showConstraintsPanel, setShowConstraintsPanel] = useState(true);
 
   const bestSuitedStrategy = useMemo(() => {
-    if (customWeights.water >= 40 || waterAvailability === 'limited' || waterAvailability === 'none') {
+    if (waterAvailability === 'limited' || waterAvailability === 'none') {
       return 'water_efficiency';
     }
-    if (customWeights.soil >= 35) {
-      return 'soil_health';
-    }
-    if (customWeights.profit >= 50) {
-      return 'profit_focused';
-    }
     return 'balanced';
-  }, [customWeights, waterAvailability]);
+  }, [waterAvailability]);
 
   // A5: Deterministic Binding Constraints Evaluation
   const bindingConstraints = useMemo(() => {
     const list = [];
+    list.push(lang === 'bn' ? 'প্রতি মৌসুমে ১টি একক শস্য নির্বাচন (৬ মৌসুম)' : 'Single crop per season (6 periods)');
+    list.push(lang === 'bn' ? 'বোটানিক্যাল পরিবার পর্যায়ক্রম ও রোগ প্রতিরোধ (২৯০টি বিধি)' : 'Botanical family transition constraints (290 rules)');
+    list.push(lang === 'bn' ? 'মাটি স্বাস্থ্য বিধি: প্রতি ৩ মৌসুমে ন্যূনতম ১টি ডালশস্য (BNF)' : 'Soil Health: Min 1 legume every 3 seasons (BNF)');
+    list.push(lang === 'bn' ? 'খাদ্য নিরাপত্তা নীতি: বছরে ন্যূনতম ১টি খাদ্যশস্য (ভাত/গম/ভুট্টা)' : 'Food Security: Min 1 cereal per year');
     if (waterAvailability === 'limited') {
-      list.push(lang === 'bn' ? 'আবদ্ধ সেচ সীমা: সর্বোচ্চ ৩৫০ মিমি (Limited Water Cap)' : 'Binding Cap: Limited Irrigation (350 mm max)');
+      list.push(lang === 'bn' ? 'আবদ্ধ সেচ সীমা: সর্বোচ্চ ৪০০ মিমি (Limited Irrigation Cap)' : 'Binding Cap: Limited Irrigation (400 mm max)');
     } else if (waterAvailability === 'none') {
-      list.push(lang === 'bn' ? 'বৃষ্টি-নির্ভর সীমাবদ্ধতা: বোরো নিষিদ্ধ (Rainfed Only)' : 'Rainfed Constraint: High-water Boro disallowed');
+      list.push(lang === 'bn' ? 'বৃষ্টি-নির্ভর সীমাবদ্ধতা: সেচ ০ মিমি (বোরো নিষিদ্ধ)' : 'Rainfed Constraint: High-water Boro disallowed (0 mm)');
     }
     if (noPowerTiller) {
       list.push(lang === 'bn' ? 'টিলার সীমাবদ্ধতা: আলু ও নিবিড় কন্দশস্য বাদ (No Heavy Tiller)' : 'Equipment Limit: Potato/Tuber excluded');
@@ -142,13 +157,16 @@ export function SixSeasonRecommendationView({
       list.push(lang === 'bn' ? 'শ্রম সংকট সীমাবদ্ধতা: উচ্চ শ্রমঘন নিড়ানি ফসল বর্জিত' : 'Labour Shortage: Intensive weeding crops excluded');
     }
     const distLower = (district || '').toLowerCase();
-    if (distLower === 'bogura' || distLower === 'rajshahi' || distLower === 'dinajpur') {
-      list.push(lang === 'bn' ? 'নাসা গ্রেস-এফও বরেন্দ্র ভূগর্ভস্থ পানি সংরক্ষণ গুণক (১.৫x)' : 'NASA GRACE-FO Barind Aquifer Depletion Factor (1.5x)');
+    const isHaor = Boolean(activeField?.seasonally_flooded) || ['sunamganj', 'netrokona', 'kishoreganj', 'habiganj'].includes(distLower);
+    if (isHaor) {
+      list.push(lang === 'bn' ? 'হাওর বন্যা নিম্নাঞ্চল: খরিপ-২ জলাবদ্ধ পতিত (Inundation Fallow)' : 'Haor flood basin: Kharif-2 inundation fallow enforced');
     }
-    list.push(lang === 'bn' ? 'খাদ্য নিরাপত্তা নীতি: বছরে ন্যূনতম ১টি খাদ্যশস্য (ভাত/গম/ভুট্টা)' : 'Food Security Constraint: Min 1 cereal per year');
-    list.push(lang === 'bn' ? 'মাটি স্বাস্থ্য বিধি: সর্বোচ্চ প্রতি ৩ মৌসুমে ১টি ডালশস্য (BNF)' : 'Soil Health Constraint: Min 1 legume every 3 seasons (BNF)');
+    const isCoastal = ['satkhira', 'khulna', 'bagerhat', 'barguna', 'patuakhali'].includes(distLower);
+    if (isCoastal) {
+      list.push(lang === 'bn' ? 'উপকূলীয় লবণাক্ততা বিধি: রবিতে লবণ-সংবেদনশীল ফসল বাদ' : 'Coastal Salinity: Salt-sensitive crops excluded');
+    }
     return list;
-  }, [waterAvailability, noPowerTiller, labourShortage, district, lang]);
+  }, [waterAvailability, noPowerTiller, labourShortage, district, activeField, lang]);
 
   // Backend planning fetch state (cache 4 priorities per district)
   const [plansByPriority, setPlansByPriority] = useState({});
@@ -184,7 +202,7 @@ export function SixSeasonRecommendationView({
       soil_texture: activeField?.soil_texture || undefined,
       soil_ph: activeField?.soil_ph != null ? Number(activeField.soil_ph) : undefined,
       organic_matter: activeField?.organic_matter != null ? Number(activeField.organic_matter) : undefined,
-      irrigation_capacity_mm: activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : undefined,
+      irrigation_capacity_mm: waterAvailability === 'none' ? 0 : (waterAvailability === 'limited' ? 400 : (activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : 1200)),
       existing_rotation: activeField?.existing_rotation || undefined,
       history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
     };
@@ -216,7 +234,7 @@ export function SixSeasonRecommendationView({
       });
 
     return () => { isCancelled = true; };
-  }, [district, reloadKey, activeField?.id, activeField?.area_ha]);
+  }, [district, reloadKey, activeField?.id, activeField?.area_ha, activeField?.irrigation_capacity_mm, activeField?.existing_rotation, waterAvailability]);
 
   // Extract field area (no hardcoded fallback)
   const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;
@@ -289,6 +307,24 @@ export function SixSeasonRecommendationView({
     };
   }, [activePlanResponse, selectedStrategy, summary]);
 
+  // Active solver weights for currently selected strategy
+  const activeWeights = useMemo(() => {
+    const fromSolver = activePlanData?.solverResult?.weights?.effective || activePlanData?.solverResult?.weights?.requested;
+    if (fromSolver) {
+      return {
+        profit: Math.round((fromSolver.profit || 0) * 100),
+        water: Math.round((fromSolver.water || 0) * 100),
+        soil: Math.round((fromSolver.soil || 0) * 100),
+      };
+    }
+    const def = STRATEGY_DEFINITIONS[selectedStrategy]?.weights || { profit: 0.34, water: 0.33, soil: 0.33 };
+    return {
+      profit: Math.round((def.profit || 0) * 100),
+      water: Math.round((def.water || 0) * 100),
+      soil: Math.round((def.soil || 0) * 100),
+    };
+  }, [activePlanData?.solverResult?.weights, selectedStrategy]);
+
   // Construct 6-Season Recommendation List strictly from solver result
   const sixSeasonRecommendations = useMemo(() => {
     const rotation = activePlanData.rotation || {};
@@ -317,14 +353,45 @@ export function SixSeasonRecommendationView({
       // feasibility_reasons
       const feasibilityReasons = matrixEntry?.feasibility_reasons || {};
 
-      let rationale = '';
+      let friendlyRationale = '';
+      let rawRationale = '';
       if (feasibilityReasons.thermal || feasibilityReasons.water || feasibilityReasons.soil) {
-        rationale = [feasibilityReasons.thermal, feasibilityReasons.water, feasibilityReasons.soil].filter(Boolean).join('; ');
+        rawRationale = [feasibilityReasons.thermal, feasibilityReasons.water, feasibilityReasons.soil].filter(Boolean).join('; ');
+        const parts = [];
+        if (feasibilityReasons.thermal) {
+          const m = feasibilityReasons.thermal.match(/factor\s*=\s*([0-9.]+)/i);
+          if (m) {
+            const p = Math.round(parseFloat(m[1]) * 100);
+            parts.push(lang === 'bn' ? `তাপমাত্রা উপযোগী (${toBengaliNumber(p)}%)` : `Thermal suitability (${p}%)`);
+          } else {
+            parts.push(lang === 'bn' ? 'তাপমাত্রা উপযোগী' : 'Thermal suitable');
+          }
+        }
+        if (feasibilityReasons.water) {
+          const wL = feasibilityReasons.water.toLowerCase();
+          if (wL.includes('deficit') || wL.includes('ঘাটতি')) {
+            parts.push(lang === 'bn' ? 'নিয়ন্ত্রিত সেচ প্রয়োজন' : 'Irrigation required');
+          } else {
+            parts.push(lang === 'bn' ? 'পানির ঘাটতি নেই' : 'No water deficit');
+          }
+        }
+        if (feasibilityReasons.soil) {
+          const m = feasibilityReasons.soil.match(/factor\s*=\s*([0-9.]+)/i);
+          if (m) {
+            const p = Math.round(parseFloat(m[1]) * 100);
+            parts.push(lang === 'bn' ? `মাটি উপযোগী (${toBengaliNumber(p)}%)` : `Soil suitability (${p}%)`);
+          } else {
+            parts.push(lang === 'bn' ? 'মাটি উপযোগী' : 'Soil suitable');
+          }
+        }
+        friendlyRationale = parts.join(', ');
       } else if (cropMeta?.is_legume) {
-        rationale = 'Biological nitrogen fixation (BNF) alternating pulse.';
+        friendlyRationale = lang === 'bn' ? 'জৈব নাইট্রোজেন সংবন্ধনকারী ডালশস্য (BNF)' : 'Biological nitrogen fixation (BNF) alternating pulse.';
       } else if (cropName) {
-        rationale = 'Optimized crop selection under regional agro-climatic and economic constraints.';
+        friendlyRationale = lang === 'bn' ? 'আঞ্চলিক কৃষি-জলবায়ু ও অর্থনৈতিক অপ্টিমাইজেশন দ্বারা নির্ধারিত' : 'Optimized crop selection under regional agro-climatic and economic constraints.';
       }
+
+      const rationale = friendlyRationale || rawRationale;
 
       const totalParcelProfitBdt = (hasArea && grossMarginBdtHa != null)
         ? Math.round(grossMarginBdtHa * fieldAreaHa)
@@ -353,6 +420,8 @@ export function SixSeasonRecommendationView({
         netProfitBdtHa: grossMarginBdtHa,
         totalParcelProfitBdt,
         rationale,
+        friendlyRationale,
+        rawRationale,
         feasibilityReasons,
         uncertaintyTonHa: dynamicYieldTHa != null ? Number((dynamicYieldTHa * 0.045).toFixed(2)) : null,
         minYieldTonHa: dynamicYieldTHa != null ? Number((dynamicYieldTHa * 0.955).toFixed(2)) : null,
@@ -930,9 +999,6 @@ export function SixSeasonRecommendationView({
           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2, #cbd5e1)' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChecklistIcon size={16} /> {lang === 'bn' ? 'জলবায়ু ও শস্য ঝুঁকি মূল্যায়ন (Traffic-Light Risk Matrix):' : 'Agro-Climatic Risk Evaluation:'}</span>
           </span>
-          <span style={{ fontSize: 11.5, color: 'var(--text-muted, #94a3b8)' }}>
-            {lang === 'bn' ? '১০ বছরের মধ্যে প্রায় ৭-৮ বছর অনুকূল থাকে' : '7 to 8 out of 10 years historically favorable'}
-          </span>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {riskSuite.map(r => (
@@ -999,9 +1065,9 @@ export function SixSeasonRecommendationView({
               </span>
               <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                 {[
-                  { id: 'full', labelBn: 'পর্যাপ্ত নলকূপ সেচ (Full)', labelEn: 'Full Tube-well (>600 mm)' },
-                  { id: 'limited', labelBn: 'সীমিত সেচ (Limited 350mm)', labelEn: 'Limited (350 mm cap)' },
-                  { id: 'none', labelBn: 'বৃষ্টি-নির্ভর (Rainfed)', labelEn: 'Rainfed Only (0 mm)' },
+                  { id: 'full', labelBn: 'পর্যাপ্ত সেচ (১২০০ মিমি)', labelEn: 'Full Irrigation (1200 mm)' },
+                  { id: 'limited', labelBn: 'সীমিত সেচ (৪০০ মিমি)', labelEn: 'Limited Irrigation (400 mm)' },
+                  { id: 'none', labelBn: 'সেচ নেই (০ মিমি)', labelEn: 'Rainfed / No Irrigation (0 mm)' },
                 ].map(opt => (
                   <button
                     key={opt.id}
@@ -1049,44 +1115,28 @@ export function SixSeasonRecommendationView({
               </div>
             </div>
 
-            {/* Input 3: Priority Weights Sliders */}
+            {/* Input 3: Solver Weights for Active Strategy */}
             <div style={{ background: 'var(--glass-strong)', borderRadius: 10, padding: 12, border: '1px solid var(--line)' }}>
               <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--leaf)', textTransform: 'uppercase' }}>
-                ⚖️ {lang === 'bn' ? 'অগ্রাধিকারের অনুপাত (Weights)' : 'Priority Balance'}
+                ⚖️ {lang === 'bn' ? 'কৌশলের সক্রিয় ওজন (Solver Weights):' : 'Active Solver Weights:'}
               </span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                  <span>{lang === 'bn' ? 'মুনাফা' : 'Profit'}: {customWeights.profit}%</span>
-                  <input
-                    type="range"
-                    min="10"
-                    max="70"
-                    value={customWeights.profit}
-                    onChange={(e) => setCustomWeights({ ...customWeights, profit: Number(e.target.value) })}
-                    style={{ width: 130 }}
-                  />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                  <span>{lang === 'bn' ? 'মুনাফা' : 'Profit'}:</span>
+                  <strong style={{ color: 'var(--leaf)', fontSize: 12 }}>{toBengaliNumber(activeWeights.profit)}%</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                  <span>{lang === 'bn' ? 'পানি সাশ্রয়' : 'Water'}: {customWeights.water}%</span>
-                  <input
-                    type="range"
-                    min="10"
-                    max="60"
-                    value={customWeights.water}
-                    onChange={(e) => setCustomWeights({ ...customWeights, water: Number(e.target.value) })}
-                    style={{ width: 130 }}
-                  />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                  <span>{lang === 'bn' ? 'পানি সাশ্রয়' : 'Water'}:</span>
+                  <strong style={{ color: 'var(--water)', fontSize: 12 }}>{toBengaliNumber(activeWeights.water)}%</strong>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                  <span>{lang === 'bn' ? 'মাটি স্বাস্থ্য' : 'Soil'}: {customWeights.soil}%</span>
-                  <input
-                    type="range"
-                    min="10"
-                    max="60"
-                    value={customWeights.soil}
-                    onChange={(e) => setCustomWeights({ ...customWeights, soil: Number(e.target.value) })}
-                    style={{ width: 130 }}
-                  />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
+                  <span>{lang === 'bn' ? 'মাটি স্বাস্থ্য' : 'Soil'}:</span>
+                  <strong style={{ color: 'var(--sun)', fontSize: 12 }}>{toBengaliNumber(activeWeights.soil)}%</strong>
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {lang === 'bn'
+                    ? `(বর্তমান নির্বাচিত কৌশল: ${STRATEGY_DEFINITIONS[selectedStrategy]?.titleBn || selectedStrategy})`
+                    : `(Current strategy: ${STRATEGY_DEFINITIONS[selectedStrategy]?.titleEn || selectedStrategy})`}
                 </div>
               </div>
             </div>
@@ -1750,11 +1800,19 @@ export function SixSeasonRecommendationView({
                   {/* Agronomic Rationale (Why Selected?) */}
                   <div style={{ marginBottom: 12, background: 'rgba(15, 23, 42, 0.4)', padding: 10, borderRadius: 8, border: '1px solid var(--glass-border)' }}>
                     <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase', marginBottom: 2 }}>
-                      {lang === 'bn' ? 'কেন এই সুপারিশ? (Agronomic Rationale):' : 'Why Recommended? (Agronomic Rationale):'}
+                      {lang === 'bn' ? 'কেন এই সুপারিশ? (কৃষি-পরিবেশগত কারণ):' : 'Why Recommended? (Agronomic Rationale):'}
                     </span>
                     <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 }}>
-                      {rec.rationale || (lang === 'bn' ? 'তথ্য নেই' : 'No rationale available')}
+                      {rec.friendlyRationale || rec.rationale || (lang === 'bn' ? 'তথ্য নেই' : 'No rationale available')}
                     </p>
+                    {rec.rawRationale && (
+                      <details style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                        <summary style={{ cursor: 'pointer', outline: 'none' }}>{lang === 'bn' ? 'বিস্তারিত (গবেষকদের জন্য)' : 'Detailed solver constraints'}</summary>
+                        <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 10, wordBreak: 'break-word', color: 'var(--text-muted)' }}>
+                          {rec.rawRationale}
+                        </div>
+                      </details>
+                    )}
                   </div>
 
                   {/* Estimated Production & Economic Grid */}
@@ -2271,8 +2329,16 @@ export function SixSeasonRecommendationView({
               {lang === 'bn' ? 'সিদ্ধান্তের বিস্তারিত ব্যাখ্যা (Decision Explanation):' : 'Mathematical Decision Explanation:'}
             </span>
             <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              {activeSeason.rationale}
+              {activeSeason.friendlyRationale || activeSeason.rationale}
             </p>
+            {activeSeason.rawRationale && (
+              <details style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                <summary style={{ cursor: 'pointer', outline: 'none' }}>{lang === 'bn' ? 'বিস্তারিত (গবেষকদের জন্য)' : 'Detailed solver constraints'}</summary>
+                <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 10.5, wordBreak: 'break-word', color: 'var(--text-muted)' }}>
+                  {activeSeason.rawRationale}
+                </div>
+              </details>
+            )}
           </div>
         </div>
       )}
@@ -2289,7 +2355,7 @@ export function SixSeasonRecommendationView({
           ২. <strong>পানি ও ফলন মডেল (FAO-33 & FAO-56):</strong> ফসলের পানির চাহিদা ও স্টুয়ার্ট ফলন হ্রাস মডেল জাতিসংঘের খাদ্য ও কৃষি সংস্থার বৈজ্ঞানিক সমীকরণ অনুসারে নির্ধারিত।
         </p>
         <p style={{ margin: 0 }}>
-          ৩. <strong>সীমাবদ্ধতা ও সতর্কতা:</strong> এই ফলাফলগুলি ঐতিহাসিক ও কৃত্রিম এগ্রো-ক্লাইমেটিক ডেটাসেটের ভিত্তিতে প্রাপ্ত অনুমিত পূর্বাভাস। মাঠপর্যায়ে বাস্তব প্রয়োগের পূর্বে স্থানীয় মৃত্তিকা নমুনা পরীক্ষা (Soil Test) ও কৃষি কর্মকর্তার পরামর্শ গ্রহণ আবশ্যক।
+          ৩. <strong>সীমাবদ্ধতা ও সতর্কতা:</strong> এই ফলাফলগুলি NASA POWER ও GPM IMERG-এর ঐতিহাসিক তথ্য এবং উদাহরণমূলক দামের ভিত্তিতে প্রাপ্ত অনুমিত পূর্বাভাস। মাঠপর্যায়ে বাস্তব প্রয়োগের পূর্বে স্থানীয় মৃত্তিকা নমুনা পরীক্ষা (Soil Test) ও কৃষি কর্মকর্তার পরামর্শ গ্রহণ আবশ্যক।
         </p>
       </div>
     </div>

@@ -27,8 +27,8 @@
 export const CROP_AGRONOMIC_MODELS = {
   rice: {
     id: 'rice',
-    nameEn: 'Aman / Boro Rice',
-    nameBn: 'আমন / বোরো ধান',
+    nameEn: 'Aman Rice',
+    nameBn: 'আমন ধান',
     potentialYieldTonHa: 5.5,
     ky: 1.10, // FAO-33 Table 24 yield response factor
     kcIni: 0.50,

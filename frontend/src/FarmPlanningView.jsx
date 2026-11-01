@@ -58,7 +58,7 @@ export function FarmPlanningView({
             </h1>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.5, maxWidth: 840 }}>
               {lang === 'bn'
-                ? '৩ বছর ও ৬ মৌসুমের গাণিতিক অপ্টিমাইজেশন (PuLP MILP), নাইট্রোজেন ফিক্সিং ডালশস্য নিয়ম, বোটানিক্যাল পরিবার পর্যায়ক্রম ও মধ্য-মৌসুমী অভিযোজিত পুনঃপরিকল্পনা।'
+                ? '২ বছর, ৬ মৌসুমের গাণিতিক অপ্টিমাইজেশন (PuLP MILP), নাইট্রোজেন ফিক্সিং ডালশস্য নিয়ম, বোটানিক্যাল পরিবার পর্যায়ক্রম ও মধ্য-মৌসুমী অভিযোজিত পুনঃপরিকল্পনা।'
                 : 'PuLP Mixed-Integer Linear Programming (MILP) solving multi-objective trade-offs across profit, water conservation, and soil health with dynamic in-season replanning.'}
             </p>
           </div>
