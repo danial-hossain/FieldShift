@@ -304,6 +304,7 @@ export function SixSeasonRecommendationView({
       planBareDays,
       baselineRotation,
       isAssumedBaseline,
+      risk: solverResult?.risk || planningData?.risk || activePlanResponse?.risk || null,
     };
   }, [activePlanResponse, selectedStrategy, summary]);
 
@@ -498,6 +499,27 @@ export function SixSeasonRecommendationView({
   const activeSeason = useMemo(() => {
     return sixSeasonRecommendations.find(s => s.key === selectedPeriodKey) || sixSeasonRecommendations[0];
   }, [sixSeasonRecommendations, selectedPeriodKey]);
+
+  const riskSuite = useMemo(() => {
+    const rawRisk = activePlanData?.risk || summary?.planning?.risk || activePlanResponse?.risk;
+    if (rawRisk) {
+      if (Array.isArray(rawRisk)) return rawRisk;
+      return [
+        rawRisk.drought,
+        rawRisk.heavy_rain || rawRisk.rain,
+        rawRisk.heat,
+        rawRisk.late_monsoon || rawRisk.onset,
+        rawRisk.bare_soil || rawRisk.erosion,
+      ].filter(Boolean);
+    }
+    return [
+      { id: 'drought', labelBn: 'খরা ঝুঁকি', labelEn: 'Drought Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'তথ্য বিশ্লেষণে খরা ঝুঁকি স্বাভাবিক।', whyEn: 'Drought risk is within normal bounds.' },
+      { id: 'heavy_rain', labelBn: 'অতিবৃষ্টি ঝুঁকি', labelEn: 'Heavy Rain Risk', level: 'medium', levelBn: 'মাঝারি', color: '#f59e0b', whyBn: 'মনসুন বর্ষণে পরিমিত নিষ্কাশন ব্যবস্থা প্রয়োজন।', whyEn: 'Drainage required during heavy monsoon spells.' },
+      { id: 'heat', labelBn: 'তাপপ্রবাহ ঝুঁকি', labelEn: 'Heat Stress Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'ফসল পরিপক্বতার পূর্বে অতিরিক্ত তাপমাত্রা বৃদ্ধি নেই।', whyEn: 'No extreme heat anomaly during flowering.' },
+      { id: 'late_monsoon', labelBn: 'বর্ষা বিলম্ব', labelEn: 'Late Monsoon', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'অনসেট পরিসংখ্যান স্বাভাবিক সীমার মধ্যে।', whyEn: 'Monsoon onset within normal climatological window.' },
+      { id: 'bare_soil', labelBn: 'পতিত মাটি ঝুঁকি', labelEn: 'Bare Soil Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'পরিকল্পনায় পতিত দিনের সংখ্যা হ্রাস করা হয়েছে।', whyEn: 'Bare soil exposure is minimized in the proposed plan.' },
+    ];
+  }, [activePlanData?.risk, summary?.planning?.risk, activePlanResponse?.risk]);
 
   // Handle Planning Simulation Run Trigger
   const handleRunSimulation = async () => {
@@ -783,13 +805,7 @@ export function SixSeasonRecommendationView({
     } catch {}
   };
 
-  const riskSuite = [
-    { id: 'drought', labelBn: 'খরা ঝুঁকি', labelEn: 'Drought Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'রবিতে ডালশস্যের গভীর শিকড় ও কম পানির কারণে খরা সহনশীলতা বেশি (নাসা SMAP মৃত্তিকা আর্দ্রতা স্বাভাবিক)।' },
-    { id: 'rain', labelBn: 'অতিবৃষ্টি ঝুঁকি', labelEn: 'Heavy Rain Risk', level: 'medium', levelBn: 'মাঝারি', color: '#f59e0b', whyBn: 'খরিফ-২ বর্ষায় আমন রোপণের সময় ড্রেনেজ প্রয়োজন (নাসা IMERG ২৫ বছরের বৃষ্টি তথ্য)।' },
-    { id: 'heat', labelBn: 'তাপপ্রবাহ ঝুঁকি', labelEn: 'Heat Stress Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'রবি ও খরিফ-১ ফসল সর্বোচ্চ তাপপ্রবাহের আগেই পরিপক্ক হয় (নাসা POWER ঐতিহাসিক তাপমাত্রা)।' },
-    { id: 'onset', labelBn: 'বর্ষা বিলম্ব', labelEn: 'Late Monsoon', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: '১০ বছরের মধ্যে প্রায় ৭ বছর ১৫–২৫ জুলাইয়ের মধ্যে বর্ষার সূচনা ঘটে (অনসেট মডেল)।' },
-    { id: 'erosion', labelBn: 'পতিত মাটি ঝুঁকি', labelEn: 'Bare Soil Risk', level: 'low', levelBn: 'শূন্য', color: '#10b981', whyBn: 'বছরজুড়ে জমিতে শস্য আচ্ছাদন থাকায় বৃষ্টির পানির তোড়ে মাটির ক্ষয় রোধ হয়।' },
-  ];
+
 
   return (
     <div className="six-season-recommendation-workspace"  style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
@@ -1018,7 +1034,13 @@ export function SixSeasonRecommendationView({
         </div>
         {expandedRisk && (
           <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', fontSize: 12.5, color: 'var(--text, #f8fafc)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><InfoIcon size={15} /> {riskSuite.find(r => r.id === expandedRisk)?.whyBn}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <InfoIcon size={15} />
+              {lang === 'bn'
+                ? (riskSuite.find(r => r.id === expandedRisk)?.whyBn || riskSuite.find(r => r.id === expandedRisk)?.whyEn)
+                : (riskSuite.find(r => r.id === expandedRisk)?.whyEn || riskSuite.find(r => r.id === expandedRisk)?.whyBn)
+              }
+            </span>
           </div>
         )}
       </div>

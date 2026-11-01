@@ -716,6 +716,15 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             field_history_crops=hist_crops_param,
             existing_rotation=data.get("existing_rotation"),
         )
+        from src.compute.risk_evaluator import compute_planner_risk_suite
+        risk_suite = compute_planner_risk_suite(
+            district=dist_key,
+            climate_df=climate_df,
+            plan_rotation=milp_res.get("selected_crop_by_period") or milp_res.get("recommended_crops"),
+            baseline_bare_days=milp_res.get("baseline_bare_days"),
+            plan_bare_days=milp_res.get("plan_bare_days"),
+        )
+        milp_res["risk"] = risk_suite
         env_basis = milp_res.get("environment_basis")
         if not env_basis:
             num_years = len(climate_df["date"].dt.year.unique()) if "date" in climate_df.columns else 25
@@ -731,6 +740,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                 "environment_basis": env_basis,
             },
             "environment_basis": env_basis,
+            "risk": risk_suite,
             "summary": {
                 "field_state": {
                     "field_id": field_id,
@@ -765,6 +775,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "is_assumed_baseline": milp_res.get("is_assumed_baseline"),
                     "baseline_bare_days": milp_res.get("baseline_bare_days"),
                     "plan_bare_days": milp_res.get("plan_bare_days"),
+                    "risk": risk_suite,
                 }
             }
         }))
