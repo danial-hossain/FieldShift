@@ -225,6 +225,19 @@ export function WaterIrrigationView({
   }, [initialSubTab]); // 'balance' | 'optimization' | 'profile' | 'stress'
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
   const [liveWaterData, setLiveWaterData] = useState(null);
+  const [envProfiles, setEnvProfiles] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    request('/api/geo/environmental-profiles')
+      .then(res => {
+        if (isMounted && res?.status === 'ok') {
+          setEnvProfiles(res);
+        }
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   const plannedRotation = useMemo(() => {
     return (
@@ -283,76 +296,65 @@ export function WaterIrrigationView({
   const tawMm = Math.round(soilWaterSpecs.tawMmPerM * zRootM);
   // Field-specific NASA Hydrology Data (SRTM elevation/slope, GRACE-FO TWS, SMAP root-zone moisture)
   const fieldTelemetry = useMemo(() => {
-    const fieldId = String(activeField?.id || '').toLowerCase();
-    const dist = String(activeField?.district || '').toLowerCase();
-    if (fieldId.includes('satkhira') || dist.includes('satkhira')) {
-      return {
-        graceTrend: '-0.15 cm/yr',
-        graceStatusBn: 'উপকূলীয় লবণাক্ততা ঝুঁকি',
-        graceStatusEn: 'Coastal Saline Vulnerability',
-        graceDescBn: 'শুষ্ক মৌসুমে জোয়ারের লবণাক্ততার ঝুঁকি রয়েছে; মিষ্টি পানি সংরক্ষণ জরুরি।',
-        graceDescEn: 'Dry-season tidal salinity requires freshwater conservation buffer.',
-        graceColor: 'var(--alert)',
-        smapMoisture: '0.25 – 0.42 m³/m³',
-        smapDescBn: 'উপকূলীয় এঁটেল মাটিতে বর্ষায় আর্দ্রতা ০.৪২ ও শীতে ০.২৫ m³/m³।',
-        smapDescEn: 'Coastal heavy clay maintains 0.42 m³/m³ during monsoon, 0.25 m³/m³ in dry season.',
-        srtmElev: '7 m',
-        srtmSlope: '4.45%',
-        srtmDescBn: 'উপকূলীয় নিচু প্লাবনভূমি; জলোচ্ছ্বাস ঝুঁকি ও ধীর নিষ্কাশন ব্যবস্থা।',
-        srtmDescEn: 'Low-lying coastal zone with tidal surge exposure.',
-      };
+    const dist = String(activeField?.district || '').toLowerCase().trim();
+    const isCoastalTidal = Boolean(
+      activeField?.coastal_saline ||
+      dist === 'satkhira' || dist === 'khulna' || dist === 'bagerhat' || dist === 'patuakhali' || dist === 'barguna'
+    );
+
+    const srtmProfile = envProfiles?.srtm?.[dist] || null;
+
+    // Elevation (m) - from field record or /api/geo/environmental-profiles
+    let elevM = activeField?.elevation_m ?? activeField?.srtm_elevation ?? srtmProfile?.elevation_m ?? null;
+    const srtmElev = elevM != null ? `${elevM} m` : null;
+
+    // Slope (%) - tidal flat unreliability guard
+    let srtmSlope = null;
+    let srtmSlopeNote = null;
+    if (isCoastalTidal) {
+      srtmSlope = lang === 'bn' ? 'নির্ভরযোগ্য নয় (জোয়ারভাটা প্লাবনভূমি)' : 'Unreliable (Coastal Tidal Plain)';
+      srtmSlopeNote = lang === 'bn'
+        ? 'উপকূলীয় জোয়ারভাটা প্লাবনভূমিতে ৩০মি এসআরটিএম বাঁধ ও নালার কারণে ঢাল নির্ভরযোগ্য নয়।'
+        : 'SRTM 30m quantization creates canal/embankment noise in coastal tidal plain.';
+    } else {
+      let slopeVal = activeField?.slope_percent ?? activeField?.slope ?? srtmProfile?.slope_percent ?? null;
+      if (slopeVal != null) {
+        srtmSlope = `${slopeVal}%`;
+      }
     }
-    if (fieldId.includes('sunamganj') || dist.includes('sunamganj')) {
-      return {
-        graceTrend: '+0.44 cm/yr',
-        graceStatusBn: 'হাওর প্লাবনভূমি পুনর্ভরণ',
-        graceStatusEn: 'Haor Basin Surface Recharge',
-        graceDescBn: 'বর্ষায় নিয়মিত প্লাবিত হওয়ায় ভূগর্ভস্থ ও ভূপৃষ্ঠের পানি পুনর্ভরিত হয়।',
-        graceDescEn: 'Annual monsoon inundation naturally replenishes surface and basin storage.',
-        graceColor: 'var(--leaf)',
-        smapMoisture: '0.19 – 0.41 m³/m³',
-        smapDescBn: 'বর্ষায় প্লাবিত জলাভূমি (০.৪১); প্রাক-বর্ষায় আর্দ্রতা ০.১৯ এ নামে।',
-        smapDescEn: 'Wetland basin saturated during monsoon (0.41), dropping to 0.19 in pre-monsoon.',
-        srtmElev: '15 m',
-        srtmSlope: '3.11%',
-        srtmDescBn: 'হাওর নিচু বেসিন; মৌসুমি জলমগ্নতা ও পাহাড়ি ঢল ঝুঁকি।',
-        srtmDescEn: 'Haor depression basin prone to early flash-flood inundation.',
-      };
-    }
-    if (fieldId.includes('dinajpur') || dist.includes('dinajpur')) {
-      return {
-        graceTrend: '-1.07 cm/yr',
-        graceStatusBn: 'বরেন্দ্র অ্যাকুইফার ক্ষয়',
-        graceStatusEn: 'Barind Aquifer Depletion',
-        graceDescBn: 'গভীর নলকূপ সেচে ভূগর্ভস্থ পানির স্তর দ্রুত নামছে; পানি সাশ্রয়ী ফসল জরুরি।',
-        graceDescEn: 'Heavy deep-tubewell abstraction depletes aquifer; water conservation priority.',
-        graceColor: 'var(--alert)',
-        smapMoisture: '0.16 – 0.33 m³/m³',
-        smapDescBn: 'প্রাক-বর্ষা এপ্রিলে আর্দ্রতা ০.১৬ এ নেমে পানির তীব্র ঘাটতি তৈরি করে।',
-        smapDescEn: 'Pre-monsoon root-zone moisture drops to 0.16 m³/m³, creating severe moisture deficit.',
-        srtmElev: '39 m',
-        srtmSlope: '2.90%',
-        srtmDescBn: 'উত্তর-পশ্চিমাঞ্চলীয় উচ্চ প্লাবনভূমি; উত্তম নিষ্কাশন কিন্তু পানির ওপর নির্ভরশীল।',
-        srtmDescEn: 'Northwest elevated terrace; good surface drainage but deep groundwater dependency.',
-      };
-    }
-    // Default Bogura
+
+    // Description
+    let srtmDescBn = srtmSlopeNote || (srtmProfile?.flood_exposure_hint
+      ? `${srtmProfile.flood_exposure_hint} (NASA SRTMGL1 ৩০মি)`
+      : (elevM != null ? `উচ্চতা ${elevM} মিটার (NASA SRTMGL1 ৩০মি উপগ্রহ উপাত্ত)` : 'এই অবস্থানের জন্য এসআরটিএম ভূ-সংস্থান উপাত্ত পাওয়া যায়নি।'));
+    let srtmDescEn = srtmSlopeNote || (srtmProfile?.flood_exposure_hint
+      ? `${srtmProfile.flood_exposure_hint} (NASA SRTMGL1 30m)`
+      : (elevM != null ? `Elevation ${elevM} m (NASA SRTMGL1 30m dataset)` : 'SRTM topography data unavailable for this field location.'));
+
+    // Regional GRACE trend
+    const graceProfile = envProfiles?.grace?.[dist] || null;
+    const graceTrend = graceProfile?.tws_trend_cm_year != null
+      ? `${graceProfile.tws_trend_cm_year} cm/yr`
+      : (dist === 'sunamganj' ? '+0.44 cm/yr' : (isCoastalTidal ? '-0.15 cm/yr' : '-1.07 cm/yr'));
+    const graceColor = graceTrend.startsWith('+') ? 'var(--leaf)' : 'var(--alert)';
+
     return {
-      graceTrend: '-1.07 cm/yr',
-      graceStatusBn: 'বরেন্দ্র অ্যাকুইফার ক্ষয়',
-      graceStatusEn: 'Barind Aquifer Depletion',
-      graceDescBn: 'গভীর নলকূপ সেচে পানির স্তর হ্রাস; ওয়াটার-সেভিং মডেলে অগ্রাধিকার আরোপিত।',
-      graceDescEn: 'Regional groundwater depletion requires 1.5x water conservation constraint.',
-      graceColor: 'var(--alert)',
-      smapMoisture: '0.15 – 0.27 m³/m³',
-      smapDescBn: 'প্রাক-বর্ষা এপ্রিল-মে মাসে রুট-জোন আর্দ্রতা ০.১৫ এ নেমে ঘাটতি সৃষ্টি করে।',
-      smapDescEn: 'Pre-monsoon April-May root-zone moisture drops to 0.15 m³/m³.',
-      srtmElev: '24 m',
-      srtmSlope: '1.92%',
-      srtmDescBn: 'সমতল পলিমাটি প্লাবনভূমি; ধীর নিষ্কাশন ও মাঝারি পানি ধারণ সহনশীলতা।',
-      srtmDescEn: 'Flat alluvial terrain; slow surface runoff with low topographic erosion risk.',
+      graceTrend,
+      graceStatusBn: dist === 'sunamganj' ? 'হাওর প্লাবনভূমি পুনর্ভরণ' : (isCoastalTidal ? 'উপকূলীয় লবণাক্ততা ঝুঁকি' : 'বরেন্দ্র অ্যাকুইফার ক্ষয়'),
+      graceStatusEn: dist === 'sunamganj' ? 'Haor Basin Surface Recharge' : (isCoastalTidal ? 'Coastal Saline Vulnerability' : 'Barind Aquifer Depletion'),
+      graceDescBn: dist === 'sunamganj' ? 'বর্ষায় নিয়মিত প্লাবিত হওয়ায় ভূগর্ভস্থ ও ভূপৃষ্ঠের পানি পুনর্ভরিত হয়।' : 'গভীর নলকূপ সেচে ভূগর্ভস্থ পানির স্তর দ্রুত নামছে; পানি সাশ্রয়ী ফসল জরুরি।',
+      graceDescEn: dist === 'sunamganj' ? 'Annual monsoon inundation naturally replenishes surface and basin storage.' : 'Deep tubewell abstraction depletes aquifer; water conservation priority.',
+      graceColor,
+      smapMoisture: dist === 'sunamganj' ? '0.19 – 0.41 m³/m³' : (isCoastalTidal ? '0.25 – 0.42 m³/m³' : '0.15 – 0.27 m³/m³'),
+      smapDescBn: dist === 'sunamganj' ? 'বর্ষায় প্লাবিত জলাভূমি (০.৪১); প্রাক-বর্ষায় আর্দ্রতা ০.১৯ এ নামে।' : 'প্রাক-বর্ষা এপ্রিল-মে মাসে রুট-জোন আর্দ্রতা নেমে ঘাটতি সৃষ্টি করে।',
+      smapDescEn: dist === 'sunamganj' ? 'Wetland basin saturated during monsoon (0.41), dropping to 0.19 in pre-monsoon.' : 'Pre-monsoon root-zone moisture drops creating seasonal deficit.',
+      srtmElev,
+      srtmSlope,
+      srtmSlopeNote,
+      srtmDescBn,
+      srtmDescEn,
     };
-  }, [activeField]);
+  }, [activeField, envProfiles, lang]);
 
   const rawMm = Math.round(tawMm * soilWaterSpecs.p);
 
@@ -574,12 +576,14 @@ export function WaterIrrigationView({
               </span>
               <span style={{ fontSize: 10, color: 'var(--text-3)' }}>1 Arc-Sec</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)' }}>
-                {fieldTelemetry.srtmElev}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: fieldTelemetry.srtmElev ? 'var(--leaf)' : 'var(--text-3)' }}>
+                {fieldTelemetry.srtmElev || (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
               </span>
               <span style={{ fontSize: 11, color: 'var(--text-2)' }}>
-                {lang === 'bn' ? `ঢাল: ${fieldTelemetry.srtmSlope}` : `Slope: ${fieldTelemetry.srtmSlope}`}
+                {fieldTelemetry.srtmSlope
+                  ? (lang === 'bn' ? `ঢাল: ${fieldTelemetry.srtmSlope}` : `Slope: ${fieldTelemetry.srtmSlope}`)
+                  : (lang === 'bn' ? 'ঢাল: তথ্য নেই' : 'Slope: No data')}
               </span>
             </div>
             <p style={{ margin: '6px 0 0', fontSize: 11, color: 'var(--text-3)', lineHeight: 1.4 }}>
