@@ -3605,10 +3605,11 @@ html, body {
   left: 10px;
   display: flex;
   gap: 4px;
-  background: rgba(255,255,255,0.94);
+  background: var(--surface, rgba(22, 29, 26, 0.94));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   padding: 3px;
   border-radius: var(--radius-sm);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   z-index: 5;
 }
 
@@ -3625,8 +3626,23 @@ html, body {
   font-family: inherit;
 }
 
+.map-layer-btn:hover {
+  color: var(--text);
+}
+
 .map-layer-btn.active {
-  background: var(--primary);
+  background: var(--leaf, #7fb069);
+  color: #0f1412;
+}
+
+[data-theme="light"] .map-layer-controls {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .map-layer-btn.active {
+  background: #047857;
   color: #ffffff;
 }
 
@@ -6924,24 +6940,42 @@ html, body {
 }
 
 .stage-mode-btn:hover {
-  color: var(--text-main);
-  background: #ffffff;
+  color: var(--text);
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
 }
 
 .stage-mode-btn.active {
+  background: var(--surface-2, rgba(255, 255, 255, 0.12));
+  border-color: var(--border, rgba(255, 255, 255, 0.15));
+  color: var(--leaf, #7fb069);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .stage-mode-btn:hover {
+  background: #f1f5f9;
+}
+
+[data-theme="light"] .stage-mode-btn.active {
   background: #ffffff;
-  border-color: var(--border-light);
-  color: var(--primary);
+  border-color: #cbd5e1;
+  color: #047857;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .stage-coords-tag {
   font-size: 11.5px;
   color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.04);
+  background: var(--surface-2, rgba(0, 0, 0, 0.2));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
   padding: 4px 10px;
   border-radius: 6px;
   font-weight: 600;
+}
+
+[data-theme="light"] .stage-coords-tag {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 
 .stage-canvas-wrapper {
@@ -8036,8 +8070,8 @@ html, body {
 }
 
 .fraction-legend-box {
-  background: #ffffff;
-  border: 1px solid var(--border-light);
+  background: var(--surface-2, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
   border-radius: 6px;
   padding: 6px 10px;
   display: flex;
@@ -8045,6 +8079,7 @@ html, body {
   justify-content: space-between;
   gap: 6px;
   font-size: 11px;
+  transition: all var(--transition-fast, 0.15s ease);
 }
 
 .fraction-legend-box .dot {
@@ -8067,14 +8102,28 @@ html, body {
 }
 
 .fraction-legend-box .name {
-  color: var(--text-muted);
+  color: var(--text-muted, #9aa5a0);
   font-weight: 600;
 }
 
 .fraction-legend-box .pct {
-  color: var(--text-main);
+  color: var(--text, #e8ece9);
   font-weight: 800;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+[data-theme="light"] .fraction-legend-box {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .fraction-legend-box .name {
+  color: #475569;
+}
+
+[data-theme="light"] .fraction-legend-box .pct {
+  color: #0f172a;
 }
 
 
@@ -14743,6 +14792,62 @@ h2, h3, .card-title, .panel-title {
 .header-field-selector select {
   color: var(--text) !important;
   background: transparent !important;
+  color-scheme: dark;
+}
+
+.header-field-selector select option {
+  background-color: #161d1a !important;
+  color: #e8ece9 !important;
+}
+
+[data-theme="light"] .header-field-selector select {
+  color-scheme: light;
+  color: #0f172a !important;
+  background: transparent !important;
+}
+
+[data-theme="light"] .header-field-selector select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Native select element baseline across dark & light themes */
+select {
+  color-scheme: dark;
+  background-color: var(--surface, #161d1a);
+  color: var(--text, #e8ece9);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+select:focus {
+  border-color: var(--leaf, #7fb069);
+}
+
+select option {
+  background-color: #161d1a;
+  color: #e8ece9;
+}
+
+[data-theme="light"] select {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] select:focus {
+  border-color: #047857;
+}
+
+[data-theme="light"] select option {
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 /* Page Container (Gutter, max-width, gap) */

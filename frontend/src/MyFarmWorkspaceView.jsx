@@ -401,14 +401,14 @@ export function MyFarmWorkspaceView({
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, margin: '16px 0' }}>
               {/* Rabi Crop Selector */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
+              <div style={{ background: 'var(--surface-2, rgba(0, 0, 0, 0.15))', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--leaf)', marginBottom: 6, textTransform: 'uppercase' }}>
                   ১. রবি মৌসুম (Rabi: Nov - Apr)
                 </label>
                 <select
                   value={existingRotation.rabi}
                   onChange={e => setExistingRotation({ ...existingRotation, rabi: e.target.value })}
-                  style={{ width: '100%', background: '#0b131a', color: '#fff', border: '1px solid #334155', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Boro Rice">বোরো ধান (Boro Rice - High Water)</option>
                   <option value="Wheat">গম (Wheat)</option>
@@ -424,14 +424,14 @@ export function MyFarmWorkspaceView({
               </div>
 
               {/* Kharif-1 Crop Selector */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
+              <div style={{ background: 'var(--surface-2, rgba(0, 0, 0, 0.15))', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--water)', marginBottom: 6, textTransform: 'uppercase' }}>
                   ২. খরিফ-১ মৌসুম (Kharif-1: Apr - Jun)
                 </label>
                 <select
                   value={existingRotation.kharif1}
                   onChange={e => setExistingRotation({ ...existingRotation, kharif1: e.target.value })}
-                  style={{ width: '100%', background: '#0b131a', color: '#fff', border: '1px solid #334155', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Fallow">পতিত জমি (Fallow / Common Practice)</option>
                   <option value="Aus Rice">আউশ ধান (Aus Rice)</option>
@@ -443,14 +443,14 @@ export function MyFarmWorkspaceView({
               </div>
 
               {/* Kharif-2 Crop Selector */}
-              <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
+              <div style={{ background: 'var(--surface-2, rgba(0, 0, 0, 0.15))', padding: 12, borderRadius: 10, border: '1px solid var(--line)' }}>
                 <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--sun)', marginBottom: 6, textTransform: 'uppercase' }}>
                   ৩. খরিফ-২ মৌসুম (Kharif-2: Jul - Oct)
                 </label>
                 <select
                   value={existingRotation.kharif2}
                   onChange={e => setExistingRotation({ ...existingRotation, kharif2: e.target.value })}
-                  style={{ width: '100%', background: '#0b131a', color: '#fff', border: '1px solid #334155', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Rice">রোপা আমন ধান (T.Aman Rice - Monsoon)</option>
                   <option value="Fallow">পতিত জমি (Fallow - Waterlogged Basin)</option>
