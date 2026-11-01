@@ -149,7 +149,7 @@ export function FieldParcelManagerView({
   }, [lat, lon, pinMode]);
 
   const areaHa = activeField?.area_ha != null ? Number(activeField.area_ha) : 10.0;
-  const areaAcres = (areaHa * 2.47105).toFixed(1);
+  const areaBigha = (areaHa * 10000 / 1337.8).toFixed(1);
   const texture = activeField?.soil_texture || 'loam';
   const organicMatter = activeField?.organic_matter != null ? Number(activeField.organic_matter) : 2.5;
   const irrigationMm = activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : 90;
@@ -204,13 +204,13 @@ export function FieldParcelManagerView({
                   📍 {lat.toFixed(4)}° N, {lon.toFixed(4)}° E
                 </span>
                 <span className="hero-meta-chip">
-                  📐 {areaHa} ha ({areaAcres} acres)
+                  📐 {areaHa} {lang === 'bn' ? 'হেক্টর' : 'ha'} ({areaBigha} {lang === 'bn' ? 'বিঘা' : 'bigha'})
                 </span>
                 <span className="hero-meta-chip" style={{ background: soilInfo.bgBadge, color: soilInfo.textBadge, borderColor: soilInfo.colorHex }}>
                   🌱 {soilInfo.label}
                 </span>
                 <span className="hero-source-chip">
-                  {isDemo ? 'Offline Demo Benchmark' : `Authoritative PostgreSQL (#${activeField.id})`}
+                  {isDemo ? (lang === 'bn' ? 'অফলাইন ডেমো বেঞ্চমার্ক' : 'Offline Demo Benchmark') : (lang === 'bn' ? `জমি #${activeField.id}` : `Field #${activeField.id}`)}
                 </span>
               </>
             ) : (
@@ -228,9 +228,19 @@ export function FieldParcelManagerView({
 
         <div className="hero-banner-stats">
           <div className="hero-stat-block">
-            <span className="stat-label">Organic Matter</span>
+            <span className="stat-label">{lang === 'bn' ? 'জৈব পদার্থ' : 'Organic Matter'}</span>
             <span className="stat-val text-green">{hasActiveField ? `${organicMatter}%` : '--'}</span>
-            <small className="stat-sub">{hasActiveField ? (isDemo ? 'Benchmark Estimate' : 'Measured / Registered') : 'No measurement'}</small>
+            <small className="stat-sub">
+              {hasActiveField ? (
+                isDemo
+                  ? (lang === 'bn' ? 'ধরে নেওয়া' : 'Assumed')
+                  : (activeField?.organic_matter != null
+                      ? (lang === 'bn' ? 'আপনার দেওয়া' : 'User provided')
+                      : (activeField?.soilgrids_soil || activeField?.district)
+                        ? 'SoilGrids'
+                        : (lang === 'bn' ? 'ধরে নেওয়া' : 'Assumed'))
+              ) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+            </small>
           </div>
           <div className="hero-divider" />
           <div className="hero-stat-block">
@@ -249,24 +259,9 @@ export function FieldParcelManagerView({
             <div className="stage-mode-tabs">
               <button
                 type="button"
-                className={`stage-mode-btn ${mapMode === 'satellite' ? 'active' : ''}`}
-                onClick={() => setMapMode('satellite')}
+                className="stage-mode-btn active"
               >
-                🛰️ Satellite View
-              </button>
-              <button
-                type="button"
-                className={`stage-mode-btn ${mapMode === '3d_block' ? 'active' : ''}`}
-                onClick={() => setMapMode('3d_block')}
-              >
-                🏔️ 3D Terrain Block
-              </button>
-              <button
-                type="button"
-                className={`stage-mode-btn ${mapMode === 'ndvi' ? 'active' : ''}`}
-                onClick={() => setMapMode('ndvi')}
-              >
-                🌱 Simulated NDVI Health
+                🛰️ {lang === 'bn' ? 'স্যাটেলাইট ভিউ ও স্থানাঙ্ক' : 'Satellite View & Location'}
               </button>
             </div>
 
@@ -331,212 +326,44 @@ export function FieldParcelManagerView({
           )}
 
           <div className="stage-canvas-wrapper">
-            {mapMode === 'satellite' && (
-              <div className="interactive-google-map-holder">
-                <GoogleFieldMapPicker
-                  latitude={pinMode ? pinnedCoords.lat : lat}
-                  longitude={pinMode ? pinnedCoords.lon : lon}
-                  readOnly={!pinMode}
-                  onChange={(newLat, newLng) => {
-                    if (pinMode) {
-                      setPinnedCoords({ lat: Number(newLat), lon: Number(newLng) });
-                    }
-                  }}
-                  onLocationNameChange={() => {}}
-                />
-              </div>
-            )}
-
-            {mapMode === '3d_block' && (
-              <div className="isometric-3d-block-holder">
-                <svg className="isometric-svg" viewBox="0 0 600 380" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <linearGradient id="topsoilGrad" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor={soilInfo.colorHex} />
-                      <stop offset="100%" stopColor="var(--bg-deep)" />
-                    </linearGradient>
-                    <linearGradient id="subsoilGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--bg-deep)" />
-                      <stop offset="100%" stopColor="var(--bg-deep)" />
-                    </linearGradient>
-                    <linearGradient id="canopyGreen" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0%" stopColor="var(--leaf)" />
-                      <stop offset="100%" stopColor="var(--leaf)" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Dark Grid Background */}
-                  <rect width="600" height="380" fill="var(--bg-deep)" rx="16" />
-
-                  {/* 3D Isometric Extruded Block Base */}
-                  {/* Right Face (Depth Layer) */}
-                  <polygon points="480,180 480,260 300,340 300,260" fill="url(#subsoilGrad)" stroke="var(--line)" strokeWidth="1.5" />
-                  {/* Left Face (Depth Layer) */}
-                  <polygon points="120,180 120,260 300,340 300,260" fill="var(--bg-deep)" stroke="var(--line)" strokeWidth="1.5" />
-
-                  {/* Top Face (Surface Crop Canopy / Furrow field) */}
-                  <polygon points="300,80 480,180 300,260 120,180" fill="url(#topsoilGrad)" stroke="var(--leaf)" strokeWidth="2" />
-
-                  {/* Crop Furrow Lines in 3D perspective */}
-                  <g stroke="rgba(34, 197, 94, 0.5)" strokeWidth="2" fill="none">
-                    <line x1="260" y1="102" x2="380" y2="215" strokeDasharray="6 4" />
-                    <line x1="220" y1="125" x2="340" y2="238" strokeDasharray="6 4" />
-                    <line x1="180" y1="147" x2="300" y2="260" strokeDasharray="6 4" />
-                    <line x1="300" y1="80" x2="420" y2="193" strokeDasharray="6 4" />
-                    <line x1="340" y1="102" x2="460" y2="215" strokeDasharray="6 4" />
-                  </g>
-
-                  {/* 3D Crop Plants Array */}
-                  <g fill="url(#canopyGreen)">
-                    <circle cx="280" cy="120" r="5" />
-                    <circle cx="320" cy="140" r="6" />
-                    <circle cx="360" cy="160" r="5.5" />
-                    <circle cx="240" cy="140" r="5" />
-                    <circle cx="280" cy="165" r="6.5" />
-                    <circle cx="320" cy="190" r="6" />
-                    <circle cx="200" cy="165" r="4.5" />
-                    <circle cx="240" cy="190" r="6" />
-                    <circle cx="280" cy="215" r="6.5" />
-                  </g>
-
-                  {/* Center Radar Beacon */}
-                  <g transform="translate(300, 170)">
-                    <circle cx="0" cy="0" r="28" fill="none" stroke="var(--leaf)" strokeWidth="1.5" opacity="0.6">
-                      <animate attributeName="r" values="10;45" dur="2.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.8;0" dur="2.5s" repeatCount="indefinite" />
-                    </circle>
-                    <circle cx="0" cy="0" r="6" fill="var(--leaf)" />
-                    <circle cx="0" cy="0" r="3" fill="var(--text)" />
-                  </g>
-
-                  {/* Dimension Annotations */}
-                  <g fill="var(--text)" fontSize="11" fontWeight="700">
-                    <text x="495" y="200" fill="var(--leaf)">Topsoil: 0–15 cm (OM {organicMatter}%)</text>
-                    <text x="495" y="235" fill="var(--sun)">Subsoil: 15–40 cm ({soilInfo.label})</text>
-                    <text x="495" y="270" fill="var(--text-2)">Bedrock Drainage Horizon</text>
-                    <line x1="485" y1="185" x2="490" y2="185" stroke="var(--leaf)" strokeWidth="2" />
-                    <line x1="485" y1="220" x2="490" y2="220" stroke="var(--sun)" strokeWidth="2" />
-                    <line x1="485" y1="260" x2="490" y2="260" stroke="var(--line)" strokeWidth="2" />
-                  </g>
-
-                  {/* Irrigation Inflow Pipe Line */}
-                  <path d="M70,220 L120,240 L300,260" stroke="var(--water)" strokeWidth="3" fill="none" strokeDasharray="8 4" />
-                  <circle cx="70" cy="220" r="5" fill="var(--water)" />
-                  <text x="40" y="210" fill="var(--water)" fontSize="10.5" fontWeight="800">IRRIGATION CAPACITY: {irrigationMm} MM</text>
-                </svg>
-              </div>
-            )}
-
-            {mapMode === 'ndvi' && (
-              <div className="ndvi-simulation-holder">
-                <svg className="ndvi-svg" viewBox="0 0 600 380" preserveAspectRatio="xMidYMid meet">
-                  <rect width="600" height="380" fill="var(--bg-deep)" rx="16" />
-
-                  <g opacity="0.9">
-                    <rect x="80" y="50" width="440" height="260" rx="12" fill="var(--leaf)" stroke="var(--leaf)" strokeWidth="1.5" />
-                    <circle cx="220" cy="150" r="80" fill="var(--leaf)" opacity="0.8" />
-                    <circle cx="360" cy="190" r="95" fill="var(--leaf)" opacity="0.85" />
-                    <circle cx="410" cy="130" r="65" fill="var(--leaf)" opacity="0.9" />
-                    <ellipse cx="280" cy="220" rx="90" ry="45" fill="var(--leaf)" opacity="0.75" />
-                    <ellipse cx="140" cy="240" rx="50" ry="30" fill="var(--accent)" opacity="0.7" />
-                  </g>
-
-                  {/* False Color Heatmap Scale Legend */}
-                  <g transform="translate(100, 335)">
-                    <text x="0" y="14" fill="var(--text-2)" fontSize="11" fontWeight="700">NDVI VIGOR:</text>
-                    <rect x="90" y="2" width="50" height="15" fill="var(--sun)" rx="3" />
-                    <text x="95" y="13" fill="var(--text)" fontSize="9.5" fontWeight="700">0.25 (Low)</text>
-
-                    <rect x="145" y="2" width="60" height="15" fill="var(--leaf)" rx="3" />
-                    <text x="150" y="13" fill="var(--text)" fontSize="9.5" fontWeight="700">0.55 (Med)</text>
-
-                    <rect x="210" y="2" width="65" height="15" fill="var(--leaf)" rx="3" />
-                    <text x="215" y="13" fill="var(--bg-deep)" fontSize="9.5" fontWeight="800">0.82 (High)</text>
-
-                    <text x="300" y="14" fill="var(--leaf)" fontSize="11.5" fontWeight="800">
-                      Mean Field Canopy Index: 0.68 (Robust Biomass)
-                    </text>
-                  </g>
-                </svg>
-              </div>
-            )}
+            <div className="interactive-google-map-holder">
+              <GoogleFieldMapPicker
+                latitude={pinMode ? pinnedCoords.lat : lat}
+                longitude={pinMode ? pinnedCoords.lon : lon}
+                readOnly={!pinMode}
+                onChange={(newLat, newLng) => {
+                  if (pinMode) {
+                    setPinnedCoords({ lat: Number(newLat), lon: Number(newLng) });
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
 
         {/* Right Soil Horizon Deck */}
         <div className="parcel-soil-deck">
-          {/* Card 1: Soil Horizon Stratigraphy */}
+          {/* Card 1: Soil Texture & Fractions (ISRIC SoilGrids 250m) */}
           <div className="param-card-3d soil-stratigraphy-card">
             <div className="card-top-row">
               <div className="card-title-wrap">
-                <span className="card-title-icon">🧪 Soil Horizon Core</span>
-                <span className="card-subtitle-note">Geological Horizons & Texture Stratigraphy</span>
+                <span className="card-title-icon">🧪 {lang === 'bn' ? 'মাটির কণার অনুপাত' : 'Soil Texture Fractions'}</span>
+                <span className="card-subtitle-note">
+                  {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
+                </span>
               </div>
               <span className="soil-tag-pill" style={{ background: soilInfo.bgBadge, color: soilInfo.textBadge, borderColor: soilInfo.colorHex }}>
                 {soilInfo.label}
               </span>
             </div>
 
-            {/* Geological Core Strata Breakdown */}
-            <div className="soil-strata-container">
-              {/* Left Depth Column Indicator */}
-              <div className="soil-depth-column" title="Soil Horizon Depth Profile">
-                <div className="strata-block strata-a" style={{ background: `linear-gradient(180deg, var(--leaf) 0%, ${soilInfo.colorHex} 100%)` }}>
-                  <span className="strata-id">A</span>
-                </div>
-                <div className="strata-block strata-b">
-                  <span className="strata-id">B</span>
-                </div>
-                <div className="strata-block strata-c">
-                  <span className="strata-id">C</span>
-                </div>
-              </div>
-
-              {/* Right Horizon Descriptions */}
-              <div className="soil-horizons-list">
-                {/* A Horizon */}
-                <div className="horizon-row-card horizon-a-card">
-                  <div className="horizon-row-head">
-                    <strong className="h-name">A-Horizon (Topsoil 0–15 cm)</strong>
-                    <span className="depth-badge">0–15 cm</span>
-                  </div>
-                  <div className="horizon-row-metrics">
-                    <span className="h-metric-chip highlight">Organic Matter: {organicMatter}%</span>
-                    <span className="h-metric-chip">High Biota</span>
-                  </div>
-                </div>
-
-                {/* B Horizon */}
-                <div className="horizon-row-card horizon-b-card">
-                  <div className="horizon-row-head">
-                    <strong className="h-name">B-Horizon (Subsoil 15–40 cm)</strong>
-                    <span className="depth-badge">15–40 cm</span>
-                  </div>
-                  <div className="horizon-row-metrics">
-                    <span className="h-metric-chip">Illuvial Clay Enrichment</span>
-                    <span className="h-metric-chip highlight">FC: {soilInfo.fc}</span>
-                  </div>
-                </div>
-
-                {/* C Horizon */}
-                <div className="horizon-row-card horizon-c-card">
-                  <div className="horizon-row-head">
-                    <strong className="h-name">C-Horizon (Substratum)</strong>
-                    <span className="depth-badge">40+ cm</span>
-                  </div>
-                  <div className="horizon-row-metrics">
-                    <span className="h-metric-chip">Weathered Bedrock</span>
-                    <span className="h-metric-chip">Drainage Floor</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Particle Texture Fractions Breakdown */}
-            <div className="soil-fractions-wrapper">
+            <div className="soil-fractions-wrapper" style={{ marginTop: 6 }}>
               <div className="fractions-label-row">
-                <span className="fractions-title">Soil Texture Fractions</span>
-                <span className="fractions-total">USDA Particle Size Distribution</span>
+                <span className="fractions-title">{lang === 'bn' ? 'বালু, পলি ও কাদার অনুপাত' : 'Sand, Silt & Clay Distribution'}</span>
+                <span className="fractions-total">
+                  {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
+                </span>
               </div>
 
               <div className="soil-fractions-bar-v2">
@@ -545,96 +372,105 @@ export function FieldParcelManagerView({
                   style={{ width: `${soilInfo.sand}%` }}
                   title={`Sand: ${soilInfo.sand}%`}
                 >
-                  <span>Sand {soilInfo.sand}%</span>
+                  <span>{lang === 'bn' ? 'বালু' : 'Sand'} {soilInfo.sand}%</span>
                 </div>
                 <div
                   className="fraction-seg-v2 silt"
                   style={{ width: `${soilInfo.silt}%` }}
                   title={`Silt: ${soilInfo.silt}%`}
                 >
-                  <span>Silt {soilInfo.silt}%</span>
+                  <span>{lang === 'bn' ? 'পলি' : 'Silt'} {soilInfo.silt}%</span>
                 </div>
                 <div
                   className="fraction-seg-v2 clay"
                   style={{ width: `${soilInfo.clay}%` }}
                   title={`Clay: ${soilInfo.clay}%`}
                 >
-                  <span>Clay {soilInfo.clay}%</span>
+                  <span>{lang === 'bn' ? 'কাদা' : 'Clay'} {soilInfo.clay}%</span>
                 </div>
               </div>
 
               <div className="fractions-legend-grid">
                 <div className="fraction-legend-box sand">
                   <span className="dot" />
-                  <span className="name">Sand</span>
+                  <span className="name">{lang === 'bn' ? 'বালু (Sand)' : 'Sand'}</span>
                   <strong className="pct">{soilInfo.sand}%</strong>
                 </div>
                 <div className="fraction-legend-box silt">
                   <span className="dot" />
-                  <span className="name">Silt</span>
+                  <span className="name">{lang === 'bn' ? 'পলি (Silt)' : 'Silt'}</span>
                   <strong className="pct">{soilInfo.silt}%</strong>
                 </div>
                 <div className="fraction-legend-box clay">
                   <span className="dot" />
-                  <span className="name">Clay</span>
+                  <span className="name">{lang === 'bn' ? 'কাদা (Clay)' : 'Clay'}</span>
                   <strong className="pct">{soilInfo.clay}%</strong>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Key Physical Soil Metrics */}
+          {/* Card 2: Key Physical Soil Metrics (FC & PWP only, no fake depth) */}
           <div className="param-card-3d">
             <div className="card-top-row">
-              <span className="card-title-icon">💧 Physical Moisture Parameters</span>
-              <span className="status-live-chip">Soil Profile</span>
+              <span className="card-title-icon">💧 {lang === 'bn' ? 'আর্দ্রতা ধারণ সক্ষমতা' : 'Moisture Retention Capacity'}</span>
+              <span className="status-live-chip">
+                {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
+              </span>
             </div>
-            <div className="param-metrics-grid">
+            <div className="param-metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
               <div className="p-metric-box">
-                <span className="lbl">Field Capacity (FC)</span>
+                <span className="lbl">{lang === 'bn' ? 'ফিল্ড ক্যাপাসিটি (FC)' : 'Field Capacity (FC)'}</span>
                 <strong className="val text-green">{soilInfo.fc}</strong>
+                <small style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                  {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
+                </small>
               </div>
               <div className="p-metric-box">
-                <span className="lbl">Wilting Point (PWP)</span>
+                <span className="lbl">{lang === 'bn' ? 'উইল্টিং পয়েন্ট (PWP)' : 'Permanent Wilting Point (PWP)'}</span>
                 <strong className="val text-amber">{soilInfo.pwp}</strong>
-              </div>
-              <div className="p-metric-box">
-                <span className="lbl">Drought Resiliency</span>
-                <strong className="val text-green">High Buffer</strong>
-              </div>
-              <div className="p-metric-box">
-                <span className="lbl">Water Table Depth</span>
-                <strong className="val">3.2 <small>m (Rabi)</small></strong>
+                <small style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>
+                  {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
+                </small>
               </div>
             </div>
           </div>
 
-          {/* Card 3: Crop Rotation History */}
+          {/* Card 3: Authentic Crop Rotation History from /api/fields/{id}/history */}
           <div className="param-card-3d">
             <div className="card-top-row">
-              <span className="card-title-icon">🌾 Agronomic Rotation History</span>
-              <span className="crop-history-badge">{cropYear} • {crop}</span>
+              <span className="card-title-icon">🌾 {lang === 'bn' ? 'ফসল আবর্তনের ইতিহাস' : 'Agronomic Rotation History'}</span>
+              {activeField?.history && activeField.history.length > 0 && (
+                <span className="crop-history-badge">
+                  {activeField.history[0].year} • {activeField.history[0].crop}
+                </span>
+              )}
             </div>
             <div className="crop-history-body">
-              <div className="crop-sequence-pill-strip">
-                <div className="seq-step prev">
-                  <span className="seq-yr">{cropYear - 1}</span>
-                  <strong>Lentil (BNF)</strong>
+              {activeField?.history && activeField.history.length > 0 ? (
+                <div className="crop-sequence-pill-strip" style={{ flexWrap: 'wrap', gap: 8 }}>
+                  {activeField.history.map((h, idx) => (
+                    <div key={h.id || idx} className="seq-step current">
+                      <span className="seq-yr">{h.year} • {h.season}</span>
+                      <strong>{h.crop}</strong>
+                    </div>
+                  ))}
                 </div>
-                <span className="seq-arrow">→</span>
-                <div className="seq-step current">
-                  <span className="seq-yr">{cropYear}</span>
-                  <strong>{crop}</strong>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '14px 10px', color: 'var(--text-muted)' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 13 }}>
+                    {lang === 'bn' ? 'এখনো কোনো ফসলের ইতিহাস নেই' : 'No crop history recorded yet.'}
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-primary-sm"
+                    onClick={() => onEditField && onEditField(activeField)}
+                    style={{ fontSize: 12, padding: '6px 14px', margin: '0 auto' }}
+                  >
+                    {lang === 'bn' ? '+ ইতিহাস যোগ করুন' : '+ Add History'}
+                  </button>
                 </div>
-                <span className="seq-arrow">→</span>
-                <div className="seq-step next">
-                  <span className="seq-yr">{cropYear + 1}</span>
-                  <strong>Mungbean (Proposed)</strong>
-                </div>
-              </div>
-              <p className="crop-rotation-note">
-                Prior rotation included nitrogen-fixing pulses contributing ~35 kg N/ha residual fertility.
-              </p>
+              )}
             </div>
           </div>
         </div>
@@ -666,7 +502,7 @@ export function FieldParcelManagerView({
               type="button"
               className="btn-add-field"
               onClick={() => onAddField && onAddField()}
-              title="Register a new agricultural field in PostgreSQL"
+              title="Register a new agricultural field"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -678,9 +514,9 @@ export function FieldParcelManagerView({
         </div>
 
         {!user ? (
-          <p className="field-load-notice">Sign in to load registered fields from PostgreSQL.</p>
+          <p className="field-load-notice">{lang === "bn" ? "নিবন্ধিত জমি লোড করতে সাইন ইন করুন।" : "Sign in to load registered fields."}</p>
         ) : !fieldsLoaded ? (
-          <p className="field-load-notice">Loading registered fields from PostgreSQL...</p>
+          <p className="field-load-notice">{lang === "bn" ? "জমি লোড হচ্ছে..." : "Loading registered fields..."}</p>
         ) : fieldsError ? (
           <p className="field-load-notice" role="alert">Could not load registered fields: {fieldsError}</p>
         ) : filteredFields.length > 0 ? (
@@ -800,7 +636,7 @@ export function FieldParcelManagerView({
                     <div className="field-props-highlight-grid">
                       <div className="prop-highlight-card">
                         <div className="prop-highlight-val">
-                          {formatNumber(fld.area_ha, 1, null) != null ? `${formatNumber(fld.area_ha, 1)} ha` : 'Not provided'}
+                          {formatNumber(fld.area_ha, 1, null) != null ? `${formatNumber(fld.area_ha, 1)} ha (${(Number(fld.area_ha) * 10000 / 1337.8).toFixed(1)} ${lang === 'bn' ? 'বিঘা' : 'bigha'})` : (lang === 'bn' ? 'তথ্য নেই' : 'Not provided')}
                         </div>
                         <div className="prop-highlight-lbl">Field Size</div>
                       </div>
