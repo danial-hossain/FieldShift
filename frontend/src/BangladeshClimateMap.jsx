@@ -2,7 +2,7 @@
 // Interactive Bangladesh 64-District Climate Map & Scenario Perturbation Sliders (A6)
 // Visualizes NASA Earth Observations across 64 districts with scenario sliders (Rainfall ±20%, Temp +0..+2°C)
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import districtsData from './bd_districts_choropleth.json';
 import { formatNumber } from './marketUtils.js';
 
@@ -91,29 +91,67 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
     }
   };
 
-  // Scenario perturbation impact calculations
+  const [scenarioResult, setScenarioResult] = useState(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Debounced 400ms API call to backend climate scenario endpoint
+  useEffect(() => {
+    let active = true;
+    setIsCalculating(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/geo/climate-scenario', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            district: activeField?.district || 'bogura',
+            latitude: activeField?.latitude,
+            longitude: activeField?.longitude,
+            rain_delta_pct: rainDelta,
+            temp_delta_c: tempDelta,
+          }),
+        });
+        const data = await res.json();
+        if (active && data.status === 'ok') {
+          setScenarioResult(data);
+        }
+      } catch (e) {
+        console.warn('Failed to calculate climate scenario:', e);
+      } finally {
+        if (active) setIsCalculating(false);
+      }
+    }, 400);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [rainDelta, tempDelta, activeField?.district, activeField?.latitude, activeField?.longitude]);
+
+  // Dynamic scenario impact from empirical API or fallback to calibrated model
   const scenarioImpact = useMemo(() => {
-    // Penman-Monteith ET0 sensitivity: +4.2% per °C
-    const et0IncreasePct = Number((tempDelta * 4.2).toFixed(1));
-    // Water requirement delta mm: baseline ~1850 mm
-    const waterDeltaMm = Math.round(1850 * (et0IncreasePct / 100.0) - (rainDelta * 12.0));
-    // Heat stress days: +3 days per 1°C
-    const extraHeatStressDays = Math.round(tempDelta * 3.5);
-
-    // Resilience comparisons across strategies
-    const existingProfitDeltaPct = Number((- (tempDelta * 3.2) + (rainDelta * 0.4)).toFixed(1));
-    const waterStratProfitDeltaPct = Number((- (tempDelta * 1.8) + (rainDelta * 0.15)).toFixed(1));
-    const soilStratProfitDeltaPct = Number((- (tempDelta * 1.5) + (rainDelta * 0.10)).toFixed(1));
-
+    if (scenarioResult) {
+      return {
+        et0IncreasePct: scenarioResult.et0_increase_pct,
+        waterDeltaMm: scenarioResult.water_delta_mm,
+        extraHeatStressDays: scenarioResult.extra_heat_stress_days,
+        existingProfitDeltaPct: scenarioResult.existing_profit_delta_pct,
+        waterStratProfitDeltaPct: scenarioResult.water_strat_profit_delta_pct,
+        soilStratProfitDeltaPct: scenarioResult.soil_strat_profit_delta_pct,
+      };
+    }
+    const et0IncreasePct = Number((tempDelta * 3.8).toFixed(1));
+    const waterDeltaMm = Math.round(1350 * (et0IncreasePct / 100.0) - (rainDelta * 10.0));
+    const extraHeatStressDays = Math.round(tempDelta * 16.0);
     return {
       et0IncreasePct,
       waterDeltaMm,
       extraHeatStressDays,
-      existingProfitDeltaPct,
-      waterStratProfitDeltaPct,
-      soilStratProfitDeltaPct
+      existingProfitDeltaPct: Number((- (tempDelta * 3.2) + (rainDelta * 0.4)).toFixed(1)),
+      waterStratProfitDeltaPct: Number((- (tempDelta * 1.8) + (rainDelta * 0.15)).toFixed(1)),
+      soilStratProfitDeltaPct: Number((- (tempDelta * 1.5) + (rainDelta * 0.10)).toFixed(1)),
     };
-  }, [rainDelta, tempDelta]);
+  }, [scenarioResult, rainDelta, tempDelta]);
 
   return (
     <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--glass-border)', padding: '20px 24px', marginBottom: 24, boxShadow: 'var(--glass-shadow)' }}>
