@@ -11,6 +11,7 @@ import { ClimateStress3D } from './research3d/ClimateStress3D.jsx';
 import { ScenarioComparison3D } from './research3d/ScenarioComparison3D.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
+import { CROP_DATABASE } from './sixSeasonEngine.js';
 
 export function DigitalTwin3DView({
   activeField,
@@ -581,31 +582,81 @@ export function DigitalTwin3DView({
       )}
 
       {/* SUB-TAB 4: SCENARIO A/B COMPARISON */}
-      {subTab === 'compare' && (
-        <div className="dash-card ui-card-hud" style={{ background: 'var(--glass-strong)', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
-            {lang === 'bn' ? 'দ্বৈত দৃশ্যকল্প এ/বি ত্রিমাত্রিক তুলনা' : 'Scenario A/B Dual 3D Comparison'}
-          </h3>
-          <ScenarioComparison3D
-            scenarioA={{
-              name: 'Scenario A: Baseline Traditional Rotation',
-              crop: rotationsByStrategy.existing[0] || 'Rice',
-              yield_kg_ha: 4200,
-              water_mm: 1200,
-              profit_bdt: 95000,
-            }}
-            scenarioB={{
-              name: `Scenario B: Optimized (${selectedStrategy.toUpperCase()})`,
-              crop: currentSeason.crop,
-              yield_kg_ha: 4600,
-              water_mm: currentSeason.waterMm > 0 ? currentSeason.waterMm : 350,
-              profit_bdt: 114000,
-            }}
-            activeDiffMetric="water"
-            lang={lang}
-          />
-        </div>
-      )}
+      {subTab === 'compare' && (() => {
+        const planningSummary = plan?.summary?.planning || summary?.planning || plan?.planning || null;
+        if (!planningSummary) {
+          return (
+            <div className="dash-card ui-card-hud" style={{ background: 'var(--glass-strong)', border: '1px solid var(--line)', borderRadius: 14, padding: 24, textAlign: 'center' }}>
+              <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+                {lang === 'bn' ? 'দ্বৈত দৃশ্যকল্প এ/বি ত্রিমাত্রিক তুলনা' : 'Scenario A/B Dual 3D Comparison'}
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: '20px 0' }}>
+                {lang === 'bn' ? 'তথ্য নেই (প্রথমে আবর্তন পরিকল্পনা তৈরি করুন)' : 'No data (Please generate a rotation plan first)'}
+              </p>
+            </div>
+          );
+        }
+
+        const baselineCrop = rotationsByStrategy.existing[selectedSeasonIdx] || planningSummary.baseline_rotation?.[selectedSeasonIdx % 3] || 'Boro Rice';
+        const planCrop = currentSeason.crop;
+        const baselineMeta = CROP_DATABASE[baselineCrop] || null;
+        const planMeta = CROP_DATABASE[planCrop] || null;
+
+        const baselineYieldKgHa = baselineMeta?.baseYieldTonHa != null ? Math.round(baselineMeta.baseYieldTonHa * 1000) : null;
+        const planYieldKgHa = planMeta?.baseYieldTonHa != null ? Math.round(planMeta.baseYieldTonHa * 1000) : null;
+
+        const baselineWaterMm = planningSummary.baseline_irrigation_mm != null ? Math.round(planningSummary.baseline_irrigation_mm) : null;
+        const planWaterMm = planningSummary.plan_irrigation_mm != null ? Math.round(planningSummary.plan_irrigation_mm) : (currentSeason.waterMm > 0 ? currentSeason.waterMm : null);
+
+        const baselineProfitBdt = planningSummary.baseline_profit_bdt != null ? Math.round(planningSummary.baseline_profit_bdt) : null;
+        const planProfitBdt = planningSummary.plan_profit_bdt != null ? Math.round(planningSummary.plan_profit_bdt) : null;
+
+        const baselineNitrogenKg = planningSummary.baseline_nitrogen_kg != null ? Math.round(planningSummary.baseline_nitrogen_kg) : null;
+        const planNitrogenKg = planningSummary.plan_nitrogen_kg != null ? Math.round(planningSummary.plan_nitrogen_kg) : null;
+
+        return (
+          <div className="dash-card ui-card-hud" style={{ background: 'var(--glass-strong)', border: '1px solid var(--line)', borderRadius: 14, padding: 20 }}>
+            <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+              {lang === 'bn' ? 'দ্বৈত দৃশ্যকল্প এ/বি ত্রিমাত্রিক তুলনা' : 'Scenario A/B Dual 3D Comparison'}
+            </h3>
+            <ScenarioComparison3D
+              scenarioA={{
+                name: lang === 'bn' ? 'দৃশ্যকল্প ক: বিদ্যমান ঐতিহ্যগত বেসলাইন' : 'Scenario A: Baseline Traditional Rotation',
+                crop: baselineCrop,
+                yield_kg_ha: baselineYieldKgHa,
+                yield_ton_ha: baselineMeta?.baseYieldTonHa != null ? String(baselineMeta.baseYieldTonHa) : null,
+                water_mm: baselineWaterMm,
+                profit_bdt: baselineProfitBdt,
+                nitrogenKgHa: baselineNitrogenKg,
+              }}
+              scenarioB={{
+                name: lang === 'bn' ? `দৃশ্যকল্প খ: নির্বাচিত পরিকল্পনা (${selectedStrategy.toUpperCase()})` : `Scenario B: Optimized (${selectedStrategy.toUpperCase()})`,
+                crop: planCrop,
+                yield_kg_ha: planYieldKgHa,
+                yield_ton_ha: planMeta?.baseYieldTonHa != null ? String(planMeta.baseYieldTonHa) : null,
+                water_mm: planWaterMm,
+                profit_bdt: planProfitBdt,
+                nitrogenKgHa: planNitrogenKg,
+              }}
+              comparison={{
+                yieldTonHa: {
+                  absoluteDiff: baselineMeta?.baseYieldTonHa != null && planMeta?.baseYieldTonHa != null ? Number((planMeta.baseYieldTonHa - baselineMeta.baseYieldTonHa).toFixed(1)) : 0,
+                  percentageDiff: baselineMeta?.baseYieldTonHa > 0 ? Math.round(((planMeta.baseYieldTonHa - baselineMeta.baseYieldTonHa) / baselineMeta.baseYieldTonHa) * 100) : 0,
+                },
+                waterAppliedMm: {
+                  absoluteDiff: planWaterMm != null && baselineWaterMm != null ? planWaterMm - baselineWaterMm : 0,
+                  percentageDiff: baselineWaterMm > 0 ? Math.round(((planWaterMm - baselineWaterMm) / baselineWaterMm) * 100) : 0,
+                },
+                netReturnBdt: {
+                  absoluteDiff: planningSummary.profit_delta_bdt != null ? Math.round(planningSummary.profit_delta_bdt) : (planProfitBdt != null && baselineProfitBdt != null ? planProfitBdt - baselineProfitBdt : 0),
+                },
+              }}
+              activeDiffMetric="water"
+              lang={lang}
+            />
+          </div>
+        );
+      })()}
 
     </div>
   );

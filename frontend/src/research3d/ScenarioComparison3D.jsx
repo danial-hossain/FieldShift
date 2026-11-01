@@ -16,10 +16,10 @@ export function ScenarioComparison3D({
   currentDay = 120,
   lang = 'bn'
 }) {
-  const yieldA = simResultA?.yieldOutcomes?.simulatedYieldTonHa || 5.2;
-  const yieldB = simResultB?.yieldOutcomes?.simulatedYieldTonHa || 5.6;
-  const waterA = simResultA?.waterBalance?.totalWaterAppliedMm || 350;
-  const waterB = simResultB?.waterBalance?.totalWaterAppliedMm || 240;
+  const yieldA = simResultA?.yieldOutcomes?.simulatedYieldTonHa ?? scenarioA?.yield_ton_ha ?? (scenarioA?.yield_kg_ha ? (Number(scenarioA.yield_kg_ha) / 1000).toFixed(1) : (lang === 'bn' ? 'তথ্য নেই' : 'No data'));
+  const yieldB = simResultB?.yieldOutcomes?.simulatedYieldTonHa ?? scenarioB?.yield_ton_ha ?? (scenarioB?.yield_kg_ha ? (Number(scenarioB.yield_kg_ha) / 1000).toFixed(1) : (lang === 'bn' ? 'তথ্য নেই' : 'No data'));
+  const waterA = simResultA?.waterBalance?.totalWaterAppliedMm ?? scenarioA?.water_mm ?? scenarioA?.irrigationMm ?? (lang === 'bn' ? 'তথ্য নেই' : 'No data');
+  const waterB = simResultB?.waterBalance?.totalWaterAppliedMm ?? scenarioB?.water_mm ?? scenarioB?.irrigationMm ?? (lang === 'bn' ? 'তথ্য নেই' : 'No data');
 
   const handleSceneReady = ({ scene }) => {
     const duelGroup = new THREE.Group();
@@ -123,16 +123,16 @@ export function ScenarioComparison3D({
             ভিন্ন ইনপুট পরিবর্তনসমূহ (Differing Inputs):
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>সেচ বাজেট:</span>
-            <span>A: {scenarioA?.irrigationMm || 350}mm ➔ B: {scenarioB?.irrigationMm || 240}mm</span>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'সেচ বাজেট:' : 'Irrigation:'}</span>
+            <span>A: {scenarioA?.water_mm != null ? `${scenarioA.water_mm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} ➔ B: {scenarioB?.water_mm != null ? `${scenarioB.water_mm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>আবহাওয়া:</span>
-            <span>{scenarioB?.weatherScenario || 'warming_1_5c'}</span>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'আবহাওয়া দৃশ্যকল্প:' : 'Weather Scenario:'}</span>
+            <span>{scenarioB?.weatherScenario || (lang === 'bn' ? 'নাসা পর্যবেক্ষণ (NASA POWER)' : 'NASA POWER Observed')}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>নাইট্রোজেন (N):</span>
-            <span>A: {scenarioA?.nitrogenKgHa || 120}kg ➔ B: {scenarioB?.nitrogenKgHa || 135}kg</span>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'নাইট্রোজেন (N):' : 'Nitrogen (N):'}</span>
+            <span>A: {scenarioA?.nitrogenKgHa != null ? `${scenarioA.nitrogenKgHa} kg` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} ➔ B: {scenarioB?.nitrogenKgHa != null ? `${scenarioB.nitrogenKgHa} kg` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</span>
           </div>
         </div>
 

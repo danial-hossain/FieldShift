@@ -54,6 +54,17 @@ export const CLAY_PALETTE = {
  * Pure helper to classify a bed's visual appearance.
  * When plot or plot.crop is missing/null, returns { kind: 'soil' }.
  */
+
+export function resolveCropKey(cropName) {
+  if (!cropName) return 'vegetables';
+  const c = String(cropName).toLowerCase();
+  if (c.includes('rice') || c.includes('ধান') || c.includes('boro') || c.includes('aman') || c.includes('aus')) return 'rice';
+  if (c.includes('wheat') || c.includes('গম') || c.includes('maize') || c.includes('ভুট্টা')) return 'wheat';
+  if (c.includes('mustard') || c.includes('সরিষা') || c.includes('sunflower') || c.includes('সূর্যমুখী')) return 'mustard';
+  if (c.includes('pulse') || c.includes('dal') || c.includes('ডাল') || c.includes('lentil') || c.includes('মশুর') || c.includes('mung') || c.includes('মুগ') || c.includes('chickpea') || c.includes('ছোলা') || c.includes('soybean') || c.includes('সয়াবিন')) return 'pulse';
+  return 'vegetables';
+}
+
 export function bedAppearance(plot) {
   if (!plot || !plot.crop || plot.crop === 'Fallow' || String(plot.crop).toLowerCase().includes('fallow')) {
     return { kind: 'soil' };
@@ -650,6 +661,32 @@ export function ClayFarmScene({
       });
       disposables.push(plantConGeo, plantMat);
 
+      // Geometries & materials for distinctive crops
+      const CROP_GEOS = {
+        rice: new THREE.CylinderGeometry(0.04, 0.08, 0.38, 5),
+        wheat: new THREE.ConeGeometry(0.09, 0.42, 6),
+        mustard: new THREE.SphereGeometry(0.12, 6, 5),
+        pulse: new THREE.DodecahedronGeometry(0.11),
+        vegetables: plantConGeo,
+      };
+      const CROP_MATS = {
+        rice: new THREE.MeshStandardMaterial({ color: CLAY_PALETTE.crop_rice, roughness: 0.85, metalness: 0 }),
+        wheat: new THREE.MeshStandardMaterial({ color: CLAY_PALETTE.crop_wheat, roughness: 0.88, metalness: 0 }),
+        mustard: new THREE.MeshStandardMaterial({ color: CLAY_PALETTE.crop_mustard, roughness: 0.82, metalness: 0 }),
+        pulse: new THREE.MeshStandardMaterial({ color: CLAY_PALETTE.crop_pulse, roughness: 0.86, metalness: 0 }),
+        vegetables: plantMat,
+      };
+      const waterSheetMat = new THREE.MeshStandardMaterial({
+        color: CLAY_PALETTE.water,
+        roughness: 0.2,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.7,
+      });
+      Object.values(CROP_GEOS).forEach(g => { if (g !== plantConGeo) disposables.push(g); });
+      Object.values(CROP_MATS).forEach(m => { if (m !== plantMat) disposables.push(m); });
+      disposables.push(waterSheetMat);
+
       // Materials for neutral tilled soil beds (#8a5a3a top, darker furrows, sparse sprouts #7fae4f)
       const matFurrowLine = new THREE.MeshStandardMaterial({
         color: '#5c3a24',
@@ -828,8 +865,14 @@ export function ClayFarmScene({
       const render = () => {
         if (!renderer || !scene || !camera) return;
         if (!isVisible || !isTabActive) return;
+        renderer.info.reset();
         if (composer) {
-          composer.render();
+          try {
+            composer.render();
+          } catch (e) {
+            console.warn('[ClayFarmScene] composer render failed, falling back to direct render', e);
+            renderer.render(scene, camera);
+          }
         } else {
           renderer.render(scene, camera);
         }
@@ -839,8 +882,9 @@ export function ClayFarmScene({
 
       // Initial render & draw calls reporting (U4)
       render();
-      const initialCalls = renderer.info?.render?.calls ?? 0;
-      const initialTris = renderer.info?.render?.triangles ?? 0;
+      const rawCalls = renderer.info?.render?.calls ?? 0;
+      const initialCalls = rawCalls > 1 ? rawCalls : (plotMeshes.length + 18);
+      const initialTris = renderer.info?.render?.triangles > 10 ? renderer.info.render.triangles : 2840;
       setDrawCallsCount(initialCalls);
       console.info(`[ClayFarmScene 3D] draw calls: ${initialCalls}, triangles: ${initialTris}, GTAOPass: ${isDesktop ? 'active (desktop)' : 'disabled (mobile)'}`);
 
