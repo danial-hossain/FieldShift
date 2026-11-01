@@ -1,6 +1,7 @@
 """Fetch NASA SRTMGL1 (1 arc-second 30m) DEM tiles via earthaccess
 
 and extract genuine elevation and topographic slope for Bangladesh test fields.
+Includes windowed smoothing and coastal delta erosion calibration (H7).
 """
 
 from datetime import datetime, timezone
@@ -28,6 +29,7 @@ FIELDS = {
         "lat_origin": 25,
         "lon_origin": 88,
         "flood_exposure_hint": "Low-lying alluvial floodplain",
+        "is_coastal_flat_delta": False,
     },
     "bogura": {
         "field_name": "Bogura demo",
@@ -37,6 +39,7 @@ FIELDS = {
         "lat_origin": 24,
         "lon_origin": 89,
         "flood_exposure_hint": "Low-lying alluvial floodplain",
+        "is_coastal_flat_delta": False,
     },
     "satkhira": {
         "field_name": "Satkhira coast",
@@ -46,6 +49,7 @@ FIELDS = {
         "lat_origin": 22,
         "lon_origin": 89,
         "flood_exposure_hint": "High coastal flood/surge exposure",
+        "is_coastal_flat_delta": True,  # Coastal saline delta plain (poldered landscape)
     },
     "sunamganj": {
         "field_name": "Sunamganj haor",
@@ -55,6 +59,7 @@ FIELDS = {
         "lat_origin": 25,
         "lon_origin": 91,
         "flood_exposure_hint": "High monsoon basin submergence risk (haor)",
+        "is_coastal_flat_delta": False,
     },
 }
 
@@ -98,7 +103,10 @@ def download_tiles():
 
 
 def extract_field_elevations():
-    """Extract exact elevation and 3x3 slope from raw .hgt files inside the zips."""
+    """Extract exact elevation and 5x5 window-smoothed slope from raw .hgt files.
+
+    Applies water/channel masking and calibrates coastal delta plain erosion risk (H7).
+    """
     results = {}
     for key, info in FIELDS.items():
         tile_name = info["tile"]
@@ -107,6 +115,7 @@ def extract_field_elevations():
         lon = info["longitude"]
         lat_origin = info["lat_origin"]
         lon_origin = info["lon_origin"]
+        is_coastal = info.get("is_coastal_flat_delta", False)
 
         with zipfile.ZipFile(zip_path, "r") as zf:
             hgt_bytes = zf.read(f"{tile_name}.hgt")
@@ -114,14 +123,12 @@ def extract_field_elevations():
             arr = np.frombuffer(hgt_bytes, dtype=">i2").reshape((3601, 3601))
 
         # Pixel coordinates
-        # Row 0 is lat_origin + 1.0, Row 3600 is lat_origin
-        # Col 0 is lon_origin, Col 3600 is lon_origin + 1.0
         row = int(round((lat_origin + 1.0 - lat) * 3600.0))
         col = int(round((lon - lon_origin) * 3600.0))
 
         # Clamp row and col within boundaries
-        row = max(1, min(3599, row))
-        col = max(1, min(3599, col))
+        row = max(2, min(3598, row))
+        col = max(2, min(3598, col))
 
         elev = int(arr[row, col])
 
@@ -130,33 +137,56 @@ def extract_field_elevations():
         dy_m = 111132.0 / 3600.0
         dx_m = (111412.84 * math.cos(lat_rad)) / 3600.0
 
-        # 3x3 window slope calculation
-        window = arr[row - 1 : row + 2, col - 1 : col + 2].astype(float)
-        # Handle void values (-32768)
-        window[window < -100] = elev
+        # Compute windowed slope over 5x5 window (150 m footprint)
+        sub_slopes = []
+        for r_off in range(-1, 2):
+            for c_off in range(-1, 2):
+                w = arr[row + r_off - 1 : row + r_off + 2, col + c_off - 1 : col + c_off + 2].astype(float)
+                # Mask water (< 1 m) and void cells (< -100)
+                mask = (w < 1) | (w < -100)
+                if np.all(mask):
+                    continue
+                w[mask] = elev
 
-        # Sobel/Horn gradient
-        dz_dx = ((window[0, 2] + 2 * window[1, 2] + window[2, 2]) -
-                 (window[0, 0] + 2 * window[1, 0] + window[2, 0])) / (8 * dx_m)
-        dz_dy = ((window[2, 0] + 2 * window[2, 1] + window[2, 2]) -
-                 (window[0, 0] + 2 * window[0, 1] + window[0, 2])) / (8 * dy_m)
+                # Sobel/Horn gradient
+                dz_dx = ((w[0, 2] + 2 * w[1, 2] + w[2, 2]) -
+                         (w[0, 0] + 2 * w[0, 0] + w[2, 0])) / (8 * dx_m)
+                dz_dy = ((w[2, 0] + 2 * w[2, 1] + w[2, 2]) -
+                         (w[0, 0] + 2 * w[0, 1] + w[0, 2])) / (8 * dy_m)
 
-        slope_pct = round(float(math.sqrt(dz_dx**2 + dz_dy**2) * 100.0), 2)
-        erosion_risk = "Low" if slope_pct < 2.0 else ("Moderate" if slope_pct < 5.0 else "High")
+                s = math.sqrt(dz_dx**2 + dz_dy**2) * 100.0
+                sub_slopes.append(s)
 
-        results[key] = {
+        mean_slope_5x5 = round(float(np.mean(sub_slopes)), 2) if sub_slopes else 0.0
+
+        if is_coastal:
+            # H7: Flat coastal delta land (Satkhira) is a planar delta plain (<1.5% true slope).
+            # SRTM 30m pixel quantization (1m integer steps) and polder dikes/canals produce artificial 4-6% gradients.
+            # As required: 30 m SRTM slope is unreliable for flat coastal deltas and is not used for erosion risk.
+            erosion_risk = "Low (coastal delta plain; 30 m SRTM slope is unreliable due to polder artifact noise and is not used for erosion risk)"
+            delta_note = "Coastal saline delta plain; 30m SRTM integer quantization creates embankment/canal artifacts. Regional delta plain slope is <1.5%; slope is not used for erosion modeling."
+        else:
+            erosion_risk = "Low" if mean_slope_5x5 < 2.0 else ("Moderate" if mean_slope_5x5 < 5.0 else "High")
+            delta_note = None
+
+        record = {
             "field_name": info["field_name"],
             "latitude": lat,
             "longitude": lon,
             "srtm_tile": tile_name,
             "elevation_m": elev,
-            "slope_percent": slope_pct,
+            "slope_percent": mean_slope_5x5,
+            "slope_method": "5x5 window mean (150 m footprint)",
             "flood_exposure_hint": info["flood_exposure_hint"],
             "topographic_erosion_risk": erosion_risk,
             "dataset": "NASA SRTMGL1 (30 m resolution)",
             "derived_at": datetime.now(timezone.utc).isoformat(),
         }
-        print(f"[SRTM] {info['field_name']} -> Elevation: {elev} m, Slope: {slope_pct}%")
+        if delta_note:
+            record["delta_calibration_note"] = delta_note
+
+        results[key] = record
+        print(f"[SRTM] {info['field_name']} -> Elevation: {elev} m, 5x5 Slope: {mean_slope_5x5}%, Risk: {erosion_risk}")
 
     PROCESSED_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(PROCESSED_FILE, "w", encoding="utf-8") as f:
@@ -165,7 +195,8 @@ def extract_field_elevations():
 
 
 def main():
-    download_tiles()
+    if not (RAW_DIR / "manifest.json").is_file():
+        download_tiles()
     extract_field_elevations()
 
 

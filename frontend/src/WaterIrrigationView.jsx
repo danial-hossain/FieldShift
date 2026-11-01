@@ -78,7 +78,7 @@ export function WaterIrrigationView({
         smapDescBn: 'উপকূলীয় এঁটেল মাটিতে বর্ষায় আর্দ্রতা ০.৪২ ও শীতে ০.২৫ m³/m³।',
         smapDescEn: 'Coastal heavy clay maintains 0.42 m³/m³ during monsoon, 0.25 m³/m³ in dry season.',
         srtmElev: '7 m',
-        srtmSlope: '5.95%',
+        srtmSlope: '4.45%',
         srtmDescBn: 'উপকূলীয় নিচু প্লাবনভূমি; জলোচ্ছ্বাস ঝুঁকি ও ধীর নিষ্কাশন ব্যবস্থা।',
         srtmDescEn: 'Low-lying coastal zone with tidal surge exposure.',
       };
@@ -95,7 +95,7 @@ export function WaterIrrigationView({
         smapDescBn: 'বর্ষায় প্লাবিত জলাভূমি (০.৪১); প্রাক-বর্ষায় আর্দ্রতা ০.১৯ এ নামে।',
         smapDescEn: 'Wetland basin saturated during monsoon (0.41), dropping to 0.19 in pre-monsoon.',
         srtmElev: '15 m',
-        srtmSlope: '3.01%',
+        srtmSlope: '3.11%',
         srtmDescBn: 'হাওর নিচু বেসিন; মৌসুমি জলমগ্নতা ও পাহাড়ি ঢল ঝুঁকি।',
         srtmDescEn: 'Haor depression basin prone to early flash-flood inundation.',
       };
@@ -112,7 +112,7 @@ export function WaterIrrigationView({
         smapDescBn: 'প্রাক-বর্ষা এপ্রিলে আর্দ্রতা ০.১৬ এ নেমে পানির তীব্র ঘাটতি তৈরি করে।',
         smapDescEn: 'Pre-monsoon root-zone moisture drops to 0.16 m³/m³, creating severe moisture deficit.',
         srtmElev: '39 m',
-        srtmSlope: '3.58%',
+        srtmSlope: '2.90%',
         srtmDescBn: 'উত্তর-পশ্চিমাঞ্চলীয় উচ্চ প্লাবনভূমি; উত্তম নিষ্কাশন কিন্তু পানির ওপর নির্ভরশীল।',
         srtmDescEn: 'Northwest elevated terrace; good surface drainage but deep groundwater dependency.',
       };
@@ -129,7 +129,7 @@ export function WaterIrrigationView({
       smapDescBn: 'প্রাক-বর্ষা এপ্রিল-মে মাসে রুট-জোন আর্দ্রতা ০.১৫ এ নেমে ঘাটতি সৃষ্টি করে।',
       smapDescEn: 'Pre-monsoon April-May root-zone moisture drops to 0.15 m³/m³.',
       srtmElev: '24 m',
-      srtmSlope: '0.81%',
+      srtmSlope: '1.92%',
       srtmDescBn: 'সমতল পলিমাটি প্লাবনভূমি; ধীর নিষ্কাশন ও মাঝারি পানি ধারণ সহনশীলতা।',
       srtmDescEn: 'Flat alluvial terrain; slow surface runoff with low topographic erosion risk.',
     };

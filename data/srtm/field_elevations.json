@@ -5,11 +5,12 @@
     "longitude": 88.6332,
     "srtm_tile": "N25E088",
     "elevation_m": 39,
-    "slope_percent": 3.58,
+    "slope_percent": 2.9,
+    "slope_method": "5x5 window mean (150 m footprint)",
     "flood_exposure_hint": "Low-lying alluvial floodplain",
     "topographic_erosion_risk": "Moderate",
     "dataset": "NASA SRTMGL1 (30 m resolution)",
-    "derived_at": "2026-10-31T18:14:04.922187+00:00"
+    "derived_at": "2026-11-01T05:34:47.258995+00:00"
   },
   "bogura": {
     "field_name": "Bogura demo",
@@ -17,11 +18,12 @@
     "longitude": 89.37,
     "srtm_tile": "N24E089",
     "elevation_m": 24,
-    "slope_percent": 0.81,
+    "slope_percent": 1.92,
+    "slope_method": "5x5 window mean (150 m footprint)",
     "flood_exposure_hint": "Low-lying alluvial floodplain",
     "topographic_erosion_risk": "Low",
     "dataset": "NASA SRTMGL1 (30 m resolution)",
-    "derived_at": "2026-10-31T18:14:04.989633+00:00"
+    "derived_at": "2026-11-01T05:34:47.327634+00:00"
   },
   "satkhira": {
     "field_name": "Satkhira coast",
@@ -29,11 +31,13 @@
     "longitude": 89.0705,
     "srtm_tile": "N22E089",
     "elevation_m": 7,
-    "slope_percent": 5.95,
+    "slope_percent": 4.45,
+    "slope_method": "5x5 window mean (150 m footprint)",
     "flood_exposure_hint": "High coastal flood/surge exposure",
-    "topographic_erosion_risk": "High",
+    "topographic_erosion_risk": "Low (coastal delta plain; 30 m SRTM slope is unreliable due to polder artifact noise and is not used for erosion risk)",
     "dataset": "NASA SRTMGL1 (30 m resolution)",
-    "derived_at": "2026-10-31T18:14:05.054701+00:00"
+    "derived_at": "2026-11-01T05:34:47.390393+00:00",
+    "delta_calibration_note": "Coastal saline delta plain; 30m SRTM integer quantization creates embankment/canal artifacts. Regional delta plain slope is <1.5%; slope is not used for erosion modeling."
   },
   "sunamganj": {
     "field_name": "Sunamganj haor",
@@ -41,10 +45,11 @@
     "longitude": 91.395,
     "srtm_tile": "N25E091",
     "elevation_m": 15,
-    "slope_percent": 3.01,
+    "slope_percent": 3.11,
+    "slope_method": "5x5 window mean (150 m footprint)",
     "flood_exposure_hint": "High monsoon basin submergence risk (haor)",
     "topographic_erosion_risk": "Moderate",
     "dataset": "NASA SRTMGL1 (30 m resolution)",
-    "derived_at": "2026-10-31T18:14:05.173281+00:00"
+    "derived_at": "2026-11-01T05:34:47.503731+00:00"
   }
 }

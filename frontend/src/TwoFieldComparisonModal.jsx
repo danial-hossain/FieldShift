@@ -280,7 +280,7 @@ export function TwoFieldComparisonModal({
 
     return {
       elevationM: srtm.elevation_m ?? (distKey === 'satkhira' ? 7 : distKey === 'sunamganj' ? 15 : distKey === 'dinajpur' ? 39 : 24),
-      slopePct: srtm.slope_percent ?? (distKey === 'satkhira' ? 5.95 : distKey === 'sunamganj' ? 3.01 : distKey === 'dinajpur' ? 3.58 : 0.81),
+      slopePct: srtm.slope_percent ?? (distKey === 'satkhira' ? 4.45 : distKey === 'sunamganj' ? 3.11 : distKey === 'dinajpur' ? 2.90 : 1.92),
       erosionRisk: srtm.topographic_erosion_risk || (lang === 'bn' ? 'মাঝারি' : 'Moderate'),
       floodHint: srtm.flood_exposure_hint || (f.seasonally_flooded ? 'Monsoon inundation' : 'Alluvial plain'),
       graceTrend,
