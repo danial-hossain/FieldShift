@@ -1,3 +1,12 @@
+export function normalizeSeasonCode(seasonStr, lang = 'bn') {
+  if (!seasonStr) return '--';
+  const s = String(seasonStr).trim().toLowerCase();
+  if (s === 'dry' || s === 'rabi' || s === 'রবি') return lang === 'bn' ? 'রবি' : 'Rabi';
+  if (s === 'monsoon' || s === 'kharif2' || s === 'kharif-2' || s === 'খরিফ-২' || s === 'খরিপ-২') return lang === 'bn' ? 'খরিফ-২' : 'Kharif-2';
+  if (s === 'kharif1' || s === 'kharif-1' || s === 'খরিফ-১' || s === 'খরিপ-১') return lang === 'bn' ? 'খরিফ-১' : 'Kharif-1';
+  return seasonStr;
+}
+
 // frontend/src/MyFarmWorkspaceView.jsx
 // My Farm Workspace for FieldShift 2026 (P2 / M5 / M6 / M7)
 // Sub-navigation: 1. আমার জমিগুলো, 2. জমির বিবরণ, 3. মাটি, 4. ফসল ও ইতিহাস.
@@ -444,6 +453,7 @@ export function MyFarmWorkspaceView({
   }, [fetchHistory]);
 
   // M6: Form state to add past seasonal record
+
   const [newHistorySeason, setNewHistorySeason] = useState('রবি');
   const [newHistoryYear, setNewHistoryYear] = useState('2024');
   const [newHistoryCrop, setNewHistoryCrop] = useState('');
@@ -452,6 +462,40 @@ export function MyFarmWorkspaceView({
   const [newHistoryWater, setNewHistoryWater] = useState('');
   const [newHistoryNotes, setNewHistoryNotes] = useState('');
   const [isSubmittingHistory, setIsSubmittingHistory] = useState(false);
+
+  // Filter crops strictly by allowed seasons
+  // Filter crops strictly by allowed seasons
+  const availableSeasonCrops = useMemo(() => {
+    const s = String(newHistorySeason || '').trim().toLowerCase();
+    if (s.includes('রবি') || s.includes('rabi') || s.includes('dry')) {
+      return [
+        { value: 'Boro Rice', label: lang === 'bn' ? 'বোরো ধান (Boro Rice)' : 'Boro Rice' },
+        { value: 'Potato', label: lang === 'bn' ? 'গোল আলু (Potato)' : 'Potato' },
+        { value: 'Mustard', label: lang === 'bn' ? 'সরিষা (Mustard)' : 'Mustard' },
+        { value: 'Wheat', label: lang === 'bn' ? 'গম (Wheat)' : 'Wheat' },
+        { value: 'Lentil', label: lang === 'bn' ? 'মসুর ডাল (Lentil)' : 'Lentil' },
+        { value: 'Chickpea', label: lang === 'bn' ? 'ছোলা (Chickpea)' : 'Chickpea' },
+        { value: 'Sunflower', label: lang === 'bn' ? 'সূর্যমুখী (Sunflower)' : 'Sunflower' },
+        { value: 'Maize', label: lang === 'bn' ? 'ভুট্টা (Maize)' : 'Maize' },
+        { value: 'Tomato', label: lang === 'bn' ? 'টমেটো (Tomato)' : 'Tomato' },
+        { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+      ];
+    }
+    if (s.includes('খরিপ-১') || s.includes('খরিফ-১') || s.includes('kharif1') || s.includes('kharif-1')) {
+      return [
+        { value: 'Aus Rice', label: lang === 'bn' ? 'আউশ ধান (Aus Rice)' : 'Aus Rice' },
+        { value: 'Mungbean', label: lang === 'bn' ? 'মুগডাল (Mungbean)' : 'Mungbean' },
+        { value: 'Sesame', label: lang === 'bn' ? 'তিল (Sesame)' : 'Sesame' },
+        { value: 'Jute', label: lang === 'bn' ? 'পাট (Jute)' : 'Jute' },
+        { value: 'Maize', label: lang === 'bn' ? 'গ্রীষ্মকালীন ভুট্টা (Summer Maize)' : 'Summer Maize' },
+        { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+      ];
+    }
+    return [
+      { value: 'Rice', label: lang === 'bn' ? 'রোপা আমন ধান (T.Aman Rice)' : 'T.Aman Rice' },
+      { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+    ];
+  }, [newHistorySeason, lang]);
 
   const handleAddHistory = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -962,7 +1006,7 @@ export function MyFarmWorkspaceView({
                   <div>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'জেলা সদর থেকে দূরত্ব:' : 'Distance to District Centre:'}</span>
                     <strong style={{ fontSize: 14, color: 'var(--text)' }}>
-                      {activeField.nearest_district_distance_km != null ? `${activeField.nearest_district_distance_km.toFixed(1)} কিমি` : '২.৫ কিমি'}
+                      {activeField.nearest_district_distance_km != null ? `${activeField.nearest_district_distance_km.toFixed(1)} কিমি` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                     </strong>
                   </div>
                   <div>
@@ -972,7 +1016,7 @@ export function MyFarmWorkspaceView({
                   <div>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'সেচ সক্ষমতা:' : 'Irrigation Capacity:'}</span>
                     <strong style={{ fontSize: 14, color: 'var(--water, #38bdf8)' }}>
-                      {activeField.irrigation_capacity_mm != null ? `${activeField.irrigation_capacity_mm} মিমি` : '৪০০ মিমি (সীমিত সেচ)'}
+                      {activeField.irrigation_capacity_mm != null ? `${activeField.irrigation_capacity_mm} মিমি` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                     </strong>
                   </div>
                   <div>
@@ -1169,7 +1213,7 @@ export function MyFarmWorkspaceView({
                       <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
                         <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'ডাল নাইট্রোজেন যোগ:' : 'Legume BNF:'}</span>
                         <strong style={{ color: 'var(--leaf, #10b981)' }}>
-                          {baselinePlanning.plan_nitrogen_kg != null ? `+${baselinePlanning.plan_nitrogen_kg.toFixed(0)} কেজি N` : '+৪২ কেজি N'}
+                          {baselinePlanning.plan_nitrogen_kg != null ? `+${baselinePlanning.plan_nitrogen_kg.toFixed(0)} কেজি N` : '--'}
                         </strong>
                       </div>
                     </div>
@@ -1404,7 +1448,7 @@ export function MyFarmWorkspaceView({
                 <select
                   value={existingRotation.rabi}
                   onChange={e => setExistingRotation({ ...existingRotation, rabi: e.target.value })}
-                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Boro Rice">বোরো ধান (Boro Rice - High Water)</option>
                   <option value="Wheat">গম (Wheat)</option>
@@ -1427,7 +1471,7 @@ export function MyFarmWorkspaceView({
                 <select
                   value={existingRotation.kharif1}
                   onChange={e => setExistingRotation({ ...existingRotation, kharif1: e.target.value })}
-                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Fallow">পতিত জমি (Fallow / Common Practice)</option>
                   <option value="Aus Rice">আউশ ধান (Aus Rice)</option>
@@ -1446,7 +1490,7 @@ export function MyFarmWorkspaceView({
                 <select
                   value={existingRotation.kharif2}
                   onChange={e => setExistingRotation({ ...existingRotation, kharif2: e.target.value })}
-                  style={{ width: '100%', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
+                  style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 13, fontWeight: 600 }}
                 >
                   <option value="Rice">রোপা আমন ধান (T.Aman Rice - Monsoon)</option>
                   <option value="Fallow">পতিত জমি (Fallow - Waterlogged Basin)</option>
@@ -1556,7 +1600,7 @@ export function MyFarmWorkspaceView({
                       return (
                         <tr key={row.id || idx} style={{ borderBottom: '1px solid var(--line)' }}>
                           <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text)' }}>
-                            {row.year ? `${row.year} ` : ''}{row.season || '--'}
+                            {row.year ? `${row.year} ` : ''}{normalizeSeasonCode(row.season, lang)}
                           </td>
                           <td style={{ padding: '12px', color: 'var(--leaf)', fontWeight: 700 }}>
                             {row.crop || '--'}
@@ -1593,7 +1637,7 @@ export function MyFarmWorkspaceView({
                     <select
                       value={newHistorySeason}
                       onChange={e => setNewHistorySeason(e.target.value)}
-                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                     >
                       <option value="রবি">রবি (Rabi: Nov - Apr)</option>
                       <option value="খরিপ-১">খরিপ-১ (Kharif-1: Apr - Jun)</option>
@@ -1610,20 +1654,23 @@ export function MyFarmWorkspaceView({
                       max="2035"
                       value={newHistoryYear}
                       onChange={e => setNewHistoryYear(e.target.value)}
-                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                     />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
-                      {lang === 'bn' ? 'উৎপাদিত ফসল' : 'Crop Name'} *
+                      {lang === 'bn' ? 'উৎপাদিত ফসল (অনুমোদিত)' : 'Crop Name (Season-filtered)'} *
                     </label>
-                    <input
-                      type="text"
-                      placeholder={lang === 'bn' ? 'যেমন: আলু, সরিষা, আমন ধান' : 'e.g. Potato, Mustard'}
+                    <select
                       value={newHistoryCrop}
                       onChange={e => setNewHistoryCrop(e.target.value)}
-                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
-                    />
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
+                    >
+                      <option value="">{lang === 'bn' ? '-- ফসল নির্বাচন করুন --' : '-- Select Crop --'}</option>
+                      {availableSeasonCrops.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
@@ -1636,12 +1683,12 @@ export function MyFarmWorkspaceView({
                         placeholder="0.00"
                         value={newHistoryYield}
                         onChange={e => setNewHistoryYield(e.target.value)}
-                        style={{ flex: 1, borderRadius: 8, padding: '7px 8px', fontSize: 12.5 }}
+                        style={{ flex: 1, background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                       />
                       <select
                         value={newHistoryYieldUnit}
                         onChange={e => setNewHistoryYieldUnit(e.target.value)}
-                        style={{ borderRadius: 8, padding: '7px 6px', fontSize: 11.5 }}
+                        style={{ background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 6px', fontSize: 11.5 }}
                       >
                         <option value="maund_bigha">মণ/বিঘা</option>
                         <option value="ton_ha">t/ha</option>
@@ -1658,7 +1705,7 @@ export function MyFarmWorkspaceView({
                       placeholder="e.g. 400"
                       value={newHistoryWater}
                       onChange={e => setNewHistoryWater(e.target.value)}
-                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                     />
                   </div>
                   <div>
@@ -1670,7 +1717,7 @@ export function MyFarmWorkspaceView({
                       placeholder={lang === 'bn' ? 'মাটির অবস্থা বা জাত' : 'Soil state or variety'}
                       value={newHistoryNotes}
                       onChange={e => setNewHistoryNotes(e.target.value)}
-                      style={{ width: '100%', borderRadius: 8, padding: '7px 10px', fontSize: 12.5 }}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                     />
                   </div>
                 </div>
