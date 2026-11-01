@@ -3763,23 +3763,23 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 7: ACCOUNT & MY FIELDS -------------------- */}
+        {/* -------------------- VIEW 7: ACCOUNT & PROFILE (P1) -------------------- */}
         {activeNav === 'account' && (
-          <div className="profile-3d-wrapper">
+          <div className="profile-3d-wrapper" style={{ maxWidth: 1040, margin: '0 auto', padding: '24px 16px' }}>
             {/* 1. Header with Title & Profile Actions */}
-            <div className="profile-3d-header">
+            <div className="profile-3d-header" style={{ marginBottom: 24 }}>
               <div className="profile-3d-title-group">
                 <span className="profile-3d-eyebrow">
                   <span className="live-pulse-dot" />
-                  {lang === 'bn' ? 'ব্যবহারকারী ও খামার প্রোফাইল' : 'USER & FARM PROFILE'}
+                  {lang === 'bn' ? 'ব্যবহারকারী অ্যাকাউন্ট' : 'USER ACCOUNT'}
                 </span>
                 <h1 className="profile-3d-title">
-                  {lang === 'bn' ? 'প্রোফাইল ও আমার জমিসমূহ / Profile & My Fields' : 'Profile & My Fields'}
+                  {lang === 'bn' ? 'প্রোফাইল ও সেটিংস' : 'Profile & Settings'}
                 </h1>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
                   {lang === 'bn'
-                    ? 'ব্যক্তিগত তথ্য, সক্রিয় জমির পরিমাপ এবং নিবন্ধিত পার্সেলসমূহ।'
-                    : 'Personal details, active parcel telemetry, and registered field records.'}
+                    ? 'আপনার ব্যক্তিগত অ্যাকাউন্ট, ভাষা ও ভিজ্যুয়াল থিম পছন্দসমূহ।'
+                    : 'Your personal account profile, language, and display preferences.'}
                 </p>
               </div>
 
@@ -3791,7 +3791,7 @@ export function App() {
                       className="dashboard-primary-run-btn"
                       onClick={openEditProfile}
                       style={{ padding: '8px 16px', fontSize: 12.5 }}
-                      title="Edit agronomist profile name and farm station"
+                      title="Edit agronomist profile"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -3803,7 +3803,7 @@ export function App() {
                       type="button"
                       className="top-bar-icon-btn"
                       onClick={handleSignOut}
-                      title="Sign Out of Active Session"
+                      title="Sign Out"
                       style={{ width: 'auto', padding: '0 14px', height: 36, gap: 6, fontSize: 12 }}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3840,334 +3840,195 @@ export function App() {
               </div>
             </div>
 
-            {/* 2. Dual Column Hero: Agronomist Profile Card + Active Field Card */}
-            <div className="profile-3d-hero-grid">
-              {/* Left Column: Profile Card */}
-              <div className="holo-card-container">
-                <div className="holo-id-card">
-                  <div className="holo-shimmer-sweep" />
-
-                  {/* Top: Microchip & Clearance */}
-                  <div className="holo-card-top-row">
-                    <div className="holo-chip-wrap">
-                      <div className="holo-microchip" title="Profile Microchip" />
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(0, 223, 129, 0.7)" strokeWidth="2">
-                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                        <line x1="12" y1="20" x2="12.01" y2="20"/>
-                      </svg>
-                    </div>
-                    <span className="holo-clearance-badge">NASA SPACE APPS 2026</span>
+            {/* Main Account Grid: ID Card + My Farm Jump Card */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
+              {/* Account Identity Card */}
+              <div className="dash-card" style={{ padding: 24, borderRadius: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                  <div className="orbit-core-sphere" style={{ width: 56, height: 56, fontSize: 20, flexShrink: 0 }}>
+                    {user ? (user.name || 'AG').slice(0, 2).toUpperCase() : 'AG'}
                   </div>
-
-                  {/* Middle: Avatar & Identity */}
-                  <div className="holo-avatar-stage">
-                    <div className="orbit-avatar-wrapper">
-                      <div className="orbit-core-sphere">
-                        {user ? (user.name || 'AG').slice(0, 2).toUpperCase() : 'AG'}
-                      </div>
-                      <div className="orbit-ring-1" />
-                      <div className="orbit-ring-2" />
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-main, #f1f5f9)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      {user ? user.name : (lang === 'bn' ? 'অতিথি ব্যবহারকারী' : 'Guest Agronomist')}
+                      {user && (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#00df81">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                        </svg>
+                      )}
                     </div>
-
-                    <div className="holo-operator-info">
-                      <div className="holo-operator-name">
-                        {user ? user.name : 'Guest Agronomist'}
-                        {user && (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="#00df81">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                          </svg>
-                        )}
-                      </div>
-                      <span className="holo-operator-role">{user?.role || (lang === 'bn' ? 'কৃষক ও খামার পরিচালক' : 'Farmer & Farm Operator')}</span>
-                      <span className="holo-operator-email">{user ? user.email : 'guest@fieldshift.local'}</span>
+                    <div style={{ fontSize: 13, color: 'var(--primary, #10b981)', fontWeight: 600, marginTop: 2 }}>
+                      {user?.role || (lang === 'bn' ? 'কৃষক ও খামার পরিচালক' : 'Farmer & Farm Operator')}
+                    </div>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {user ? user.email : 'guest@fieldshift.local'}
                     </div>
                   </div>
+                </div>
 
-                  {/* Profile Specification Grid */}
-                  <div className="holo-card-specs-grid">
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">{lang === 'bn' ? 'ডাটাবেস সংরক্ষণ' : 'Storage Engine'}</span>
-                      <span className="holo-spec-value">
-                        {backendHealth?.database?.toLowerCase() === 'sqlite' || !backendHealth?.database
-                          ? (lang === 'bn' ? 'SQLite (Local) / সংরক্ষিত' : 'SQLite (Local) / Saved')
-                          : `${backendHealth.database} / Saved`}
-                      </span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">{lang === 'bn' ? 'সক্রিয় খামার' : 'Active Farm'}</span>
-                      <span className="holo-spec-value">
-                        {userFarms.find(farm => farm.id === activeField?.farm_id)?.name || 'My Farm'}
-                      </span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">{lang === 'bn' ? 'অ্যাকাউন্ট স্ট্যাটাস' : 'Account Status'}</span>
-                      <span className="holo-spec-value">{user ? (lang === 'bn' ? 'লগইনকৃত' : 'Signed in') : (lang === 'bn' ? 'ডেমো মোড' : 'Guest / demo mode')}</span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">{lang === 'bn' ? 'নিবন্ধন তারিখ' : 'Member Since'}</span>
-                      <span className="holo-spec-value">
-                        {user && user.created_at ? formatDate(user.created_at) : 'Oct 3, 2026'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Bottom: Verification Status */}
-                  <div className="holo-card-actions">
-                    <span style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span className="live-pulse-dot" style={{ width: 6, height: 6 }} />
-                      {user ? (lang === 'bn' ? 'সক্রিয় সেশন' : 'Active session') : (lang === 'bn' ? 'ডেমো মোড' : 'Demo session')}
+                {/* Account Details & Settings */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, borderTop: '1px solid var(--border-light)', paddingTop: 16 }}>
+                  {/* Language Setting */}
+                  <div className="holo-spec-box" style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: 12, borderRadius: 10 }}>
+                    <span className="holo-spec-label" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+                      {lang === 'bn' ? 'অ্যাপের ভাষা' : 'App Language'}
                     </span>
-                    <button
-                      type="button"
-                      className="btn-text-link"
-                      onClick={openEditProfile}
-                      style={{ fontSize: 12, fontWeight: 700 }}
-                    >
-                      {lang === 'bn' ? 'প্রোফাইল সম্পাদন →' : 'Configure Profile →'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Active Field Card with Map & 4 Telemetry Boxes */}
-              <div className="spatial-terrain-card">
-                <div className="theme-card-header" style={{ marginBottom: 8 }}>
-                  <div className="theme-card-title-group">
-                    <span className="theme-card-eyebrow">{lang === 'bn' ? 'সক্রিয় জমি' : 'Active field'}</span>
-                    <h3 className="theme-card-title" style={{ fontSize: 18 }}>
-                      {activeField ? activeField.name : (lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected')}
-                    </h3>
-                  </div>
-                  <span className="source-tag live">
-                    {activeField ? (activeField.is_demo ? 'Demo Benchmark' : `Field ID #${activeField.id}`) : 'No Selection'}
-                  </span>
-                </div>
-
-                <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--text-muted)' }}>
-                  {lang === 'bn'
-                    ? 'ডাটাবেসে সংরক্ষিত জমির সীমানা ও স্যাটেলাইট স্থানাঙ্ক।'
-                    : 'Authoritative parcel boundary and location coordinates saved in database.'}
-                </p>
-
-                {/* Satellite Viewport */}
-                <div className="spatial-terrain-viewport">
-                  <div className="spatial-mesh-overlay" />
-                  <GoogleFieldMapThumbnail
-                    latitude={activeField?.latitude ?? 24.8500}
-                    longitude={activeField?.longitude ?? 89.3700}
-                    name={activeField?.name || 'Active Farm Field'}
-                    height="200px"
-                    onClick={() => setActiveNav('field')}
-                  />
-                  <div className="spatial-hud-floating">
-                    <div className="spatial-hud-chip">
-                      <span>GPS:</span>
-                      <strong>
-                        {formatNumber(activeField?.latitude, 4, null) != null && formatNumber(activeField?.longitude, 4, null) != null
-                          ? `${formatNumber(activeField.latitude, 4)}°, ${formatNumber(activeField.longitude, 4)}°`
-                          : '24.8500°, 89.3700°'}
-                      </strong>
-                    </div>
-                    <div className="spatial-hud-chip">
-                      <span>Area:</span>
-                      <strong>{formatNumber(activeField?.area_ha, 1) || '10.0'} ha</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4 Key Boxes: Soil Texture, Organic Matter, Irrigation Capacity, Previous Crop */}
-                <div className="spatial-telemetry-row">
-                  <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">{lang === 'bn' ? 'মাটির ধরণ' : 'Soil Texture'}</span>
-                    <strong style={{ fontSize: 13, color: '#f1f5f9', textTransform: 'capitalize' }}>
-                      {activeField?.soil_texture ? activeField.soil_texture.replaceAll('_', ' ') : 'Loam'}
-                    </strong>
-                  </div>
-                  <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">{lang === 'bn' ? 'জৈব পদার্থ' : 'Organic Matter'}</span>
-                    <strong style={{ fontSize: 13, color: 'var(--primary)' }}>
-                      {formatNumber(activeField?.organic_matter, 1) || '2.5'}%
-                    </strong>
-                  </div>
-                  <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">{lang === 'bn' ? 'সেচ ধারণক্ষমতা' : 'Irrigation Cap'}</span>
-                    <strong style={{ fontSize: 13, color: '#38bdf8' }}>
-                      {formatNumber(activeField?.irrigation_capacity_mm, 0) || '90'} mm
-                    </strong>
-                  </div>
-                  <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">{lang === 'bn' ? 'পূর্ববর্তী ফসল' : 'Previous Crop'}</span>
-                    <strong style={{ fontSize: 13, color: '#fbbf24' }}>
-                      {activeField?.previous_crop || 'Maize'}
-                    </strong>
-                  </div>
-                </div>
-
-                {/* Honest SoilGrids row if texture/fractions available */}
-                {(() => {
-                  const tex = activeField?.soil_texture;
-                  const fractions = {
-                    clay_loam: { sand: 32, silt: 34, clay: 34 },
-                    loam: { sand: 40, silt: 40, clay: 20 },
-                    silty_loam: { sand: 20, silt: 65, clay: 15 },
-                    sandy_loam: { sand: 65, silt: 25, clay: 10 },
-                    silty_clay: { sand: 10, silt: 45, clay: 45 },
-                    clay: { sand: 15, silt: 25, clay: 60 },
-                  }[tex];
-                  if (!fractions) return null;
-                  return (
-                    <div style={{
-                      marginTop: 10,
-                      padding: '8px 12px',
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid var(--border-light)',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: 'var(--text-muted)'
-                    }}>
-                      {lang === 'bn'
-                        ? `মাটি (SoilGrids): বালি ${fractions.sand}% · পলি ${fractions.silt}% · কাদা ${fractions.clay}%`
-                        : `Soil (SoilGrids): Sand ${fractions.sand}% · Silt ${fractions.silt}% · Clay ${fractions.clay}%`}
-                    </div>
-                  );
-                })()}
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-                  <button
-                    type="button"
-                    className="btn-text-link"
-                    onClick={() => handleSelectActiveField(activeField, true)}
-                    style={{ fontSize: 12, fontWeight: 700 }}
-                  >
-                    {lang === 'bn' ? 'ড্যাশবোর্ডে দেখুন →' : 'Open in Dashboard →'}
-                  </button>
-                  <button
-                    type="button"
-                    className="dashboard-primary-run-btn"
-                    onClick={() => setActiveNav('field')}
-                    style={{ padding: '6px 14px', fontSize: 12 }}
-                  >
-                    {lang === 'bn' ? 'জমি ব্যবস্থাপক' : 'Open Parcel Manager'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Registered Farm Parcels Hub (Real count, total ha, Select and Delete buttons) */}
-            <div className="dash-card" style={{ marginTop: 24, padding: 20 }}>
-              <div className="theme-card-header" style={{ marginBottom: 14 }}>
-                <div className="theme-card-title-group">
-                  <span className="theme-card-eyebrow">{lang === 'bn' ? 'নিবন্ধিত জমির তালিকা' : 'PARCEL REGISTRY'}</span>
-                  <h3 className="theme-card-title" style={{ fontSize: 18 }}>
-                    {lang === 'bn' ? 'আমার নিবন্ধিত জমিসমূহ' : 'Registered Farm Parcels'}
-                  </h3>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="field-count-pill" style={{ background: 'rgba(0, 223, 129, 0.15)', color: 'var(--primary)', border: '1px solid rgba(0, 223, 129, 0.3)', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
-                    {userFields.length} {lang === 'bn' ? 'টি জমি' : (userFields.length === 1 ? 'Field' : 'Fields')}
-                  </span>
-                  <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
-                    ({userFields.reduce((acc, f) => acc + (Number(f.area_ha) || 0), 0).toFixed(1)} ha total)
-                  </span>
-                </div>
-              </div>
-
-              {userFields.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: 12, border: '1px dashed var(--border-light)' }}>
-                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-muted)' }}>
-                    {lang === 'bn' ? 'কোনো নিবন্ধিত জমি নেই।' : 'No registered farm parcels found.'}
-                  </p>
-                  <button
-                    type="button"
-                    className="dashboard-primary-run-btn"
-                    onClick={() => {
-                      setActiveNav('field');
-                      openAddFieldModal();
-                    }}
-                    style={{ fontSize: 12.5, padding: '7px 16px', margin: '0 auto' }}
-                  >
-                    {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Field'}
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {userFields.map(f => {
-                    const isSelected = activeField && String(f.id) === String(activeField.id);
-                    return (
-                      <div
-                        key={f.id}
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setLang('bn')}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '12px 16px',
-                          background: isSelected ? 'rgba(0, 223, 129, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                          border: `1px solid ${isSelected ? 'var(--primary, #10b981)' : 'var(--border-light)'}`,
-                          borderRadius: 10,
-                          flexWrap: 'wrap',
-                          gap: 12
+                          flex: 1,
+                          padding: '5px 8px',
+                          fontSize: 12,
+                          borderRadius: 6,
+                          border: lang === 'bn' ? '1px solid var(--primary, #10b981)' : '1px solid var(--border-light)',
+                          background: lang === 'bn' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                          color: lang === 'bn' ? 'var(--primary, #10b981)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontWeight: lang === 'bn' ? 700 : 400
                         }}
                       >
-                        <div style={{ minWidth: 200 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <strong style={{ fontSize: 14, color: '#f1f5f9' }}>{f.name}</strong>
-                            <span style={{ fontSize: 11, padding: '2px 6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, color: 'var(--text-dim)' }}>
-                              #{f.id}
-                            </span>
-                            {isSelected && (
-                              <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)', borderRadius: 4, fontWeight: 700 }}>
-                                {lang === 'bn' ? 'সক্রিয়' : 'Active'}
-                              </span>
-                            )}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
-                            {formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E • {f.area_ha ? `${f.area_ha} ha` : 'Area unrecorded'} • {f.soil_texture ? f.soil_texture.replaceAll('_', ' ') : 'Loam'}
-                          </div>
-                        </div>
+                        বাংলা
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setLang('en')}
+                        style={{
+                          flex: 1,
+                          padding: '5px 8px',
+                          fontSize: 12,
+                          borderRadius: 6,
+                          border: lang === 'en' ? '1px solid var(--primary, #10b981)' : '1px solid var(--border-light)',
+                          background: lang === 'en' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                          color: lang === 'en' ? 'var(--primary, #10b981)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontWeight: lang === 'en' ? 700 : 400
+                        }}
+                      >
+                        English
+                      </button>
+                    </div>
+                  </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {!isSelected && (
-                            <button
-                              type="button"
-                              className="btn-field-action"
-                              onClick={() => handleSelectActiveField(f, false)}
-                              style={{ padding: '6px 12px', fontSize: 12 }}
-                            >
-                              {lang === 'bn' ? 'নির্বাচন করুন' : 'Select'}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="btn-field-archive"
-                            onClick={() => handleArchiveField(f)}
-                            style={{ padding: '6px 12px', fontSize: 12 }}
-                            title={lang === 'bn' ? 'জমি মুছে ফেলুন' : 'Delete this field'}
-                          >
-                            {lang === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {/* Theme Setting */}
+                  <div className="holo-spec-box" style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: 12, borderRadius: 10 }}>
+                    <span className="holo-spec-label" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 6 }}>
+                      {lang === 'bn' ? 'ভিজ্যুয়াল থিম' : 'Color Theme'}
+                    </span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setTheme('dark')}
+                        style={{
+                          flex: 1,
+                          padding: '5px 8px',
+                          fontSize: 12,
+                          borderRadius: 6,
+                          border: theme === 'dark' ? '1px solid var(--primary, #10b981)' : '1px solid var(--border-light)',
+                          background: theme === 'dark' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                          color: theme === 'dark' ? 'var(--primary, #10b981)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontWeight: theme === 'dark' ? 700 : 400
+                        }}
+                      >
+                        🌙 {lang === 'bn' ? 'ডার্ক' : 'Dark'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTheme('light')}
+                        style={{
+                          flex: 1,
+                          padding: '5px 8px',
+                          fontSize: 12,
+                          borderRadius: 6,
+                          border: theme === 'light' ? '1px solid var(--primary, #10b981)' : '1px solid var(--border-light)',
+                          background: theme === 'light' ? 'rgba(16, 185, 129, 0.2)' : 'transparent',
+                          color: theme === 'light' ? 'var(--primary, #10b981)' : 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontWeight: theme === 'light' ? 700 : 400
+                        }}
+                      >
+                        ☀️ {lang === 'bn' ? 'লাইট' : 'Light'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Database Engine */}
+                  <div className="holo-spec-box" style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: 12, borderRadius: 10 }}>
+                    <span className="holo-spec-label" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'ডাটাবেস সংরক্ষণ' : 'Storage Engine'}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                      {backendHealth?.database?.toLowerCase() === 'sqlite' || !backendHealth?.database
+                        ? 'SQLite (Local)'
+                        : `${backendHealth.database}`}
+                    </span>
+                  </div>
+
+                  {/* Member Since */}
+                  <div className="holo-spec-box" style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: 12, borderRadius: 10 }}>
+                    <span className="holo-spec-label" style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'নিবন্ধন তারিখ' : 'Member Since'}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-main)' }}>
+                      {user && user.created_at ? formatDate(user.created_at) : 'Oct 3, 2026'}
+                    </span>
+                  </div>
                 </div>
-              )}
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    setActiveNav('field');
-                    openAddFieldModal();
-                  }}
-                  style={{ fontSize: 12.5, padding: '8px 16px' }}
-                >
-                  {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Field'}
-                </button>
+              {/* Small My Farm Navigation Card (P1 Requirement) */}
+              <div className="dash-card" style={{ padding: 24, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 20 }}>🚜</span>
+                    <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-main)' }}>
+                      {lang === 'bn' ? 'আমার জমি' : 'My Farm'}
+                    </h3>
+                  </div>
+                  <span style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    padding: '3px 10px',
+                    borderRadius: 20,
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: 'var(--primary, #10b981)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)'
+                  }}>
+                    {userFields.length} {lang === 'bn' ? 'টি জমি' : 'fields'}
+                  </span>
+                </div>
+
+                <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  {lang === 'bn' ? (
+                    <>আমার জমি: <strong style={{ color: 'var(--text-main)' }}>{userFields.length}</strong> টি, মোট <strong style={{ color: 'var(--text-main)' }}>{(userFields.reduce((acc, f) => acc + (Number(f.area_ha) || 0), 0) * (10000 / 1337.8)).toFixed(1)}</strong> বিঘা</>
+                  ) : (
+                    <>My Fields: <strong style={{ color: 'var(--text-main)' }}>{userFields.length}</strong> fields, total <strong style={{ color: 'var(--text-main)' }}>{(userFields.reduce((acc, f) => acc + (Number(f.area_ha) || 0), 0) * (10000 / 1337.8)).toFixed(1)}</strong> bigha</>
+                  )}
+                </p>
+
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--text-dim)' }}>
+                  {lang === 'bn'
+                    ? 'জমির পার্সেল যোগ, সম্পাদনা, স্যাটেলাইট ম্যাপ ও মাটির পুষ্টি দেখতে আমার জমি পেজে যান।'
+                    : 'Manage farm parcels, satellite boundaries, soil diagnostics, and seasonal rotations in My Farm.'}
+                </p>
+
+                <div style={{ marginTop: 'auto', paddingTop: 8 }}>
+                  <button
+                    type="button"
+                    className="dashboard-primary-run-btn"
+                    onClick={() => setActiveNav('field')}
+                    style={{ width: '100%', padding: '10px 16px', fontSize: 13.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  >
+                    <span>{lang === 'bn' ? 'আমার জমিতে যান' : 'Go to My Farm'}</span>
+                    <span>→</span>
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        )}
 
             {/* Optional Developer Command Telemetry behind ?debug=1 */}
             {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
