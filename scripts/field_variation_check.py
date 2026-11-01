@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """Multi-Field Variation Guard Check (S8a).
 
-Verifies that model and satellite outputs dynamically differ across 3 distinct
+Verifies that model and satellite outputs dynamically differ across 4 distinct
 agro-ecological zones in Bangladesh:
 1. Rajshahi (Northwest Level Barind Tract)
 2. Sunamganj (Northeast Haor Wetland Basin)
-3. Barisal (Southern Coastal Plain)
+3. Satkhira (Southwest Coastal Saline Delta)
+4. Barisal (Southern Coastal Riverine Floodplain - Sauya Marka Field)
 
 Queries:
 - /api/planning (rotations, profit, water, risk block)
 - /api/water/plan (FAO-56 water balance, net irrigation requirement)
 - /api/location/weather (NASA POWER 30-day continuous observations)
 
-Fails if any field-dependent value is statically identical across all 3 fields.
+Fails if any field-dependent value is statically identical across all regions.
 """
 
 import sys
@@ -29,7 +30,7 @@ FIELDS = [
         "lat": 24.37,
         "lon": 88.60,
         "soil": "clay loam",
-        "area_ha": 1.0,
+        "area_ha": 1.2,
     },
     {
         "key": "sunamganj",
@@ -38,16 +39,25 @@ FIELDS = [
         "lat": 25.07,
         "lon": 91.40,
         "soil": "clay",
+        "area_ha": 2.5,
+    },
+    {
+        "key": "satkhira",
+        "name": "Satkhira (Coast)",
+        "district": "satkhira",
+        "lat": 22.72,
+        "lon": 89.07,
+        "soil": "silty loam",
         "area_ha": 1.0,
     },
     {
         "key": "barisal",
-        "name": "Barisal (Coastal)",
+        "name": "Barisal (Sauya Marka)",
         "district": "barisal",
         "lat": 22.70,
-        "lon": 90.37,
+        "lon": 90.35,
         "soil": "silty loam",
-        "area_ha": 1.0,
+        "area_ha": 1.5,
     },
 ]
 
@@ -66,10 +76,10 @@ def get_json(endpoint, params):
         return json.loads(resp.read().decode("utf-8"))
 
 def main():
-    print("=" * 80)
+    print("=" * 96)
     print("FIELD VARIATION GUARD CHECK (S8a)")
-    print("Verifying dynamic variation across Rajshahi, Sunamganj, and Barisal")
-    print("=" * 80)
+    print("Verifying dynamic variation across Rajshahi, Sunamganj, Satkhira, and Barisal")
+    print("=" * 96)
 
     results = {}
 
@@ -124,8 +134,8 @@ def main():
         }
 
     # Format side-by-side table
-    print(f"{'Metric':<35} | {'Rajshahi':<14} | {'Sunamganj':<14} | {'Barisal':<14}")
-    print("-" * 83)
+    print(f"{'Metric':<34} | {'Rajshahi':<12} | {'Sunamganj':<12} | {'Satkhira':<12} | {'Barisal':<12}")
+    print("-" * 96)
 
     keys_to_compare = [
         ("Risk: Drought Dry Spell (%)", "risk_drought_val"),
@@ -147,23 +157,24 @@ def main():
     for label, k in keys_to_compare:
         r_val = results["rajshahi"][k]
         s_val = results["sunamganj"][k]
+        sk_val = results["satkhira"][k]
         b_val = results["barisal"][k]
 
-        print(f"{label:<35} | {str(r_val):<14} | {str(s_val):<14} | {str(b_val):<14}")
+        print(f"{label:<34} | {str(r_val):<12} | {str(s_val):<12} | {str(sk_val):<12} | {str(b_val):<12}")
 
-        # Guard: check if all 3 values are identical
-        if r_val == s_val == b_val and r_val is not None:
+        # Guard: check if all 4 values are identical
+        if r_val == s_val == sk_val == b_val and r_val is not None:
             identical_failures.append((label, r_val))
 
-    print("=" * 83)
+    print("=" * 96)
 
     if identical_failures:
-        print("\nFAILURE: The following metrics were statically identical across all 3 regions:")
+        print("\nFAILURE: The following metrics were statically identical across all regions:")
         for label, val in identical_failures:
             print(f"  - {label}: {val}")
         sys.exit(1)
     else:
-        print("\nSUCCESS: All field-dependent metrics dynamically vary across the 3 agro-ecological zones!")
+        print("\nSUCCESS: All field-dependent metrics dynamically vary across the 4 agro-ecological zones!")
         sys.exit(0)
 
 if __name__ == "__main__":
