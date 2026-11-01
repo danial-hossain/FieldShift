@@ -53,6 +53,11 @@ class Field(Timestamped, Base):
     power_cell: Mapped[str | None] = mapped_column(String, nullable=True)
     imerg_cell: Mapped[str | None] = mapped_column(String, nullable=True)
     soilgrids_soil: Mapped[str | None] = mapped_column(String, nullable=True)
+    soilgrids_sand: Mapped[float | None] = mapped_column(Float, nullable=True)
+    soilgrids_silt: Mapped[float | None] = mapped_column(Float, nullable=True)
+    soilgrids_clay: Mapped[float | None] = mapped_column(Float, nullable=True)
+    soilgrids_ph: Mapped[float | None] = mapped_column(Float, nullable=True)
+    soilgrids_soc: Mapped[float | None] = mapped_column(Float, nullable=True)
     existing_rotation: Mapped[dict[str, Any] | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
 
 class FieldHistory(Base):
@@ -62,6 +67,8 @@ class FieldHistory(Base):
     crop: Mapped[str | None] = mapped_column(String)
     season: Mapped[str | None] = mapped_column(String)
     year: Mapped[int | None] = mapped_column(Integer)
+    yield_ton_per_ha: Mapped[float | None] = mapped_column(Float, nullable=True)
+    water_applied_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 

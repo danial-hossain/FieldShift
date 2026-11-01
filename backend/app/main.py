@@ -19,7 +19,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 from .database import Base, engine, get_db, is_postgres
-from .models import Analysis, Farm, Field as FarmField, FieldHistory, Session as LoginSession, User
+from .models import Analysis, Farm, FarmOutcome, Field as FarmField, FieldHistory, Session as LoginSession, User
 
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 allowed_origins = [
@@ -497,8 +497,16 @@ def startup() -> None:
                 conn.execute(text("ALTER TABLE fields ADD COLUMN imerg_cell VARCHAR"))
             if "soilgrids_soil" not in cols:
                 conn.execute(text("ALTER TABLE fields ADD COLUMN soilgrids_soil VARCHAR"))
+            for sg_col in ["soilgrids_sand", "soilgrids_silt", "soilgrids_clay", "soilgrids_ph", "soilgrids_soc"]:
+                if sg_col not in cols:
+                    conn.execute(text(f"ALTER TABLE fields ADD COLUMN {sg_col} FLOAT"))
             if "existing_rotation" not in cols:
                 conn.execute(text("ALTER TABLE fields ADD COLUMN existing_rotation JSON"))
+            hist_cols = {c["name"] for c in inspect(conn).get_columns("field_history")}
+            if "yield_ton_per_ha" not in hist_cols:
+                conn.execute(text("ALTER TABLE field_history ADD COLUMN yield_ton_per_ha FLOAT"))
+            if "water_applied_mm" not in hist_cols:
+                conn.execute(text("ALTER TABLE field_history ADD COLUMN water_applied_mm FLOAT"))
     except Exception as e:
         logger.warning(f"Field table column migration notice: {e}")
 
@@ -2168,15 +2176,63 @@ def delete_field(field_id: int, user: User = Depends(require_user), db: DbSessio
     return {"status": "deleted", "id": field_id}
 
 @app.get("/api/fields/{field_id}/history")
-def field_history(field_id:int,user:User=Depends(require_user),db:DbSession=Depends(get_db)):
-    owned_field(db,field_id,user)
-    return {"status":"ok","history":[row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id==field_id).order_by(FieldHistory.year,FieldHistory.id))]}
+def field_history(field_id: int, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
+    owned_field(db, field_id, user)
+    histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == field_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))]
+    outcomes = [row(x) for x in db.scalars(select(FarmOutcome).where(FarmOutcome.field_id == field_id).order_by(FarmOutcome.year.desc(), FarmOutcome.id.desc()))]
+    return {"status": "ok", "history": histories, "outcomes": outcomes}
 
-@app.post("/api/fields/{field_id}/history",status_code=201)
-def create_field_history(field_id:int,payload:Payload,user:User=Depends(require_user),db:DbSession=Depends(get_db)):
-    owned_field(db,field_id,user); data=payload.model_dump(); stamp=now()
-    item=FieldHistory(field_id=field_id,crop=data.get("crop"),season=data.get("season"),year=data.get("year"),notes=data.get("notes"),created_at=stamp)
-    db.add(item); db.commit(); db.refresh(item); return {"status":"created","history":row(item)}
+@app.post("/api/fields/{field_id}/history", status_code=201)
+def create_field_history(field_id: int, payload: Payload, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
+    owned_field(db, field_id, user)
+    data = payload.model_dump()
+    stamp = now()
+    y_val = None
+    if data.get("yield_ton_per_ha") not in (None, ""):
+        try: y_val = float(data["yield_ton_per_ha"])
+        except (ValueError, TypeError): pass
+    elif data.get("yield_ton_ha") not in (None, ""):
+        try: y_val = float(data["yield_ton_ha"])
+        except (ValueError, TypeError): pass
+    elif data.get("yield_maund_per_bigha") not in (None, ""):
+        try:
+            m_val = float(data["yield_maund_per_bigha"])
+            y_val = round((m_val * 37.32) / (1000 * 0.13378), 2)
+        except (ValueError, TypeError): pass
+    elif data.get("yield") not in (None, ""):
+        try: y_val = float(data["yield"])
+        except (ValueError, TypeError): pass
+
+    w_val = None
+    if data.get("water_applied_mm") not in (None, ""):
+        try: w_val = float(data["water_applied_mm"])
+        except (ValueError, TypeError): pass
+    elif data.get("rainfall_mm") not in (None, ""):
+        try: w_val = float(data["rainfall_mm"])
+        except (ValueError, TypeError): pass
+    elif data.get("water") not in (None, ""):
+        try: w_val = float(data["water"])
+        except (ValueError, TypeError): pass
+
+    yr = None
+    if data.get("year") not in (None, ""):
+        try: yr = int(data["year"])
+        except (ValueError, TypeError): yr = 2025
+
+    item = FieldHistory(
+        field_id=field_id,
+        crop=str(data.get("crop", "")).strip() or None,
+        season=str(data.get("season", "")).strip() or None,
+        year=yr,
+        yield_ton_per_ha=y_val,
+        water_applied_mm=w_val,
+        notes=data.get("notes"),
+        created_at=stamp
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return {"status": "created", "history": row(item)}
 
 
 @app.post("/api/fields/{field_id}/enrich")
@@ -2242,8 +2298,18 @@ def enrich_field_endpoint(
                     f_obj.power_cell = geo.get("power_cell")
                 if geo.get("imerg_cell"):
                     f_obj.imerg_cell = geo.get("imerg_cell")
-                if soil.get("texture"):
-                    f_obj.soilgrids_soil = soil.get("texture")
+                if soil.get("texture_class") or soil.get("texture"):
+                    f_obj.soilgrids_soil = soil.get("texture_class") or soil.get("texture")
+                if soil.get("sand_pct") is not None:
+                    f_obj.soilgrids_sand = float(soil["sand_pct"])
+                if soil.get("silt_pct") is not None:
+                    f_obj.soilgrids_silt = float(soil["silt_pct"])
+                if soil.get("clay_pct") is not None:
+                    f_obj.soilgrids_clay = float(soil["clay_pct"])
+                if soil.get("ph") is not None:
+                    f_obj.soilgrids_ph = float(soil["ph"])
+                if soil.get("organic_matter_pct") is not None:
+                    f_obj.soilgrids_soc = round(float(soil["organic_matter_pct"]) / 1.724, 2)
                 if geo.get("nearest_district") in {"sunamganj", "netrokona", "kishoreganj", "habiganj", "moulvibazar"}:
                     f_obj.seasonally_flooded = True
                 db.commit()
