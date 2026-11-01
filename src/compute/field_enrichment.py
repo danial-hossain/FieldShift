@@ -239,20 +239,16 @@ def enrich_field_data(
     soil_res = fetch_isric_soilgrids(latitude, longitude, allow_network=not offline)
 
     if soil_res is None:
-        # Fallback to district default baseline
+        # Honest fallback when offline and no SoilGrids cache within 5 km
         soil_res = {
-            "ph": 6.5,
-            "organic_matter_pct": 2.2,
-            "clay_pct": 32.0,
-            "sand_pct": 28.0,
-            "silt_pct": 40.0,
+            "ph": None,
+            "organic_matter_pct": None,
+            "clay_pct": None,
+            "sand_pct": None,
+            "silt_pct": None,
             "texture_class": dist_meta.get("soil_type", "loam"),
-            "depth_profile": [
-                {"depth": "0-5 cm", "ph": 6.4, "organic_carbon_pct": 1.35, "organic_matter_pct": 2.33, "clay_pct": 31.0, "sand_pct": 29.0, "silt_pct": 40.0},
-                {"depth": "5-15 cm", "ph": 6.5, "organic_carbon_pct": 1.28, "organic_matter_pct": 2.20, "clay_pct": 32.0, "sand_pct": 28.0, "silt_pct": 40.0},
-                {"depth": "15-30 cm", "ph": 6.6, "organic_carbon_pct": 1.20, "organic_matter_pct": 2.07, "clay_pct": 33.0, "sand_pct": 27.0, "silt_pct": 40.0},
-            ],
-            "source_tag": "ISRIC SoilGrids 250 m",
+            "depth_profile": [],
+            "source_tag": "SoilGrids তথ্য পাওয়া যায়নি (অফলাইন)",
         }
 
     # 4. Handle user overrides
