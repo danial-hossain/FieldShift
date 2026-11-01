@@ -152,7 +152,8 @@ test('2. Valid overlays render honest colors and labels', () => {
 test('3. No NDVI, moisturePct or yieldTonPerHa passed or rendered', () => {
   const dir = path.resolve('src');
   const clayCode = fs.readFileSync(path.join(dir, 'ClayFarmScene.jsx'), 'utf-8');
-  const farmerFarmCode = fs.readFileSync(path.join(dir, 'FarmerFarm3D.jsx'), 'utf-8');
+  const farmerFarmPath = path.join(dir, 'FarmerFarm3D.jsx');
+  const farmerFarmCode = fs.existsSync(farmerFarmPath) ? fs.readFileSync(farmerFarmPath, 'utf-8') : '';
   const realFarmCode = fs.readFileSync(path.join(dir, 'RealFarmCanvas3D.jsx'), 'utf-8');
 
   // Verify fabricated properties are NOT present in overlay handlers

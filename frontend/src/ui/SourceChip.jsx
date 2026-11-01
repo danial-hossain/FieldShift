@@ -45,12 +45,12 @@ export function SourceChip({
     color = '#0284c7';
     border = '1px solid rgba(14, 165, 233, 0.28)';
   } else if (s.includes('class') || s.includes('গড় মান') || s.includes('মাপা নয়')) {
-    label = lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Class Average (Not Measured)';
+    label = size === 'xs' ? (lang === 'bn' ? 'গড় মান' : 'Class Avg') : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Class Average (Not Measured)');
     bg = 'rgba(148, 163, 184, 0.1)';
     color = '#94a3b8';
     border = '1px solid rgba(148, 163, 184, 0.2)';
   } else if (s.includes('offline') || s.includes('অফলাইন')) {
-    label = lang === 'bn' ? 'SoilGrids তথ্য পাওয়া যায়নি (অফলাইন)' : 'SoilGrids unavailable (offline)';
+    label = size === 'xs' ? (lang === 'bn' ? 'অফলাইন' : 'Offline') : (lang === 'bn' ? 'SoilGrids তথ্য পাওয়া যায়নি (অফলাইন)' : 'SoilGrids unavailable (offline)');
     bg = 'rgba(239, 68, 68, 0.1)';
     color = '#f87171';
     border = '1px solid rgba(239, 68, 68, 0.2)';

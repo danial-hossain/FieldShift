@@ -354,7 +354,7 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
                     <rect x="-24" y="-2" width="12" height="4" fill="#38bdf8" />
                     <rect x="12" y="-2" width="12" height="4" fill="#38bdf8" />
                     <circle cx="0" cy="0" r="2" fill="#f43f5e" />
-                    <text x="-20" y="-10" fill="rgba(238, 243, 238, 0.68)" fontSize="8.5" fontWeight="700">CERES SAT-2</text>
+                    <text x="-20" y="-10" fill="var(--text-muted, #94a3b8)" fontSize="8.5" fontWeight="700">CERES SAT-2</text>
                   </g>
 
                   {/* Solar Irradiance Angle Vector */}
@@ -402,9 +402,9 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
 
                   {/* Vertical Elevation Altitude Axis */}
                   <line x1="60" y1="50" x2="60" y2="340" stroke="rgba(238, 243, 238, 0.42)" strokeWidth="1.5" strokeDasharray="4 4" />
-                  <text x="18" y="60" fill="rgba(238, 243, 238, 0.68)" fontSize="9" fontWeight="700">15 KM</text>
-                  <text x="22" y="135" fill="rgba(238, 243, 238, 0.68)" fontSize="9" fontWeight="700">4 KM</text>
-                  <text x="22" y="210" fill="rgba(238, 243, 238, 0.68)" fontSize="9" fontWeight="700">1 KM</text>
+                  <text x="18" y="60" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">15 KM</text>
+                  <text x="22" y="135" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">4 KM</text>
+                  <text x="22" y="210" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">1 KM</text>
                   <text x="26" y="295" fill="#00df81" fontSize="9" fontWeight="800">0 M</text>
                 </svg>
               </div>
@@ -437,8 +437,8 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
 
                   {/* Detailed 3D Satellite Rendering */}
                   <g transform="translate(270, 60)">
-                    <rect x="-16" y="-10" width="32" height="20" rx="3" fill="rgba(238, 243, 238, 0.68)" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.5" />
-                    <line x1="0" y1="10" x2="0" y2="24" stroke="rgba(238, 243, 238, 0.68)" strokeWidth="2" />
+                    <rect x="-16" y="-10" width="32" height="20" rx="3" fill="var(--text-muted, #94a3b8)" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.5" />
+                    <line x1="0" y1="10" x2="0" y2="24" stroke="rgba(148, 163, 184, 0.3)" strokeWidth="2" />
                     <circle cx="0" cy="26" r="4" fill="#38bdf8" />
                     {/* Left Solar Panel */}
                     <rect x="-56" y="-6" width="38" height="12" fill="#38bdf8" stroke="#38bdf8" strokeWidth="1" />
@@ -544,7 +544,7 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
                 </div>
                 <div className="readout-limits">
                   <div><span>Vapor Pressure:</span> <strong>High</strong></div>
-                  <div><span>Risk Index:</span> <strong style={{ color: humidVal > 80 ? '#facc15' : '#00df81' }}>{humidVal > 80 ? 'High humidity (rule-based hint)' : 'Normal (rule-based hint)'}</strong></div>
+                  <div><span>Risk Index:</span> <strong style={{ color: humidVal > 80 ? 'var(--sun)' : 'var(--leaf)' }}>{humidVal > 80 ? 'High humidity (rule-based hint)' : 'Normal (rule-based hint)'}</strong></div>
                 </div>
                 <span className="readout-status-tag tag-amber">{humidVal > 80 ? "High humidity (rule-based hint)" : "Moderate humidity (rule-based hint)"}</span>
               </div>
@@ -673,10 +673,10 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
             </defs>
 
             {/* Grid horizontal lines */}
-            <line x1="60" y1="40" x2="940" y2="40" stroke="#eef3ee" strokeDasharray="3 3" />
-            <line x1="60" y1="95" x2="940" y2="95" stroke="#eef3ee" strokeDasharray="3 3" />
-            <line x1="60" y1="150" x2="940" y2="150" stroke="#eef3ee" strokeDasharray="3 3" />
-            <line x1="60" y1="205" x2="940" y2="205" stroke="rgba(238, 243, 238, 0.68)" />
+            <line x1="60" y1="40" x2="940" y2="40" stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3 3" />
+            <line x1="60" y1="95" x2="940" y2="95" stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3 3" />
+            <line x1="60" y1="150" x2="940" y2="150" stroke="rgba(148, 163, 184, 0.2)" strokeDasharray="3 3" />
+            <line x1="60" y1="205" x2="940" y2="205" stroke="rgba(148, 163, 184, 0.3)" />
 
             {/* Metric Chart Lines */}
             {activeChartMetric === 'temp' && (
@@ -814,34 +814,34 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
             {/* Axis Y Labels */}
             {activeChartMetric === 'temp' && (
               <>
-                <text x="20" y="44" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">40°C</text>
-                <text x="20" y="99" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">33°C</text>
-                <text x="20" y="154" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">26°C</text>
-                <text x="20" y="209" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">20°C</text>
+                <text x="20" y="44" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">40°C</text>
+                <text x="20" y="99" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">33°C</text>
+                <text x="20" y="154" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">26°C</text>
+                <text x="20" y="209" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">20°C</text>
               </>
             )}
             {activeChartMetric === 'rain' && (
               <>
-                <text x="15" y="44" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">25 mm</text>
-                <text x="15" y="99" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">18 mm</text>
-                <text x="15" y="154" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">10 mm</text>
-                <text x="20" y="209" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">0 mm</text>
+                <text x="15" y="44" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">25 mm</text>
+                <text x="15" y="99" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">18 mm</text>
+                <text x="15" y="154" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">10 mm</text>
+                <text x="20" y="209" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">0 mm</text>
               </>
             )}
             {activeChartMetric === 'humidity' && (
               <>
-                <text x="15" y="44" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">100%</text>
-                <text x="20" y="99" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">85%</text>
-                <text x="20" y="154" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">70%</text>
-                <text x="20" y="209" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">50%</text>
+                <text x="15" y="44" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">100%</text>
+                <text x="20" y="99" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">85%</text>
+                <text x="20" y="154" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">70%</text>
+                <text x="20" y="209" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">50%</text>
               </>
             )}
             {activeChartMetric === 'solar' && (
               <>
-                <text x="10" y="44" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">25 MJ</text>
-                <text x="10" y="99" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">18 MJ</text>
-                <text x="10" y="154" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">12 MJ</text>
-                <text x="15" y="209" fill="rgba(238, 243, 238, 0.68)" fontSize="10.5" fontWeight="700">5 MJ</text>
+                <text x="10" y="44" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">25 MJ</text>
+                <text x="10" y="99" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">18 MJ</text>
+                <text x="10" y="154" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">12 MJ</text>
+                <text x="15" y="209" fill="var(--text-muted, #94a3b8)" fontSize="10.5" fontWeight="700">5 MJ</text>
               </>
             )}
 

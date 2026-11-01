@@ -174,7 +174,7 @@ export function AdaptiveReplanningView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '26px' }}>🔄</span>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Adaptive Next-Season Replanning
               </h2>
               <span style={{
@@ -190,7 +190,7 @@ export function AdaptiveReplanningView({
                 P0 CLOSED-LOOP REPLANNER
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#94a3b8', maxWidth: '840px', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '840px', lineHeight: 1.5 }}>
               Farming is dynamic. Rather than replaying a static 2-year calendar, this engine incorporates the 
               <em>actual crops you harvested</em> and <em>newly measured soil/irrigation tests</em>, then uses MILP branch-and-bound 
               to regenerate optimal future seasons with explicit explanations of why recommendations changed.
@@ -235,7 +235,7 @@ export function AdaptiveReplanningView({
               className="dashboard-field-select"
               value={completedSeasonsCount}
               onChange={(e) => setCompletedSeasonsCount(Number(e.target.value))}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
             >
               <option value={1}>1 Season Completed (Replan remaining 5)</option>
               <option value={2}>2 Seasons Completed (Replan remaining 4)</option>
@@ -251,7 +251,7 @@ export function AdaptiveReplanningView({
               className="dashboard-field-select"
               value={historyItems[0]?.crop_planted || ''}
               onChange={(e) => handleUpdateHistoryCrop(0, e.target.value)}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
             >
               <option value="">{lang === 'bn' ? '-- ফসল নির্বাচন করুন --' : '-- Select Crop --'}</option>
               {cropChoices.map(c => <option key={c} value={c}>{c}</option>)}
@@ -269,7 +269,7 @@ export function AdaptiveReplanningView({
               value={updatedSoilPh}
               onChange={(e) => setUpdatedSoilPh(e.target.value)}
               placeholder="e.g. 6.2"
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px 10px', borderRadius: '8px' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px 10px', borderRadius: '8px' }}
             />
           </div>
 
@@ -284,7 +284,7 @@ export function AdaptiveReplanningView({
               value={updatedOm}
               onChange={(e) => setUpdatedOm(e.target.value)}
               placeholder="e.g. 1.85"
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px 10px', borderRadius: '8px' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px 10px', borderRadius: '8px' }}
             />
           </div>
 
@@ -298,7 +298,7 @@ export function AdaptiveReplanningView({
               value={updatedIrrig}
               onChange={(e) => setUpdatedIrrig(e.target.value)}
               placeholder="e.g. 380"
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px 10px', borderRadius: '8px' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px 10px', borderRadius: '8px' }}
             />
           </div>
 
@@ -310,7 +310,7 @@ export function AdaptiveReplanningView({
               className="dashboard-field-select"
               value={weatherBias}
               onChange={(e) => setWeatherBias(e.target.value)}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
             >
               <option value="normal">Normal Seasonal Climate</option>
               <option value="drier">Drier Trend (-20% Rain)</option>
@@ -332,43 +332,43 @@ export function AdaptiveReplanningView({
         <div>
           {/* Summary Scorecard */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>History Anchored</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>History Anchored</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
                 {replanData.completed_seasons_count} Season{replanData.completed_seasons_count > 1 ? 's' : ''} Past
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Incorporated as fixed state</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Incorporated as fixed state</span>
             </div>
 
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remaining Horizon</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Remaining Horizon</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#00df81', marginTop: '4px' }}>
                 {replanData.remaining_seasons_count} Seasons Re-optimized
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Solving from updated soil test</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Solving from updated soil test</span>
             </div>
 
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Projected Replanned Profit</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Projected Replanned Profit</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
                 BDT {formatNumber(replanData.financial_projection?.total_replanned_profit_bdt, 0)}
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Across remaining periods</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Across remaining periods</span>
             </div>
 
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Soil Regeneration Rate</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Soil Regeneration Rate</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#a78bfa', marginTop: '4px' }}>
                 {replanData.financial_projection?.soil_health_recovery_rate || '+0.45'}
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Proxy recovery score delta</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Proxy recovery score delta</span>
             </div>
           </div>
 
           {/* 3D Six-Season Replanned Trajectory */}
           {replanTrajectoryRecs.length > 0 && (
             <div style={{ marginBottom: '20px' }}>
-              <h4 style={{ margin: '0 0 10px', fontSize: '15px', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h4 style={{ margin: '0 0 10px', fontSize: '15px', color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>🌐</span> 3D Adaptive 6-Season Trajectory (Historical Harvested vs Re-optimized Seasons)
               </h4>
               <SixSeasonTrajectory3D
@@ -382,15 +382,15 @@ export function AdaptiveReplanningView({
           )}
 
           {/* Schedule Table: Past vs Replanned with Why Recommendations Changed */}
-          <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>📋</span> Adaptive Rotation Schedule &amp; Causal Rationales
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', textAlign: 'left' }}>
+                  <tr style={{ borderBottom: '1px solid #334155', color: 'var(--text-muted, #94a3b8)', textAlign: 'left' }}>
                     <th style={{ padding: '10px 12px' }}>Season Horizon</th>
                     <th style={{ padding: '10px 12px' }}>Original Plan</th>
                     <th style={{ padding: '10px 12px' }}>Adaptive Recommendation</th>
@@ -402,10 +402,10 @@ export function AdaptiveReplanningView({
                   {/* Past Seasons */}
                   {replanData.historical_context?.map((past, idx) => (
                     <tr key={`past-${idx}`} style={{ borderBottom: '1px solid #1e293b', background: 'rgba(255, 255, 255, 0.02)' }}>
-                      <td style={{ padding: '12px', fontWeight: 600, color: '#94a3b8' }}>
+                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-muted, #94a3b8)' }}>
                         {past.season_name}
                       </td>
-                      <td style={{ padding: '12px', color: '#64748b' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-dim, #64748b)' }}>
                         Baseline Planned
                       </td>
                       <td style={{ padding: '12px' }}>
@@ -413,10 +413,10 @@ export function AdaptiveReplanningView({
                           ✓ {past.crop_planted} (Harvested)
                         </span>
                       </td>
-                      <td style={{ padding: '12px', color: '#94a3b8', fontSize: '11.5px' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-muted, #94a3b8)', fontSize: '11.5px' }}>
                         {formatNumber(past.yield_kg_ha, 0)} kg/ha • {past.water_applied_mm} mm
                       </td>
-                      <td style={{ padding: '12px', color: '#64748b', fontSize: '12px' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-dim, #64748b)', fontSize: '12px' }}>
                         Historical field state committed to memory.
                       </td>
                     </tr>
@@ -428,10 +428,10 @@ export function AdaptiveReplanningView({
                       borderBottom: '1px solid #1e293b',
                       background: item.is_changed ? 'rgba(0, 223, 129, 0.04)' : 'transparent',
                     }}>
-                      <td style={{ padding: '12px', fontWeight: 600, color: '#f1f5f9' }}>
+                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-main, #f1f5f9)' }}>
                         {item.season_name}
                       </td>
-                      <td style={{ padding: '12px', color: '#94a3b8' }}>
+                      <td style={{ padding: '12px', color: 'var(--text-muted, #94a3b8)' }}>
                         {item.original_baseline_crop}
                       </td>
                       <td style={{ padding: '12px' }}>
@@ -447,7 +447,7 @@ export function AdaptiveReplanningView({
                             REVISED
                           </span>
                         ) : (
-                          <span style={{ marginLeft: '8px', padding: '2px 7px', borderRadius: '4px', background: '#1e293b', color: '#64748b', fontSize: '10.5px' }}>
+                          <span style={{ marginLeft: '8px', padding: '2px 7px', borderRadius: '4px', background: '#1e293b', color: 'var(--text-dim, #64748b)', fontSize: '10.5px' }}>
                             Retained
                           </span>
                         )}
@@ -466,10 +466,10 @@ export function AdaptiveReplanningView({
           </div>
 
           {/* Scientific Disclaimer */}
-          <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span style={{ fontSize: '22px' }}>🛡️</span>
-            <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
-              <strong style={{ color: '#f1f5f9' }}>Scientific Disclosure:</strong> {replanData.scientific_disclaimer}
+            <div style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--text-main, #f1f5f9)' }}>Scientific Disclosure:</strong> {replanData.scientific_disclaimer}
             </div>
           </div>
         </div>

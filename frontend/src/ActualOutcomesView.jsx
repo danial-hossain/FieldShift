@@ -199,7 +199,7 @@ export function ActualOutcomesView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '26px' }}>📋</span>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 {lang === 'bn' ? 'প্রকৃত বনাম আনুমানিক ফলাফল ল্যাব' : 'Actual vs. Estimated Outcomes Lab'}
               </h2>
               <span style={{
@@ -215,7 +215,7 @@ export function ActualOutcomesView({
                 P2 EMPIRICAL VALIDATION
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#94a3b8', maxWidth: '840px', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '840px', lineHeight: 1.5 }}>
               {lang === 'bn'
                 ? 'গাণিতিক পূর্বাভাসের সাথে কৃষকের বাস্তব মাঠের তথ্যের মিলন ঘটান। বাস্তব ফলন, বাজারমূল্য ও পানির ব্যবহার সংরক্ষণ করে মডেলের যথার্থতা পরীক্ষা করুন।'
                 : 'Bridge mathematical predictions with ground truth. Record real harvest yields, farm-gate prices, and water use to compute empirical model variance (Δ Yield, Δ Revenue). Historical observations are preserved in SQLite and never fabricated.'}
@@ -264,20 +264,20 @@ export function ActualOutcomesView({
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '14px',
           }}>
-            <div style={{ background: '#0e1318', padding: '12px 16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border-medium, #1e293b)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase' }}>
                 {lang === 'bn' ? 'পর্যবেক্ষিত মৌসুমসমূহ' : 'Observed Seasons'}
               </span>
-              <div style={{ fontSize: '22px', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
+              <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', marginTop: '2px' }}>
                 {summaryStats.total_recorded_seasons} {lang === 'bn' ? 'টি রেকর্ড' : 'Recorded'}
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
                 {lang === 'bn' ? 'মাঠের প্রকৃত তথ্য ভাণ্ডার' : 'Empirical farm harvest logs'}
               </span>
             </div>
 
-            <div style={{ background: '#0e1318', padding: '12px 16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border-medium, #1e293b)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase' }}>
                 {lang === 'bn' ? 'গড় ফলন পার্থক্য' : 'Average Yield Variance'}
               </span>
               <div style={{
@@ -288,13 +288,13 @@ export function ActualOutcomesView({
               }}>
                 {(summaryStats.average_yield_variance_pct || 0) > 0 ? '+' : ''}{formatNumber(summaryStats.average_yield_variance_pct, 1)}%
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
                 {lang === 'bn' ? 'প্রকৃত বনাম MILP পূর্বাভাস' : 'Actual vs. MILP predicted yield'}
               </span>
             </div>
 
-            <div style={{ background: '#0e1318', padding: '12px 16px', borderRadius: '10px', border: '1px solid #1e293b' }}>
-              <span style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>
+            <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--border-medium, #1e293b)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase' }}>
                 {lang === 'bn' ? 'গড় রাজস্ব পার্থক্য' : 'Average Revenue Variance'}
               </span>
               <div style={{
@@ -305,7 +305,7 @@ export function ActualOutcomesView({
               }}>
                 {(summaryStats.average_revenue_variance_pct || 0) > 0 ? '+' : ''}{formatNumber(summaryStats.average_revenue_variance_pct, 1)}%
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
                 {lang === 'bn' ? 'প্রকৃত বনাম MILP আয়' : 'Actual vs. MILP predicted cash'}
               </span>
             </div>
@@ -343,13 +343,13 @@ export function ActualOutcomesView({
           padding: '20px',
           marginBottom: '20px',
         }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>📝</span> {lang === 'bn' ? 'মৌসুমের মাঠ পর্যায়ের ফসল কাটার তথ্য প্রদান' : 'Record Seasonal Harvest Ground Truth'}
           </h3>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'মৌসুম ও বছর:' : 'Season Window:'}
               </label>
               <input
@@ -358,26 +358,26 @@ export function ActualOutcomesView({
                 value={form.season_name}
                 onChange={e => setForm({ ...form, season_name: e.target.value })}
                 required
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'প্রকৃত চাষকৃত ফসল:' : 'Actual Crop Planted:'}
               </label>
               <select
                 className="dashboard-field-select"
                 value={form.crop_planted}
                 onChange={e => setForm({ ...form, crop_planted: e.target.value })}
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
               >
                 {cropChoices.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'প্রকৃত ফলন (kg/ha):' : 'Actual Yield (kg/ha):'}
               </label>
               <input
@@ -388,12 +388,12 @@ export function ActualOutcomesView({
                 required
                 min="1"
                 max="200000"
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'মডেল পূর্বাভাস ফলন (kg/ha):' : 'Model Predicted Yield (kg/ha):'}
               </label>
               <input
@@ -401,12 +401,12 @@ export function ActualOutcomesView({
                 className="input-box"
                 value={form.predicted_yield_kg_ha}
                 onChange={e => setForm({ ...form, predicted_yield_kg_ha: e.target.value })}
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'প্রকৃত মোট রাজস্ব (BDT/ha):' : 'Actual Revenue (BDT/ha):'}
               </label>
               <input
@@ -416,12 +416,12 @@ export function ActualOutcomesView({
                 onChange={e => setForm({ ...form, actual_revenue_bdt: e.target.value })}
                 required
                 min="0"
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'পূর্বাভাস রাজস্ব (BDT/ha):' : 'Predicted Revenue (BDT/ha):'}
               </label>
               <input
@@ -429,12 +429,12 @@ export function ActualOutcomesView({
                 className="input-box"
                 value={form.predicted_revenue_bdt}
                 onChange={e => setForm({ ...form, predicted_revenue_bdt: e.target.value })}
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'প্রকৃত সেচ পানি (mm):' : 'Actual Water Applied (mm):'}
               </label>
               <input
@@ -444,12 +444,12 @@ export function ActualOutcomesView({
                 onChange={e => setForm({ ...form, actual_water_mm: e.target.value })}
                 min="0"
                 max="3000"
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
                 {lang === 'bn' ? 'ফসল কাটার তারিখ:' : 'Harvest Date:'}
               </label>
               <input
@@ -457,13 +457,13 @@ export function ActualOutcomesView({
                 className="input-box"
                 value={form.harvest_date}
                 onChange={e => setForm({ ...form, harvest_date: e.target.value })}
-                style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px' }}
+                style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px' }}
               />
             </div>
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{ display: 'block', fontSize: '11.5px', color: '#94a3b8', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', marginBottom: '4px' }}>
               {lang === 'bn' ? 'মাঠ ব্যবস্থাপনা ও আবহাওয়ার বিবরণ:' : 'Field Management & Weather Notes:'}
             </label>
             <textarea
@@ -471,7 +471,7 @@ export function ActualOutcomesView({
               rows={2}
               value={form.notes}
               onChange={e => setForm({ ...form, notes: e.target.value })}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155', padding: '8px', borderRadius: '8px', resize: 'vertical' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)', padding: '8px', borderRadius: '8px', resize: 'vertical' }}
             />
           </div>
 
@@ -489,26 +489,26 @@ export function ActualOutcomesView({
       {/* Recorded Outcomes Table */}
       <div className="dash-card" style={{
         background: '#131920',
-        border: '1px solid #1e293b',
+        border: '1px solid var(--border-medium, #1e293b)',
         borderRadius: '14px',
         padding: '20px',
         marginBottom: '20px'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>📊</span> {lang === 'bn' ? 'মাঠ পর্যায়ের বাস্তব রেকর্ড ও মডেল পার্থক্য' : 'Empirical Ground Truth Records & Prediction Variance'}
           </h3>
           {outcomes.length > 0 && (
-            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)' }}>
               {lang === 'bn' ? 'সারিতে ক্লিক করে ত্রিমাত্রিক ভিউতে বিস্তারিত দেখুন' : 'Click a row to inspect in 3D'}
             </span>
           )}
         </div>
 
         {outcomes.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '36px 20px', color: '#94a3b8' }}>
+          <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-muted, #94a3b8)' }}>
             <span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>🌱</span>
-            <strong style={{ color: '#f8fafc', fontSize: '15px' }}>
+            <strong style={{ color: 'var(--text-main, #f8fafc)', fontSize: '15px' }}>
               {lang === 'bn' ? 'এই জমির জন্য এখনো কোনো বাস্তব ফসল কাটার তথ্য যুক্ত করা হয়নি।' : 'No harvest outcome records registered yet for this field.'}
             </strong>
             <p style={{ margin: '6px 0 14px', fontSize: '12.5px' }}>
@@ -529,7 +529,7 @@ export function ActualOutcomesView({
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '1px solid #334155', color: 'var(--text-muted, #94a3b8)', textAlign: 'left' }}>
                   <th style={{ padding: '10px' }}>{lang === 'bn' ? 'মৌসুম' : 'Season'}</th>
                   <th style={{ padding: '10px' }}>{lang === 'bn' ? 'ফসল' : 'Crop'}</th>
                   <th style={{ padding: '10px' }}>{lang === 'bn' ? 'বাস্তব ফলন' : 'Actual Yield'}</th>
@@ -561,7 +561,7 @@ export function ActualOutcomesView({
                         transition: 'background 0.2s ease'
                       }}
                     >
-                      <td style={{ padding: '10px', fontWeight: 600, color: '#f8fafc' }}>
+                      <td style={{ padding: '10px', fontWeight: 600, color: 'var(--text-main, #f8fafc)' }}>
                         {item.season_name}
                         {isSelected && (
                           <span style={{ marginLeft: '6px', fontSize: '10px', color: '#c084fc', fontWeight: 700 }}>
@@ -570,10 +570,10 @@ export function ActualOutcomesView({
                         )}
                       </td>
                       <td style={{ padding: '10px', color: '#00df81', fontWeight: 700 }}>{item.crop_planted}</td>
-                      <td style={{ padding: '10px', color: '#f8fafc' }}>
+                      <td style={{ padding: '10px', color: 'var(--text-main, #f8fafc)' }}>
                         {item.actual_yield_kg_ha != null ? `${formatNumber(item.actual_yield_kg_ha, 0)} kg/ha` : '—'}
                       </td>
-                      <td style={{ padding: '10px', color: '#94a3b8' }}>
+                      <td style={{ padding: '10px', color: 'var(--text-muted, #94a3b8)' }}>
                         {item.predicted_yield_kg_ha != null ? `${formatNumber(item.predicted_yield_kg_ha, 0)} kg/ha` : '—'}
                       </td>
                       <td style={{ padding: '10px' }}>
@@ -590,7 +590,7 @@ export function ActualOutcomesView({
                           </span>
                         ) : '—'}
                       </td>
-                      <td style={{ padding: '10px', color: '#f8fafc' }}>
+                      <td style={{ padding: '10px', color: 'var(--text-main, #f8fafc)' }}>
                         {item.actual_revenue_bdt != null ? `BDT ${formatNumber(item.actual_revenue_bdt, 0)}` : '—'}
                       </td>
                       <td style={{ padding: '10px' }}>
@@ -607,7 +607,7 @@ export function ActualOutcomesView({
                           </span>
                         ) : '—'}
                       </td>
-                      <td style={{ padding: '10px', color: '#94a3b8', fontSize: '11.5px', maxWidth: '240px' }}>
+                      <td style={{ padding: '10px', color: 'var(--text-muted, #94a3b8)', fontSize: '11.5px', maxWidth: '240px' }}>
                         {item.notes || '—'}
                       </td>
                     </tr>
@@ -622,7 +622,7 @@ export function ActualOutcomesView({
       {/* Safety & Model Evaluation Notice */}
       <div className="dash-card" style={{
         background: '#131920',
-        border: '1px solid #1e293b',
+        border: '1px solid var(--border-medium, #1e293b)',
         borderRadius: '12px',
         padding: '16px',
         display: 'flex',
@@ -630,8 +630,8 @@ export function ActualOutcomesView({
         gap: '12px'
       }}>
         <span style={{ fontSize: '22px' }}>🛡️</span>
-        <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
-          <strong style={{ color: '#f8fafc' }}>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.5 }}>
+          <strong style={{ color: 'var(--text-main, #f8fafc)' }}>
             {lang === 'bn' ? 'ধারাবাহিক মূল্যায়ন ও নিরাপত্তা প্রোটোকল:' : 'Continuous Evaluation Safety Protocol:'}
           </strong>{' '}
           {lang === 'bn'

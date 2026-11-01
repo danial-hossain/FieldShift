@@ -144,14 +144,14 @@ export function FarmerHomeView({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
             <span style={{ fontSize: 20 }}>🚀</span>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--leaf, #10b981)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               NASA Space Apps 2026 Interactive Experience
             </span>
           </div>
-          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f8fafc' }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text-main, #f8fafc)' }}>
             {lang === 'bn' ? 'কীভাবে নাসার উপাত্ত ফসলের ঝুঁকি কমায়? দ্রুত জানুন' : 'Adapting Farms with NASA Data: See it in Action'}
           </h2>
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: '#94a3b8' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted, #94a3b8)' }}>
             {lang === 'bn'
               ? '৭-ধাপের নির্দেশিত ডেমো অথবা দুই ভিন্ন অঞ্চলের জলবায়ু ও ফসল আবর্তনের তুলনামূলক প্রমাণ দেখুন।'
               : 'Take the 7-step guided story or explore live 2-field regional divergence (Rajshahi vs Sunamganj).'}
@@ -186,7 +186,7 @@ export function FarmerHomeView({
             onClick={() => setTwoFieldOpen(true)}
             style={{
               background: 'rgba(56, 189, 248, 0.12)',
-              color: '#38bdf8',
+              color: 'var(--water, #38bdf8)',
               border: '1px solid rgba(56, 189, 248, 0.35)',
               padding: '10px 18px',
               borderRadius: 10,
@@ -296,7 +296,7 @@ export function FarmerHomeView({
             <span style={{ fontSize: 16 }}>💧</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-            <span style={{ fontSize: 28, fontWeight: 600, color: '#38bdf8', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>
+            <span style={{ fontSize: 28, fontWeight: 600, color: 'var(--water, #38bdf8)', fontFamily: 'Inter, sans-serif', lineHeight: 1 }}>
               {lang === 'bn' ? toBengaliNumber(rainSum30.toFixed(1)) : rainSum30.toFixed(1)}
             </span>
             <span style={{ fontSize: 13, color: 'var(--text-2)' }}>mm</span>
@@ -616,7 +616,7 @@ export function FarmerHomeView({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '4px 10px', borderRadius: 9999, fontFamily: 'Inter, sans-serif' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--water, #38bdf8)', background: 'rgba(56, 189, 248, 0.12)', padding: '4px 10px', borderRadius: 9999, fontFamily: 'Inter, sans-serif' }}>
                   {lang === 'bn' ? `${toBengaliNumber(rainSum30.toFixed(1))} mm মোট` : `${rainSum30.toFixed(1)} mm Total`}
                 </span>
               </div>
@@ -707,11 +707,11 @@ export function FarmerHomeView({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 11.5, color: '#c5e86c', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 11.5, color: 'var(--accent, #c5e86c)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#c5e86c', display: 'inline-block' }}></span>
                   {lang === 'bn' ? 'পিরিয়ড ১' : 'Period 1'}
                 </span>
-                <span style={{ fontSize: 11.5, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ fontSize: 11.5, color: 'var(--water, #38bdf8)', display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#38bdf8', display: 'inline-block' }}></span>
                   {lang === 'bn' ? 'পিরিয়ড ২' : 'Period 2'}
                 </span>

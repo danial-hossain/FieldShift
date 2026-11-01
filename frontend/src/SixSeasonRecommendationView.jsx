@@ -514,7 +514,7 @@ export function SixSeasonRecommendationView({
     }
     return [
       { id: 'drought', labelBn: 'খরা ঝুঁকি', labelEn: 'Drought Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'তথ্য বিশ্লেষণে খরা ঝুঁকি স্বাভাবিক।', whyEn: 'Drought risk is within normal bounds.' },
-      { id: 'heavy_rain', labelBn: 'অতিবৃষ্টি ঝুঁকি', labelEn: 'Heavy Rain Risk', level: 'medium', levelBn: 'মাঝারি', color: '#f59e0b', whyBn: 'মনসুন বর্ষণে পরিমিত নিষ্কাশন ব্যবস্থা প্রয়োজন।', whyEn: 'Drainage required during heavy monsoon spells.' },
+      { id: 'heavy_rain', labelBn: 'অতিবৃষ্টি ঝুঁকি', labelEn: 'Heavy Rain Risk', level: 'medium', levelBn: 'মাঝারি', color: 'var(--sun)', whyBn: 'মনসুন বর্ষণে পরিমিত নিষ্কাশন ব্যবস্থা প্রয়োজন।', whyEn: 'Drainage required during heavy monsoon spells.' },
       { id: 'heat', labelBn: 'তাপপ্রবাহ ঝুঁকি', labelEn: 'Heat Stress Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'ফসল পরিপক্বতার পূর্বে অতিরিক্ত তাপমাত্রা বৃদ্ধি নেই।', whyEn: 'No extreme heat anomaly during flowering.' },
       { id: 'late_monsoon', labelBn: 'বর্ষা বিলম্ব', labelEn: 'Late Monsoon', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'অনসেট পরিসংখ্যান স্বাভাবিক সীমার মধ্যে।', whyEn: 'Monsoon onset within normal climatological window.' },
       { id: 'bare_soil', labelBn: 'পতিত মাটি ঝুঁকি', labelEn: 'Bare Soil Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'পরিকল্পনায় পতিত দিনের সংখ্যা হ্রাস করা হয়েছে।', whyEn: 'Bare soil exposure is minimized in the proposed plan.' },
@@ -850,7 +850,7 @@ export function SixSeasonRecommendationView({
             size="md"
             loading={isSimulating}
             onClick={handleRunSimulation}
-            style={{ fontWeight: 800, background: 'linear-gradient(135deg, var(--leaf) 0%, var(--leaf) 100%)', color: 'var(--bg-deep)' }}
+            style={{ fontWeight: 800 }}
           >
             ▶ {lang === 'bn' ? '৬-মৌসুমের পরিকল্পনা চালান' : 'Run 6-Season Simulation'}
           </GlassButton>
@@ -1215,7 +1215,7 @@ export function SixSeasonRecommendationView({
               borderRadius: 12,
               textAlign: 'left',
               border: '1px solid rgba(148, 163, 184, 0.3)',
-              background: 'rgba(15, 23, 42, 0.45)',
+              background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -1225,11 +1225,11 @@ export function SixSeasonRecommendationView({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ fontSize: 18 }}>🚜</span>
-                  <strong style={{ fontSize: 13, color: '#94a3b8' }}>
+                  <strong style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)' }}>
                     {lang === 'bn' ? 'বিদ্যমান আবর্তন (বেসলাইন)' : 'Existing Rotation (Baseline)'}
                   </strong>
                 </div>
-                <span style={{ fontSize: 10, background: 'rgba(148, 163, 184, 0.2)', color: '#cbd5e1', padding: '1px 6px', borderRadius: 999, fontWeight: 800 }}>
+                <span style={{ fontSize: 10, background: 'rgba(148, 163, 184, 0.2)', color: 'var(--text-muted)', padding: '1px 6px', borderRadius: 999, fontWeight: 800 }}>
                   {lang === 'bn' ? 'বেসলাইন' : 'BASELINE'}
                 </span>
               </div>
@@ -1238,22 +1238,22 @@ export function SixSeasonRecommendationView({
               </div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
                 {baselineCrops.slice(0, 3).map((c, i) => (
-                  <span key={i} style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid #475569', padding: '1px 6px', borderRadius: 4, fontSize: 10.5, color: '#cbd5e1' }}>
+                  <span key={i} style={{ background: 'var(--line)', border: '1px solid var(--glass-border)', padding: '1px 6px', borderRadius: 4, fontSize: 10.5, color: 'var(--text)' }}>
                     {translateCropName(c, lang)}
                   </span>
                 ))}
               </div>
             </div>
             <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8, fontSize: 11 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #94a3b8)' }}>
                 <span>{lang === 'bn' ? 'লাভ (Margin):' : 'Margin:'}</span>
                 <strong>{activePlanData.baselineProfitBdt != null ? `${formatCurrency(activePlanData.baselineProfitBdt, lang)}/ha` : '—'}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171', marginTop: 2 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--alert)', marginTop: 2 }}>
                 <span>{lang === 'bn' ? 'সেচ প্রয়োজন:' : 'Irrigation:'}</span>
                 <strong>{activePlanData.baselineIrrigationMm != null ? `${Math.round(activePlanData.baselineIrrigationMm)} mm` : '—'}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f59e0b', marginTop: 2 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--sun)', marginTop: 2 }}>
                 <span>{lang === 'bn' ? 'অনাবৃত দিন:' : 'Bare Days:'}</span>
                 <strong>{activePlanData.baselineBareDays != null ? `${activePlanData.baselineBareDays} ${lang === 'bn' ? 'দিন/বছর' : 'days/yr'}` : '—'}</strong>
               </div>
@@ -1290,7 +1290,7 @@ export function SixSeasonRecommendationView({
                     <div style={{
                       background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3), rgba(0, 223, 129, 0.15))',
                       border: '1px solid #10b981',
-                      color: '#34d399',
+                      color: 'var(--leaf)',
                       padding: '2px 8px',
                       borderRadius: 999,
                       fontSize: 10,
@@ -1334,7 +1334,7 @@ export function SixSeasonRecommendationView({
         
         {/* 12-Month Horizontal Calendar Strip (Hero View) */}
         <div style={{
-          background: 'rgba(15, 23, 42, 0.75)',
+          background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
           border: '1px solid var(--glass-border)',
           borderRadius: 12,
           padding: 16,
@@ -1414,7 +1414,7 @@ export function SixSeasonRecommendationView({
         {/* A2 & A7: Deterministic 5-Item Strategy Card with Plain-Language Popovers and SAAO Notice */}
         <div style={{
           marginTop: 18,
-          background: 'rgba(15, 23, 42, 0.65)',
+          background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
           border: '1px solid var(--glass-border)',
           borderRadius: 14,
           padding: 18,
@@ -1436,7 +1436,7 @@ export function SixSeasonRecommendationView({
             gap: 6,
             flexWrap: 'wrap',
             padding: '8px 12px',
-            background: 'rgba(2, 6, 23, 0.55)',
+            background: 'var(--surface-2, rgba(255, 255, 255, 0.04))',
             borderRadius: 8,
             border: '1px solid rgba(56, 189, 248, 0.18)',
             marginBottom: 14
@@ -1456,7 +1456,7 @@ export function SixSeasonRecommendationView({
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
             {/* 1. Why this strategy */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--water)', textTransform: 'uppercase', marginBottom: 4 }}>
                 ১. কেন এই কৌশল? (Why this strategy)
               </div>
@@ -1472,7 +1472,7 @@ export function SixSeasonRecommendationView({
             </div>
 
             {/* 2. Scientific Evidence with Dataset Tag */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--leaf)', textTransform: 'uppercase' }}>
                   ২. উপাত্তভিত্তিক প্রমাণ (Scientific Evidence)
@@ -1490,8 +1490,8 @@ export function SixSeasonRecommendationView({
             </div>
 
             {/* 3. Benefits vs Existing Baseline */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: 4 }}>
+            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--sun)', textTransform: 'uppercase', marginBottom: 4 }}>
                 ৩. বিদ্যমান অভ্যাসের তুলনায় সুবিধা (Benefits vs Baseline)
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
@@ -1502,7 +1502,7 @@ export function SixSeasonRecommendationView({
             </div>
 
             {/* 4. Information Gaps */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#ec4899', textTransform: 'uppercase' }}>
                   ৪. উপাত্তের সীমাবদ্ধতা (Information Gaps)
@@ -1517,7 +1517,7 @@ export function SixSeasonRecommendationView({
             </div>
 
             {/* 5. Risks Needing Local Review */}
-            <div style={{ background: 'rgba(0, 0, 0, 0.3)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)', gridColumn: 'span 2' }}>
+            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)', gridColumn: 'span 2' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#eab308', textTransform: 'uppercase', marginBottom: 4 }}>
                 ৫. মাঠপর্যায়ে স্থানীয় ঝুঁকি ও যাচাইকরণ (Risks Needing Local Review)
               </div>
@@ -1556,7 +1556,7 @@ export function SixSeasonRecommendationView({
                 key={rec.key}
                 onClick={() => setSelectedPeriodKey(rec.key)}
                 style={{
-                  background: isSelected ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%)' : 'rgba(15, 23, 42, 0.55)',
+                  background: isSelected ? 'var(--surface-2, rgba(255, 255, 255, 0.08))' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                   borderRadius: 14,
                   border: isSelected ? '2px solid var(--leaf)' : '1px solid var(--glass-border)',
                   boxShadow: isSelected ? '0 6px 20px rgba(0, 223, 129, 0.25)' : 'var(--glass-shadow)',
@@ -1600,7 +1600,7 @@ export function SixSeasonRecommendationView({
                   </div>
 
                   {/* Agronomic Rationale (Why Selected?) */}
-                  <div style={{ marginBottom: 12, background: 'rgba(15, 23, 42, 0.4)', padding: 10, borderRadius: 8, border: '1px solid var(--glass-border)' }}>
+                  <div style={{ marginBottom: 12, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, border: '1px solid var(--glass-border)' }}>
                     <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase', marginBottom: 2 }}>
                       {lang === 'bn' ? 'কেন এই সুপারিশ? (কৃষি-পরিবেশগত কারণ):' : 'Why Recommended? (Agronomic Rationale):'}
                     </span>
@@ -1619,19 +1619,19 @@ export function SixSeasonRecommendationView({
 
                   {/* Estimated Production & Economic Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
-                    <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: '6px 10px', borderRadius: 6 }}>
+                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
                       <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অনুমিত ফলন:' : 'Predicted Yield:'}</span>
                       <strong style={{ color: 'var(--leaf)', fontSize: 13 }}>{rec.yieldTonHa != null ? `${rec.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</strong> {rec.yieldMaundBigha != null && <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>({rec.yieldMaundBigha} md/bg)</span>}
                     </div>
-                    <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: '6px 10px', borderRadius: 6 }}>
+                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
                       <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{hasArea ? (lang === 'bn' ? 'মোট উৎপাদন:' : 'Total Harvest:') : (lang === 'bn' ? 'ফসল ইটি (ET):' : 'Crop ET:')}</span>
                       <strong style={{ color: 'var(--text)', fontSize: 13 }}>{hasArea ? (rec.totalHarvestTons != null ? `${rec.totalHarvestTons} tons` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')) : (rec.cropEtMm != null ? `${rec.cropEtMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</strong>
                     </div>
-                    <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: '6px 10px', borderRadius: 6 }}>
+                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
                       <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'প্রত্যাশিত লাভ/ha:' : 'Gross Margin / ha:'}</span>
                       <strong style={{ color: 'var(--water)', fontSize: 12.5 }}>{rec.grossMarginBdtHa != null ? formatCurrency(rec.grossMarginBdtHa, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
                     </div>
-                    <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: '6px 10px', borderRadius: 6 }}>
+                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
                       <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{hasArea ? (lang === 'bn' ? 'মোট খামার লাভ:' : 'Parcel Profit:') : (lang === 'bn' ? 'সেচ চাহিদা:' : 'Irrigation Required:')}</span>
                       <strong style={{ color: 'var(--sun)', fontSize: 12.5 }}>{hasArea ? (rec.totalParcelProfitBdt != null ? formatCurrency(rec.totalParcelProfitBdt, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')) : (rec.irrigationReqMm != null ? `${rec.irrigationReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</strong>
                     </div>
@@ -1692,7 +1692,7 @@ export function SixSeasonRecommendationView({
                     fontSize: 11,
                     fontWeight: 800,
                     cursor: 'pointer',
-                    background: p.key === selectedPeriodKey ? 'var(--leaf)' : 'rgba(15, 23, 42, 0.6)',
+                    background: p.key === selectedPeriodKey ? 'var(--leaf)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                     color: p.key === selectedPeriodKey ? 'var(--bg-deep)' : 'var(--text-muted)',
                     border: '1px solid var(--glass-border)'
                   }}
@@ -1704,7 +1704,7 @@ export function SixSeasonRecommendationView({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'উদ্ভিদ পরিবার ও জাত' : 'Botanical Family & Traits'}</span>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{activeSeason.family || activeSeason.cropMeta?.family || (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</div>
               <div style={{ fontSize: 11.5, color: 'var(--leaf)', marginTop: 4 }}>
@@ -1712,7 +1712,7 @@ export function SixSeasonRecommendationView({
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'পানি ও বৃদ্ধি কাল' : 'Hydrological Demand & Duration'}</span>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--water)', marginTop: 2 }}>
                 {activeSeason.waterReqMm != null ? `${activeSeason.waterReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
@@ -1723,7 +1723,7 @@ export function SixSeasonRecommendationView({
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অনুমিত ফলন ও অনিশ্চয়তা' : 'Yield Prediction & RMSE Bound'}</span>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--leaf)', marginTop: 2 }}>
                 {activeSeason.yieldTonHa != null ? `${activeSeason.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
@@ -1734,7 +1734,7 @@ export function SixSeasonRecommendationView({
               </div>
             </div>
 
-            <div style={{ background: 'rgba(15, 23, 42, 0.5)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অর্থনৈতিক নিট মার্জিন' : 'Economic Net Return'}</span>
               <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--sun)', marginTop: 2 }}>
                 {activeSeason.grossMarginBdtHa != null ? formatCurrency(activeSeason.grossMarginBdtHa, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} /ha
@@ -1747,7 +1747,7 @@ export function SixSeasonRecommendationView({
             </div>
           </div>
 
-          <div style={{ marginTop: 14, background: 'rgba(15, 23, 42, 0.4)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+          <div style={{ marginTop: 14, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase' }}>
               {lang === 'bn' ? 'সিদ্ধান্তের বিস্তারিত ব্যাখ্যা (Decision Explanation):' : 'Mathematical Decision Explanation:'}
             </span>
@@ -1846,7 +1846,7 @@ export function SixSeasonRecommendationView({
 
       {/* A3: Soil Health & Ecological Indicators Suite */}
       <div style={{
-        background: 'rgba(15, 23, 42, 0.7)',
+        background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
         border: '1px solid var(--glass-border)',
         borderRadius: 14,
         padding: '16px 20px',
@@ -1952,7 +1952,7 @@ export function SixSeasonRecommendationView({
                 fontWeight: 800,
                 cursor: 'pointer',
                 border: viewMode === 'comparison' ? '1px solid var(--water)' : '1px solid var(--glass-border)',
-                background: viewMode === 'comparison' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(15, 23, 42, 0.45)',
+                background: viewMode === 'comparison' ? 'rgba(56, 189, 248, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                 color: viewMode === 'comparison' ? 'var(--water)' : 'var(--text-muted)'
               }}
             >
@@ -1968,7 +1968,7 @@ export function SixSeasonRecommendationView({
                 fontWeight: 800,
                 cursor: 'pointer',
                 border: viewMode === 'timeline' ? '1px solid var(--sun)' : '1px solid var(--glass-border)',
-                background: viewMode === 'timeline' ? 'rgba(251, 191, 36, 0.2)' : 'rgba(15, 23, 42, 0.45)',
+                background: viewMode === 'timeline' ? 'rgba(251, 191, 36, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                 color: viewMode === 'timeline' ? 'var(--sun)' : 'var(--text-muted)'
               }}
             >
@@ -1984,7 +1984,7 @@ export function SixSeasonRecommendationView({
                 fontWeight: 800,
                 cursor: 'pointer',
                 border: viewMode === '3d_trajectory' ? '1px solid var(--leaf)' : '1px solid var(--glass-border)',
-                background: viewMode === '3d_trajectory' ? 'rgba(0, 223, 129, 0.2)' : 'rgba(15, 23, 42, 0.45)',
+                background: viewMode === '3d_trajectory' ? 'rgba(0, 223, 129, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                 color: viewMode === '3d_trajectory' ? 'var(--leaf)' : 'var(--text-muted)'
               }}
             >
@@ -2000,7 +2000,7 @@ export function SixSeasonRecommendationView({
           </h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
             <thead>
-              <tr style={{ background: 'rgba(15, 23, 42, 0.7)', borderBottom: '1px solid var(--glass-border)', color: 'var(--text-2)' }}>
+              <tr style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', borderBottom: '1px solid var(--glass-border)', color: 'var(--text-2)' }}>
                 <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'কৌশল প্রোফাইল' : 'Strategy Profile'}</th>
                 <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? '৬-মৌসুমের ফসল আবর্তন ক্রম' : '6-Season Crop Rotation Sequence'}</th>
                 <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? '৬-মৌসুমের লাভ (BDT/ha)' : 'Gross Margin (BDT/ha)'}</th>
@@ -2020,11 +2020,11 @@ export function SixSeasonRecommendationView({
                 <td style={{ padding: '12px 14px', fontWeight: 800 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 16 }}>🚜</span>
-                    <span style={{ color: '#94a3b8' }}>
+                    <span style={{ color: 'var(--text-muted, #94a3b8)' }}>
                       {lang === 'bn' ? 'বিদ্যমান কৃষক অভ্যাস (বেসলাইন)' : 'Existing Practice (Baseline)'}
                     </span>
                   </div>
-                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 2 }}>{lang === 'bn' ? 'আমার খামার পেজে নির্ধারিত' : 'From My Farm profile'}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-dim, #64748b)', marginTop: 2 }}>{lang === 'bn' ? 'আমার খামার পেজে নির্ধারিত' : 'From My Farm profile'}</div>
                 </td>
                 <td style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
@@ -2032,7 +2032,7 @@ export function SixSeasonRecommendationView({
                       const cm = CROP_DATABASE[c] || { icon: '🌱', nameBn: c, nameEn: c };
                       return (
                         <React.Fragment key={pIdx}>
-                          <span style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid #475569', padding: '2px 6px', borderRadius: 6, fontSize: 11, color: '#cbd5e1' }}>
+                          <span style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid #475569', padding: '2px 6px', borderRadius: 6, fontSize: 11, color: 'var(--text-muted)' }}>
                             {cm.icon} {lang === 'bn' ? (cm.nameBn || c) : (cm.nameEn || c)}
                           </span>
                           {pIdx < baselineCrops.length - 1 && <span style={{ color: 'var(--text-3)', fontSize: 10 }}>→</span>}
@@ -2041,23 +2041,23 @@ export function SixSeasonRecommendationView({
                     })}
                   </div>
                 </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: '#94a3b8' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--text-muted, #94a3b8)' }}>
                   {activePlanData.baselineProfitBdt != null ? `${formatCurrency(activePlanData.baselineProfitBdt, lang)}/ha` : '—'}
                 </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: '#f87171' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--alert)' }}>
                   {activePlanData.baselineIrrigationMm != null ? `${Math.round(activePlanData.baselineIrrigationMm)} mm` : '—'}
                 </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: '#f59e0b' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--sun)' }}>
                   {activePlanData.baselineNitrogenKg != null ? `${Math.round(activePlanData.baselineNitrogenKg)} kg N` : '0 kg N'}
                 </td>
-                <td style={{ padding: '12px 14px', fontWeight: 900, color: '#64748b' }}>
+                <td style={{ padding: '12px 14px', fontWeight: 900, color: 'var(--text-dim, #64748b)' }}>
                   0.420
                 </td>
-                <td style={{ padding: '12px 14px', fontSize: 11, color: '#f87171', fontWeight: 700 }}>
+                <td style={{ padding: '12px 14px', fontSize: 11, color: 'var(--alert)', fontWeight: 700 }}>
                   ⚠️ {!baselineCrops.some(c => CROP_DATABASE[c]?.is_legume) ? (lang === 'bn' ? 'ডাল ফসলহীন (উচ্চ ক্ষয়)' : '0 Legumes (N Depletion)') : (lang === 'bn' ? 'সীমিত বৈচিত্র্য' : 'Limited Diversity')}
                 </td>
                 <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                  <span style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>
                     {lang === 'bn' ? 'তুলনার ভিত্তি' : 'Baseline'}
                   </span>
                 </td>
@@ -2099,7 +2099,7 @@ export function SixSeasonRecommendationView({
                           const cm = c ? (CROP_DATABASE[c] || { icon: '🌱', nameBn: c, nameEn: c }) : null;
                           return (
                             <React.Fragment key={p.key}>
-                              <span style={{ background: 'rgba(15, 23, 42, 0.7)', border: '1px solid var(--glass-border)', padding: '2px 6px', borderRadius: 6, fontSize: 11 }}>
+                              <span style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', border: '1px solid var(--glass-border)', padding: '2px 6px', borderRadius: 6, fontSize: 11 }}>
                                 {cm ? `${cm.icon} ${lang === 'bn' ? cm.nameBn : cm.nameEn}` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                               </span>
                               {pIdx < 5 && <span style={{ color: 'var(--text-3)', fontSize: 10 }}>→</span>}
@@ -2139,7 +2139,7 @@ export function SixSeasonRecommendationView({
                           fontSize: 11.5,
                           fontWeight: 800,
                           cursor: 'pointer',
-                          background: isSelected ? stratMeta.color : 'rgba(15, 23, 42, 0.6)',
+                          background: isSelected ? stratMeta.color : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
                           color: isSelected ? 'var(--bg-deep)' : 'var(--text)',
                           border: isSelected ? 'none' : '1px solid var(--glass-border)'
                         }}
@@ -2166,7 +2166,7 @@ export function SixSeasonRecommendationView({
 
           {/* 12-Month Horizontal Calendar Strip */}
           <div style={{
-            background: 'rgba(15, 23, 42, 0.75)',
+            background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
             border: '1px solid var(--glass-border)',
             borderRadius: 12,
             padding: 16,
@@ -2306,14 +2306,14 @@ export function SixSeasonRecommendationView({
               { yearNum: 2, labelEn: 'Year 2 (Years 2027-2028)', labelBn: '২য় বছর (মৌসুম ৩ ও ৪)', s1: sixSeasonRecommendations[2], s2: sixSeasonRecommendations[3] },
               { yearNum: 3, labelEn: 'Year 3 (Years 2028-2029)', labelBn: '৩য় বছর (মৌসুম ৫ ও ৬)', s1: sixSeasonRecommendations[4], s2: sixSeasonRecommendations[5] }
             ].map(y => (
-              <div key={y.yearNum} style={{ background: 'rgba(15, 23, 42, 0.55)', borderRadius: 12, border: '1px solid var(--glass-border)', padding: 14 }}>
+              <div key={y.yearNum} style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', borderRadius: 12, border: '1px solid var(--glass-border)', padding: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--glass-border)', paddingBottom: 8 }}>
                   <strong style={{ fontSize: 14, color: 'var(--water)' }}>{y[lang === 'bn' ? 'labelBn' : 'labelEn']}</strong>
                   <span style={{ fontSize: 11, background: 'var(--line)', padding: '2px 8px', borderRadius: 999, color: 'var(--text-muted)' }}>Year {y.yearNum}</span>
                 </div>
 
                 {/* Season 1 */}
-                <div style={{ marginBottom: 10, background: 'rgba(15, 23, 42, 0.4)', padding: 10, borderRadius: 8, borderLeft: y.s1?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--sun)' }}>
+                <div style={{ marginBottom: 10, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, borderLeft: y.s1?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--sun)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
                     <span>Season 1 (Rabi (Nov-Apr, dry))</span>
                     {y.s1?.isLegume && <span style={{ color: 'var(--leaf)', fontWeight: 800 }}>🌱 BNF Fixer</span>}
@@ -2328,7 +2328,7 @@ export function SixSeasonRecommendationView({
                 </div>
 
                 {/* Season 2 */}
-                <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: 10, borderRadius: 8, borderLeft: y.s2?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--water)' }}>
+                <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, borderLeft: y.s2?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--water)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
                     <span>Season 2 (Kharif (May-Oct, wet))</span>
                     {y.s2?.isLegume && <span style={{ color: 'var(--leaf)', fontWeight: 800 }}>🌱 BNF Fixer</span>}

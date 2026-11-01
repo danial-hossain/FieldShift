@@ -1075,7 +1075,7 @@ export function MyFarmWorkspaceView({
               />
               <div style={{ marginTop: 10 }}>
                 {/* Progress bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
                     {lang === 'bn' ? 'সামগ্রিক পূর্ণতা:' : 'Overall completeness:'}
                   </span>
@@ -1277,7 +1277,7 @@ export function MyFarmWorkspaceView({
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, margin: '16px 0' }}>
             {/* 1. Texture */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'মাটির গঠন (Texture):' : 'Soil Texture Class:'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
@@ -1288,7 +1288,7 @@ export function MyFarmWorkspaceView({
 
             {/* 2. Sand % */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'বালি (Sand):' : 'Sand Fraction:'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
@@ -1299,7 +1299,7 @@ export function MyFarmWorkspaceView({
 
             {/* 3. Silt % */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'পলি (Silt):' : 'Silt Fraction:'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
@@ -1310,7 +1310,7 @@ export function MyFarmWorkspaceView({
 
             {/* 4. Clay % */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'কাদা (Clay):' : 'Clay Fraction:'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
@@ -1321,7 +1321,7 @@ export function MyFarmWorkspaceView({
 
             {/* 5. Soil pH */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'মাটির অম্লতা (pH):' : 'Soil pH:'}</span>
                 <SourceChip
                   source={activeField?.soil_ph != null ? 'user' : (activeField?.soilgrids_ph != null ? 'SoilGrids' : 'class_average')}
@@ -1339,7 +1339,7 @@ export function MyFarmWorkspaceView({
 
             {/* 6. Organic Matter */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'জৈব পদার্থ (OM):' : 'Organic Matter:'}</span>
                 <SourceChip
                   source={activeField?.organic_matter != null ? 'user' : (activeField?.soilgrids_soc != null ? 'SoilGrids' : 'class_average')}
@@ -1357,7 +1357,7 @@ export function MyFarmWorkspaceView({
 
             {/* 7. Field Capacity (FC) */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'ফিল্ড ক্যাপাসিটি (FC):' : 'Field Capacity (FC):'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'saxton_rawls' : 'class_average'} lang={lang} size="xs" />
               </div>
@@ -1371,7 +1371,7 @@ export function MyFarmWorkspaceView({
 
             {/* 8. Permanent Wilting Point (PWP) */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'উইল্টিং পয়েন্ট (PWP):' : 'Wilting Point (PWP):'}</span>
                 <SourceChip source={hasRealSoilGrids ? 'saxton_rawls' : 'class_average'} lang={lang} size="xs" />
               </div>

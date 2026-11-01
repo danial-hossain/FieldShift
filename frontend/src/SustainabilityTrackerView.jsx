@@ -134,7 +134,7 @@ export function SustainabilityTrackerView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '26px' }}>🌱</span>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 {lang === 'bn' ? 'মাটির স্বাস্থ্য ও স্থায়িত্ব ট্র্যাকার' : 'Soil Health & Multi-Season Sustainability Tracker'}
               </h2>
               <span style={{
@@ -150,7 +150,7 @@ export function SustainabilityTrackerView({
                 {lang === 'bn' ? 'বাস্তব আবর্তন ভিত্তিক' : 'PLAN OUTPUT GROUNDED'}
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#94a3b8', maxWidth: '840px', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '840px', lineHeight: 1.5 }}>
               {lang === 'bn'
                 ? 'আপনার জমিতে সুপারিশকৃত ২ বছরের ফসল পরিকল্পনার বাস্তব মাটির স্বাস্থ্য, জৈবিক নাইট্রোজেন সংবন্ধন, মাটির নগ্ন দিন ও পানির লোড বিশ্লেষণ।'
                 : 'Evaluates empirical biological soil indicators directly derived from the recommended multi-season rotation plan for this field.'}
@@ -178,9 +178,9 @@ export function SustainabilityTrackerView({
           gap: '14px',
         }}>
           {/* 1. Biological Nitrogen Fixed */}
-          <div style={{ background: '#0e1318', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+          <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 700 }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
                 {lang === 'bn' ? 'জৈবিক নাইট্রোজেন (BNF)' : 'Biological N Fixed'}
               </span>
               <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>
@@ -190,15 +190,15 @@ export function SustainabilityTrackerView({
             <div style={{ fontSize: '22px', fontWeight: 800, color: '#10b981' }}>
               {totalNFixedKgHa} kg N/ha
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
               {lang === 'bn' ? `ইউরিয়া সাশ্রয়: ~৳${Math.round(totalNFixedKgHa * 2.2 * 27).toLocaleString()}` : `Equivalent urea savings: ~৳${Math.round(totalNFixedKgHa * 2.2 * 27).toLocaleString()}`}
             </span>
           </div>
 
           {/* 2. Bare-Field Days */}
-          <div style={{ background: '#0e1318', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+          <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 700 }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
                 {lang === 'bn' ? 'মাটি নগ্ন দিন (ক্ষয় ঝুঁকি)' : 'Bare-Field Days'}
               </span>
               <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: totalBareDays > 150 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)', color: totalBareDays > 150 ? '#ef4444' : '#f59e0b', fontWeight: 700 }}>
@@ -208,15 +208,15 @@ export function SustainabilityTrackerView({
             <div style={{ fontSize: '22px', fontWeight: 800, color: totalBareDays > 150 ? '#ef4444' : '#f8fafc' }}>
               {totalBareDays} {lang === 'bn' ? 'দিন / ২ বছর' : 'days / 2 yrs'}
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
               {lang === 'bn' ? `${730 - totalBareDays} দিন শস্য বা আচ্ছাদন উপস্থিত` : `${730 - totalBareDays} days active vegetative cover`}
             </span>
           </div>
 
           {/* 3. Water Footprint */}
-          <div style={{ background: '#0e1318', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+          <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 700 }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
                 {lang === 'bn' ? 'মোট সেচ পানির চাহিদা' : 'Total Water Demand'}
               </span>
               <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 700 }}>
@@ -226,15 +226,15 @@ export function SustainabilityTrackerView({
             <div style={{ fontSize: '22px', fontWeight: 800, color: '#38bdf8' }}>
               {totalWaterMm} mm
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
               {lang === 'bn' ? `গড় প্রতি মৌসুমে: ${Math.round(totalWaterMm / 6)} mm` : `Mean per season: ${Math.round(totalWaterMm / 6)} mm`}
             </span>
           </div>
 
           {/* 4. OM Residue Contribution */}
-          <div style={{ background: '#0e1318', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+          <div style={{ background: 'var(--bg-card-subtle, #0e1318)', padding: '14px 16px', borderRadius: '12px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', fontWeight: 700 }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', fontWeight: 700 }}>
                 {lang === 'bn' ? 'জৈব পদার্থ (OM) অবদান' : 'Residue OM Gain'}
               </span>
               <span style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', fontWeight: 700 }}>
@@ -244,7 +244,7 @@ export function SustainabilityTrackerView({
             <div style={{ fontSize: '22px', fontWeight: 800, color: '#c084fc' }}>
               +{totalOmContributionPct}%
             </div>
-            <span style={{ fontSize: '11px', color: '#64748b' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
               {hasMeasuredOm ? `Base: ${activeField.organic_matter}% OM` : 'From root mass & legume residue'}
             </span>
           </div>
@@ -266,8 +266,8 @@ export function SustainabilityTrackerView({
       </div>
 
       {/* 6-Season Trajectory Breakdown */}
-      <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>📈</span> {lang === 'bn' ? 'পরিকল্পনা অনুযায়ী ৬-মৌসুমের স্থায়িত্ব ট্র্যাজেক্টরি' : '6-Season Sustainability Trajectory Breakdown'}
         </h3>
 
@@ -277,28 +277,28 @@ export function SustainabilityTrackerView({
             const isNeutral = step.delta === 0;
             return (
               <div key={idx} style={{
-                background: '#0e1318',
-                border: '1px solid #1e293b',
+                background: 'var(--bg-card-subtle, #0e1318)',
+                border: '1px solid var(--border-medium, #1e293b)',
                 borderRadius: '12px',
                 padding: '14px',
                 position: 'relative',
               }}>
-                <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)', marginBottom: '4px' }}>
                   {step.season}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
                   <span style={{ fontSize: '18px' }}>{step.icon}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#f8fafc' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                     {step.crop}
                   </span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '6px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', marginBottom: '6px' }}>
                   {step.family}
                 </div>
                 <div style={{ fontSize: '11px', color: step.isLegume ? '#10b981' : '#cbd5e1' }}>
                   {step.isLegume ? `🌿 BNF: +${step.nFixed} kg N/ha` : `💧 Water: ${step.water_mm} mm`}
                 </div>
-                <div style={{ fontSize: '10.5px', color: '#64748b', marginTop: '4px' }}>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-dim, #64748b)', marginTop: '4px' }}>
                   Bare days: {step.bareDays} d
                 </div>
               </div>

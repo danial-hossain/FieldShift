@@ -220,6 +220,16 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
             <svg viewBox="0 0 420 520" style={{ width: '100%', maxWidth: 360, height: 'auto', maxHeight: 420 }}>
               {/* Outer border & subtle grid */}
               <rect width="420" height="520" fill="none" rx="10" />
+              {/* Bangladesh Geographic Silhouette Boundary */}
+              <path
+                id="bangladesh-outline"
+                d="M 52,38 L 85,65 L 120,60 L 155,75 L 190,95 L 235,115 L 285,110 L 315,140 L 325,175 L 295,200 L 305,250 L 345,305 L 375,370 L 370,410 L 345,465 L 330,440 L 300,380 L 255,360 L 225,385 L 180,415 L 140,410 L 105,370 L 100,335 L 75,300 L 55,250 L 35,190 L 45,130 L 35,80 Z"
+                fill="rgba(56, 189, 248, 0.05)"
+                stroke="rgba(56, 189, 248, 0.35)"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+                strokeDasharray="4 2"
+              />
               
               {/* District Centroid Circles */}
               {districtsData.map(d => {

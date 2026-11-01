@@ -153,7 +153,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                 6 BANGLADESH AEZ PROFILES
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.4' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)', lineHeight: '1.4' }}>
               {lang === 'bn'
                 ? 'বাংলাদেশের বিভিন্ন কৃষি পরিবেশ অঞ্চলের ৬টি প্রতিনিধি খেত প্রোফাইলে বাস্তব গণনা পাইপলাইন (FAO-56, FAO-33 ও PuLP MILP) পরিচালনা, এক-চলক সংবেদনশীলতা সুইপ এবং বৈজ্ঞানিক বাউন্ড যাচাই।'
                 : 'Controlled agronomic simulation across 6 authentic Bangladesh AEZ profiles running genuine FAO-56 dual Kc water balance, FAO-33 Stewart yield reduction, and PuLP MILP optimization.'}
@@ -252,11 +252,11 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                 <span style={{ fontWeight: '700', fontSize: '0.9rem', color: isSelected ? '#93c5fd' : '#f1f5f9' }}>
                   {prof.district}
                 </span>
-                <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: '#94a3b8' }}>
+                <span style={{ fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: 'var(--text-muted, #94a3b8)' }}>
                   {prof.crop.toUpperCase()}
                 </span>
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '6px' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', marginBottom: '6px' }}>
                 {prof.soilTexture} • {prof.areaHa} ha
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', fontWeight: '600' }}>
@@ -308,7 +308,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>
                 Area (ha) {currentProfile.areaHa <= 0 && <span style={{ color: '#f87171' }}>* &gt; 0</span>}
               </label>
               <input
@@ -319,7 +319,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>
                 Irrigation (mm) {currentProfile.irrigationCapacityMm < 0 && <span style={{ color: '#f87171' }}>* &gt;= 0</span>}
               </label>
               <input
@@ -330,7 +330,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nitrogen (kg/ha)</label>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>Nitrogen (kg/ha)</label>
               <input
                 type="number"
                 value={currentProfile.nitrogenKgHa}
@@ -339,7 +339,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Soil pH</label>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>Soil pH</label>
               <input
                 type="number"
                 step="0.1"
@@ -349,7 +349,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Organic Matter (%)</label>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>Organic Matter (%)</label>
               <input
                 type="number"
                 step="0.1"
@@ -359,7 +359,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Price (BDT/maund)</label>
+              <label style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', display: 'block', marginBottom: '4px' }}>Price (BDT/maund)</label>
               <input
                 type="number"
                 value={currentProfile.sellingPriceMaund}
@@ -409,7 +409,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           <div style={{ overflowX: 'auto', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: 'var(--text-muted, #94a3b8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'ক্ষেতের নাম ও জেলা' : 'Field & District'}</th>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'শস্য ও মাটি' : 'Crop & Texture'}</th>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'আয়তন' : 'Area'}</th>
@@ -450,7 +450,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                         {base.cumulativeIrrigationMm} mm
                       </td>
                       <td style={{ padding: '12px', fontWeight: '700', color: '#34d399' }}>
-                        {base.simulatedYieldTonHa} t/ha <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>({(base.simulatedYieldTonHa * prof.areaHa).toFixed(1)} t total)</span>
+                        {base.simulatedYieldTonHa} t/ha <span style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)' }}>({(base.simulatedYieldTonHa * prof.areaHa).toFixed(1)} t total)</span>
                       </td>
                       <td style={{ padding: '12px', color: base.yieldLossPct > 20 ? '#f87171' : '#facc15' }}>
                         {base.yieldLossPct}%
@@ -490,17 +490,17 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
               <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: '600', marginBottom: '6px' }}>🏆 HIGHEST YIELDING FIELD</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Cumilla Heavy Clay (4.99 t/ha)</div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Heavy clay water retention minimizes vegetative drought stress.</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>Heavy clay water retention minimizes vegetative drought stress.</div>
             </div>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
               <div style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: '600', marginBottom: '6px' }}>💧 WATER-STRESSED CASE</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Rajshahi Barind Tract (-22.5% Yield)</div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Groundwater constrained to 180 mm under drought weather scenario.</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>Groundwater constrained to 180 mm under drought weather scenario.</div>
             </div>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
               <div style={{ fontSize: '0.8rem', color: '#c084fc', fontWeight: '600', marginBottom: '6px' }}>💰 HIGHEST VALUE / HA</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Jashore BARI Lentil (4,000 BDT/md)</div>
-              <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>High market price and low water requirement yield superior gross margin.</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>High market price and low water requirement yield superior gross margin.</div>
             </div>
             <div style={{ background: selectedFieldKey === 'jashore_pulse_veg' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: selectedFieldKey === 'jashore_pulse_veg' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)' }}>
               <div style={{ fontSize: '0.8rem', color: selectedFieldKey === 'jashore_pulse_veg' ? '#f87171' : '#60a5fa', fontWeight: '600', marginBottom: '6px' }}>
@@ -548,7 +548,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           <div style={{ overflowX: 'auto', background: 'rgba(15, 23, 42, 0.8)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <tr style={{ background: 'rgba(30, 41, 59, 0.9)', color: 'var(--text-muted, #94a3b8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'পরীক্ষিত চলক' : 'Tested Factor'}</th>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'বেসলাইন মান' : 'Baseline Value'}</th>
                   <th style={{ padding: '12px' }}>{lang === 'bn' ? 'পরিবর্তিত মান' : 'Perturbed Value'}</th>
@@ -562,10 +562,10 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               <tbody>
                 {filteredOvats.map((v, i) => (
                   <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <td style={{ padding: '12px', fontWeight: '600', color: '#f8fafc' }}>
+                    <td style={{ padding: '12px', fontWeight: '600', color: 'var(--text-main, #f8fafc)' }}>
                       {lang === 'bn' ? v.factorLabelBn : v.factorLabel}
                     </td>
-                    <td style={{ padding: '12px', color: '#94a3b8' }}>
+                    <td style={{ padding: '12px', color: 'var(--text-muted, #94a3b8)' }}>
                       {v.baselineValue} {v.unit}
                     </td>
                     <td style={{ padding: '12px', fontWeight: '600', color: '#38bdf8' }}>
@@ -601,7 +601,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                         {v.classification}
                       </span>
                     </td>
-                    <td style={{ padding: '12px', fontSize: '0.75rem', color: '#94a3b8', maxWidth: '300px' }}>
+                    <td style={{ padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', maxWidth: '300px' }}>
                       {v.modelLimitation}
                     </td>
                   </tr>
@@ -619,7 +619,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
             <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', color: '#60a5fa' }}>
               {lang === 'bn' ? '২×২ ফ্যাক্টোরিয়াল মিথস্ক্রিয়া: সেচ (Irrigation) × নাইট্রোজেন (Nitrogen)' : '2×2 Factorial Interaction: Irrigation × Nitrogen'}
             </h3>
-            <p style={{ margin: '0 0 20px 0', fontSize: '0.85rem', color: '#94a3b8' }}>
+            <p style={{ margin: '0 0 20px 0', fontSize: '0.85rem', color: 'var(--text-muted, #94a3b8)' }}>
               {lang === 'bn' ? currentInteraction.synergy.agronomicInterpretationBn : currentInteraction.synergy.agronomicInterpretationEn}
             </p>
 
@@ -627,12 +627,12 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                 <div style={{ fontSize: '0.8rem', color: '#f87171', fontWeight: '600' }}>[1] LOW IRRIG × LOW N (0,0 CONTROL)</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', margin: '6px 0' }}>
-                  {currentInteraction.grid.lowIrrigLowN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>({(currentInteraction.grid.lowIrrigLowN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
+                  {currentInteraction.grid.lowIrrigLowN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)' }}>({(currentInteraction.grid.lowIrrigLowN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#f1f5f9', fontWeight: '600' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-main, #f1f5f9)', fontWeight: '600' }}>
                   Profit: {currentInteraction.grid.lowIrrigLowN.netReturnBdt.toLocaleString()} BDT
                 </div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>
                   vs Control (0,0): Baseline | vs Normal: {currentInteraction.grid.lowIrrigLowN.deltaProfitBdt.toLocaleString()} BDT
                 </div>
               </div>
@@ -640,9 +640,9 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(234, 179, 8, 0.3)' }}>
                 <div style={{ fontSize: '0.8rem', color: '#facc15', fontWeight: '600' }}>[2] LOW IRRIG × HIGH N (0,1)</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', margin: '6px 0' }}>
-                  {currentInteraction.grid.lowIrrigHighN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>({(currentInteraction.grid.lowIrrigHighN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
+                  {currentInteraction.grid.lowIrrigHighN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)' }}>({(currentInteraction.grid.lowIrrigHighN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#f1f5f9', fontWeight: '600' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-main, #f1f5f9)', fontWeight: '600' }}>
                   Profit: {currentInteraction.grid.lowIrrigHighN.netReturnBdt.toLocaleString()} BDT
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>
@@ -653,9 +653,9 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                 <div style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: '600' }}>[3] HIGH IRRIG × LOW N (1,0)</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', margin: '6px 0' }}>
-                  {currentInteraction.grid.highIrrigLowN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>({(currentInteraction.grid.highIrrigLowN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
+                  {currentInteraction.grid.highIrrigLowN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)' }}>({(currentInteraction.grid.highIrrigLowN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#f1f5f9', fontWeight: '600' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-main, #f1f5f9)', fontWeight: '600' }}>
                   Profit: {currentInteraction.grid.highIrrigLowN.netReturnBdt.toLocaleString()} BDT
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>
@@ -666,9 +666,9 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                 <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: '600' }}>[4] HIGH IRRIG × HIGH N (1,1)</div>
                 <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff', margin: '6px 0' }}>
-                  {currentInteraction.grid.highIrrigHighN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>({(currentInteraction.grid.highIrrigHighN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
+                  {currentInteraction.grid.highIrrigHighN.yieldTonHa} t/ha <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)' }}>({(currentInteraction.grid.highIrrigHighN.yieldTonHa * currentProfile.areaHa).toFixed(1)} t total)</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#f1f5f9', fontWeight: '600' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-main, #f1f5f9)', fontWeight: '600' }}>
                   Profit: {currentInteraction.grid.highIrrigHighN.netReturnBdt.toLocaleString()} BDT
                 </div>
                 <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '4px' }}>
@@ -709,7 +709,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               </div>
             </div>
 
-            <div style={{ marginTop: '14px', fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>
+            <div style={{ marginTop: '14px', fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>
               {lang === 'bn' ? currentInteraction.synergy.mathematicalReconciliationBn : currentInteraction.synergy.mathematicalReconciliationEn}
             </div>
           </div>
@@ -741,7 +741,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               >
                 <div style={{ flex: '1', minWidth: '240px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#f8fafc' }}>
+                    <span style={{ fontWeight: '700', fontSize: '0.9rem', color: 'var(--text-main, #f8fafc)' }}>
                       {lang === 'bn' ? inv.checkNameBn : inv.checkNameEn}
                     </span>
                     <span style={{
@@ -755,7 +755,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                       {inv.category}
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginBottom: '6px' }}>
                     {lang === 'bn' ? inv.descriptionBn : inv.descriptionEn}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontFamily: 'monospace' }}>

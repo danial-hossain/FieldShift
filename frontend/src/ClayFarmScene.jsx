@@ -836,28 +836,31 @@ export function ClayFarmScene({
       let isVisible = true;
       let isTabActive = typeof document !== 'undefined' ? !document.hidden : true;
 
-      // U4: GTAOPass on desktop only (width >= 1024)
+      // Direct high-fidelity WebGL rendering (PCF Soft Shadows + ACES Tonemapping + PMREM Environment)
       const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 1024;
       let composer = null;
-      if (isDesktop) {
+      // GTAOPass is optional and only applied if WebGL 2.0 depth texture is safely supported
+      if (isDesktop && renderer.capabilities.isWebGL2 && width > 100 && height > 100) {
         try {
-          composer = new EffectComposer(renderer);
+          const comp = new EffectComposer(renderer);
           const renderPass = new RenderPass(scene, camera);
-          composer.addPass(renderPass);
+          comp.addPass(renderPass);
 
           const gtaoPass = new GTAOPass(scene, camera, width, height);
           gtaoPass.output = GTAOPass.OUTPUT.Default;
-          composer.addPass(gtaoPass);
+          comp.addPass(gtaoPass);
 
           const outputPass = new OutputPass();
-          composer.addPass(outputPass);
+          comp.addPass(outputPass);
 
+          composer = comp;
           disposables.push({
             dispose: () => {
-              try { composer.dispose(); } catch (e) {}
+              try { comp.dispose(); } catch (e) {}
             }
           });
         } catch (err) {
+          console.warn('[ClayFarmScene] GTAO composer not available on this context, using direct render:', err);
           composer = null;
         }
       }
@@ -1040,7 +1043,7 @@ export function ClayFarmScene({
 
       {/* Floating Glass HUD Card for Selected Plot */}
       <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 2 }}>
-        <span style={{ fontSize: 10.5, background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted, #94a3b8)', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+        <span style={{ fontSize: 10.5, background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#e2e8f0', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
           Draw calls: {drawCallsCount} {typeof window !== 'undefined' && window.innerWidth >= 1024 ? '• GTAOPass: ON' : ''}
         </span>
       </div>

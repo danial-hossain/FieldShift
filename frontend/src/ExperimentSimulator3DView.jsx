@@ -243,7 +243,7 @@ export function ExperimentSimulator3DView({
   };
 
   return (
-    <div className="experiment-simulator-container" style={{ padding: '18px 24px', background: 'radial-gradient(ellipse at 50% 0%, #0d1e2e 0%, #060b13 70%, #04070c 100%)', minHeight: '100vh', color: '#f8fafc' }}>
+    <div className="experiment-simulator-container" style={{ padding: '18px 24px', background: 'radial-gradient(ellipse at 50% 0%, #0d1e2e 0%, #060b13 70%, #04070c 100%)', minHeight: '100vh', color: 'var(--text-main, #f8fafc)' }}>
       {/* Top Scientific Command Header with 3 Core Tabs */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 18, borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: 16 }}>
         <div>
@@ -251,17 +251,17 @@ export function ExperimentSimulator3DView({
             <span style={{ background: '#0284c7', color: '#ffffff', padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800 }}>
               🔬 3D RESEARCH LAB
             </span>
-            <span style={{ fontSize: 12, color: '#94a3b8' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)' }}>
               Engine: <strong style={{ color: '#38bdf8' }}>Three.js v186 WebGL PCFSoft</strong>
             </span>
             <span style={{ fontSize: 12, color: '#00df81' }}>
               Field: <strong>{activeField?.name || (lang === 'bn' ? 'বগুড়া ডেমো খামার [DEMO]' : 'Bogura Demo Farm [DEMO]')}</strong> (10.0 ha)
             </span>
           </div>
-          <h1 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: '#f8fafc', letterSpacing: '-0.02em' }}>
+          <h1 style={{ margin: 0, fontSize: 23, fontWeight: 900, color: 'var(--text-main, #f8fafc)', letterSpacing: '-0.02em' }}>
             {lang === 'bn' ? 'ত্রিমাত্রিক কৃষি গবেষণা ল্যাব ও দৃশ্যকল্প সিমুলেটর' : '3D Farm Experiment Simulator & Scenario Workbench'}
           </h1>
-          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#94a3b8', maxWidth: 840 }}>
+          <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-muted, #94a3b8)', maxWidth: 840 }}>
             {lang === 'bn'
               ? 'বাস্তবসম্মত ৩ডি কৃষি পরিবেশ, সেচ চ্যানেল, সৌর পাম্প, আবহাওয়া মাস্তুল এবং ১২০-দিনের এফএও-৩৩ ওয়াটার-ব্যালেন্স ও ফলন সিমুলেশন।'
               : 'Immersive real-time 3D farm environment with physical lighting, instanced crop tillers, irrigation canal, solar pump station, and FAO-33 water-yield response.'}
@@ -383,7 +383,7 @@ export function ExperimentSimulator3DView({
             {/* LEFT PANEL: Active Field, Soil, Crop, Irrigation, Simulation Inputs */}
             <div style={{ background: 'var(--glass-bg-card)',borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                   ⚙️ {lang === 'bn' ? 'সিমুলেশন ইনপুট' : 'Simulation Inputs'}
                 </span>
                 <span style={{ fontSize: 11, color: activeScenarioTab === 'A' ? '#00df81' : '#38bdf8', fontWeight: 800 }}>
@@ -396,10 +396,10 @@ export function ExperimentSimulator3DView({
                 <div style={{ color: 'rgba(238, 243, 238, 0.68)', marginBottom: 2 }}>
                   {lang === 'bn' ? 'নির্দিষ্ট খামার প্লট:' : 'Active Parcel:'}
                 </div>
-                <div style={{ fontWeight: 800, color: '#f8fafc', marginBottom: 4 }}>
+                <div style={{ fontWeight: 800, color: 'var(--text-main, #f8fafc)', marginBottom: 4 }}>
                   {activeField?.name || (lang === 'bn' ? 'বগুড়া ডেমো খামার [DEMO]' : 'Bogura Demo Farm [DEMO]')}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #94a3b8)' }}>
                   <span>মাটি: <strong>{activeField?.soil_texture || 'Loam'}</strong></span>
                   <span>TAW: <strong>140 mm</strong></span>
                   <span>pH: <strong>6.8</strong></span>
@@ -420,13 +420,13 @@ export function ExperimentSimulator3DView({
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 12 }}>
                     <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 3 }}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted, #94a3b8)', marginBottom: 3 }}>
                         {lang === 'bn' ? 'ফসল ও জাত নির্বাচন:' : 'Crop Selection:'}
                       </label>
                       <select
                         value={currentConfig.crop}
                         onChange={(e) => updateConfig('crop', e.target.value)}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 12, fontWeight: 700 }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 12, fontWeight: 700 }}
                       >
                         <option value="rice">ধান (BRRI Dhan-49 / Aman Rice)</option>
                         <option value="wheat">গম (BARI Gom-33)</option>
@@ -438,13 +438,13 @@ export function ExperimentSimulator3DView({
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 3 }}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted, #94a3b8)', marginBottom: 3 }}>
                         {lang === 'bn' ? 'আবহাওয়া দৃশ্যকল্প (NASA POWER Climate):' : 'Weather Perturbation:'}
                       </label>
                       <select
                         value={currentConfig.weatherScenario}
                         onChange={(e) => updateConfig('weatherScenario', e.target.value)}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 12 }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 12 }}
                       >
                         <option value="baseline">Historical Normal (30-yr Normal)</option>
                         <option value="warming_1_5c">+1.5°C Global Warming</option>
@@ -456,18 +456,18 @@ export function ExperimentSimulator3DView({
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 3 }}>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted, #94a3b8)', marginBottom: 3 }}>
                           {lang === 'bn' ? 'সেচ বাজেট (মিমি):' : 'Irrigation (mm):'}
                         </label>
                         <input
                           type="number"
                           value={currentConfig.irrigationMm}
                           onChange={(e) => updateConfig('irrigationMm', Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 12 }}
+                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 12 }}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 3 }}>
+                        <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted, #94a3b8)', marginBottom: 3 }}>
                           {lang === 'bn' ? 'জমি আয়তন (হেক্টর):' : 'Area (ha):'}
                         </label>
                         <input
@@ -475,50 +475,50 @@ export function ExperimentSimulator3DView({
                           step="0.5"
                           value={currentConfig.areaHa}
                           onChange={(e) => updateConfig('areaHa', Number(e.target.value))}
-                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 12 }}
+                          style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 12 }}
                         />
                       </div>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', marginBottom: 2 }}>N (kg/ha)</label>
+                        <label style={{ display: 'block', fontSize: 10.5, color: 'var(--text-muted, #94a3b8)', marginBottom: 2 }}>N (kg/ha)</label>
                         <input
                           type="number"
                           value={currentConfig.nitrogenKgHa}
                           onChange={(e) => updateConfig('nitrogenKgHa', Number(e.target.value))}
-                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 11.5 }}
+                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5 }}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', marginBottom: 2 }}>P (kg/ha)</label>
+                        <label style={{ display: 'block', fontSize: 10.5, color: 'var(--text-muted, #94a3b8)', marginBottom: 2 }}>P (kg/ha)</label>
                         <input
                           type="number"
                           value={currentConfig.phosphorusKgHa}
                           onChange={(e) => updateConfig('phosphorusKgHa', Number(e.target.value))}
-                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 11.5 }}
+                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5 }}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: 10.5, color: '#94a3b8', marginBottom: 2 }}>K (kg/ha)</label>
+                        <label style={{ display: 'block', fontSize: 10.5, color: 'var(--text-muted, #94a3b8)', marginBottom: 2 }}>K (kg/ha)</label>
                         <input
                           type="number"
                           value={currentConfig.potassiumKgHa}
                           onChange={(e) => updateConfig('potassiumKgHa', Number(e.target.value))}
-                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 11.5 }}
+                          style={{ width: '100%', padding: '5px 6px', borderRadius: 5, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5 }}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 3 }}>
+                      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted, #94a3b8)', marginBottom: 3 }}>
                         {lang === 'bn' ? 'বিক্রয় দর (টাকা/মণ):' : 'Selling Price (BDT/maund):'}
                       </label>
                       <input
                         type="number"
                         value={currentConfig.sellingPriceMaund}
                         onChange={(e) => updateConfig('sellingPriceMaund', Number(e.target.value))}
-                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid #334155', color: '#f8fafc', fontSize: 12 }}
+                        style={{ width: '100%', padding: '6px 8px', borderRadius: 6, background: '#1e293b', border: '1px solid var(--border-medium, #334155)', color: 'var(--text-main, #f8fafc)', fontSize: 12 }}
                       />
                     </div>
                   </div>
@@ -843,7 +843,7 @@ export function ExperimentSimulator3DView({
                     {activePlot.treatment}
                   </span>
                 </div>
-                <div style={{ fontWeight: 800, fontSize: 13.5, color: '#f8fafc', marginBottom: 8 }}>
+                <div style={{ fontWeight: 800, fontSize: 13.5, color: 'var(--text-main, #f8fafc)', marginBottom: 8 }}>
                   {activePlot.titleBn}
                 </div>
 
@@ -851,12 +851,12 @@ export function ExperimentSimulator3DView({
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '6px 8px', borderRadius: 6 }}>
                     <div style={{ color: 'rgba(238, 243, 238, 0.68)' }}>অনুমিত ফলন:</div>
                     <strong style={{ color: '#00df81', fontSize: 13 }}>{activePlot.yieldTonHa} t/ha</strong>
-                    <div style={{ fontSize: 10, color: '#94a3b8' }}>({activePlot.yieldMaundBigha} মণ/বিঘা)</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted, #94a3b8)' }}>({activePlot.yieldMaundBigha} মণ/বিঘা)</div>
                   </div>
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '6px 8px', borderRadius: 6 }}>
                     <div style={{ color: 'rgba(238, 243, 238, 0.68)' }}>মাটির আর্দ্রতা:</div>
                     <strong style={{ color: '#38bdf8', fontSize: 13 }}>{activePlot.moisturePct}%</strong>
-                    <div style={{ fontSize: 10, color: '#94a3b8' }}>Ks: {activePlot.ks}</div>
+                    <div style={{ fontSize: 10, color: 'var(--text-muted, #94a3b8)' }}>Ks: {activePlot.ks}</div>
                   </div>
                   <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '6px 8px', borderRadius: 6 }}>
                     <div style={{ color: 'rgba(238, 243, 238, 0.68)' }}>প্রয়োগকৃত পানি:</div>
@@ -874,10 +874,10 @@ export function ExperimentSimulator3DView({
                 <div style={{ fontWeight: 800, color: '#38bdf8', marginBottom: 4 }}>
                   🛰️ DATA PROVENANCE (NASA POWER)
                 </div>
-                <p style={{ margin: '0 0 6px', color: '#94a3b8', lineHeight: 1.4 }}>
+                <p style={{ margin: '0 0 6px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.4 }}>
                   আবহাওয়া ডেটা নাসা পাওয়ার (NASA POWER 0.5° × 0.5° Gridded Model Reanalysis) থেকে প্রাপ্ত। এটি সরাসরি ফিল্ড সেন্সর রিডিং নয়, বরং গ্রিডেড মডেল সিমুলেশন।
                 </p>
-                <div style={{ color: '#64748b', fontSize: 10 }}>
+                <div style={{ color: 'var(--text-dim, #64748b)', fontSize: 10 }}>
                   FAO-56 Dual Kc · Penman-Monteith · Stewart Yield Loss
                 </div>
               </div>
@@ -928,14 +928,14 @@ export function ExperimentSimulator3DView({
                 <button
                   type="button"
                   onClick={() => setCurrentDayStep(1)}
-                  style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#f8fafc', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
                   ⏪ Day 1
                 </button>
                 <button
                   type="button"
                   onClick={() => setCurrentDayStep(120)}
-                  style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: '#f8fafc', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
                   ⏩ Harvest (120)
                 </button>
@@ -985,7 +985,7 @@ export function ExperimentSimulator3DView({
         <div style={{ background: 'var(--glass-bg-card)',borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 22, boxShadow: 'var(--glass-shadow)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#f8fafc' }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: 'var(--text-main, #f8fafc)' }}>
                 ⚖️ {lang === 'bn' ? 'দৃশ্যকল্প এ বনাম দৃশ্যকল্প বি গাণিতিক তুলনা ম্যাট্রিক্স' : 'Multi-Scenario Quantitative Comparison (Scenario A vs B)'}
               </h3>
               <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'rgba(238, 243, 238, 0.68)' }}>
@@ -1075,7 +1075,7 @@ export function ExperimentSimulator3DView({
                   }
                 ].map((row, rIdx) => (
                   <tr key={rIdx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <td style={{ padding: '12px 16px', fontWeight: 700, color: '#f8fafc' }}>{row.label}</td>
+                    <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--text-main, #f8fafc)' }}>{row.label}</td>
                     <td style={{ padding: '12px 16px', color: 'rgba(238, 243, 238, 0.68)' }}>{row.valA}</td>
                     <td style={{ padding: '12px 16px', color: '#38bdf8' }}>{row.valB}</td>
                     <td style={{ padding: '12px 16px', fontWeight: 800, color: row.isPositive ? '#00df81' : '#f87171' }}>
@@ -1096,7 +1096,7 @@ export function ExperimentSimulator3DView({
       {activeMainTab === 'stress_tests' && (
         <div style={{ background: 'var(--glass-bg-card)',borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 22, boxShadow: 'var(--glass-shadow)' }}>
           <div style={{ marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: '#f8fafc' }}>
+            <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: 'var(--text-main, #f8fafc)' }}>
               ⚡ {lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট ও বাউন্ডারি যাচাই ল্যাব' : 'Scientific Stress Tests & Edge-Case Verification Lab'}
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'rgba(238, 243, 238, 0.68)' }}>

@@ -197,10 +197,10 @@ export function DigitalTwin3DView({
                 {activeField?.name || 'Bogura Demo Field'} ({formatNumber(areaHa, 1)} ha · {activeField?.district || 'bogura'})
               </span>
             </div>
-            <h1 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: '#f8fafc' }}>
+            <h1 style={{ margin: '0 0 4px', fontSize: 20, fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
               {lang === 'bn' ? 'ত্রিমাত্রিক ডিজিটাল টুইন ও কৃষি সিমুলেশন' : '3D Agricultural Digital Twin Simulator'}
             </h1>
-            <p style={{ margin: 0, fontSize: 13, color: '#94a3b8', lineHeight: 1.4, maxWidth: 840 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.4, maxWidth: 840 }}>
               {lang === 'bn'
                 ? 'বাস্তবসম্মত থ্রি.জেএস দৃশ্যকল্পে জমির ফসল আবর্তন, আবহাওয়া সংবেদনশীলতা এবং মাটির আর্দ্রতা প্রোফাইলের ত্রিমাত্রিক মডেল।'
                 : 'Physics-based 3D digital twin visualizing planned seasonal crops, weather perturbations, soil moisture stratifications, and camera perspectives.'}
@@ -219,11 +219,9 @@ export function DigitalTwin3DView({
             </button>
             <button
               type="button"
+              className="farm-viewmode-toggle-btn"
               onClick={() => setViewMode(viewMode === '3d' ? '2d' : '3d')}
               style={{
-                background: viewMode === '3d' ? 'var(--hud-teal)' : 'var(--line)',
-                color: viewMode === '3d' ? '#0f172a' : '#f8fafc',
-                border: '1px solid rgba(0, 223, 129, 0.4)',
                 borderRadius: 8,
                 padding: '6px 12px',
                 fontSize: 12,
@@ -244,9 +242,9 @@ export function DigitalTwin3DView({
               type="button"
               onClick={() => setSubTab(tab.id)}
               style={{
-                background: subTab === tab.id ? 'rgba(0, 223, 129, 0.2)' : 'rgba(15, 23, 42, 0.6)',
+                background: subTab === tab.id ? 'rgba(0, 223, 129, 0.18)' : 'var(--surface-2, rgba(255, 255, 255, 0.05))',
                 border: subTab === tab.id ? '1px solid var(--hud-teal)' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: subTab === tab.id ? 'var(--hud-teal)' : '#94a3b8',
+                color: subTab === tab.id ? 'var(--primary)' : 'var(--text-muted)',
                 borderRadius: 8,
                 padding: '6px 14px',
                 fontSize: 12.5,
@@ -270,7 +268,7 @@ export function DigitalTwin3DView({
           
           {/* CUSTOMIZATION CONTROL COCKPIT HUD (B6) */}
           <div style={{
-            background: 'rgba(15, 23, 42, 0.85)',
+            background: 'var(--bg-card, rgba(15, 23, 42, 0.85))',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             borderRadius: 14,
             padding: '16px 20px',
@@ -282,7 +280,7 @@ export function DigitalTwin3DView({
             {/* 1. Field Selector */}
             {userFields && userFields.length > 0 && onSelectField && (
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase' }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                   {lang === 'bn' ? '১. জমি নির্বাচন (Field)' : '1. Target Field'}
                 </label>
                 <select
@@ -294,7 +292,7 @@ export function DigitalTwin3DView({
                   style={{
                     width: '100%',
                     background: '#0b131a',
-                    color: '#f8fafc',
+                    color: 'var(--text-main, #f8fafc)',
                     border: '1px solid #334155',
                     borderRadius: 8,
                     padding: '6px 10px',
@@ -314,7 +312,7 @@ export function DigitalTwin3DView({
 
             {/* 2. Strategy Selector */}
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                 {lang === 'bn' ? '২. স্ট্র্যাটেজি (Strategy)' : '2. Strategy'}
               </label>
               <select
@@ -340,7 +338,7 @@ export function DigitalTwin3DView({
 
             {/* 3. Overlay Selector */}
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                 {lang === 'bn' ? '৩. ওভারলে (Overlay)' : '3. Overlay'}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
@@ -375,7 +373,7 @@ export function DigitalTwin3DView({
 
             {/* 4. Weather Scenario Sliders (Rain & Temp) */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                 <span>{lang === 'bn' ? 'বৃষ্টিপাত পরিবর্তন' : 'Rain Delta'}:</span>
                 <span style={{ color: rainDeltaPct > 0 ? '#38bdf8' : rainDeltaPct < 0 ? '#f59e0b' : '#94a3b8' }}>
                   {rainDeltaPct > 0 ? `+${rainDeltaPct}%` : `${rainDeltaPct}%`} ({scenarioRainMm} mm)
@@ -391,7 +389,7 @@ export function DigitalTwin3DView({
                 style={{ width: '100%', accentColor: '#38bdf8', cursor: 'pointer', height: 4, marginBottom: 8 }}
               />
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>
                 <span>{lang === 'bn' ? 'তাপমাত্রা বৃদ্ধি' : 'Temp Delta'}:</span>
                 <span style={{ color: tempDeltaC > 0 ? '#ef4444' : '#94a3b8' }}>
                   +{tempDeltaC}°C ({scenarioTempC}°C)
@@ -410,7 +408,7 @@ export function DigitalTwin3DView({
 
             {/* 5. Camera Presets */}
             <div>
-              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase' }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase' }}>
                 {lang === 'bn' ? 'ক্যামেরা কোণ (Camera Preset)' : 'Camera Preset'}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
@@ -444,8 +442,8 @@ export function DigitalTwin3DView({
 
           {/* 6-PERIOD SEASON SLIDER HUD */}
           <div style={{
-            background: 'rgba(15, 23, 42, 0.7)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--bg-card, rgba(15, 23, 42, 0.7))',
+            border: '1px solid var(--glass-border)',
             borderRadius: 12,
             padding: '12px 16px',
             display: 'flex',
@@ -462,15 +460,15 @@ export function DigitalTwin3DView({
                   fontWeight: 700,
                   padding: '2px 10px',
                   borderRadius: 999,
-                  background: 'rgba(0, 223, 129, 0.15)',
-                  color: 'var(--hud-teal)',
-                  border: '1px solid rgba(0, 223, 129, 0.3)'
+                  background: 'var(--badge-leaf-bg, rgba(0, 223, 129, 0.15))',
+                  color: 'var(--leaf)',
+                  border: '1px solid var(--badge-leaf-border, rgba(0, 223, 129, 0.3))'
                 }}>
                   {lang === 'bn' ? currentSeason.nameBn : currentSeason.nameEn}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: '#cbd5e1' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12, color: 'var(--text-2)' }}>
                 <span>🌾 <strong>{lang === 'bn' ? 'পরিকল্পিত ফসল:' : 'Crop:'}</strong> {currentSeason.crop}</span>
                 <span>💧 <strong>{lang === 'bn' ? 'সেচ চাহিদা:' : 'Water:'}</strong> {currentSeason.waterMm > 0 ? `${currentSeason.waterMm} mm` : (lang === 'bn' ? 'বৃষ্টি-নির্ভর (০ মিমি)' : 'Rainfed (0 mm)')}</span>
                 <span>🌡️ <strong>{lang === 'bn' ? 'মাটি আর্দ্রতা:' : 'Moisture:'}</strong> ~{currentSeason.moisture}%</span>
@@ -502,9 +500,9 @@ export function DigitalTwin3DView({
                     style={{
                       padding: '5px 4px',
                       borderRadius: 8,
-                      border: isCur ? '1px solid var(--hud-teal)' : '1px solid rgba(255, 255, 255, 0.08)',
-                      background: isCur ? 'rgba(0, 223, 129, 0.2)' : 'rgba(255, 255, 255, 0.02)',
-                      color: isCur ? 'var(--hud-teal)' : '#94a3b8',
+                      border: isCur ? '1px solid var(--leaf)' : '1px solid var(--glass-border)',
+                      background: isCur ? 'rgba(0, 223, 129, 0.2)' : 'var(--line)',
+                      color: isCur ? 'var(--leaf)' : 'var(--text-muted)',
                       fontSize: 11,
                       fontWeight: isCur ? 700 : 500,
                       cursor: 'pointer',

@@ -59,7 +59,7 @@ export function PlainLanguagePopover({ termKey, lang = 'bn', inline = true, labe
         style={{
           background: isOpen ? 'rgba(56, 189, 248, 0.22)' : 'rgba(56, 189, 248, 0.1)',
           border: '1px solid rgba(56, 189, 248, 0.35)',
-          color: '#38bdf8',
+          color: 'var(--water, #0284c7)',
           fontSize: 10.5,
           fontWeight: 600,
           padding: '2px 7px',
@@ -99,7 +99,7 @@ export function PlainLanguagePopover({ termKey, lang = 'bn', inline = true, labe
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
             <div>
-              <strong style={{ color: '#38bdf8', fontSize: 12.5, display: 'block' }}>
+              <strong style={{ color: 'var(--water, #0284c7)', fontSize: 12.5, display: 'block' }}>
                 {lang === 'bn' ? data.termBn : data.termEn}
               </strong>
               <span style={{ fontSize: 10.5, color: 'var(--text-muted, #94a3b8)' }}>

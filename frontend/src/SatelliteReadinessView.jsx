@@ -79,7 +79,7 @@ export function SatelliteReadinessView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '26px' }}>🛰️</span>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Satellite &amp; Earth Observation Sensor Readiness
               </h2>
               <span style={{
@@ -95,7 +95,7 @@ export function SatelliteReadinessView({
                 P1 SPACE SENSOR TELEMETRY
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#94a3b8', maxWidth: '840px', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '840px', lineHeight: 1.5 }}>
               Transparent telemetry readiness audit. FieldShift maintains an operational connector for <strong>NASA POWER Climatology</strong>, 
               while explicitly detailing the authentication and raster processing prerequisites for <strong>NASA SMAP</strong> and <strong>Sentinel-2 MSI</strong>.
             </p>
@@ -110,7 +110,7 @@ export function SatelliteReadinessView({
         height={380}
       />
 
-      {loading && <div style={{ color: '#94a3b8', padding: '20px' }}>Inspecting satellite sensor APIs...</div>}
+      {loading && <div style={{ color: 'var(--text-muted, #94a3b8)', padding: '20px' }}>Inspecting satellite sensor APIs...</div>}
       {error && (
         <div style={{
           color: '#ef4444',
@@ -167,7 +167,7 @@ export function SatelliteReadinessView({
             }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#f8fafc' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                     {sensor.sensor_name}
                   </h3>
                   <span style={{
@@ -182,21 +182,21 @@ export function SatelliteReadinessView({
                   </span>
                 </div>
 
-                <p style={{ margin: '0 0 14px', fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 14px', fontSize: '12.5px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.5 }}>
                   {sensor.intended_measurement}
                 </p>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', background: '#0e1318', padding: '12px', borderRadius: '8px', marginBottom: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px', background: 'var(--bg-card-subtle, #0e1318)', padding: '12px', borderRadius: '8px', marginBottom: '14px' }}>
                   <div>
-                    <span style={{ color: '#64748b', fontSize: '11px' }}>Spatial Resolution:</span>
+                    <span style={{ color: 'var(--text-dim, #64748b)', fontSize: '11px' }}>Spatial Resolution:</span>
                     <div style={{ color: '#e2e8f0', fontWeight: 600 }}>{sensor.spatial_resolution}</div>
                   </div>
                   <div>
-                    <span style={{ color: '#64748b', fontSize: '11px' }}>Cadence:</span>
+                    <span style={{ color: 'var(--text-dim, #64748b)', fontSize: '11px' }}>Cadence:</span>
                     <div style={{ color: '#38bdf8', fontWeight: 600 }}>{sensor.cadence}</div>
                   </div>
                   <div style={{ gridColumn: 'span 2' }}>
-                    <span style={{ color: '#64748b', fontSize: '11px' }}>Primary Variables:</span>
+                    <span style={{ color: 'var(--text-dim, #64748b)', fontSize: '11px' }}>Primary Variables:</span>
                     <div style={{ color: '#00df81', fontWeight: 600, fontSize: '11.5px' }}>{sensor.parameters}</div>
                   </div>
                 </div>
@@ -221,11 +221,11 @@ export function SatelliteReadinessView({
       </div>
 
       {/* Scientific Integrity Assurance */}
-      <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px' }}>
-        <h4 style={{ margin: '0 0 10px', fontSize: '14.5px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px' }}>
+        <h4 style={{ margin: '0 0 10px', fontSize: '14.5px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>🛡️</span> Zero-Hallucination Satellite Telemetry Policy
         </h4>
-        <p style={{ margin: 0, fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6 }}>
+        <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
           {readiness?.disclaimer || "FieldShift prohibits synthetic NDVI generation. NASA POWER meteorological variables (temperature, radiation, precipitation) provide regional climate boundaries, but cannot be presented as direct farm-level canopy greenness or sub-field moisture sensors without genuine Earth observation telemetry."}
         </p>
       </div>

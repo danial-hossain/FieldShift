@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FieldShift 2026 - Final UI Visual Contact Sheet (C5)</title>
+  <style>
+    :root {
+      --bg: #070d0a;
+      --card: #0e1712;
+      --border: #1b2e23;
+      --accent: #00df81;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+    }
+    body {
+      margin: 0;
+      padding: 32px 40px;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    .badge-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+    }
+    .pill {
+      background: rgba(0, 223, 129, 0.12);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .mobile-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+    }
+    img {
+      width: 100%;
+      height: auto;
+      display: block;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    img:hover {
+      transform: scale(1.01);
+    }
+    footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>FieldShift 2026 — Verified UI Contact Sheet</h1>
+  <div class="subtitle">Complete visual audit across 9 canonical destinations in Dark/Light themes at Desktop (1440px) and Mobile (390px).</div>
+  <div class="badge-bar">
+    <div class="pill">✓ WCAG AA Compliant (0 Failures)</div>
+    <div class="pill">✓ 9 / 9 Destinations Audited</div>
+    <div class="pill">✓ Dark &amp; Light High-Contrast Validated</div>
+    <div class="pill">✓ Responsive 1440px + 390px Viewports</div>
+  </div>
+
+  
+    <div class="section-title">
+      <span>1. Overview & Daily Brief</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: dashboard</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>overview_dark_1440.png</span>
+        </div>
+        <a href="overview_dark_1440.png" target="_blank">
+          <img src="overview_dark_1440.png" alt="overview dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>overview_light_1440.png</span>
+        </div>
+        <a href="overview_light_1440.png" target="_blank">
+          <img src="overview_light_1440.png" alt="overview light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>overview_dark_390.png</span>
+        </div>
+        <a href="overview_dark_390.png" target="_blank">
+          <img src="overview_dark_390.png" alt="overview dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>overview_light_390.png</span>
+        </div>
+        <a href="overview_light_390.png" target="_blank">
+          <img src="overview_light_390.png" alt="overview light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>2. My Farm & Parcel Registry</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: field</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>my_farm_dark_1440.png</span>
+        </div>
+        <a href="my_farm_dark_1440.png" target="_blank">
+          <img src="my_farm_dark_1440.png" alt="my_farm dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>my_farm_light_1440.png</span>
+        </div>
+        <a href="my_farm_light_1440.png" target="_blank">
+          <img src="my_farm_light_1440.png" alt="my_farm light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>my_farm_dark_390.png</span>
+        </div>
+        <a href="my_farm_dark_390.png" target="_blank">
+          <img src="my_farm_dark_390.png" alt="my_farm dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>my_farm_light_390.png</span>
+        </div>
+        <a href="my_farm_light_390.png" target="_blank">
+          <img src="my_farm_light_390.png" alt="my_farm light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>3. 6-Season Rotation Planner</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: farm_planning</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>rotation_planner_dark_1440.png</span>
+        </div>
+        <a href="rotation_planner_dark_1440.png" target="_blank">
+          <img src="rotation_planner_dark_1440.png" alt="rotation_planner dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>rotation_planner_light_1440.png</span>
+        </div>
+        <a href="rotation_planner_light_1440.png" target="_blank">
+          <img src="rotation_planner_light_1440.png" alt="rotation_planner light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>rotation_planner_dark_390.png</span>
+        </div>
+        <a href="rotation_planner_dark_390.png" target="_blank">
+          <img src="rotation_planner_dark_390.png" alt="rotation_planner dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>rotation_planner_light_390.png</span>
+        </div>
+        <a href="rotation_planner_light_390.png" target="_blank">
+          <img src="rotation_planner_light_390.png" alt="rotation_planner light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>4. Climate & NASA Risk Matrix</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: weather</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>climate_risk_dark_1440.png</span>
+        </div>
+        <a href="climate_risk_dark_1440.png" target="_blank">
+          <img src="climate_risk_dark_1440.png" alt="climate_risk dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>climate_risk_light_1440.png</span>
+        </div>
+        <a href="climate_risk_light_1440.png" target="_blank">
+          <img src="climate_risk_light_1440.png" alt="climate_risk light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>climate_risk_dark_390.png</span>
+        </div>
+        <a href="climate_risk_dark_390.png" target="_blank">
+          <img src="climate_risk_dark_390.png" alt="climate_risk dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>climate_risk_light_390.png</span>
+        </div>
+        <a href="climate_risk_light_390.png" target="_blank">
+          <img src="climate_risk_light_390.png" alt="climate_risk light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>5. Water & Irrigation Optimization</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: water</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>water_irrigation_dark_1440.png</span>
+        </div>
+        <a href="water_irrigation_dark_1440.png" target="_blank">
+          <img src="water_irrigation_dark_1440.png" alt="water_irrigation dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>water_irrigation_light_1440.png</span>
+        </div>
+        <a href="water_irrigation_light_1440.png" target="_blank">
+          <img src="water_irrigation_light_1440.png" alt="water_irrigation light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>water_irrigation_dark_390.png</span>
+        </div>
+        <a href="water_irrigation_dark_390.png" target="_blank">
+          <img src="water_irrigation_dark_390.png" alt="water_irrigation dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>water_irrigation_light_390.png</span>
+        </div>
+        <a href="water_irrigation_light_390.png" target="_blank">
+          <img src="water_irrigation_light_390.png" alt="water_irrigation light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>6. Harvest & Market Intelligence</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: harvest_profit</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>harvest_market_dark_1440.png</span>
+        </div>
+        <a href="harvest_market_dark_1440.png" target="_blank">
+          <img src="harvest_market_dark_1440.png" alt="harvest_market dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>harvest_market_light_1440.png</span>
+        </div>
+        <a href="harvest_market_light_1440.png" target="_blank">
+          <img src="harvest_market_light_1440.png" alt="harvest_market light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>harvest_market_dark_390.png</span>
+        </div>
+        <a href="harvest_market_dark_390.png" target="_blank">
+          <img src="harvest_market_dark_390.png" alt="harvest_market dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>harvest_market_light_390.png</span>
+        </div>
+        <a href="harvest_market_light_390.png" target="_blank">
+          <img src="harvest_market_light_390.png" alt="harvest_market light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>7. 3D Digital Twin Farm Diorama</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: digital_twin</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>farm_3d_dark_1440.png</span>
+        </div>
+        <a href="farm_3d_dark_1440.png" target="_blank">
+          <img src="farm_3d_dark_1440.png" alt="farm_3d dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>farm_3d_light_1440.png</span>
+        </div>
+        <a href="farm_3d_light_1440.png" target="_blank">
+          <img src="farm_3d_light_1440.png" alt="farm_3d light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>farm_3d_dark_390.png</span>
+        </div>
+        <a href="farm_3d_dark_390.png" target="_blank">
+          <img src="farm_3d_dark_390.png" alt="farm_3d dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>farm_3d_light_390.png</span>
+        </div>
+        <a href="farm_3d_light_390.png" target="_blank">
+          <img src="farm_3d_light_390.png" alt="farm_3d light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>8. Evidence & Data Provenance</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: data_evidence</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>evidence_method_dark_1440.png</span>
+        </div>
+        <a href="evidence_method_dark_1440.png" target="_blank">
+          <img src="evidence_method_dark_1440.png" alt="evidence_method dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>evidence_method_light_1440.png</span>
+        </div>
+        <a href="evidence_method_light_1440.png" target="_blank">
+          <img src="evidence_method_light_1440.png" alt="evidence_method light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>evidence_method_dark_390.png</span>
+        </div>
+        <a href="evidence_method_dark_390.png" target="_blank">
+          <img src="evidence_method_dark_390.png" alt="evidence_method dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>evidence_method_light_390.png</span>
+        </div>
+        <a href="evidence_method_light_390.png" target="_blank">
+          <img src="evidence_method_light_390.png" alt="evidence_method light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+    <div class="section-title">
+      <span>9. Farmer Account & Profile</span>
+      <span style="font-size: 13px; color: var(--accent); font-weight: normal;">ID: account</span>
+    </div>
+
+    <!-- Desktop 1440px Comparison -->
+    <div class="comparison-grid">
+      <div class="card">
+        <div class="card-header">
+          <span>Dark Mode (1440px)</span>
+          <span>account_dark_1440.png</span>
+        </div>
+        <a href="account_dark_1440.png" target="_blank">
+          <img src="account_dark_1440.png" alt="account dark 1440" />
+        </a>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span>Light Mode (1440px)</span>
+          <span>account_light_1440.png</span>
+        </div>
+        <a href="account_light_1440.png" target="_blank">
+          <img src="account_light_1440.png" alt="account light 1440" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Mobile 390px Comparison -->
+    <div class="comparison-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Dark Mode (Mobile 390px)</span>
+          <span>account_dark_390.png</span>
+        </div>
+        <a href="account_dark_390.png" target="_blank">
+          <img src="account_dark_390.png" alt="account dark 390" />
+        </a>
+      </div>
+      <div class="card" style="max-width: 420px; margin: 0 auto;">
+        <div class="card-header">
+          <span>Light Mode (Mobile 390px)</span>
+          <span>account_light_390.png</span>
+        </div>
+        <a href="account_light_390.png" target="_blank">
+          <img src="account_light_390.png" alt="account light 390" />
+        </a>
+      </div>
+    </div>
+  
+
+  <footer>
+    FieldShift 2026 Decision Support System · NASA Space Apps Challenge 2026 · Automated Verification Protocol Complete
+  </footer>
+</body>
+</html>

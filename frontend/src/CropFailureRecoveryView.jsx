@@ -109,7 +109,7 @@ export function CropFailureRecoveryView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <span style={{ fontSize: '26px' }}>⚡</span>
-              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#f8fafc' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Crop Failure &amp; Adaptive Recovery Simulator
               </h2>
               <span style={{
@@ -125,7 +125,7 @@ export function CropFailureRecoveryView({
                 P0 RESILIENCE ENGINE
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#94a3b8', maxWidth: '820px', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '820px', lineHeight: 1.5 }}>
               Stress-test your farm rotation against simulated shock events (severe drought, unseasonal waterlogging, heat waves, or pest blights). 
               The MILP solver dynamically re-optimizes remaining seasons to mitigate financial losses and restore soil vitality.
             </p>
@@ -165,7 +165,7 @@ export function CropFailureRecoveryView({
                 setFailureType(e.target.value);
                 runSimulation(e.target.value, failureSeason, severity);
               }}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
             >
               {failureTypes.map(t => (
                 <option key={t.id} value={t.id}>{t.icon} {t.label}</option>
@@ -185,7 +185,7 @@ export function CropFailureRecoveryView({
                 setFailureSeason(Number(e.target.value));
                 runSimulation(failureType, Number(e.target.value), severity);
               }}
-              style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
+              style={{ width: '100%', background: 'var(--bg-card-subtle, #0e1318)', color: 'var(--text-main, #f8fafc)', border: '1px solid var(--border-medium, #334155)' }}
             >
               {seasonOptions.map(s => (
                 <option key={s.idx} value={s.idx}>{s.label}</option>
@@ -216,7 +216,7 @@ export function CropFailureRecoveryView({
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     border: severity === s.id ? `1.5px solid ${s.color}` : '1px solid #334155',
-                    background: severity === s.id ? `${s.color}22` : '#0e1318',
+                    background: severity === s.id ? `${s.color}22` : 'var(--bg-card-subtle, #0e1318)',
                     color: severity === s.id ? s.color : '#94a3b8',
                   }}
                 >
@@ -273,12 +273,12 @@ export function CropFailureRecoveryView({
 
           {/* Key Metric Scorecard */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pre-Shock Profit</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pre-Shock Profit</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#00df81', marginTop: '4px' }}>
                 BDT {formatNumber(simData.financial_summary?.pre_shock_net_profit_bdt, 0)}
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Original 6-season baseline</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Original 6-season baseline</span>
             </div>
 
             <div className="dash-card" style={{ background: '#131920', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', padding: '16px' }}>
@@ -289,33 +289,33 @@ export function CropFailureRecoveryView({
               <span style={{ fontSize: '11px', color: '#f87171' }}>Damage in {simData.failure_event?.season_label?.split(' ')[0]} {simData.failure_event?.season_label?.split(' ')[1]}</span>
             </div>
 
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recovered Total Profit</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recovered Total Profit</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
                 BDT {formatNumber(simData.financial_summary?.recovered_plan_profit_bdt, 0)}
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Post-recovery adaptive rotation</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Post-recovery adaptive rotation</span>
             </div>
 
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px' }}>
-              <span style={{ fontSize: '11.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recovery Efficiency</span>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recovery Efficiency</span>
               <div style={{ fontSize: '22px', fontWeight: 800, color: '#a78bfa', marginTop: '4px' }}>
                 {formatNumber(simData.financial_summary?.recovery_efficiency_pct, 1)}%
               </div>
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Capital preservation ratio</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>Capital preservation ratio</span>
             </div>
           </div>
 
           {/* Rotation Comparison: Baseline vs Shock Impact vs Adaptive Recovery */}
-          <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
-            <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🔄</span> Multi-Season Rotation Response Breakdown
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid #334155', color: '#94a3b8', textAlign: 'left' }}>
+                  <tr style={{ borderBottom: '1px solid #334155', color: 'var(--text-muted, #94a3b8)', textAlign: 'left' }}>
                     <th style={{ padding: '10px 12px' }}>Season Horizon</th>
                     <th style={{ padding: '10px 12px' }}>Baseline Plan</th>
                     <th style={{ padding: '10px 12px' }}>Shock Scenario Status</th>
@@ -331,7 +331,7 @@ export function CropFailureRecoveryView({
 
                     let statusBadge = null;
                     if (isPast) {
-                      statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#1e293b', color: '#94a3b8', fontSize: '11px' }}>Pre-Event Normal</span>;
+                      statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#1e293b', color: 'var(--text-muted, #94a3b8)', fontSize: '11px' }}>Pre-Event Normal</span>;
                     } else if (isShockSeason) {
                       statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '11px', fontWeight: 700 }}>⚠️ Shock Incurred (-{simData.failure_event?.yield_loss_pct}%)</span>;
                     } else {
@@ -346,16 +346,16 @@ export function CropFailureRecoveryView({
                         <td style={{ padding: '12px', fontWeight: 600, color: '#e2e8f0' }}>
                           {pre.season_name}
                         </td>
-                        <td style={{ padding: '12px', color: '#f1f5f9' }}>
+                        <td style={{ padding: '12px', color: 'var(--text-main, #f1f5f9)' }}>
                           <span style={{ fontWeight: 700 }}>{pre.crop}</span>
-                          <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>BDT {formatNumber(pre.profit_bdt, 0)} • {formatNumber(pre.water_mm, 0)} mm</span>
+                          <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>BDT {formatNumber(pre.profit_bdt, 0)} • {formatNumber(pre.water_mm, 0)} mm</span>
                         </td>
                         <td style={{ padding: '12px' }}>
                           {statusBadge}
                         </td>
                         <td style={{ padding: '12px' }}>
                           {isPast ? (
-                            <span style={{ color: '#64748b' }}>{pre.crop} (As planted)</span>
+                            <span style={{ color: 'var(--text-dim, #64748b)' }}>{pre.crop} (As planted)</span>
                           ) : isShockSeason ? (
                             <span style={{ color: '#ef4444', fontWeight: 700 }}>
                               {pre.crop} ({100 - simData.failure_event?.yield_loss_pct}% salvage)
@@ -370,7 +370,7 @@ export function CropFailureRecoveryView({
                                   Adjusted
                                 </span>
                               )}
-                              <span style={{ display: 'block', fontSize: '11px', color: '#64748b' }}>
+                              <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-dim, #64748b)' }}>
                                 BDT {formatNumber(recov?.profit_bdt, 0)} • {formatNumber(recov?.water_mm, 0)} mm
                               </span>
                             </div>
@@ -396,11 +396,11 @@ export function CropFailureRecoveryView({
           {/* Binding Constraints & Scientific Safeguards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px', marginBottom: '20px' }}>
             {/* Binding Constraints */}
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '18px' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>🔒</span> Binding Constraints Limiting Recovery
               </h4>
-              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6 }}>
+              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
                 {simData.binding_constraints?.map((c, i) => (
                   <li key={i} style={{ marginBottom: '6px' }}>
                     <strong style={{ color: '#e2e8f0' }}>{c.name}:</strong> {c.detail}
@@ -410,11 +410,11 @@ export function CropFailureRecoveryView({
             </div>
 
             {/* Scientific Transparency & Disclaimer */}
-            <div className="dash-card" style={{ background: '#131920', border: '1px solid #1e293b', borderRadius: '12px', padding: '18px' }}>
-              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '18px' }}>
+              <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>🛡️</span> Scientific Safeguards &amp; Uncertainty Note
               </h4>
-              <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
                 {simData.scientific_disclaimer}
               </p>
               <div style={{ marginTop: '12px', padding: '8px 12px', background: 'rgba(0, 223, 129, 0.06)', border: '1px solid rgba(0, 223, 129, 0.2)', borderRadius: '8px', fontSize: '11.5px', color: '#00df81' }}>
