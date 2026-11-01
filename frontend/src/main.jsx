@@ -1335,35 +1335,51 @@ export function App() {
   };
 
   // Dedicated Field Management Handlers
+  const haversineMeters = (lat1, lon1, lat2, lon2) => {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
   const openAddFieldModal = (initialCoords = null) => {
     setFieldModal('add');
     setFieldModalError('');
-    const defaultLat = initialCoords?.latitude != null
-      ? String(initialCoords.latitude)
-      : (activeField?.latitude != null ? String(activeField.latitude) : '24.3677');
-    const defaultLon = initialCoords?.longitude != null
-      ? String(initialCoords.longitude)
-      : (activeField?.longitude != null ? String(activeField.longitude) : '88.6077');
+    const defaultLat = initialCoords?.latitude != null ? String(initialCoords.latitude) : '';
+    const defaultLon = initialCoords?.longitude != null ? String(initialCoords.longitude) : '';
 
     setFieldForm({
       id: null,
       name: '',
       latitude: defaultLat,
       longitude: defaultLon,
-      area_ha: '10.0',
+      area_ha: '',
       soil_texture: 'loam',
-      soil_ph: '6.5',
-      organic_matter: '2.5',
-      irrigation_capacity_mm: '100',
-      crop: 'Rice',
-      previous_crop_year: '2025',
-      seasonally_flooded: (parseFloat(defaultLat) >= 24.5 && parseFloat(defaultLon) >= 91.0)
+      soil_ph: '',
+      organic_matter: '',
+      irrigation_tier: 'ample',
+      irrigation_capacity_mm: '1200',
+      show_custom_irrigation: false,
+      crop: '',
+      season: 'rabi',
+      previous_crop_year: String(new Date().getFullYear()),
+      seasonally_flooded: false
     });
   };
 
   const openEditFieldModal = fld => {
     setFieldModal('edit');
     setFieldModalError('');
+    const irrVal = fld.irrigation_capacity_mm != null ? String(fld.irrigation_capacity_mm) : '1200';
+    let tier = 'custom';
+    if (irrVal === '1200') tier = 'ample';
+    else if (irrVal === '400') tier = 'limited';
+    else if (irrVal === '0') tier = 'rainfed';
+
     setFieldForm({
       id: fld.id,
       farm_id: fld.farm_id,
@@ -1374,9 +1390,12 @@ export function App() {
       soil_texture: fld.soil_texture || 'unknown',
       soil_ph: fld.soil_ph != null ? String(fld.soil_ph) : '',
       organic_matter: fld.organic_matter != null ? String(fld.organic_matter) : '',
-      irrigation_capacity_mm: fld.irrigation_capacity_mm != null ? String(fld.irrigation_capacity_mm) : '',
+      irrigation_tier: tier,
+      irrigation_capacity_mm: irrVal,
+      show_custom_irrigation: tier === 'custom',
       crop: fld.previous_crop || fld.current_crop || (fld.history && fld.history[0]?.crop) || '',
-      previous_crop_year: fld.previous_crop_year != null ? String(fld.previous_crop_year) : (fld.history && fld.history[0]?.year ? String(fld.history[0]?.year) : ''),
+      season: (fld.history && fld.history[0]?.season) || 'rabi',
+      previous_crop_year: fld.previous_crop_year != null ? String(fld.previous_crop_year) : (fld.history && fld.history[0]?.year ? String(fld.history[0]?.year) : String(new Date().getFullYear())),
       seasonally_flooded: Boolean(fld.seasonally_flooded)
     });
   };
@@ -1386,19 +1405,40 @@ export function App() {
     setFieldModalLoading(true);
     setFieldModalError('');
     try {
+      const trimmedName = (fieldForm.name || '').trim();
+      if (!trimmedName) {
+        throw new Error(lang === 'bn' ? 'জমির নাম আবশ্যক।' : 'Field name is required.');
+      }
       const latVal = fieldForm.latitude === '' || fieldForm.latitude == null ? null : parseFloat(fieldForm.latitude);
       const lonVal = fieldForm.longitude === '' || fieldForm.longitude == null ? null : parseFloat(fieldForm.longitude);
+      if (latVal == null || lonVal == null || !Number.isFinite(latVal) || !Number.isFinite(lonVal)) {
+        throw new Error(lang === 'bn' ? 'ম্যাপ বা জিপিএস থেকে স্থানাঙ্ক নির্বাচন করা আবশ্যক।' : 'Coordinates must be set via map pin or GPS.');
+      }
       const areaVal = fieldForm.area_ha === '' || fieldForm.area_ha == null ? null : parseFloat(fieldForm.area_ha);
       const phVal = fieldForm.soil_ph === '' || fieldForm.soil_ph == null ? null : parseFloat(fieldForm.soil_ph);
       const omVal = fieldForm.organic_matter === '' || fieldForm.organic_matter == null ? null : parseFloat(fieldForm.organic_matter);
       const irrVal = fieldForm.irrigation_capacity_mm === '' || fieldForm.irrigation_capacity_mm == null ? null : parseFloat(fieldForm.irrigation_capacity_mm);
       const yrVal = fieldForm.previous_crop_year === '' || fieldForm.previous_crop_year == null ? null : parseInt(fieldForm.previous_crop_year, 10);
 
+      // Duplicate validation against registered user fields
+      const sameName = userFields.find(f => String(f.id) !== String(fieldForm.id) && (f.name || '').trim().toLowerCase() === trimmedName.toLowerCase());
+      if (sameName) {
+        throw new Error(lang === 'bn' ? `"${trimmedName}" নামের জমি ইতিমধ্যে বিদ্যমান। ভিন্ন নাম নির্বাচন করুন।` : `A field named "${trimmedName}" already exists. Please choose a different name.`);
+      }
+      const tooClose = userFields.find(f => {
+        if (String(f.id) === String(fieldForm.id)) return false;
+        if (f.latitude == null || f.longitude == null) return false;
+        return haversineMeters(latVal, lonVal, Number(f.latitude), Number(f.longitude)) < 50;
+      });
+      if (tooClose) {
+        throw new Error(lang === 'bn' ? `এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${tooClose.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `A field ("${tooClose.name}") already exists within 50 meters of these coordinates.`);
+      }
+
       const payload = {
-        name: fieldForm.name.trim(),
-        latitude: Number.isFinite(latVal) ? latVal : null,
-        longitude: Number.isFinite(lonVal) ? lonVal : null,
-        area_ha: Number.isFinite(areaVal) ? areaVal : null,
+        name: trimmedName,
+        latitude: latVal,
+        longitude: lonVal,
+        area_ha: Number.isFinite(areaVal) ? areaVal : 1.0,
         soil_texture: fieldForm.soil_texture === 'unknown' ? null : fieldForm.soil_texture,
         soil_ph: Number.isFinite(phVal) ? phVal : null,
         organic_matter: Number.isFinite(omVal) ? omVal : null,
@@ -1424,8 +1464,46 @@ export function App() {
         });
       }
       const newFieldId = res?.field?.id || (fieldModal === 'edit' ? fieldForm.id : null);
+      if (newFieldId && fieldModal !== 'edit') {
+        if (fieldForm.crop && fieldForm.crop.trim()) {
+          try {
+            await request(`/api/fields/${newFieldId}/history`, {
+              method: 'POST',
+              body: JSON.stringify({
+                crop: fieldForm.crop.trim(),
+                season: fieldForm.season || 'rabi',
+                year: Number.isFinite(yrVal) ? yrVal : new Date().getFullYear(),
+                notes: 'Initial rotation entry'
+              })
+            });
+          } catch (hErr) {
+            console.warn('Field history setup:', hErr);
+          }
+        }
+        try {
+          await request(`/api/fields/${newFieldId}/enrich`, {
+            method: 'POST',
+            body: JSON.stringify({
+              latitude: latVal,
+              longitude: lonVal,
+              area_ha: Number.isFinite(areaVal) ? areaVal : 1.0,
+              soil_ph: Number.isFinite(phVal) ? phVal : undefined,
+              organic_matter: Number.isFinite(omVal) ? omVal : undefined,
+              soil_texture: fieldForm.soil_texture === 'unknown' ? undefined : fieldForm.soil_texture
+            })
+          });
+        } catch (eErr) {
+          console.warn('Enrichment failed:', eErr);
+        }
+      }
       await loadUserData(user, newFieldId);
       setFieldModal(null);
+      setToastMessage({
+        type: 'success',
+        message: lang === 'bn'
+          ? (fieldModal === 'edit' ? `"${payload.name}" সফলভাবে আপডেট করা হয়েছে।` : `"${payload.name}" নতুন জমি সফলভাবে তৈরি ও সমৃদ্ধ করা হয়েছে।`)
+          : (fieldModal === 'edit' ? `Field "${payload.name}" updated successfully.` : `Field "${payload.name}" added and enriched successfully.`)
+      });
     } catch (err) {
       setFieldModalError(err.message);
     } finally {
@@ -2047,6 +2125,10 @@ export function App() {
                     setSelectedFieldId(null);
                     return;
                   }
+                  if (val === '__add_new__') {
+                    openAddFieldModal();
+                    return;
+                  }
                   if (val === 'demo') {
                     handleSelectActiveField(demoField, false);
                     return;
@@ -2056,8 +2138,13 @@ export function App() {
                 }}
               >
                 <option value="" disabled>{lang === 'bn' ? 'সক্রিয় জমি নির্বাচন করুন...' : 'Select active field...'}</option>
-                {userFields.map(f => (
-                  <option key={f.id} value={String(f.id)}>{f.name} ({f.area_ha || 1} ha)</option>
+                <option value="__add_new__" style={{ fontWeight: 600, color: 'var(--leaf)' }}>
+                  {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add New Field'}
+                </option>
+                {Array.from(new Map(userFields.map(f => [String(f.id), f])).values()).map(f => (
+                  <option key={f.id} value={String(f.id)}>
+                    {f.name} ({f.district ? `${f.district}, ` : ''}{f.area_ha || 1} ha)
+                  </option>
                 ))}
                 <option value="demo">{lang === 'bn' ? 'বগুড়া ডেমো খামার (১০ হেক্টর) [DEMO]' : 'Demo Field (Bogura 10 ha) [DEMO]'}</option>
               </select>
@@ -3469,6 +3556,8 @@ export function App() {
             user={user}
             userFields={userFields}
             onSelectField={handleSelectActiveField}
+            onAddField={openAddFieldModal}
+            onEditField={openEditFieldModal}
             onArchiveField={handleArchiveField}
             onDeleteField={handleArchiveField}
             request={request}
@@ -4094,16 +4183,16 @@ export function App() {
               <div className="modal-backdrop" onClick={() => !fieldModalLoading && setFieldModal(null)}>
                 <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: 720, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   <div className="modal-header" style={{ flexShrink: 0 }}>
-                    <h3>{fieldModal === 'edit' ? `Edit Field: ${fieldForm.name || 'Parcel'}` : 'Add New Agricultural Field'}</h3>
+                    <h3>{fieldModal === 'edit' ? (lang === 'bn' ? `জমি সম্পাদন: ${fieldForm.name || ''}` : `Edit Field: ${fieldForm.name || 'Parcel'}`) : (lang === 'bn' ? 'নতুন কৃষি জমি যোগ করুন' : 'Add New Agricultural Field')}</h3>
                     <button type="button" className="modal-close-btn" onClick={() => !fieldModalLoading && setFieldModal(null)}>×</button>
                   </div>
                   <form onSubmit={handleFieldFormSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', margin: 0 }}>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 22px' }}>
                       <div className="form-group">
-                        <label>Field Name *</label>
+                        <label>{lang === 'bn' ? 'জমির নাম *' : 'Field Name *'}</label>
                         <input
                           className="input-box"
-                          placeholder="e.g. North Plot 1"
+                          placeholder={lang === 'bn' ? 'যেমন: উত্তর মাঠ ১ / দিঘীর পাড়' : 'e.g. North Plot 1'}
                           value={fieldForm.name}
                           onChange={e => setFieldForm(prev => ({ ...prev, name: e.target.value }))}
                           required
@@ -4113,8 +4202,8 @@ export function App() {
                       {/* Interactive Google Maps Field Location Picker */}
                       <div className="form-group">
                         <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                          <span style={{ fontWeight: 600 }}>Interactive Field Location (Google Maps) *</span>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Click or drag marker to set coordinates</span>
+                          <span style={{ fontWeight: 600 }}>{lang === 'bn' ? 'ম্যাপে জমির অবস্থান নির্বাচন *' : 'Interactive Field Location (Google Maps) *'}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'মার্কার টেনে বা জিপিএস দিয়ে স্থানাঙ্ক নির্ধারণ করুন' : 'Click or drag marker to set coordinates'}</span>
                         </label>
                         <GoogleFieldMapPicker
                           latitude={fieldForm.latitude}
@@ -4137,22 +4226,24 @@ export function App() {
                       {/* Precise Synced Latitude & Longitude Inputs */}
                       <div className="form-grid-inner">
                         <div className="form-group">
-                          <label>Latitude (° N) *</label>
+                          <label>{lang === 'bn' ? 'অক্ষাংশ (Latitude ° N) *' : 'Latitude (° N) *'}</label>
                           <input
                             className="input-box"
                             type="number"
                             step="0.0001"
+                            placeholder={lang === 'bn' ? 'ম্যাপে পিন রাখুন' : 'Pin location on map'}
                             value={fieldForm.latitude}
                             onChange={e => setFieldForm(prev => ({ ...prev, latitude: e.target.value }))}
                             required
                           />
                         </div>
                         <div className="form-group">
-                          <label>Longitude (° E) *</label>
+                          <label>{lang === 'bn' ? 'দ্রাঘিমাংশ (Longitude ° E) *' : 'Longitude (° E) *'}</label>
                           <input
                             className="input-box"
                             type="number"
                             step="0.0001"
+                            placeholder={lang === 'bn' ? 'ম্যাপে পিন রাখুন' : 'Pin location on map'}
                             value={fieldForm.longitude}
                             onChange={e => setFieldForm(prev => ({ ...prev, longitude: e.target.value }))}
                             required
@@ -4162,81 +4253,215 @@ export function App() {
 
                       <div className="form-grid-inner">
                         <div className="form-group">
-                          <label>Field Size (ha) *</label>
+                          <label>{lang === 'bn' ? 'জমির পরিমাপ (হেক্টর) *' : 'Field Size (ha) *'}</label>
                           <input
                             className="input-box"
                             type="number"
-                            step="0.1"
+                            step="any"
+                            min="0.01"
+                            placeholder="e.g. 1.5"
                             value={fieldForm.area_ha}
                             onChange={e => setFieldForm(prev => ({ ...prev, area_ha: e.target.value }))}
                             required
                           />
+                          {fieldForm.area_ha && Number(fieldForm.area_ha) > 0 && (
+                            <small style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                              ≈ {(Number(fieldForm.area_ha) * 10000 / 1337.8).toFixed(1)} {lang === 'bn' ? 'বিঘা' : 'bigha'} (1 bigha = 1,338 m²)
+                            </small>
+                          )}
                         </div>
                         <div className="form-group">
-                          <label>Soil Texture</label>
+                          <label>{lang === 'bn' ? 'মাটির ধরন (Soil Texture)' : 'Soil Texture'}</label>
                           <select
                             className="input-box"
-                            value={fieldForm.soil_texture}
+                            value={fieldForm.soil_texture || 'unknown'}
                             onChange={e => setFieldForm(prev => ({ ...prev, soil_texture: e.target.value }))}
                           >
-                            <option value="loam">Loam</option>
-                            <option value="silty_loam">Silty Loam</option>
-                            <option value="clay_loam">Clay Loam</option>
-                            <option value="unknown">Unknown</option>
+                            <option value="loam">{lang === 'bn' ? 'দোআঁশ (Loam)' : 'Loam (দোআঁশ)'}</option>
+                            <option value="silty_loam">{lang === 'bn' ? 'পলি দোআঁশ (Silty Loam)' : 'Silty Loam (পলি দোআঁশ)'}</option>
+                            <option value="clay_loam">{lang === 'bn' ? 'এঁটেল দোআঁশ (Clay Loam)' : 'Clay Loam (এঁটেল দোআঁশ)'}</option>
+                            <option value="clay">{lang === 'bn' ? 'এঁটেল (Clay)' : 'Clay (এঁটেল)'}</option>
+                            <option value="sandy_loam">{lang === 'bn' ? 'বেলে দোআঁশ (Sandy Loam)' : 'Sandy Loam (বেলে দোআঁশ)'}</option>
+                            <option value="unknown">{lang === 'bn' ? 'জানি না (Unknown)' : 'Unknown (জানি না)'}</option>
                           </select>
                         </div>
                       </div>
 
+                      {/* Irrigation Capacity (3 Choices + Collapsible Advanced) */}
+                      <div className="form-group">
+                        <label style={{ fontWeight: 600, marginBottom: 6, display: 'block' }}>
+                          {lang === 'bn' ? 'সেচ সুবিধা (Irrigation Capacity)' : 'Irrigation Capacity'}
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => setFieldForm(prev => ({ ...prev, irrigation_tier: 'ample', irrigation_capacity_mm: '1200' }))}
+                            style={{
+                              padding: '10px 8px',
+                              borderRadius: 8,
+                              border: fieldForm.irrigation_tier === 'ample' ? '2px solid var(--leaf, #22c55e)' : '1px solid var(--border-light, #334155)',
+                              background: fieldForm.irrigation_tier === 'ample' ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-card, #1e293b)',
+                              color: 'inherit',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'পর্যাপ্ত (Ample)' : 'Ample (পর্যাপ্ত)'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>1,200 mm/yr</div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFieldForm(prev => ({ ...prev, irrigation_tier: 'limited', irrigation_capacity_mm: '400' }))}
+                            style={{
+                              padding: '10px 8px',
+                              borderRadius: 8,
+                              border: fieldForm.irrigation_tier === 'limited' ? '2px solid var(--leaf, #22c55e)' : '1px solid var(--border-light, #334155)',
+                              background: fieldForm.irrigation_tier === 'limited' ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-card, #1e293b)',
+                              color: 'inherit',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সীমিত (Limited)' : 'Limited (সীমিত)'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>400 mm/yr</div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFieldForm(prev => ({ ...prev, irrigation_tier: 'rainfed', irrigation_capacity_mm: '0' }))}
+                            style={{
+                              padding: '10px 8px',
+                              borderRadius: 8,
+                              border: fieldForm.irrigation_tier === 'rainfed' ? '2px solid var(--leaf, #22c55e)' : '1px solid var(--border-light, #334155)',
+                              background: fieldForm.irrigation_tier === 'rainfed' ? 'rgba(34, 197, 94, 0.15)' : 'var(--bg-card, #1e293b)',
+                              color: 'inherit',
+                              cursor: 'pointer',
+                              textAlign: 'center'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সেচ নেই (Rainfed)' : 'Rainfed (সেচ নেই)'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>0 mm/yr</div>
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <button
+                            type="button"
+                            onClick={() => setFieldForm(prev => ({ ...prev, show_custom_irrigation: !prev.show_custom_irrigation }))}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--leaf, #22c55e)',
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              padding: 0,
+                              textDecoration: 'underline'
+                            }}
+                          >
+                            {fieldForm.show_custom_irrigation
+                              ? (lang === 'bn' ? '▲ উন্নত ইনপুট বন্ধ করুন' : '▲ Hide custom mm')
+                              : (lang === 'bn' ? 'উন্নত: mm দিন ▾' : 'Advanced: specify mm ▾')}
+                          </button>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {lang === 'bn' ? `বর্তমান মান: ${fieldForm.irrigation_capacity_mm || 0} মিমি` : `Current: ${fieldForm.irrigation_capacity_mm || 0} mm`}
+                          </span>
+                        </div>
+
+                        {fieldForm.show_custom_irrigation && (
+                          <div style={{ marginTop: 8 }}>
+                            <input
+                              className="input-box"
+                              type="number"
+                              min="0"
+                              max="3000"
+                              placeholder="e.g. 800"
+                              value={fieldForm.irrigation_capacity_mm}
+                              onChange={e => setFieldForm(prev => ({ ...prev, irrigation_capacity_mm: e.target.value, irrigation_tier: 'custom' }))}
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Previous Crop Rotation History */}
+                      <div className="form-group" style={{ padding: '12px 14px', background: 'var(--bg-card, #1e293b)', borderRadius: 8, border: '1px solid var(--border-light, #334155)' }}>
+                        <label style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
+                          🌾 {lang === 'bn' ? 'পূর্ববর্তী ফসলের বিবরণ (ঐতিহাসিক তথ্য)' : 'Previous Crop Record (Agronomic History)'}
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                          <div>
+                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                              {lang === 'bn' ? 'মৌসুম' : 'Season'}
+                            </label>
+                            <select
+                              className="input-box"
+                              value={fieldForm.season || 'rabi'}
+                              onChange={e => setFieldForm(prev => ({ ...prev, season: e.target.value }))}
+                            >
+                              <option value="rabi">{lang === 'bn' ? 'রবি (Rabi)' : 'Rabi (Winter)'}</option>
+                              <option value="kharif1">{lang === 'bn' ? 'খরিপ-১ (Kharif-1)' : 'Kharif-1'}</option>
+                              <option value="kharif2">{lang === 'bn' ? 'খরিপ-২ (Kharif-2)' : 'Kharif-2'}</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                              {lang === 'bn' ? 'ফসলের নাম' : 'Crop'}
+                            </label>
+                            <input
+                              className="input-box"
+                              placeholder={lang === 'bn' ? 'যেমন: বোরো ধান / আমন' : 'e.g. Boro Rice'}
+                              value={fieldForm.crop}
+                              onChange={e => setFieldForm(prev => ({ ...prev, crop: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                              {lang === 'bn' ? 'বছর' : 'Year'}
+                            </label>
+                            <input
+                              className="input-box"
+                              type="number"
+                              placeholder="2025"
+                              value={fieldForm.previous_crop_year}
+                              onChange={e => setFieldForm(prev => ({ ...prev, previous_crop_year: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Optional Soil Diagnostics */}
                       <div className="form-grid-inner">
                         <div className="form-group">
-                          <label>Soil pH (0 - 14)</label>
+                          <label>
+                            {lang === 'bn' ? 'মাটির পিএইচ (Soil pH, ঐচ্ছিক)' : 'Soil pH (0 - 14, Optional)'}
+                          </label>
                           <input
                             className="input-box"
                             type="number"
                             step="0.1"
                             min="0"
                             max="14"
-                            placeholder="e.g. 6.5"
+                            placeholder={lang === 'bn' ? 'খালি রাখলে SoilGrids (ঐচ্ছিক)' : 'Optional (SoilGrids auto-fills)'}
                             value={fieldForm.soil_ph}
                             onChange={e => setFieldForm(prev => ({ ...prev, soil_ph: e.target.value }))}
                           />
                         </div>
                         <div className="form-group">
-                          <label>Organic Matter (%)</label>
+                          <label>
+                            {lang === 'bn' ? 'জৈব পদার্থ (Organic Matter %, ঐচ্ছিক)' : 'Organic Matter (%, Optional)'}
+                          </label>
                           <input
                             className="input-box"
                             type="number"
                             step="0.1"
+                            min="0"
+                            max="100"
+                            placeholder={lang === 'bn' ? 'খালি রাখলে SoilGrids (ঐচ্ছিক)' : 'Optional (SoilGrids auto-fills)'}
                             value={fieldForm.organic_matter}
                             onChange={e => setFieldForm(prev => ({ ...prev, organic_matter: e.target.value }))}
                           />
                         </div>
                       </div>
 
-                      <div className="form-grid-inner">
-                        <div className="form-group">
-                          <label>Irrigation Capacity (mm)</label>
-                          <input
-                            className="input-box"
-                            type="number"
-                            step="1"
-                            value={fieldForm.irrigation_capacity_mm}
-                            onChange={e => setFieldForm(prev => ({ ...prev, irrigation_capacity_mm: e.target.value }))}
-                          />
-                        </div>
-                        <div className="form-group">
-                          <label>Previous Crop Year</label>
-                          <input
-                            className="input-box"
-                            type="number"
-                            step="1"
-                            value={fieldForm.previous_crop_year}
-                            onChange={e => setFieldForm(prev => ({ ...prev, previous_crop_year: e.target.value }))}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="form-group" style={{ marginTop: 8, padding: '10px 14px', background: 'rgba(0, 223, 129, 0.05)', borderRadius: 8, border: '1px solid rgba(0, 223, 129, 0.2)' }}>
+                      <div className="form-group" style={{ marginTop: 4, padding: '10px 14px', background: 'rgba(0, 223, 129, 0.05)', borderRadius: 8, border: '1px solid rgba(0, 223, 129, 0.2)' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', margin: 0 }}>
                           <input
                             type="checkbox"
@@ -4258,22 +4483,27 @@ export function App() {
                       )}
                     </div>
 
-                    <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, padding: '14px 22px', borderTop: '1px solid var(--border-light)', background: '#ffffff', flexShrink: 0, boxShadow: '0 -2px 10px rgba(0,0,0,0.04)' }}>
+                    <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, padding: '14px 22px', borderTop: '1px solid var(--border-light)', background: 'var(--bg-card, #ffffff)', flexShrink: 0, boxShadow: '0 -2px 10px rgba(0,0,0,0.04)' }}>
                       <button
                         type="button"
                         className="btn-secondary"
                         onClick={() => setFieldModal(null)}
                         disabled={fieldModalLoading}
                       >
-                        Cancel
+                        {lang === 'bn' ? 'বাতিল' : 'Cancel'}
                       </button>
                       <button
                         type="submit"
                         className="run-cta-btn"
                         style={{ padding: '8px 20px', fontSize: 13.5 }}
-                        disabled={fieldModalLoading}
+                        disabled={fieldModalLoading || !fieldForm.name?.trim() || !fieldForm.latitude || !fieldForm.longitude}
+                        title={(!fieldForm.latitude || !fieldForm.longitude) ? (lang === 'bn' ? 'ম্যাপে ক্লিক করে বা জিপিএস দিয়ে স্থানাঙ্ক নির্বাচন করুন' : 'Place map pin or use GPS first') : ''}
                       >
-                        {fieldModalLoading ? 'Saving…' : (fieldModal === 'edit' ? 'Update Field' : 'Save New Field')}
+                        {fieldModalLoading
+                          ? (lang === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…')
+                          : (fieldModal === 'edit'
+                              ? (lang === 'bn' ? 'আপডেট করুন' : 'Update Field')
+                              : (lang === 'bn' ? 'জমি সংরক্ষণ করুন' : 'Save Field'))}
                       </button>
                     </div>
                   </form>

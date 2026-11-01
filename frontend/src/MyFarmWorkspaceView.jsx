@@ -16,6 +16,8 @@ export function MyFarmWorkspaceView({
   onSelectField,
   onArchiveField,
   onDeleteField,
+  onAddField,
+  onEditField,
   request,
   lang = 'bn',
   onNavigate,
@@ -298,6 +300,8 @@ export function MyFarmWorkspaceView({
           user={user}
           userFields={userFields}
           onSelectField={onSelectField}
+          onAddField={onAddField}
+          onEditField={onEditField}
           onArchiveField={onArchiveField || onDeleteField}
           onDeleteField={onArchiveField || onDeleteField}
           lang={lang}

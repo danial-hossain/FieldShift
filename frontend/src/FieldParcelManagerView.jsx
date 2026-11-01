@@ -697,7 +697,7 @@ export function FieldParcelManagerView({
             <button
               type="button"
               className="btn-add-field"
-              onClick={() => onAddField && onAddField({ latitude: lat, longitude: lon })}
+              onClick={() => onAddField && onAddField()}
               title="Register a new agricultural field in PostgreSQL"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -963,7 +963,7 @@ export function FieldParcelManagerView({
               type="button"
               className="btn-add-field"
               style={{ margin: '0 auto' }}
-              onClick={() => onAddField && onAddField({ latitude: lat, longitude: lon })}
+              onClick={() => onAddField && onAddField()}
             >
               {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Your First Field'}
             </button>
