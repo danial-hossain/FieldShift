@@ -1366,6 +1366,9 @@ export function App() {
       show_custom_irrigation: false,
       crop: '',
       season: 'rabi',
+      rotation_rabi: 'Boro',
+      rotation_kharif1: 'Fallow',
+      rotation_kharif2: 'Aman',
       previous_crop_year: String(new Date().getFullYear()),
       seasonally_flooded: false
     });
@@ -1393,8 +1396,11 @@ export function App() {
       irrigation_tier: tier,
       irrigation_capacity_mm: irrVal,
       show_custom_irrigation: tier === 'custom',
-      crop: fld.previous_crop || fld.current_crop || (fld.history && fld.history[0]?.crop) || '',
+      crop: fld.existing_rotation?.rabi || fld.previous_crop || fld.current_crop || (fld.history && fld.history[0]?.crop) || 'Boro',
       season: (fld.history && fld.history[0]?.season) || 'rabi',
+      rotation_rabi: fld.existing_rotation?.rabi || fld.previous_crop || 'Boro',
+      rotation_kharif1: fld.existing_rotation?.kharif1 || 'Fallow',
+      rotation_kharif2: fld.existing_rotation?.kharif2 || 'Aman',
       previous_crop_year: fld.previous_crop_year != null ? String(fld.previous_crop_year) : (fld.history && fld.history[0]?.year ? String(fld.history[0]?.year) : String(new Date().getFullYear())),
       seasonally_flooded: Boolean(fld.seasonally_flooded)
     });
@@ -1434,18 +1440,11 @@ export function App() {
         throw new Error(lang === 'bn' ? `এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${tooClose.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `A field ("${tooClose.name}") already exists within 50 meters of these coordinates.`);
       }
 
-      let formRot = null;
-      if (fieldForm.crop && fieldForm.crop.trim()) {
-        const c = fieldForm.crop.trim();
-        const s = (fieldForm.season || 'rabi').toLowerCase();
-        if (s === 'kharif1') {
-          formRot = { rabi: 'Boro Rice', kharif1: c, kharif2: 'Rice' };
-        } else if (s === 'kharif2') {
-          formRot = { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: c };
-        } else {
-          formRot = { rabi: c, kharif1: 'Fallow', kharif2: 'Rice' };
-        }
-      }
+      const formRot = {
+        rabi: fieldForm.rotation_rabi || 'Boro',
+        kharif1: fieldForm.rotation_kharif1 || 'Fallow',
+        kharif2: fieldForm.rotation_kharif2 || 'Aman'
+      };
 
       const payload = {
         name: trimmedName,
@@ -1456,9 +1455,9 @@ export function App() {
         soil_ph: Number.isFinite(phVal) ? phVal : null,
         organic_matter: Number.isFinite(omVal) ? omVal : null,
         irrigation_capacity_mm: Number.isFinite(irrVal) ? irrVal : null,
-        crop: fieldForm.crop ? fieldForm.crop.trim() : null,
-        previous_crop: fieldForm.crop ? fieldForm.crop.trim() : null,
-        previous_crop_year: Number.isFinite(yrVal) ? yrVal : null,
+        crop: formRot.rabi,
+        previous_crop: formRot.rabi,
+        previous_crop_year: Number.isFinite(yrVal) ? yrVal : new Date().getFullYear(),
         seasonally_flooded: Boolean(fieldForm.seasonally_flooded),
         existing_rotation: formRot
       };
@@ -4249,48 +4248,64 @@ export function App() {
                         )}
                       </div>
 
-                      {/* Previous Crop Rotation History */}
+                      {/* 3-Season Existing Rotation (M8 Baseline Alignment) */}
                       <div className="form-group" style={{ padding: '12px 14px', background: 'var(--bg-card, #1e293b)', borderRadius: 8, border: '1px solid var(--border-light, #334155)' }}>
-                        <label style={{ fontWeight: 600, display: 'block', marginBottom: 6 }}>
-                          🌾 {lang === 'bn' ? 'পূর্ববর্তী ফসলের বিবরণ (ঐতিহাসিক তথ্য)' : 'Previous Crop Record (Agronomic History)'}
-                        </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <label style={{ fontWeight: 600, display: 'block', margin: 0, fontSize: 13 }}>
+                            🔄 {lang === 'bn' ? 'বিদ্যমান ৩-মৌসুম ফসল আবর্তন (বেসলাইন)' : 'Existing 3-Season Crop Rotation (Baseline)'}
+                          </label>
+                          <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
+                            {lang === 'bn' ? 'মডেল তুলনা করবে' : 'Used by solver'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                           <div>
                             <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
-                              {lang === 'bn' ? 'মৌসুম' : 'Season'}
+                              {lang === 'bn' ? 'রবি (শীতকালীন)' : 'Rabi (Winter)'}
                             </label>
                             <select
                               className="input-box"
-                              value={fieldForm.season || 'rabi'}
-                              onChange={e => setFieldForm(prev => ({ ...prev, season: e.target.value }))}
+                              value={fieldForm.rotation_rabi || 'Boro'}
+                              onChange={e => setFieldForm(prev => ({ ...prev, rotation_rabi: e.target.value }))}
                             >
-                              <option value="rabi">{lang === 'bn' ? 'রবি (Rabi)' : 'Rabi (Winter)'}</option>
-                              <option value="kharif1">{lang === 'bn' ? 'খরিপ-১ (Kharif-1)' : 'Kharif-1'}</option>
-                              <option value="kharif2">{lang === 'bn' ? 'খরিপ-২ (Kharif-2)' : 'Kharif-2'}</option>
+                              <option value="Boro">{lang === 'bn' ? 'বোরো ধান' : 'Boro Rice'}</option>
+                              <option value="Mustard">{lang === 'bn' ? 'সরিষা' : 'Mustard'}</option>
+                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
+                              <option value="Potato">{lang === 'bn' ? 'আলু' : 'Potato'}</option>
+                              <option value="Wheat">{lang === 'bn' ? 'গম' : 'Wheat'}</option>
+                              <option value="Lentil">{lang === 'bn' ? 'মসুর' : 'Lentil'}</option>
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
                             </select>
                           </div>
                           <div>
                             <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
-                              {lang === 'bn' ? 'ফসলের নাম' : 'Crop'}
+                              {lang === 'bn' ? 'খরিপ-১ (প্রাক-বর্ষা)' : 'Kharif-1 (Pre-Monsoon)'}
                             </label>
-                            <input
+                            <select
                               className="input-box"
-                              placeholder={lang === 'bn' ? 'যেমন: বোরো ধান / আমন' : 'e.g. Boro Rice'}
-                              value={fieldForm.crop}
-                              onChange={e => setFieldForm(prev => ({ ...prev, crop: e.target.value }))}
-                            />
+                              value={fieldForm.rotation_kharif1 || 'Fallow'}
+                              onChange={e => setFieldForm(prev => ({ ...prev, rotation_kharif1: e.target.value }))}
+                            >
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
+                              <option value="Aus">{lang === 'bn' ? 'আউশ ধান' : 'Aus Rice'}</option>
+                              <option value="Jute">{lang === 'bn' ? 'পাট' : 'Jute'}</option>
+                              <option value="Mungbean">{lang === 'bn' ? 'মুগডাল' : 'Mungbean'}</option>
+                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
+                              <option value="Sesame">{lang === 'bn' ? 'তিল' : 'Sesame'}</option>
+                            </select>
                           </div>
                           <div>
                             <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
-                              {lang === 'bn' ? 'বছর' : 'Year'}
+                              {lang === 'bn' ? 'খরিপ-২ (বর্ষাকালীন)' : 'Kharif-2 (Monsoon)'}
                             </label>
-                            <input
+                            <select
                               className="input-box"
-                              type="number"
-                              placeholder="2025"
-                              value={fieldForm.previous_crop_year}
-                              onChange={e => setFieldForm(prev => ({ ...prev, previous_crop_year: e.target.value }))}
-                            />
+                              value={fieldForm.rotation_kharif2 || 'Aman'}
+                              onChange={e => setFieldForm(prev => ({ ...prev, rotation_kharif2: e.target.value }))}
+                            >
+                              <option value="Aman">{lang === 'bn' ? 'আমন ধান' : 'Aman Rice'}</option>
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
+                            </select>
                           </div>
                         </div>
                       </div>
