@@ -54,3 +54,4 @@ Derived directly from the dynamic agronomic matrix and PuLP CBC MILP optimizatio
    - The MILP selects salt-tolerant oilseeds (**Sunflower** or **Mustard**) and winter cash crops, completely eliminating the negative margin of dry-season Boro rice.
 3. **Card Explanation**:
    - The UI surfaces a dedicated Coastal Saline Assessment card explaining why conservative planning reduces pumping risk and salinity accumulation compared to intensive monocultures.
+

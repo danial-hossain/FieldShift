@@ -2,7 +2,7 @@
 // My Farm & Parcel Workspace for FieldShift 2026
 // Sub-navigation: Farm Overview, Field Parcels, Field Map, Soil Information, Field History.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { formatNumber } from './marketUtils.js';
@@ -20,6 +20,10 @@ export function MyFarmWorkspaceView({
 }) {
   const { t } = useTranslation(lang);
   const [subTab, setSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
 
   // A1: Existing Rotation Baseline State
   const [existingRotation, setExistingRotation] = useState(() => {

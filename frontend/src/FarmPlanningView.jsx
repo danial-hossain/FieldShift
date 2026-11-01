@@ -2,7 +2,7 @@
 // Farm Planning Workspace for FieldShift 2026
 // Sub-navigation: 6-Season Rotation Planner (MILP), Adaptive Replanning, Scenario Comparison Lab.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { ComparisonLabView } from './ComparisonLabView.jsx';
@@ -26,7 +26,11 @@ export function FarmPlanningView({
   request,
 }) {
   const { t } = useTranslation(lang);
-  const [subTab, setSubTab] = useState(initialSubTab); // 'milp' | 'replan' | 'comparison'
+  const [subTab, setSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]); // 'milp' | 'replan' | 'comparison'
 
   const subTabs = [
     { id: 'milp', label: lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনা (MILP)' : '1. 6-Season Rotation Planner', icon: '🌾' },

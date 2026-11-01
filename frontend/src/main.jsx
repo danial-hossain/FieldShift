@@ -937,6 +937,34 @@ export function App() {
     })();
   };
 
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__fs_navigate = (nav, tab = null) => {
+        handleNavigate(nav, tab);
+      };
+      window.__fs_selectField = (fieldId) => {
+        if (fieldId === 'demo' || String(fieldId) === '304') {
+          const found = userFields.find(f => String(f.id) === String(fieldId));
+          if (found) {
+            handleSelectActiveField(found, false);
+            return true;
+          }
+          if (demoField) {
+            handleSelectActiveField(demoField, false);
+            return true;
+          }
+        }
+        const found = userFields.find(f => String(f.id) === String(fieldId));
+        if (found) {
+          handleSelectActiveField(found, false);
+          return true;
+        }
+        return false;
+      };
+    }
+  }, [userFields, demoField, handleNavigate]);
+
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [running, setRunning] = useState(false);
@@ -1814,7 +1842,7 @@ export function App() {
 
       {/* Left Vertical Navigation Rail (Mobile Drawer on phone screens) */}
       <aside className={`sidebar ${mobileNavOpen ? 'mobile-open' : ''}`}>
-        <div className="sidebar-logo" title="FieldShift Decision Support" onClick={() => handleNavigate('dashboard')} style={{ cursor: 'pointer' }}>
+        <div className="sidebar-logo" title="FieldShift Decision Support" data-nav="dashboard" onClick={() => handleNavigate('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="sidebar-logo-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
@@ -1854,7 +1882,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'field' || activeNav === 'field_map' ? 'active' : ''}`}
-            onClick={() => handleNavigate('field')}
+            data-nav="field" onClick={() => handleNavigate('field')}
             title={lang === 'bn' ? '২. আমার জমি - সীমানা, স্যাটেলাইট ম্যাপ ও মাটি' : '2. My Fields - Parcels, Map & Soil'}
           >
             <span className="nav-item-icon">🗺️</span>
@@ -1865,7 +1893,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'farm_planning' || activeNav === 'crop_advice' ? 'active' : ''}`}
-            onClick={() => handleNavigate('farm_planning')}
+            data-nav="farm_planning" onClick={() => handleNavigate('farm_planning')}
             title={lang === 'bn' ? '৩. আবর্তন পরিকল্পনা - বর্তমান বনাম ৩ বিকল্প কৌশল' : '3. Rotation Planner - Existing vs 3 Strategies'}
           >
             <span className="nav-item-icon">📐</span>
@@ -1876,7 +1904,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'weather' ? 'active' : ''}`}
-            onClick={() => handleNavigate('weather')}
+            data-nav="weather" onClick={() => handleNavigate('weather')}
             title={lang === 'bn' ? '৪. আবহাওয়া ও ঝুঁকি - নাসা বৃষ্টি, অনসেট ও খরা ঝুঁকি' : '4. Climate & Risk - NASA Rain, Onset & Heat'}
           >
             <span className="nav-item-icon">🌦️</span>
@@ -1887,7 +1915,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'water_irrigation' ? 'active' : ''}`}
-            onClick={() => handleNavigate('water_irrigation')}
+            data-nav="water_irrigation" onClick={() => handleNavigate('water_irrigation')}
             title={lang === 'bn' ? '৫. পানি ও সেচ - সেচ ক্যালেন্ডার ও মাটির স্তর' : '5. Water - Irrigation Calendar & Soil Column'}
           >
             <span className="nav-item-icon">💧</span>
@@ -1898,7 +1926,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'harvest_profit' || activeNav === 'market' ? 'active' : ''}`}
-            onClick={() => handleNavigate('harvest_profit')}
+            data-nav="harvest_profit" onClick={() => handleNavigate('harvest_profit')}
             title={lang === 'bn' ? '৬. বাজার - বাজারদর, আয় ও জাতীয় চাহিদা' : '6. Market - Prices, Revenue & National Need'}
           >
             <span className="nav-item-icon">💰</span>
@@ -1909,7 +1937,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'digital_twin' ? 'active' : ''}`}
-            onClick={() => handleNavigate('digital_twin')}
+            data-nav="digital_twin" onClick={() => handleNavigate('digital_twin')}
             title={lang === 'bn' ? '৭. ৩ডি খামার - বাস্তবসম্মত ডায়োরামা প্ল্যান ভিউয়ার' : '7. 3D Farm - Plan Viewer Diorama'}
           >
             <span className="nav-item-icon">🌐</span>
@@ -1920,7 +1948,7 @@ export function App() {
           <button
             type="button"
             className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' || activeNav === 'assistant' || activeNav === 'account' ? 'active' : ''}`}
-            onClick={() => handleNavigate('data_evidence')}
+            data-nav="data_evidence" onClick={() => handleNavigate('data_evidence')}
             title={lang === 'bn' ? '৮. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '8. Evidence & Method - Datasets, Methods & Research'}
           >
             <span className="nav-item-icon">📊</span>

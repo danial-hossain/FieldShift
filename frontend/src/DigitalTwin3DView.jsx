@@ -4,7 +4,7 @@
 // Weather Perturbation Sliders (Rain -20..+20%, Temp +0..+2°C), Camera Presets, and Reset.
 // All driven dynamically by field API data with zero fabricated fallbacks.
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { RealFarmCanvas3D } from './RealFarmCanvas3D.jsx';
 import { CropGrowth3D } from './research3d/CropGrowth3D.jsx';
 import { ClimateStress3D } from './research3d/ClimateStress3D.jsx';
@@ -27,6 +27,10 @@ export function DigitalTwin3DView({
 
   // Sub-Navigation: 'farm' | 'growth' | 'climate' | 'compare'
   const [subTab, setSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]);
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
 
   // Customization Controls State (B6)

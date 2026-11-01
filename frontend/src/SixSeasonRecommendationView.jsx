@@ -217,7 +217,7 @@ const [selectedStrategy, setSelectedStrategy] = useState('balanced');
       });
 
     return () => { isCancelled = true; };
-  }, [district, reloadKey, activeField?.area_ha]);
+  }, [district, reloadKey, activeField?.id, activeField?.area_ha]);
 
   // Extract field area (no hardcoded fallback)
   const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;

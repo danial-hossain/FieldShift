@@ -21,7 +21,11 @@ export function WaterIrrigationView({
   initialSubTab = 'balance',
 }) {
   const { t } = useTranslation(lang);
-  const [subTab, setSubTab] = useState(initialSubTab); // 'balance' | 'optimization' | 'profile' | 'stress'
+  const [subTab, setSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]); // 'balance' | 'optimization' | 'profile' | 'stress'
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
   const [liveWaterData, setLiveWaterData] = useState(null);
 

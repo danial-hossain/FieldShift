@@ -12,7 +12,7 @@
 // - Workspace Overview Command Center launchpad
 // - Zero navigation conflicts: active tab strictly matches rendered view
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from './i18n.js';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { ExperimentSimulator3DView } from './ExperimentSimulator3DView.jsx';
@@ -121,6 +121,13 @@ export function ResearchWorkspaceView({
       ? 'six_seasons_milp'
       : initialTab
   );
+
+  useEffect(() => {
+    if (initialTab) {
+      const nextTab = initialTab === 'milp' || initialTab === 'six_seasons_milp' ? 'six_seasons_milp' : initialTab;
+      setSubTab(nextTab);
+    }
+  }, [initialTab]);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState({ archive: true });

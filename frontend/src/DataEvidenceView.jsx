@@ -4,7 +4,7 @@
 // Features: 4-tier data reliability hierarchy, dataset citations, NASA POWER parameter registry,
 // missing-value protocols, and reproducibility reports.
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
 import { formatNumber } from './marketUtils.js';
@@ -19,7 +19,11 @@ export function DataEvidenceView({
   onNavigate,
 }) {
   const { t } = useTranslation(lang);
-  const [subTab, setSubTab] = useState(initialSubTab); // 'sources' | 'provenance' | 'reports' | 'methodology'
+  const [subTab, setSubTab] = useState(initialSubTab);
+
+  useEffect(() => {
+    if (initialSubTab) setSubTab(initialSubTab);
+  }, [initialSubTab]); // 'sources' | 'provenance' | 'reports' | 'methodology'
 
   const subTabs = [
     { id: 'sources', labelBn: 'নাসা তথ্য উৎস (NASA Sources)', labelEn: '1. NASA Data Sources', icon: '🛰️' },

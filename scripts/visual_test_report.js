@@ -32,73 +32,377 @@ const FIELDS = [
 
 const VIEWS = [
   // 1. Home Dashboard
-  { id: '01_home', nav: 'dashboard', title: 'Farmer Home Dashboard', expectedDiff: true },
+  {
+    id: '01_home',
+    nav: 'dashboard',
+    title: 'Farmer Home Dashboard',
+    expectedDiff: true,
+    headingKeywords: ['হোম', 'ড্যাশবোর্ড', 'dashboard', 'overview', 'সারসংক্ষেপ', 'daily brief', 'আজকের']
+  },
 
   // 2. My Farm
-  { id: '02_farm_overview', nav: 'field', subTab: 'overview', title: 'My Farm - Overview', expectedDiff: true },
-  { id: '02_farm_parcels', nav: 'field', subTab: 'parcels', title: 'My Farm - Parcel List', expectedDiff: true },
-  { id: '02_farm_map', nav: 'field', subTab: 'map', title: 'My Farm - Satellite Map', expectedDiff: true },
-  { id: '02_farm_soil', nav: 'field', subTab: 'soil', title: 'My Farm - Soil Info', expectedDiff: true },
-  { id: '02_farm_history', nav: 'field', subTab: 'history', title: 'My Farm - Crop History', expectedDiff: true },
+  {
+    id: '02_farm_overview',
+    nav: 'field',
+    subTab: 'overview',
+    title: 'My Farm - Overview',
+    expectedDiff: true,
+    headingKeywords: ['আমার জমি', 'my fields', 'overview', 'সারসংক্ষেপ', 'সীমানা', 'parcels']
+  },
+  {
+    id: '02_farm_parcels',
+    nav: 'field',
+    subTab: 'parcels',
+    title: 'My Farm - Parcel List',
+    expectedDiff: true,
+    headingKeywords: ['আমার জমি', 'my fields', 'parcels', 'তালিকা', 'জমি']
+  },
+  {
+    id: '02_farm_map',
+    nav: 'field',
+    subTab: 'map',
+    title: 'My Farm - Satellite Map',
+    expectedDiff: true,
+    headingKeywords: ['আমার জমি', 'my fields', 'map', 'ম্যাপ', 'স্যাটেলাইট']
+  },
+  {
+    id: '02_farm_soil',
+    nav: 'field',
+    subTab: 'soil',
+    title: 'My Farm - Soil Info',
+    expectedDiff: true,
+    headingKeywords: ['আমার জমি', 'my fields', 'soil', 'মাটি']
+  },
+  {
+    id: '02_farm_history',
+    nav: 'field',
+    subTab: 'history',
+    title: 'My Farm - Crop History',
+    expectedDiff: true,
+    headingKeywords: ['আমার জমি', 'my fields', 'history', 'ইতিহাস']
+  },
 
   // 3. Crop Advice & Planting Advisory
-  { id: '03_crop_advice_aman', nav: 'crop_advice', crop: 'aman', title: 'Crop Advisory - Aman Monsoon', expectedDiff: true },
-  { id: '03_crop_advice_aus', nav: 'crop_advice', crop: 'aus', title: 'Crop Advisory - Aus Pre-Monsoon', expectedDiff: true },
+  {
+    id: '03_crop_advice_aman',
+    nav: 'crop_advice',
+    crop: 'aman',
+    title: 'Crop Advisory - Aman Monsoon',
+    expectedDiff: true,
+    headingKeywords: ['আমন', 'aman', 'ধান', 'rice', 'রোপণ', 'advisory', 'উপদেষ্টা']
+  },
+  {
+    id: '03_crop_advice_aus',
+    nav: 'crop_advice',
+    crop: 'aus',
+    title: 'Crop Advisory - Aus Pre-Monsoon',
+    expectedDiff: true,
+    headingKeywords: ['আউশ', 'aus', 'ধান', 'rice', 'রোপণ', 'advisory', 'উপদেষ্টা']
+  },
 
   // 4. NASA Weather 3D
-  { id: '04_weather_globe', nav: 'weather', weatherView: 'globe', title: 'NASA Weather 3D - Globe', expectedDiff: true },
-  { id: '04_weather_column', nav: 'weather', weatherView: 'column', title: 'NASA Weather 3D - Column', expectedDiff: true },
-  { id: '04_weather_constellation', nav: 'weather', weatherView: 'constellation', title: 'NASA Weather 3D - Constellation', expectedDiff: true },
+  {
+    id: '04_weather_globe',
+    nav: 'weather',
+    weatherView: 'globe',
+    title: 'NASA Weather 3D - Globe',
+    expectedDiff: true,
+    headingKeywords: ['আবহাওয়া', 'weather', 'climate', 'observations', 'নাসা', 'nasa', 'ঝুঁকি']
+  },
+  {
+    id: '04_weather_column',
+    nav: 'weather',
+    weatherView: 'column',
+    title: 'NASA Weather 3D - Column',
+    expectedDiff: true,
+    headingKeywords: ['আবহাওয়া', 'weather', 'climate', 'observations', 'স্তম্ভ', 'column', 'ঝুঁকি']
+  },
+  {
+    id: '04_weather_constellation',
+    nav: 'weather',
+    weatherView: 'constellation',
+    title: 'NASA Weather 3D - Constellation',
+    expectedDiff: true,
+    headingKeywords: ['আবহাওয়া', 'weather', 'climate', 'observations', 'satellite', 'স্যাটেলাইট', 'constellation', 'ঝুঁকি']
+  },
 
   // 5. Farm Planning
-  { id: '05_planning_milp', nav: 'farm_planning', subTab: 'milp', title: 'Farm Planning - 6-Season MILP Rotation', expectedDiff: true },
-  { id: '05_planning_replan', nav: 'farm_planning', subTab: 'replan', title: 'Farm Planning - Adaptive Replan', expectedDiff: true },
-  { id: '05_planning_comparison', nav: 'farm_planning', subTab: 'comparison', title: 'Farm Planning - 3-Way Comparison Lab', expectedDiff: true },
-  { id: '05_planning_workbench', nav: 'farm_planning', subTab: 'experiment_simulator_3d', title: 'Farm Planning - 3D Experiment Workbench', expectedDiff: true },
+  {
+    id: '05_planning_milp',
+    nav: 'farm_planning',
+    subTab: 'milp',
+    title: 'Farm Planning - 6-Season MILP Rotation',
+    expectedDiff: true,
+    headingKeywords: ['পরিকল্পনা', 'planning', 'rotation', 'আবর্তন', 'milp', 'ফসল']
+  },
+  {
+    id: '05_planning_replan',
+    nav: 'farm_planning',
+    subTab: 'replan',
+    title: 'Farm Planning - Adaptive Replan',
+    expectedDiff: true,
+    headingKeywords: ['পরিকল্পনা', 'planning', 'replan', 'পুনঃপরিকল্পনা', 'অভিযোজিত', 'adaptive']
+  },
+  {
+    id: '05_planning_comparison',
+    nav: 'farm_planning',
+    subTab: 'comparison',
+    title: 'Farm Planning - 3-Way Comparison Lab',
+    expectedDiff: true,
+    headingKeywords: ['পরিকল্পনা', 'planning', 'তুলনামূলক', 'comparison', 'lab', 'ল্যাব']
+  },
+  {
+    id: '05_planning_workbench',
+    nav: 'farm_planning',
+    subTab: 'experiment_simulator_3d',
+    title: 'Farm Planning - 3D Experiment Workbench',
+    expectedDiff: true,
+    headingKeywords: ['পরিকল্পনা', 'planning', 'ওয়ার্কবেঞ্চ', 'ওয়ার্কবেঞ্চ', 'workbench', 'simulator', 'সিমুলেটর']
+  },
 
   // 6. Water & Irrigation
-  { id: '06_water_balance', nav: 'water_irrigation', subTab: 'balance', title: 'Water & Irrigation - Water Balance', expectedDiff: true },
-  { id: '06_water_schedule', nav: 'water_irrigation', subTab: 'optimization', title: 'Water & Irrigation - Schedule Optimization', expectedDiff: true },
-  { id: '06_water_profile', nav: 'water_irrigation', subTab: 'profile', title: 'Water & Irrigation - Soil Moisture Profile', expectedDiff: true },
-  { id: '06_water_stress', nav: 'water_irrigation', subTab: 'stress', title: 'Water & Irrigation - Drought Stress Index', expectedDiff: true },
+  {
+    id: '06_water_balance',
+    nav: 'water_irrigation',
+    subTab: 'balance',
+    title: 'Water & Irrigation - Water Balance',
+    expectedDiff: true,
+    headingKeywords: ['পানি', 'water', 'সেচ', 'irrigation', 'ভারসাম্য', 'balance']
+  },
+  {
+    id: '06_water_schedule',
+    nav: 'water_irrigation',
+    subTab: 'optimization',
+    title: 'Water & Irrigation - Schedule Optimization',
+    expectedDiff: true,
+    headingKeywords: ['পানি', 'water', 'সেচ', 'irrigation', 'সময়সূচি', 'schedule', 'অপটিমাইজেশন', 'optimization']
+  },
+  {
+    id: '06_water_profile',
+    nav: 'water_irrigation',
+    subTab: 'profile',
+    title: 'Water & Irrigation - Soil Moisture Profile',
+    expectedDiff: true,
+    headingKeywords: ['পানি', 'water', 'সেচ', 'irrigation', 'আর্দ্রতা', 'profile', 'প্রোফাইল', 'স্তর']
+  },
+  {
+    id: '06_water_stress',
+    nav: 'water_irrigation',
+    subTab: 'stress',
+    title: 'Water & Irrigation - Drought Stress Index',
+    expectedDiff: true,
+    headingKeywords: ['পানি', 'water', 'সেচ', 'irrigation', 'খরা', 'stress', 'চাপ']
+  },
 
   // 7. Research Workspace - Core Labs
-  { id: '07_research_onset', nav: 'research', lab: 'onset_science', title: 'Research Lab - Onset Science (39 Unique Cells)', expectedDiff: false },
-  { id: '07_research_six_seasons', nav: 'research', lab: 'six_seasons_milp', title: 'Research Lab - 6-Season MILP Lab', expectedDiff: true },
-  { id: '07_research_uncertainty', nav: 'research', lab: 'uncertainty', title: 'Research Lab - Weather Uncertainty', expectedDiff: true },
-  { id: '07_research_soil_water', nav: 'research', lab: 'soil_water_3d', title: 'Research Lab - Soil & Water Hydrology FAO-56', expectedDiff: true },
-  { id: '07_research_provenance', nav: 'research', lab: 'provenance', title: 'Research Lab - Data Provenance 4-Tier', expectedDiff: false },
+  {
+    id: '07_research_onset',
+    nav: 'research',
+    lab: 'onset_science',
+    title: 'Research Lab - Onset Science (39 Unique Cells)',
+    expectedDiff: false,
+    headingKeywords: ['গবেষণা', 'research', 'onset', 'অনসেট', 'science']
+  },
+  {
+    id: '07_research_six_seasons',
+    nav: 'research',
+    lab: 'six_seasons_milp',
+    title: 'Research Lab - 6-Season MILP Lab',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'milp', 'আবর্তন', 'rotation', '৬-মৌসুম']
+  },
+  {
+    id: '07_research_uncertainty',
+    nav: 'research',
+    lab: 'uncertainty',
+    title: 'Research Lab - Weather Uncertainty',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'uncertainty', 'অনিশ্চয়তা', 'স্থিতিস্থাপকতা', 'risk']
+  },
+  {
+    id: '07_research_soil_water',
+    nav: 'research',
+    lab: 'soil_water_3d',
+    title: 'Research Lab - Soil & Water Hydrology FAO-56',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'hydrology', 'হাইড্রোলজি', 'fao-56', 'পানি', 'মাটি']
+  },
+  {
+    id: '07_research_provenance',
+    nav: 'research',
+    lab: 'provenance',
+    title: 'Research Lab - Data Provenance 4-Tier',
+    expectedDiff: false,
+    headingKeywords: ['গবেষণা', 'research', 'provenance', 'প্রোভেন্যান্স', 'রেজিস্ট্রি', 'উৎস']
+  },
 
   // 7. Research Workspace - Archive Labs
-  { id: '07_research_multi_field', nav: 'research', lab: 'multi_field_experiment', isArchive: true, title: 'Research Lab Archive - Multi-Field Lab', expectedDiff: true },
-  { id: '07_research_sensitivity', nav: 'research', lab: 'sensitivity', isArchive: true, title: 'Research Lab Archive - Sensitivity Analysis', expectedDiff: true },
-  { id: '07_research_recovery', nav: 'research', lab: 'recovery', isArchive: true, title: 'Research Lab Archive - Crop Failure Recovery', expectedDiff: true },
-  { id: '07_research_synthetic', nav: 'research', lab: 'synthetic_lab', isArchive: true, title: 'Research Lab Archive - Synthetic Data Lab', expectedDiff: false },
-  { id: '07_research_catalog', nav: 'research', lab: 'crop_catalog', isArchive: true, title: 'Research Lab Archive - Bangladesh Crop Database', expectedDiff: false },
-  { id: '07_research_satellite', nav: 'research', lab: 'satellite', isArchive: true, title: 'Research Lab Archive - Satellite Sensor Readiness', expectedDiff: false },
-  { id: '07_research_sustainability', nav: 'research', lab: 'sustainability', isArchive: true, title: 'Research Lab Archive - Soil Health & Carbon', expectedDiff: true },
+  {
+    id: '07_research_multi_field',
+    nav: 'research',
+    lab: 'multi_field_experiment',
+    isArchive: true,
+    title: 'Research Lab Archive - Multi-Field Lab',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'multi-field', 'মাল্টি-ফিল্ড']
+  },
+  {
+    id: '07_research_sensitivity',
+    nav: 'research',
+    lab: 'sensitivity',
+    isArchive: true,
+    title: 'Research Lab Archive - Sensitivity Analysis',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'sensitivity', 'সংবেদনশীলতা']
+  },
+  {
+    id: '07_research_recovery',
+    nav: 'research',
+    lab: 'recovery',
+    isArchive: true,
+    title: 'Research Lab Archive - Crop Failure Recovery',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'recovery', 'পুনরুদ্ধার', 'বিপর্যয়']
+  },
+  {
+    id: '07_research_synthetic',
+    nav: 'research',
+    lab: 'synthetic_lab',
+    isArchive: true,
+    title: 'Research Lab Archive - Synthetic Data Lab',
+    expectedDiff: false,
+    headingKeywords: ['গবেষণা', 'research', 'synthetic', 'কৃত্রিম']
+  },
+  {
+    id: '07_research_catalog',
+    nav: 'research',
+    lab: 'crop_catalog',
+    isArchive: true,
+    title: 'Research Lab Archive - Bangladesh Crop Database',
+    expectedDiff: false,
+    headingKeywords: ['গবেষণা', 'research', 'catalog', 'তথ্যকোষ', 'ডাটাবেস', 'database', 'ফসল']
+  },
+  {
+    id: '07_research_satellite',
+    nav: 'research',
+    lab: 'satellite',
+    isArchive: true,
+    title: 'Research Lab Archive - Satellite Sensor Readiness',
+    expectedDiff: false,
+    headingKeywords: ['গবেষণা', 'research', 'satellite', 'স্যাটেলাইট', 'সেন্সর']
+  },
+  {
+    id: '07_research_sustainability',
+    nav: 'research',
+    lab: 'sustainability',
+    isArchive: true,
+    title: 'Research Lab Archive - Soil Health & Carbon',
+    expectedDiff: true,
+    headingKeywords: ['গবেষণা', 'research', 'sustainability', 'স্থায়িত্ব', 'নাইট্রোজেন', 'nitrogen', 'carbon', 'কার্বন']
+  },
 
   // 8. Digital Twin 3D
-  { id: '08_twin_farm', nav: 'digital_twin', subTab: 'farm', title: 'Digital Twin 3D - Farm Plan Diorama', expectedDiff: true },
-  { id: '08_twin_growth', nav: 'digital_twin', subTab: 'growth', title: 'Digital Twin 3D - Crop Growth Phenology', expectedDiff: true },
-  { id: '08_twin_climate', nav: 'digital_twin', subTab: 'climate', title: 'Digital Twin 3D - Climate Stress Visualization', expectedDiff: true },
-  { id: '08_twin_compare', nav: 'digital_twin', subTab: 'compare', title: 'Digital Twin 3D - Scenario A/B Comparison', expectedDiff: true },
+  {
+    id: '08_twin_farm',
+    nav: 'digital_twin',
+    subTab: 'farm',
+    title: 'Digital Twin 3D - Farm Plan Diorama',
+    expectedDiff: true,
+    headingKeywords: ['ডিজিটাল টুইন', 'digital twin', 'প্ল্যান ভিউয়ার', 'diorama', '৩ডি', 'simulator']
+  },
+  {
+    id: '08_twin_growth',
+    nav: 'digital_twin',
+    subTab: 'growth',
+    title: 'Digital Twin 3D - Crop Growth Phenology',
+    expectedDiff: true,
+    headingKeywords: ['ডিজিটাল টুইন', 'digital twin', 'বৃদ্ধি', 'growth', 'phenology', '৩ডি', 'simulator']
+  },
+  {
+    id: '08_twin_climate',
+    nav: 'digital_twin',
+    subTab: 'climate',
+    title: 'Digital Twin 3D - Climate Stress Visualization',
+    expectedDiff: true,
+    headingKeywords: ['ডিজিটাল টুইন', 'digital twin', 'জলবায়ু', 'climate', 'stress', 'চাপ', '৩ডি', 'simulator']
+  },
+  {
+    id: '08_twin_compare',
+    nav: 'digital_twin',
+    subTab: 'compare',
+    title: 'Digital Twin 3D - Scenario A/B Comparison',
+    expectedDiff: true,
+    headingKeywords: ['ডিজিটাল টুইন', 'digital twin', 'তুলনা', 'scenario', 'compare', '৩ডি', 'simulator']
+  },
 
   // 9. Market Intelligence
-  { id: '09_market', nav: 'harvest_profit', title: 'Market Intelligence & Profitability', expectedDiff: true },
+  {
+    id: '09_market',
+    nav: 'harvest_profit',
+    title: 'Market Intelligence & Profitability',
+    expectedDiff: true,
+    headingKeywords: ['বাজার', 'market', 'মুনাফা', 'profit', 'মূল্য', 'দর', 'আয়']
+  },
 
   // 10. AI Agronomist
-  { id: '10_assistant', nav: 'assistant', title: 'Agronomic AI Assistant', expectedDiff: true },
+  {
+    id: '10_assistant',
+    nav: 'assistant',
+    title: 'Agronomic AI Assistant',
+    expectedDiff: true,
+    headingKeywords: ['সহকারী', 'assistant', 'agronomist', 'কৃষিবিদ', 'পরামর্শক', 'ai']
+  },
 
   // 11. Data & Evidence
-  { id: '11_evidence_sources', nav: 'data_evidence', subTab: 'sources', title: 'Data Evidence - NASA Satellite Feeds', expectedDiff: false },
-  { id: '11_evidence_provenance', nav: 'data_evidence', subTab: 'provenance', title: 'Data Evidence - 4-Tier Provenance Registry', expectedDiff: false },
-  { id: '11_evidence_reports', nav: 'data_evidence', subTab: 'reports', title: 'Data Evidence - IMERG & Climatology Reports', expectedDiff: false },
-  { id: '11_evidence_methodology', nav: 'data_evidence', subTab: 'methodology', title: 'Data Evidence - Scientific Methodology', expectedDiff: false },
-  { id: '11_evidence_limitations', nav: 'data_evidence', subTab: 'limitations', title: 'Data Evidence - Boundaries & Disclaimers', expectedDiff: false },
+  {
+    id: '11_evidence_sources',
+    nav: 'data_evidence',
+    subTab: 'sources',
+    title: 'Data Evidence - NASA Satellite Feeds',
+    expectedDiff: false,
+    headingKeywords: ['প্রমাণ', 'evidence', 'উৎস', 'sources', 'নাসা', 'nasa', 'পদ্ধতি']
+  },
+  {
+    id: '11_evidence_provenance',
+    nav: 'data_evidence',
+    subTab: 'provenance',
+    title: 'Data Evidence - 4-Tier Provenance Registry',
+    expectedDiff: false,
+    headingKeywords: ['প্রমাণ', 'evidence', 'provenance', 'প্রোভেন্যান্স', 'রেজিস্ট্রি', 'পদ্ধতি']
+  },
+  {
+    id: '11_evidence_reports',
+    nav: 'data_evidence',
+    subTab: 'reports',
+    title: 'Data Evidence - IMERG & Climatology Reports',
+    expectedDiff: false,
+    headingKeywords: ['প্রমাণ', 'evidence', 'প্রতিবেদন', 'report', 'imerg', 'পদ্ধতি']
+  },
+  {
+    id: '11_evidence_methodology',
+    nav: 'data_evidence',
+    subTab: 'methodology',
+    title: 'Data Evidence - Scientific Methodology',
+    expectedDiff: false,
+    headingKeywords: ['প্রমাণ', 'evidence', 'পদ্ধতি', 'methodology']
+  },
+  {
+    id: '11_evidence_limitations',
+    nav: 'data_evidence',
+    subTab: 'limitations',
+    title: 'Data Evidence - Boundaries & Disclaimers',
+    expectedDiff: false,
+    headingKeywords: ['প্রমাণ', 'evidence', 'সীমাবদ্ধতা', 'limitations', 'দায়মুক্তি', 'disclaimer']
+  },
 
   // 12. Operator Cockpit
-  { id: '12_account', nav: 'account', title: 'Operator Cockpit & Account Settings', expectedDiff: false }
+  {
+    id: '12_account',
+    nav: 'account',
+    title: 'Operator Cockpit & Account Settings',
+    expectedDiff: false,
+    headingKeywords: ['ককপিট', 'cockpit', 'অ্যাকাউন্ট', 'account', 'সেটিংস', 'settings', 'operator']
+  }
 ];
 
 function findChrome() {
@@ -121,6 +425,7 @@ class CDPClient {
     this.pending = new Map();
     this.consoleErrors = [];
     this.networkErrors = [];
+    this.inflight = 0;
   }
 
   async connect() {
@@ -136,6 +441,12 @@ class CDPClient {
           if (msg.error) rej(new Error(msg.error.message));
           else res(msg.result);
         } else if (msg.method) {
+          if (msg.method === 'Network.requestWillBeSent') {
+            this.inflight++;
+          }
+          if (msg.method === 'Network.loadingFinished' || msg.method === 'Network.loadingFailed') {
+            this.inflight = Math.max(0, this.inflight - 1);
+          }
           if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
             const errText = msg.params.args.map(a => a.value || a.description || '').join(' ');
             if (!errText.includes('favicon') && !errText.includes('WebGL') && !errText.includes('THREE.')) {
@@ -156,6 +467,21 @@ class CDPClient {
       this.pending.set(curId, { res, rej });
       this.ws.send(JSON.stringify({ id: curId, method, params }));
     });
+  }
+
+  async waitForNetworkIdle(maxWaitMs = 15000, idleTimeMs = 400) {
+    const start = Date.now();
+    let idleStart = null;
+    while (Date.now() - start < maxWaitMs) {
+      if (this.inflight === 0) {
+        if (!idleStart) idleStart = Date.now();
+        if (Date.now() - idleStart >= idleTimeMs) return true;
+      } else {
+        idleStart = null;
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return false;
   }
 
   close() {
@@ -212,45 +538,6 @@ async function runVisualTest() {
     mobile: false
   });
 
-  // Helper: Resilient clean state restorer
-  async function ensureCleanState(targetFieldId) {
-    const status = await cdp.send('Runtime.evaluate', {
-      expression: `
-        (function() {
-          const h2Text = document.querySelector('h2')?.innerText || '';
-          const isNotice = h2Text.includes('Interface Notice') || document.body.innerText.includes('Application Runtime Error');
-          const navCount = document.querySelectorAll('.nav-item').length;
-          const sel = document.querySelector('select[aria-label="Active field parcel"]');
-          return { isNotice, navCount, selFound: Boolean(sel), currentFieldId: sel?.value };
-        })()
-      `,
-      returnByValue: true
-    });
-
-    const s = status.result.value || {};
-    if (s.isNotice || s.navCount === 0 || !s.selFound || (targetFieldId && s.currentFieldId !== String(targetFieldId))) {
-      await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
-      await new Promise(r => setTimeout(r, 2000));
-
-      if (targetFieldId) {
-        await cdp.send('Runtime.evaluate', {
-          expression: `
-            (function() {
-              try { localStorage.setItem('fs_selected_field_id', '${targetFieldId}'); } catch {}
-              const sel = document.querySelector('select[aria-label="Active field parcel"]');
-              if (sel) {
-                const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
-                nativeSetter.call(sel, '${targetFieldId}');
-                sel.dispatchEvent(new Event('change', { bubbles: true }));
-              }
-            })()
-          `
-        });
-        await new Promise(r => setTimeout(r, 600));
-      }
-    }
-  }
-
   // Initial navigation
   console.log('[E2E] Navigating to http://localhost:5173/ ...');
   await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
@@ -276,7 +563,57 @@ async function runVisualTest() {
   });
 
   await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
-  await new Promise(r => setTimeout(r, 2200));
+  await new Promise(r => setTimeout(r, 2500));
+  await cdp.waitForNetworkIdle(15000, 500);
+
+  // Helper: Resilient clean state restorer and field switcher
+  async function ensureCleanState(targetField) {
+    const status = await cdp.send('Runtime.evaluate', {
+      expression: `
+        (function() {
+          const h2Text = document.querySelector('h2')?.innerText || '';
+          const isNotice = h2Text.includes('Interface Notice') || document.body.innerText.includes('Application Runtime Error');
+          const navCount = document.querySelectorAll('.nav-item').length;
+          const sel = document.querySelector('select[aria-label="Active field parcel"]');
+          const optCount = sel ? sel.options.length : 0;
+          const activeText = sel?.selectedOptions?.[0]?.text || '';
+          return { isNotice, navCount, selFound: Boolean(sel), optCount, currentFieldId: sel?.value, activeText };
+        })()
+      `,
+      returnByValue: true
+    });
+
+    const s = status.result.value || {};
+    if (s.isNotice || s.navCount === 0 || !s.selFound || s.optCount < 3) {
+      await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+      await new Promise(r => setTimeout(r, 2000));
+      await cdp.waitForNetworkIdle(15000, 500);
+    }
+
+    if (targetField) {
+      // Switch active field
+      await cdp.send('Runtime.evaluate', {
+        expression: `
+          (function() {
+            try { localStorage.setItem('fs_selected_field_id', '${targetField.id}'); } catch {}
+            if (window.__fs_selectField) {
+              window.__fs_selectField('${targetField.id}');
+            }
+            const sel = document.querySelector('select[aria-label="Active field parcel"]');
+            if (sel) {
+              const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value').set;
+              nativeSetter.call(sel, '${targetField.id}');
+              sel.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+          })()
+        `
+      });
+
+      // Wait for field switch and workflow network activity to settle
+      await new Promise(r => setTimeout(r, 800));
+      await cdp.waitForNetworkIdle(25000, 500);
+    }
+  }
 
   const resultsByView = {};
   for (const v of VIEWS) {
@@ -298,7 +635,7 @@ async function runVisualTest() {
     console.log(`================================================================`);
 
     // Ensure clean state and select field
-    await ensureCleanState(fld.id);
+    await ensureCleanState(fld);
 
     // Audit each view
     for (let vIdx = 0; vIdx < VIEWS.length; vIdx++) {
@@ -306,36 +643,19 @@ async function runVisualTest() {
       const stepLabel = `[${fld.key.toUpperCase()} | ${vIdx + 1}/${VIEWS.length}] ${v.title}`;
       process.stdout.write(`   → ${stepLabel} ... `);
 
-      // Verify DOM is healthy before proceeding
-      await ensureCleanState(fld.id);
-
-      const navMap = {
-        dashboard: 0,
-        field: 1,
-        crop_advice: 2,
-        weather: 3,
-        farm_planning: 4,
-        harvest_profit: 5,
-        assistant: 6,
-        account: 7,
-        research: 8,
-        water_irrigation: 9,
-        digital_twin: 10,
-        data_evidence: 11
-      };
-
-      const navIndex = navMap[v.nav] ?? 0;
-
-      // Click sidebar item
+      // Perform direct programmatic and DOM navigation
       await cdp.send('Runtime.evaluate', {
         expression: `
           (function() {
-            const navs = document.querySelectorAll('.nav-item');
-            if (navs[${navIndex}]) navs[${navIndex}].click();
+            if (window.__fs_navigate) {
+              window.__fs_navigate('${v.nav}', '${v.subTab || v.lab || v.crop || v.weatherView || ''}');
+            }
+            const navBtn = document.querySelector('.sidebar-nav [data-nav="${v.nav}"]');
+            if (navBtn) navBtn.click();
           })()
         `
       });
-      await new Promise(r => setTimeout(r, 350));
+      await new Promise(r => setTimeout(r, 200));
 
       // Expand Archive group if this is an archive lab
       if (v.isArchive) {
@@ -348,10 +668,10 @@ async function runVisualTest() {
             })()
           `
         });
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 150));
       }
 
-      // Handle sub-tab
+      // Handle sub-tab click
       if (v.subTab) {
         await cdp.send('Runtime.evaluate', {
           expression: `
@@ -372,9 +692,9 @@ async function runVisualTest() {
                 if ('${v.subTab}' === 'optimization' && (text.includes('optimization') || text.includes('অপটিমাইজেশন') || text.includes('সময়সূচি'))) return true;
                 if ('${v.subTab}' === 'profile' && (text.includes('profile') || text.includes('আর্দ্রতা'))) return true;
                 if ('${v.subTab}' === 'stress' && (text.includes('stress') || text.includes('খরা'))) return true;
-                if ('${v.subTab}' === 'farm' && (text.includes('plan viewer') || text.includes('প্ল্যান ভিউয়ার'))) return true;
+                if ('${v.subTab}' === 'farm' && (text.includes('plan viewer') || text.includes('প্ল্যান ভিউয়ার') || text.includes('diorama'))) return true;
                 if ('${v.subTab}' === 'growth' && (text.includes('growth') || text.includes('বৃদ্ধি'))) return true;
-                if ('${v.subTab}' === 'climate' && (text.includes('climate') || text.includes('চাপ'))) return true;
+                if ('${v.subTab}' === 'climate' && (text.includes('climate') || text.includes('জলবায়ু') || text.includes('চাপ'))) return true;
                 if ('${v.subTab}' === 'compare' && (text.includes('scenario') || text.includes('তুলনা'))) return true;
                 if ('${v.subTab}' === 'sources' && (text.includes('feed') || text.includes('উৎস'))) return true;
                 if ('${v.subTab}' === 'provenance' && (text.includes('provenance') || text.includes('রেজিস্ট্রি'))) return true;
@@ -387,10 +707,10 @@ async function runVisualTest() {
             })()
           `
         });
-        await new Promise(r => setTimeout(r, 350));
+        await new Promise(r => setTimeout(r, 200));
       }
 
-      // Handle research lab item
+      // Handle research lab item click
       if (v.lab) {
         await cdp.send('Runtime.evaluate', {
           expression: `
@@ -418,24 +738,27 @@ async function runVisualTest() {
             })()
           `
         });
-        await new Promise(r => setTimeout(r, 350));
+        await new Promise(r => setTimeout(r, 200));
       }
 
-      // Handle weather view tab
+      // Handle weather view tab click
       if (v.weatherView) {
         await cdp.send('Runtime.evaluate', {
           expression: `
             (function() {
               const btns = Array.from(document.querySelectorAll('.stage-tab-btn, button'));
-              const target = btns.find(b => b.innerText.toLowerCase().includes('${v.weatherView}'));
+              const target = btns.find(b => {
+                const t = b.innerText.toLowerCase();
+                return t.includes('${v.weatherView}') || ('${v.weatherView}' === 'constellation' && t.includes('satellite'));
+              });
               if (target) target.click();
             })()
           `
         });
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 200));
       }
 
-      // Handle crop tab
+      // Handle crop tab click
       if (v.crop) {
         await cdp.send('Runtime.evaluate', {
           expression: `
@@ -446,17 +769,19 @@ async function runVisualTest() {
             })()
           `
         });
-        await new Promise(r => setTimeout(r, 250));
+        await new Promise(r => setTimeout(r, 200));
       }
 
-      // Wait for spinner / loading to settle
+      // Wait for network idle & spinner settlement (max 30s)
+      await cdp.waitForNetworkIdle(20000, 400);
+
       await cdp.send('Runtime.evaluate', {
         expression: `
           new Promise((resolve) => {
             const start = Date.now();
             const check = () => {
               const spinner = document.querySelector('.loading-spinner, .shimmer-loading, [aria-busy="true"], .skeleton');
-              if (!spinner || (Date.now() - start > 6000)) resolve(true);
+              if (!spinner || (Date.now() - start > 15000)) resolve(true);
               else setTimeout(check, 100);
             };
             check();
@@ -465,45 +790,103 @@ async function runVisualTest() {
         awaitPromise: true
       });
 
-      // Audit DOM for Error Boundary & metrics
-      const errorCheck = await cdp.send('Runtime.evaluate', {
+      // Brief post-loading render stabilization
+      await new Promise(r => setTimeout(r, 350));
+
+      // Comprehensive DOM Audit (H6 Fix Requirements 1, 2, 3, 4)
+      const auditResult = await cdp.send('Runtime.evaluate', {
         expression: `
           (function() {
-            const errorH2 = document.querySelector('h2');
-            const isNotice = Boolean(errorH2 && errorH2.innerText.includes('Interface Notice'));
-            const errorCode = isNotice ? (document.querySelector('code')?.innerText || 'Error caught by Interface Notice') : '';
+            const bodyText = document.body.innerText || '';
 
-            const heading = document.querySelector('h1, h2, .page-header-title')?.innerText || '';
-            const nasaTelemetry = document.querySelector('.nasa-badge-full-text')?.innerText || '';
+            // (1) Top Bar Field Assertion
             const activeSel = document.querySelector('select[aria-label="Active field parcel"]')?.selectedOptions[0]?.text || '';
-            
-            const numbers = Array.from(document.querySelectorAll('.stat-val, .metric-value, strong, .kpi-number, td, .highlight-num'))
+            const fieldInTopBar = activeSel.toLowerCase().includes('${fld.name.toLowerCase()}') ||
+                                  activeSel.toLowerCase().includes('${fld.key.toLowerCase()}');
+
+            // (2) Page Heading Assertion
+            const mainEl = document.querySelector('main, .workspace-content, .farm-planning-workspace, .dash-workspace, #root > div > div > main') || document.body;
+            const headingEls = Array.from(document.querySelectorAll('h1, h2, .workspace-header h1, .page-header-title, .dash-card h1'));
+            const headingTexts = headingEls.map(h => (h.innerText || '').trim().toLowerCase());
+            const combinedHeading = headingTexts.join(' | ');
+
+            const keywords = ${JSON.stringify(v.headingKeywords || [])};
+            const headingMatches = keywords.length === 0 || keywords.some(kw => combinedHeading.includes(kw.toLowerCase()) || bodyText.toLowerCase().includes(kw.toLowerCase()));
+
+            // (3) Read values ONLY from main content area (exclude top bar, sidebar, mobile nav)
+            const numberEls = Array.from(mainEl.querySelectorAll('.stat-val, .metric-value, strong, .kpi-number, td, .highlight-num, .card-value'))
+              .filter(el => !el.closest('.sidebar') && !el.closest('header') && !el.closest('.global-top-bar') && !el.closest('.mobile-nav'));
+
+            const contentNumbers = numberEls
               .map(el => el.innerText.trim())
               .filter(t => t.length > 0 && /\\d/.test(t))
               .slice(0, 10);
 
-            const cards = Array.from(document.querySelectorAll('.strategy-card, .plan-card, .card, .ui-card'))
-              .map(c => c.innerText.trim().slice(0, 150))
-              .slice(0, 3);
+            // (4) Error Strings, Empty Content, and Canvas Verification
+            const errorPatterns = [
+              'Interface Notice',
+              'Application Runtime Error',
+              'Unsupported district',
+              'লোড করা যায়নি',
+              'Failed to load',
+              'Could not load',
+              'Cannot read propert',
+              '500 Internal Server Error'
+            ];
+            const matchedError = errorPatterns.find(err => bodyText.includes(err));
+
+            const mainText = mainEl.innerText.trim();
+            const isMainAreaEmpty = mainText.length < 25;
+
+            // Canvas verification
+            const canvases = Array.from(mainEl.querySelectorAll('canvas'));
+            let canvasError = null;
+            for (const c of canvases) {
+              if (c.width === 0 || c.height === 0) {
+                canvasError = 'Zero-dimension canvas detected';
+                break;
+              }
+            }
 
             return {
-              isNotice,
-              errorCode,
-              heading,
-              nasaTelemetry,
+              fieldInTopBar,
               activeSel,
-              numbers,
-              cardsSnippet: cards.join(' | ')
+              headingMatches,
+              heading: headingTexts[0] || '',
+              contentNumbers,
+              matchedError: matchedError || null,
+              isMainAreaEmpty,
+              canvasError,
+              contentSnippet: mainText.slice(0, 200).replace(/\\s+/g, ' ')
             };
           })()
         `,
         returnByValue: true
       });
 
-      const auditData = errorCheck.result.value || {};
-      const isBroken = Boolean(auditData.isNotice);
+      const auditData = auditResult.result.value || {};
 
-      // Capture screenshot
+      let isBroken = false;
+      let errorCode = '';
+
+      if (auditData.matchedError) {
+        isBroken = true;
+        errorCode = `Error string detected: "${auditData.matchedError}"`;
+      } else if (!auditData.fieldInTopBar) {
+        isBroken = true;
+        errorCode = `Active field mismatch in top bar: got "${auditData.activeSel}", expected "${fld.name}"`;
+      } else if (!auditData.headingMatches) {
+        isBroken = true;
+        errorCode = `Wrong navigation: heading "${auditData.heading}" did not match expected keywords`;
+      } else if (auditData.isMainAreaEmpty) {
+        isBroken = true;
+        errorCode = 'Main content area rendered empty (<25 characters)';
+      } else if (auditData.canvasError) {
+        isBroken = true;
+        errorCode = auditData.canvasError;
+      }
+
+      // Capture high-fidelity screenshot
       const shotName = `${v.id}__${fld.key}.jpg`;
       const shotPath = path.join(SHOTS_DIR, shotName);
       const shotRes = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 70 });
@@ -515,11 +898,10 @@ async function runVisualTest() {
         shotPath,
         base64: shotRes.data,
         isBroken,
-        errorCode: auditData.errorCode,
-        telemetry: auditData.nasaTelemetry,
+        errorCode,
         heading: auditData.heading,
-        numbers: auditData.numbers,
-        snippet: auditData.cardsSnippet,
+        numbers: auditData.contentNumbers || [],
+        snippet: auditData.contentSnippet || '',
         consoleErrors: [...cdp.consoleErrors],
         networkErrors: [...cdp.networkErrors]
       };
@@ -530,9 +912,8 @@ async function runVisualTest() {
       resultsByView[v.id].fieldResults[fld.key] = fieldResult;
 
       if (isBroken) {
-        console.log(`⚠️ BROKEN (${auditData.errorCode})`);
-        // Immediately restore page state for the next view
-        await ensureCleanState(fld.id);
+        console.log(`⚠️ BROKEN (${errorCode})`);
+        await ensureCleanState(fld);
       } else {
         console.log('✓ OK');
       }
@@ -542,7 +923,7 @@ async function runVisualTest() {
   cdp.close();
   chromeProc.kill();
 
-  console.log('\n[COMPARISON] Evaluating differences across the 4 fields for every view...');
+  console.log('\n[COMPARISON] Evaluating content divergence across the 4 fields for every view...');
 
   const problemsFound = [];
   const summaryRows = [];
@@ -565,10 +946,10 @@ async function runVisualTest() {
       ].filter(Boolean).join('; ');
       problemsFound.push(`BROKEN VIEW: ${v.title} — ${brokenFields}`);
     } else {
-      const sigD = (dinajpur?.heading || '') + '::' + (dinajpur?.numbers || []).join(',');
-      const sigB = (bogura?.heading || '') + '::' + (bogura?.numbers || []).join(',');
-      const sigS = (satkhira?.heading || '') + '::' + (satkhira?.numbers || []).join(',');
-      const sigSu = (sunamganj?.heading || '') + '::' + (sunamganj?.numbers || []).join(',');
+      const sigD = (dinajpur?.numbers || []).join(',');
+      const sigB = (bogura?.numbers || []).join(',');
+      const sigS = (satkhira?.numbers || []).join(',');
+      const sigSu = (sunamganj?.numbers || []).join(',');
 
       const allSame = (sigD === sigB && sigB === sigS && sigS === sigSu);
       if (allSame) {
@@ -578,6 +959,9 @@ async function runVisualTest() {
         }
       } else {
         vr.verdict = 'DIFFERS';
+        if (!v.expectedDiff) {
+          problemsFound.push(`UNEXPECTED DIFFERS: ${v.title} is a uniform platform methodology/provenance page, but content varied across fields.`);
+        }
       }
     }
 
@@ -589,7 +973,7 @@ async function runVisualTest() {
         ? 'Identical output across distinct parcels; potential regional sensitivity calibration gap.'
         : 'Platform-wide scientific methodology / uniform registry (expected uniform reference across all districts).';
     } else {
-      commentary = `Error boundary triggered: ${dinajpur?.errorCode || bogura?.errorCode || satkhira?.errorCode || sunamganj?.errorCode || 'Component failure'}`;
+      commentary = `Error detected: ${dinajpur?.errorCode || bogura?.errorCode || satkhira?.errorCode || sunamganj?.errorCode || 'Component failure'}`;
     }
 
     summaryRows.push({
@@ -605,9 +989,11 @@ async function runVisualTest() {
     });
   }
 
-  console.log(`[COMPARISON] Summary: ${summaryRows.filter(r => r.verdict === 'DIFFERS').length} DIFFERS, ` +
-              `${summaryRows.filter(r => r.verdict === 'SAME').length} SAME, ` +
-              `${summaryRows.filter(r => r.verdict === 'BROKEN').length} BROKEN.`);
+  const differsCount = summaryRows.filter(r => r.verdict === 'DIFFERS').length;
+  const sameCount = summaryRows.filter(r => r.verdict === 'SAME').length;
+  const brokenCount = summaryRows.filter(r => r.verdict === 'BROKEN').length;
+
+  console.log(`[COMPARISON] Summary: ${differsCount} DIFFERS, ${sameCount} SAME, ${brokenCount} BROKEN.`);
 
   // Generate HTML Report
   console.log('[REPORT] Generating HTML visual comparison report...');
@@ -947,6 +1333,7 @@ async function runVisualTest() {
   console.log('VISUAL TEST PROTOCOL COMPLETE');
   console.log(`PDF Path: ${pdfPath}`);
   console.log(`PDF Size: ${pdfSizeMb} MB`);
+  console.log(`Verdict Counts: ${differsCount} DIFFERS, ${sameCount} SAME, ${brokenCount} BROKEN`);
   console.log('================================================================\n');
 }
 
