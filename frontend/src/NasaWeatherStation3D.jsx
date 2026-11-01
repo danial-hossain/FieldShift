@@ -73,7 +73,23 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
   }, [activeSeries, timeHorizon, tempVal, tempMax, tempMin, humidVal, windVal, rainVal]);
 
   // Derived agro-climatic metrics
-  const dewPoint = (tempVal - ((100 - humidVal) / 5)).toFixed(1);
+  const rain30DaySum = useMemo(() => {
+    if (!activeSeries || activeSeries.length === 0) return null;
+    const last30 = activeSeries.slice(Math.max(0, activeSeries.length - 30));
+    const sum = last30.reduce((acc, curr) => acc + (Number(curr.rainfall) || 0), 0);
+    return sum.toFixed(1);
+  }, [activeSeries]);
+
+  const latestSolar = useMemo(() => {
+    if (!activeSeries || activeSeries.length === 0) return null;
+    const last = activeSeries[activeSeries.length - 1];
+    const val = last.solar_radiation ?? last.ALLSKY_SFC_SW_DWN;
+    return val != null ? Number(val).toFixed(1) : null;
+  }, [activeSeries]);
+
+  const dewPoint = (tempVal != null && humidVal != null)
+    ? (tempVal - ((100 - humidVal) / 5)).toFixed(1)
+    : null;
   const diurnalRange = (tempMax - tempMin).toFixed(1);
   const et0 = ((0.0023 * (tempVal + 17.8) * Math.sqrt(Math.max(1, tempMax - tempMin)) * 14.2) / 2.45).toFixed(1); // Hargreaves approximation
   const gdd = Math.max(0, ((tempMax + tempMin) / 2) - 10).toFixed(1); // Base 10C for maize/rice
@@ -345,7 +361,7 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
                   <path d="M70,70 L200,140" stroke="url(#sunbeam)" strokeWidth="3" opacity="0.8" />
                   <circle cx="60" cy="60" r="14" fill="#facc15" filter="url(#neonBlur)" />
                   <circle cx="60" cy="60" r="10" fill="#facc15" />
-                  <text x="84" y="58" fill="#facc15" fontSize="9.5" fontWeight="800">SOLAR FLUX: 14.2 MJ/m²</text>
+                  <text x="84" y="58" fill="#facc15" fontSize="9.5" fontWeight="800">{latestSolar != null ? `SOLAR FLUX: ${latestSolar} MJ/m²` : "SOLAR FLUX: তথ্য নেই"}</text>
                 </svg>
               </div>
             )}
@@ -359,7 +375,7 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
                   <g transform="translate(40, 35)">
                     <polygon points="40,20 420,20 460,70 80,70" fill="rgba(30, 58, 138, 0.35)" stroke="#38bdf8" strokeWidth="1" />
                     <text x="90" y="48" fill="#38bdf8" fontSize="11" fontWeight="800">LAYER 4: STRATOSPHERE / SOLAR BOUNDARY (10–15 KM)</text>
-                    <text x="90" y="62" fill="#38bdf8" fontSize="9.5">Direct Solar Irradiance: 14.2 MJ/m²/day • Top-of-Atmosphere Radiance</text>
+                    <text x="90" y="62" fill="#38bdf8" fontSize="9.5">Direct Solar Irradiance: {latestSolar != null ? `${latestSolar} MJ/m²/day` : "তথ্য নেই"} • Top-of-Atmosphere Radiance</text>
                   </g>
 
                   {/* Layer 3: Tropospheric Cloud Condensation Deck (2-4km) */}
@@ -500,7 +516,7 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
                   <span className="readout-unit">mm/day</span>
                 </div>
                 <div className="readout-limits">
-                  <div><span>30-Day Sum:</span> <strong>148.6 mm</strong></div>
+                  <div><span>30-Day Sum:</span> <strong>{rain30DaySum != null ? `${rain30DaySum} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</strong></div>
                   <div><span>Intensity:</span> <strong>{rainVal > 5 ? 'Moderate' : 'Light Trace'}</strong></div>
                 </div>
                 <span className="readout-status-tag tag-blue">{rainVal > 2 ? "Precipitation observed (rule-based hint)" : "Low precipitation (rule-based hint)"}</span>
