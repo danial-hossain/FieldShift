@@ -7,13 +7,16 @@ import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
-import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState } from './ui/index.js';
+import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast } from './ui/index.js';
 
 export function MyFarmWorkspaceView({
   activeField,
   user,
   userFields = [],
   onSelectField,
+  onArchiveField,
+  onDeleteField,
+  request,
   lang = 'bn',
   onNavigate,
   initialSubTab = 'overview',
@@ -37,6 +40,54 @@ export function MyFarmWorkspaceView({
     };
   });
   const [baselineSaved, setBaselineSaved] = useState(false);
+  const [mapToast, setMapToast] = useState(null);
+  const [isUpdatingCoords, setIsUpdatingCoords] = useState(false);
+
+  const handleUpdateCoords = async (newLat, newLng) => {
+    if (!activeField || activeField.id === 'demo' || isUpdatingCoords) return;
+    setIsUpdatingCoords(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+      await reqFn(`/api/fields/${activeField.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          latitude: newLat,
+          longitude: newLng,
+          name: activeField.name,
+          area_ha: activeField.area_ha,
+          soil_texture: activeField.soil_texture,
+        })
+      });
+      await reqFn(`/api/fields/${activeField.id}/enrich`, {
+        method: 'POST',
+        body: JSON.stringify({
+          latitude: newLat,
+          longitude: newLng,
+          area_ha: activeField.area_ha
+        })
+      });
+      if (typeof onSelectField === 'function') {
+        onSelectField({ ...activeField, latitude: newLat, longitude: newLng });
+      }
+      setMapToast({
+        type: 'success',
+        message: lang === 'bn'
+          ? `স্থানাঙ্ক আপডেট ও উপাত্ত সমৃদ্ধ করা হয়েছে (${newLat.toFixed(4)}°N, ${newLng.toFixed(4)}°E)`
+          : `Coordinates updated and data enriched (${newLat.toFixed(4)}°N, ${newLng.toFixed(4)}°E).`
+      });
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn' ? `স্থানাঙ্ক সংরক্ষণে ত্রুটি: ${err.message}` : `Failed to save coordinates: ${err.message}`
+      });
+    } finally {
+      setIsUpdatingCoords(false);
+    }
+  };
+
   const handleSaveBaseline = () => {
     if (!activeField) return;
     const updated = {
@@ -247,6 +298,8 @@ export function MyFarmWorkspaceView({
           user={user}
           userFields={userFields}
           onSelectField={onSelectField}
+          onArchiveField={onArchiveField || onDeleteField}
+          onDeleteField={onArchiveField || onDeleteField}
           lang={lang}
         />
       )}
@@ -265,7 +318,7 @@ export function MyFarmWorkspaceView({
                 latitude={Number(activeField.latitude)}
                 longitude={Number(activeField.longitude)}
                 onChange={(lat, lng) => {
-                  console.log('Selected coordinates:', lat, lng);
+                  handleUpdateCoords(lat, lng);
                 }}
               />
             </div>
@@ -474,6 +527,13 @@ export function MyFarmWorkspaceView({
         </div>
       )}
 
+      {mapToast && (
+        <Toast
+          type={mapToast.type}
+          message={mapToast.message}
+          onClose={() => setMapToast(null)}
+        />
+      )}
     </div>
   );
 }

@@ -34,6 +34,7 @@ import {
   runCounterfactualRequest,
 } from './counterfactual.js';
 import './styles.css';
+import { Toast } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
 import {
@@ -1432,18 +1433,47 @@ export function App() {
     }
   };
 
-  const handleArchiveField = async fld => {
-    if (!window.confirm(`Are you sure you want to archive / delete field "${fld.name}" (ID #${fld.id})?`)) {
-      return;
-    }
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const handleArchiveField = fld => {
+    if (!fld) return;
+    setDeleteConfirmTarget(fld);
+  };
+
+  const executeDeleteFields = async (target) => {
+    const targets = Array.isArray(target) ? target : [target];
+    setDeleteConfirmTarget(null);
     try {
-      await request(`/api/fields/${fld.id}`, { method: 'DELETE' });
-      await loadUserData();
-      if (viewingField && viewingField.id === fld.id) {
+      for (const t of targets) {
+        if (t?.id && t.id !== 'demo') {
+          await request(`/api/fields/${t.id}`, { method: 'DELETE' });
+        }
+      }
+      const deletedIdSet = new Set(targets.map(t => String(t.id)));
+      const remaining = userFields.filter(f => !deletedIdSet.has(String(f.id)));
+      setUserFields(remaining);
+      if (deletedIdSet.has(String(activeField?.id))) {
+        if (remaining.length > 0) {
+          handleSelectActiveField(remaining[0], false);
+        } else {
+          handleSelectActiveField(null, false);
+        }
+      }
+      if (viewingField && deletedIdSet.has(String(viewingField.id))) {
         setViewingField(null);
       }
+      setToastMessage({
+        type: 'success',
+        message: lang === 'bn'
+          ? (targets.length > 1 ? `${targets.length}টি জমি সফলভাবে মুছে ফেলা হয়েছে।` : `"${targets[0]?.name}" জমিটি সফলভাবে মুছে ফেলা হয়েছে।`)
+          : (targets.length > 1 ? `${targets.length} fields deleted successfully.` : `Field "${targets[0]?.name}" deleted successfully.`)
+      });
     } catch (err) {
-      alert(`Could not archive field: ${err.message}`);
+      setToastMessage({
+        type: 'error',
+        message: lang === 'bn' ? `মুছে ফেলা সম্ভব হয়নি: ${err.message}` : `Could not delete: ${err.message}`
+      });
     }
   };
 
@@ -3439,6 +3469,9 @@ export function App() {
             user={user}
             userFields={userFields}
             onSelectField={handleSelectActiveField}
+            onArchiveField={handleArchiveField}
+            onDeleteField={handleArchiveField}
+            request={request}
             lang={lang}
             onNavigate={handleNavigate}
             initialSubTab={myFarmSubTab}
@@ -4378,7 +4411,7 @@ export function App() {
                         handleArchiveField(viewingField);
                       }}
                     >
-                      Archive Field
+                      {lang === "bn" ? "মুছে ফেলুন" : "Delete Field"}
                     </button>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <button
@@ -4580,6 +4613,53 @@ export function App() {
           onNavigate={handleNavigate}
           onOpenAssistant={() => handleNavigate('assistant')}
         />
+
+                {/* Field Delete Confirmation Modal */}
+        {deleteConfirmTarget && (
+          <Modal
+            isOpen={Boolean(deleteConfirmTarget)}
+            onClose={() => setDeleteConfirmTarget(null)}
+            title={lang === 'bn' ? 'জমি মুছে ফেলার নিশ্চিতকরণ' : 'Confirm Field Deletion'}
+            maxWidth="480px"
+          >
+            <div style={{ padding: '8px 0' }}>
+              <p style={{ margin: '0 0 16px', color: 'var(--text, #f8fafc)', fontSize: 13.5, lineHeight: 1.5 }}>
+                {Array.isArray(deleteConfirmTarget)
+                  ? (lang === 'bn'
+                      ? `আপনি কি নিশ্চিত যে নির্বাচিত ${deleteConfirmTarget.length}টি জমি স্থায়ীভাবে মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।`
+                      : `Are you sure you want to permanently delete the ${deleteConfirmTarget.length} selected fields? This action cannot be undone.`)
+                  : (lang === 'bn'
+                      ? `আপনি কি নিশ্চিত যে "${deleteConfirmTarget?.name}" জমিটি স্থায়ীভাবে মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।`
+                      : `Are you sure you want to permanently delete field "${deleteConfirmTarget?.name}"? This action cannot be undone.`)}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+                <button
+                  type="button"
+                  className="btn-field-action"
+                  onClick={() => setDeleteConfirmTarget(null)}
+                >
+                  {lang === 'bn' ? 'বাতিল' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                  onClick={() => executeDeleteFields(deleteConfirmTarget)}
+                >
+                  {lang === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+
+        {/* Global Toast Notification */}
+        {toastMessage && (
+          <Toast
+            type={toastMessage.type}
+            message={toastMessage.message}
+            onClose={() => setToastMessage(null)}
+          />
+        )}
 
         {/* Mobile Persistent Bottom Navigation Bar (Visible only on narrow screens <= 768px) */}
         <nav className="mobile-bottom-nav" aria-label="Mobile Navigation">

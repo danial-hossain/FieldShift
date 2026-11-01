@@ -122,11 +122,18 @@ export function FieldParcelManagerView({
   onAddField,
   onBack,
   formatDate = defaultFormatDate,
-  formatNumber = defaultFormatNumber
+  formatNumber = defaultFormatNumber,
+  lang = 'bn',
 }) {
   const [mapMode, setMapMode] = useState('satellite'); // 'satellite' | '3d_block' | 'ndvi'
   const [pinMode, setPinMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFieldIds, setSelectedFieldIds] = useState([]);
+
+  useEffect(() => {
+    const validIds = new Set(userFields.map(f => f.id));
+    setSelectedFieldIds(prev => prev.filter(id => validIds.has(id)));
+  }, [userFields]);
 
   const isDemo = Boolean(activeField?.id === 'demo' || activeField?.is_demo);
   const hasActiveField = Boolean(activeField);
@@ -709,7 +716,57 @@ export function FieldParcelManagerView({
         ) : fieldsError ? (
           <p className="field-load-notice" role="alert">Could not load registered fields: {fieldsError}</p>
         ) : filteredFields.length > 0 ? (
-          <div className="fields-cards-grid">
+          <div>
+            {selectedFieldIds.length > 0 && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 18px',
+                marginBottom: 16,
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 12
+              }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  {lang === 'bn'
+                    ? `${selectedFieldIds.length}টি জমি নির্বাচিত`
+                    : `${selectedFieldIds.length} fields selected`}
+                </span>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    type="button"
+                    className="btn-field-action"
+                    onClick={() => setSelectedFieldIds([])}
+                  >
+                    {lang === 'bn' ? 'বাতিল' : 'Deselect All'}
+                  </button>
+                  <button
+                    type="button"
+                    style={{
+                      padding: '7px 16px',
+                      background: '#ef4444',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => {
+                      const toDelete = userFields.filter(f => selectedFieldIds.includes(f.id));
+                      if (onArchiveField) onArchiveField(toDelete);
+                      setSelectedFieldIds([]);
+                    }}
+                  >
+                    {lang === 'bn'
+                      ? `নির্বাচিত জমি মুছে ফেলুন (${selectedFieldIds.length})`
+                      : `Delete Selected (${selectedFieldIds.length})`}
+                  </button>
+                </div>
+              </div>
+            )}
+            <div className="fields-cards-grid">
             {filteredFields.map(fld => {
               const isActive = activeField && String(activeField.id) === String(fld.id);
               const latestCrop = fld.previous_crop || fld.current_crop || (fld.history && fld.history[0]?.crop) || 'Not recorded';
@@ -732,12 +789,26 @@ export function FieldParcelManagerView({
                   <div className="field-card-content">
                     {/* Level 1 & 2: Field Name, Status & ID */}
                     <div className="field-card-header">
-                      <div className="field-card-title-wrap">
-                        <h4>{fld.name}</h4>
-                        <span className="field-id-badge">Field ID #{fld.id}</span>
+                      <div className="field-card-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <input
+                          type="checkbox"
+                          checked={selectedFieldIds.includes(fld.id)}
+                          onChange={e => {
+                            e.stopPropagation();
+                            setSelectedFieldIds(prev =>
+                              prev.includes(fld.id) ? prev.filter(id => id !== fld.id) : [...prev, fld.id]
+                            );
+                          }}
+                          aria-label={`Select ${fld.name}`}
+                          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--primary, #10b981)' }}
+                        />
+                        <div>
+                          <h4>{fld.name}</h4>
+                          <span className="field-id-badge">Field ID #{fld.id}</span>
+                        </div>
                       </div>
                       <span className={`completeness-badge ${isActive ? 'active-highlight' : ''}`}>
-                        {isActive ? 'Active Field' : 'Registered'}
+                        {isActive ? (lang === 'bn' ? 'সক্রিয় জমি' : 'Active Field') : (lang === 'bn' ? 'নিবন্ধিত' : 'Registered')}
                       </span>
                     </div>
 
@@ -864,24 +935,29 @@ export function FieldParcelManagerView({
                         type="button"
                         className="btn-field-archive"
                         onClick={() => onArchiveField && onArchiveField(fld)}
-                        title="Archive / Remove this field"
+                        title={lang === 'bn' ? 'জমি মুছে ফেলুন' : 'Delete this field'}
                       >
-                        Archive
+                        {lang === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
                       </button>
                     </div>
                   </div>
                 </div>
               );
             })}
+            </div>
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--bg-card)', borderRadius: 16, border: '1px dashed var(--border-light)' }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" style={{ margin: '0 auto 12px' }}>
               <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" /><circle cx="12" cy="10" r="3" />
             </svg>
-            <h4 style={{ margin: '0 0 6px', fontSize: 16 }}>No registered farm parcels found</h4>
+            <h4 style={{ margin: '0 0 6px', fontSize: 16 }}>
+              {lang === 'bn' ? 'কোনো নিবন্ধিত জমি পাওয়া যায়নি' : 'No registered farm parcels found'}
+            </h4>
             <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-muted)' }}>
-              {searchQuery ? `No fields matched "${searchQuery}".` : 'Add your first agricultural parcel to configure soil properties and optimize crop rotations.'}
+              {searchQuery
+                ? (lang === 'bn' ? `"${searchQuery}" এর সাথে কোনো জমি মিলেনি।` : `No fields matched "${searchQuery}".`)
+                : (lang === 'bn' ? 'মাটির গুণাগুণ কনফিগার ও শস্য পরিকল্পনা করতে নতুন জমি যোগ করুন।' : 'Add your first agricultural parcel to configure soil properties and optimize crop rotations.')}
             </p>
             <button
               type="button"
@@ -889,7 +965,7 @@ export function FieldParcelManagerView({
               style={{ margin: '0 auto' }}
               onClick={() => onAddField && onAddField({ latitude: lat, longitude: lon })}
             >
-              + Add Your First Field
+              {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Your First Field'}
             </button>
           </div>
         )}
