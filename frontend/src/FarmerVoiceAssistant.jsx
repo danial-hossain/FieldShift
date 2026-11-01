@@ -18,7 +18,9 @@ export function FarmerVoiceAssistant({
   const [transcript, setTranscript] = useState('');
   const [responseText, setResponseText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isSupported, setIsSupported] = useState(true);
+  const [isSupported, setIsSupported] = useState(() => {
+    return typeof window !== 'undefined' && Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+  });
   const [manualInput, setManualInput] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [confirmationAction, setConfirmationAction] = useState(null);
@@ -341,6 +343,10 @@ export function FarmerVoiceAssistant({
     setManualInput(promptText);
     handleSubmit(promptText);
   };
+
+  if (!isSupported) {
+    return null;
+  }
 
   return (
     <>

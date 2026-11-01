@@ -723,6 +723,7 @@ export function App() {
 
   // Dark Theme Dashboard UI States
   const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [showNotifications, setShowNotifications] = useState(false);
   const [cropCategoryFilter, setCropCategoryFilter] = useState('All');
   const [selectedCropItem, setSelectedCropItem] = useState('Sorghum');
   const [isPlayingCamera, setIsPlayingCamera] = useState(true);
@@ -2108,19 +2109,152 @@ export function App() {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <div className="global-search-pill">
+            <div className="global-search-pill" style={{ position: 'relative' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <circle cx="11" cy="11" r="8"/>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input
                 type="text"
-                placeholder="Search parcels, crop models, climate telemetry..."
+                placeholder={lang === 'bn' ? 'জমি বা ফসল মডেল খুঁজুন...' : 'Search parcels, crop models...'}
                 value={globalSearchQuery}
                 onChange={e => setGlobalSearchQuery(e.target.value)}
               />
               {globalSearchQuery && (
                 <button type="button" className="search-clear-btn" onClick={() => setGlobalSearchQuery('')}>✕</button>
+              )}
+
+              {globalSearchQuery.trim() && (
+                <div className="global-search-dropdown" style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  left: 0,
+                  width: 320,
+                  maxHeight: 360,
+                  overflowY: 'auto',
+                  background: 'var(--bg-card, #111827)',
+                  border: '1px solid var(--border-medium, #374151)',
+                  borderRadius: 10,
+                  boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
+                  padding: 8,
+                  zIndex: 2000,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6
+                }}>
+                  {(() => {
+                    const q = globalSearchQuery.trim().toLowerCase();
+                    const matchedParcels = (userFields || []).filter(f =>
+                      f.name?.toLowerCase().includes(q) ||
+                      f.district?.toLowerCase().includes(q) ||
+                      f.soil_texture?.toLowerCase().includes(q)
+                    );
+                    const cropList = [
+                      { id: 'boro_rice', en: 'Boro Rice', bn: 'বোরো ধান', season: 'Rabi' },
+                      { id: 'aman_rice', en: 'Aman Rice', bn: 'আমন ধান', season: 'Kharif-2' },
+                      { id: 'aus_rice', en: 'Aus Rice', bn: 'আউশ ধান', season: 'Kharif-1' },
+                      { id: 'mustard', en: 'Mustard', bn: 'সরিষা', season: 'Rabi' },
+                      { id: 'potato', en: 'Potato', bn: 'আলু', season: 'Rabi' },
+                      { id: 'wheat', en: 'Wheat', bn: 'গম', season: 'Rabi' },
+                      { id: 'maize', en: 'Maize', bn: 'ভুট্টা', season: 'Rabi/Kharif' },
+                      { id: 'lentil', en: 'Lentil', bn: 'মসুর ডাল', season: 'Rabi' },
+                      { id: 'mungbean', en: 'Mungbean', bn: 'মুগ ডাল', season: 'Kharif-1' },
+                      { id: 'blackgram', en: 'Blackgram', bn: 'মাসকলাই', season: 'Kharif-2' },
+                      { id: 'chickpea', en: 'Chickpea', bn: 'ছোলা', season: 'Rabi' },
+                      { id: 'sesame', en: 'Sesame', bn: 'তিল', season: 'Kharif-1' },
+                      { id: 'jute', en: 'Jute', bn: 'পাট', season: 'Kharif-1' },
+                      { id: 'onion', en: 'Onion', bn: 'পেঁয়াজ', season: 'Rabi' },
+                      { id: 'groundnut', en: 'Groundnut', bn: 'চীনাবাদাম', season: 'Rabi' }
+                    ];
+                    const matchedCrops = cropList.filter(c =>
+                      c.en.toLowerCase().includes(q) || c.bn.includes(q) || c.season.toLowerCase().includes(q)
+                    );
+
+                    if (matchedParcels.length === 0 && matchedCrops.length === 0) {
+                      return (
+                        <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-muted, #9ca3af)', textAlign: 'center' }}>
+                          {lang === 'bn' ? 'কোনো ফলাফল পাওয়া যায়নি' : 'No matching parcels or crops'}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {matchedParcels.length > 0 && (
+                          <div>
+                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted, #9ca3af)', padding: '4px 8px' }}>
+                              {lang === 'bn' ? 'জমির পার্সেল' : 'Field Parcels'}
+                            </div>
+                            {matchedParcels.map(f => (
+                              <button
+                                key={f.id}
+                                type="button"
+                                onClick={() => {
+                                  setSelectedFieldId(f.id);
+                                  setGlobalSearchQuery('');
+                                  setActiveNav('field');
+                                  showToast(lang === 'bn' ? `${f.name} নির্বাচিত হয়েছে` : `Selected ${f.name}`, 'info');
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  background: selectedFieldId === f.id ? 'rgba(0, 223, 129, 0.15)' : 'transparent',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  color: 'var(--text-main, #f3f4f6)',
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  textAlign: 'left'
+                                }}
+                              >
+                                <span>🌾 <strong>{f.name}</strong> ({f.district})</span>
+                                <span style={{ fontSize: 11, color: 'var(--text-muted, #9ca3af)' }}>{f.area_ha || f.area_hectares} ha</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {matchedCrops.length > 0 && (
+                          <div style={{ marginTop: matchedParcels.length > 0 ? 6 : 0, borderTop: matchedParcels.length > 0 ? '1px solid var(--border-light, #2d3748)' : 'none', paddingTop: matchedParcels.length > 0 ? 6 : 0 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted, #9ca3af)', padding: '4px 8px' }}>
+                              {lang === 'bn' ? 'ফসল ও ক্রপ মডেল' : 'Crop Models'}
+                            </div>
+                            {matchedCrops.map(c => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => {
+                                  setGlobalSearchQuery('');
+                                  setActiveNav('crops');
+                                  showToast(lang === 'bn' ? `${c.bn} ক্রপ মডেল দেখানো হচ্ছে` : `Showing ${c.en} model`, 'info');
+                                }}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  borderRadius: 6,
+                                  color: 'var(--text-main, #f3f4f6)',
+                                  cursor: 'pointer',
+                                  fontSize: 12,
+                                  textAlign: 'left'
+                                }}
+                              >
+                                <span>🌱 {lang === 'bn' ? c.bn : c.en} <span style={{ fontSize: 11, color: 'var(--text-muted, #9ca3af)' }}>({lang === 'bn' ? c.en : c.bn})</span></span>
+                                <span style={{ fontSize: 11, color: '#38bdf8' }}>{c.season}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
           </div>
@@ -2183,7 +2317,21 @@ export function App() {
               type="button"
               className="top-bar-icon-btn present-toggle-btn"
               title={presentMode ? 'Exit Presentation Mode (?present=1)' : 'Enable Presentation Mode (?present=1)'}
-              onClick={() => setPresentMode(p => !p)}
+              onClick={() => {
+                setPresentMode(p => {
+                  const next = !p;
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    if (next) {
+                      url.searchParams.set('present', '1');
+                    } else {
+                      url.searchParams.delete('present');
+                    }
+                    window.history.replaceState(null, '', url.toString());
+                  }
+                  return next;
+                });
+              }}
               aria-label="Toggle presentation mode"
               style={{
                 width: 'auto',
@@ -2284,18 +2432,52 @@ export function App() {
             </button>
 
             {/* System Alerts */}
-            <button
-              type="button"
-              className="top-bar-icon-btn notification-bell-btn hide-on-mobile"
-              title="System Alerts & Analysis Notifications"
-              onClick={() => alert('All environmental telemetry feeds and crop rotation models are synchronized.')}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-              <span className="notification-badge-count">1</span>
-            </button>
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="top-bar-icon-btn notification-bell-btn hide-on-mobile"
+                title="System Alerts & Analysis Notifications"
+                onClick={() => setShowNotifications(prev => !prev)}
+                aria-label="System notifications"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span className="notification-badge-count">2</span>
+              </button>
+
+              {showNotifications && (
+                <div className="notification-popover-panel" style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 'calc(100% + 8px)',
+                  width: 320,
+                  background: 'var(--bg-card, #111827)',
+                  border: '1px solid var(--border-medium, #374151)',
+                  borderRadius: 10,
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                  padding: '12px 14px',
+                  zIndex: 2000,
+                  color: 'var(--text-main, #f3f4f6)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border-light, #2d3748)', paddingBottom: 6 }}>
+                    <strong style={{ fontSize: 13 }}>{lang === 'bn' ? 'সিস্টেম নোটিফিকেশন' : 'System Notifications'}</strong>
+                    <button type="button" onClick={() => setShowNotifications(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted, #9ca3af)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
+                    <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(0, 223, 129, 0.08)', borderLeft: '3px solid #00df81' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-main, #f3f4f6)' }}>NASA Agro-Climatology Live</div>
+                      <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: 11, marginTop: 2 }}>POWER & IMERG 2001–2024 daily records active for {activeField?.name || 'active parcel'}.</div>
+                    </div>
+                    <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.08)', borderLeft: '3px solid #38bdf8' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-main, #f3f4f6)' }}>Agronomic Optimization Ready</div>
+                      <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: 11, marginTop: 2 }}>BRRI sowing calendar & FAO-56 moisture stress models active.</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* User Profile / Login */}
             <div
