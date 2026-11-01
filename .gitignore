@@ -32,6 +32,8 @@ ENV/
 .coverage
 htmlcov/
 docs/visual_test/*.html
+docs/visual_test/*.pdf
+docs/visual_test/screenshots/
 
 # Temporary / Scratch
 scratch/

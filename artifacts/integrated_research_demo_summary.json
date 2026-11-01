@@ -2723,7 +2723,9 @@
           "water": 2.1225
         },
         "scenario_optimizer_result": {
+          "baseline_bare_days": 115,
           "baseline_comparison": {
+            "baseline_bare_days": 115,
             "baseline_irrigation_mm": 2372.7,
             "baseline_label_bn": "\u09a7\u09b0\u09c7 \u09a8\u09c7\u0993\u09af\u09bc\u09be",
             "baseline_label_en": "Assumed",
@@ -2738,6 +2740,7 @@
             "baseline_rotation_text_en": "Boro Rice -> Fallow -> Rice (assumed)",
             "is_assumed_baseline": true,
             "nitrogen_delta_kg": 35.0,
+            "plan_bare_days": 60,
             "plan_irrigation_mm": 1920.2,
             "plan_nitrogen_kg": 35.0,
             "plan_profit_bdt": 119749.0,
@@ -8624,6 +8627,7 @@
           },
           "objective_label": "optimized rotation under supplied priorities and constraints",
           "objective_value": 2.38498,
+          "plan_bare_days": 60,
           "plan_irrigation_mm": 1920.2,
           "plan_nitrogen_kg": 35.0,
           "plan_profit_bdt": 119749.0,

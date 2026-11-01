@@ -106,7 +106,12 @@ FieldShift is engineered from the ground up for 100% offline autonomy in remote 
 ## Verification & Test Suite
 
 FieldShift includes comprehensive automated test suites:
-- **Frontend Unit Tests:** 146/146 passed (`cd frontend ; npm test`).
+- **Frontend Unit Tests:** 151/151 passed (`cd frontend ; npm test`).
 - **SSR Smoke Test:** 12/12 platform destinations + Research Sub-Lab passed (`cd frontend ; npm run smoke`).
 - **Offline Integrity Check:** 10/10 checkpoints passed (`python scripts/demo_check.py`).
-- **Field Consistency Test:** All 4 Bangladesh agro-climatic zones verified (`python scripts/field_test.py --all`).
+- **Dynamic Zone Variation Guard:** 4/4 agro-ecological zones verified (`python scripts/field_variation_check.py`).
+- **Interactive Control Inventory & Persistence:** 30/30 controls verified, 0 no-effect, 0 error (`node scripts/control_inventory.js`).
+- **WCAG AA Contrast Compliance:** 2,057 elements verified, 0 failures across dark & light themes (`node scripts/contrast_check.js`).
+- **Cross-Page Numeric Consistency:** 0 discrepancies verified across Planner, Water, Weather, and Soil (`python scripts/consistency_check.py`).
+- **Agronomic Sanity Suite:** 27/27 rules & sanity tests passed (`python -m pytest tests/test_agronomic_rules.py tests/test_agronomic_sanity.py`).
+- **Cross-Field Visual Differentiation:** 43/43 views verified across all 4 canonical zones (`node scripts/visual_test_report.js`).
