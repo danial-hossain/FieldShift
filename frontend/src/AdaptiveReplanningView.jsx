@@ -17,14 +17,47 @@ export function AdaptiveReplanningView({
 
   const [completedSeasonsCount, setCompletedSeasonsCount] = useState(1);
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
-  const [historyItems, setHistoryItems] = useState([
-    { season_idx: 0, season_name: 'Year 1 - Rabi / Dry', crop_planted: 'Potato', yield_kg_ha: 22000, water_applied_mm: 480, soil_impact: 'high_depletion' },
-    { season_idx: 1, season_name: 'Year 1 - Kharif-1', crop_planted: 'Mungbean', yield_kg_ha: 1400, water_applied_mm: 320, soil_impact: 'restorative' },
-  ]);
 
-  const [updatedSoilPh, setUpdatedSoilPh] = useState(activeField?.soil_ph ? String(activeField.soil_ph) : '6.2');
-  const [updatedOm, setUpdatedOm] = useState(activeField?.organic_matter ? String(activeField.organic_matter) : '1.85');
-  const [updatedIrrig, setUpdatedIrrig] = useState(activeField?.irrigation_capacity_mm ? String(activeField.irrigation_capacity_mm) : '380');
+  const buildInitialHistory = (field) => {
+    if (!field) return [];
+    if (Array.isArray(field.history) && field.history.length > 0) {
+      return field.history.map((h, idx) => ({
+        season_idx: idx,
+        season_name: h.season ? `${h.year || ''} ${h.season}`.trim() : `Season ${idx + 1}`,
+        crop_planted: h.crop || '',
+        crop: h.crop || '',
+        yield_kg_ha: h.yield_kg_ha != null ? Number(h.yield_kg_ha) : undefined,
+        water_applied_mm: h.water_applied_mm != null ? Number(h.water_applied_mm) : undefined,
+        soil_impact: h.notes || undefined,
+      }));
+    }
+    const rot = field.existing_rotation;
+    if (rot && (rot.rabi || rot.kharif1 || rot.kharif2)) {
+      const items = [];
+      if (rot.rabi) items.push({ season_idx: 0, season_name: 'Year 1 - Rabi / Dry', crop_planted: rot.rabi, crop: rot.rabi });
+      if (rot.kharif1) items.push({ season_idx: 1, season_name: 'Year 1 - Kharif-1', crop_planted: rot.kharif1, crop: rot.kharif1 });
+      if (rot.kharif2) items.push({ season_idx: 2, season_name: 'Year 1 - Kharif-2', crop_planted: rot.kharif2, crop: rot.kharif2 });
+      return items;
+    }
+    if (field.previous_crop) {
+      return [
+        { season_idx: 0, season_name: 'Year 1 - Rabi / Dry', crop_planted: field.previous_crop, crop: field.previous_crop }
+      ];
+    }
+    return [];
+  };
+
+  const [historyItems, setHistoryItems] = useState(() => buildInitialHistory(activeField));
+  const [updatedSoilPh, setUpdatedSoilPh] = useState(activeField?.soil_ph ? String(activeField.soil_ph) : '');
+  const [updatedOm, setUpdatedOm] = useState(activeField?.organic_matter ? String(activeField.organic_matter) : '');
+  const [updatedIrrig, setUpdatedIrrig] = useState(activeField?.irrigation_capacity_mm ? String(activeField.irrigation_capacity_mm) : '');
+
+  useEffect(() => {
+    setHistoryItems(buildInitialHistory(activeField));
+    if (activeField?.soil_ph != null) setUpdatedSoilPh(String(activeField.soil_ph));
+    if (activeField?.organic_matter != null) setUpdatedOm(String(activeField.organic_matter));
+    if (activeField?.irrigation_capacity_mm != null) setUpdatedIrrig(String(activeField.irrigation_capacity_mm));
+  }, [activeField]);
   const [weatherBias, setWeatherBias] = useState('drier');
   const [priority, setPriority] = useState('balanced');
 
@@ -39,8 +72,15 @@ export function AdaptiveReplanningView({
 
   const handleUpdateHistoryCrop = (index, crop) => {
     const updated = [...historyItems];
-    updated[index].crop = crop;
-    updated[index].crop_planted = crop;
+    if (!updated[index]) {
+      updated[index] = { season_idx: index, season_name: `Season ${index + 1}`, crop_planted: crop, crop };
+    } else {
+      updated[index] = {
+        ...updated[index],
+        crop,
+        crop_planted: crop,
+      };
+    }
     setHistoryItems(updated);
   };
 
@@ -209,10 +249,11 @@ export function AdaptiveReplanningView({
             </label>
             <select
               className="dashboard-field-select"
-              value={historyItems[0].crop_planted}
+              value={historyItems[0]?.crop_planted || ''}
               onChange={(e) => handleUpdateHistoryCrop(0, e.target.value)}
               style={{ width: '100%', background: '#0e1318', color: '#f8fafc', border: '1px solid #334155' }}
             >
+              <option value="">{lang === 'bn' ? '-- ফসল নির্বাচন করুন --' : '-- Select Crop --'}</option>
               {cropChoices.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
