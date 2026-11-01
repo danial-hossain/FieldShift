@@ -148,12 +148,12 @@ export function MyFarmWorkspaceView({
               </Pill>
             </div>
             <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'আমার জমি, সীমানা ও মাটির তথ্য' : 'My Farm: Parcels, Soil & Boundaries'}
+              {lang === 'bn' ? 'আমার জমি ও মাটির তথ্য' : 'My Farm: Parcels & Soil Diagnostics'}
             </h1>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.5, maxWidth: 840 }}>
               {lang === 'bn'
-                ? 'গুগল স্যাটেলাইট ম্যাপে জমির সীমানা নির্ধারণ, পোস্টগ্রিসকিউএল পার্সেল রেজিস্ট্রি, মাটির পিএইচ (pH) ও জৈব পদার্থ এবং ঐতিহাসিক ফসল আবর্তন।'
-                : 'Interactive Google Maps boundary mapping, PostgreSQL parcel management, soil chemistry diagnostics, and historical management logging.'}
+                ? 'জমির অবস্থান, মাটির ধরন ও বৈশিষ্ট্য (SoilGrids), সেচ সক্ষমতা এবং ঐতিহাসিক ফসল আবর্তন তথ্য।'
+                : 'Field locations, soil properties (ISRIC SoilGrids), irrigation capacity, and crop rotation history.'}
             </p>
           </div>
         </div>

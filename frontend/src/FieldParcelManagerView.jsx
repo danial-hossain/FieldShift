@@ -187,38 +187,6 @@ export function FieldParcelManagerView({
 
   return (
     <div className="parcel-manager-viewport">
-      {/* 1. Header Toolbar with Direct Add Button */}
-      <div className="parcel-view-header">
-        <div className="parcel-header-left">
-          <div className="parcel-icon-glow">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M3 6l9-4 9 4v12l-9 4-9-4V6z" />
-              <path d="M12 2v20" />
-              <path d="M3 6l18 12" />
-            </svg>
-          </div>
-          <div>
-            <div className="header-breadcrumbs">
-              <span>Farm Management</span>
-              <span className="sep">/</span>
-              <span className="current">Field & Parcel Registry</span>
-            </div>
-            <h2>My Field & Parcel Manager</h2>
-            <p>Manage Field Boundaries, Soil Texture Horizons & Authoritative GIS Farm Locations</p>
-          </div>
-        </div>
-
-        <div className="parcel-header-actions">
-          <button type="button" className="btn-parcel-back" onClick={onBack}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            <span>Back to Dashboard</span>
-          </button>
-        </div>
-      </div>
-
       {/* 2. Active Parcel Hero Summary Card */}
       <div className="parcel-hero-banner" style={{ borderLeft: hasActiveField ? (isDemo ? '4px solid var(--water)' : '4px solid var(--leaf)') : '4px solid var(--sun)' }}>
         <div className="hero-banner-main">

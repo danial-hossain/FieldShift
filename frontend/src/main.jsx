@@ -4215,11 +4215,6 @@ export function App() {
                               longitude: String(lng)
                             }));
                           }}
-                          onLocationNameChange={(locName) => {
-                            if (!fieldForm.name || fieldForm.name.startsWith('Field') || fieldForm.name.startsWith('Parcel')) {
-                              setFieldForm(prev => ({ ...prev, name: prev.name || locName }));
-                            }
-                          }}
                         />
                       </div>
 
@@ -4478,8 +4473,33 @@ export function App() {
                         </p>
                       </div>
 
+                      {/* Inline duplicate & proximity warning */}
+                      {(() => {
+                        const trimmed = (fieldForm.name || '').trim().toLowerCase();
+                        if (trimmed && userFields.some(f => String(f.id) !== String(fieldForm.id) && (f.name || '').trim().toLowerCase() === trimmed)) {
+                          return (
+                            <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 6, color: '#ef4444', fontSize: 12.5, fontWeight: 500 }}>
+                              ⚠️ {lang === 'bn' ? 'সতর্কতা: এই নামের জমি ইতিমধ্যে নিবন্ধিত রয়েছে। অনুগ্রহ করে ভিন্ন নাম দিন।' : 'Warning: A field with this name already exists. Please choose a different name.'}
+                            </div>
+                          );
+                        }
+                        const latN = parseFloat(fieldForm.latitude);
+                        const lonN = parseFloat(fieldForm.longitude);
+                        if (Number.isFinite(latN) && Number.isFinite(lonN)) {
+                          const near = userFields.find(f => String(f.id) !== String(fieldForm.id) && f.latitude != null && f.longitude != null && haversineMeters(latN, lonN, Number(f.latitude), Number(f.longitude)) < 50);
+                          if (near) {
+                            return (
+                              <div style={{ padding: '8px 12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: 6, color: '#f59e0b', fontSize: 12.5, fontWeight: 500 }}>
+                                ⚠️ {lang === 'bn' ? `সতর্কতা: এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${near.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `Warning: Field "${near.name}" already exists within 50 meters of these coordinates.`}
+                              </div>
+                            );
+                          }
+                        }
+                        return null;
+                      })()}
+
                       {fieldModalError && (
-                        <p style={{ color: '#c0392b', fontSize: 13, margin: 0 }}>{fieldModalError}</p>
+                        <p style={{ color: '#c0392b', fontSize: 13, margin: 0, fontWeight: 600 }}>{fieldModalError}</p>
                       )}
                     </div>
 
