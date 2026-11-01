@@ -1977,7 +1977,7 @@ export function App() {
           {/* 8. Evidence & Method */}
           <button
             type="button"
-            className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' || activeNav === 'assistant' || activeNav === 'account' ? 'active' : ''}`}
+            className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' || activeNav === 'assistant' ? 'active' : ''}`}
             data-nav="data_evidence" onClick={() => handleNavigate('data_evidence')}
             title={lang === 'bn' ? '৮. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '8. Evidence & Method - Datasets, Methods & Research'}
           >
@@ -1987,7 +1987,7 @@ export function App() {
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="sidebar-user-mini" onClick={() => setActiveNav('account')} role="button" tabIndex={0} title="Profile &amp; Settings">
+          <div className={`sidebar-user-mini ${activeNav === 'account' ? 'active' : ''}`} onClick={() => setActiveNav('account')} role="button" tabIndex={0} title="Profile &amp; Settings">
             <div className="sidebar-user-avatar">
               {user ? (user.name || user.email || 'U').slice(0, 1).toUpperCase() : 'U'}
             </div>
@@ -3660,19 +3660,23 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 7: ADVANCED 3D PROFILE & OPERATOR COMMAND COCKPIT -------------------- */}
+        {/* -------------------- VIEW 7: ACCOUNT & MY FIELDS -------------------- */}
         {activeNav === 'account' && (
           <div className="profile-3d-wrapper">
-            {/* 1. Header with Breadcrumb & Session Actions */}
+            {/* 1. Header with Title & Profile Actions */}
             <div className="profile-3d-header">
               <div className="profile-3d-title-group">
                 <span className="profile-3d-eyebrow">
                   <span className="live-pulse-dot" />
-                  AGRONOMIST COMMAND COCKPIT • OPERATOR PASSPORT
+                  {lang === 'bn' ? 'ব্যবহারকারী ও খামার প্রোফাইল' : 'USER & FARM PROFILE'}
                 </span>
-                <h1 className="profile-3d-title">Operator Profile & Spatial Station</h1>
+                <h1 className="profile-3d-title">
+                  {lang === 'bn' ? 'প্রোফাইল ও আমার জমিসমূহ / Profile & My Fields' : 'Profile & My Fields'}
+                </h1>
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
-                  Manage autonomous credentials, PostgreSQL field registry, and 3D spatial telemetry.
+                  {lang === 'bn'
+                    ? 'ব্যক্তিগত তথ্য, সক্রিয় জমির পরিমাপ এবং নিবন্ধিত পার্সেলসমূহ।'
+                    : 'Personal details, active parcel telemetry, and registered field records.'}
                 </p>
               </div>
 
@@ -3690,7 +3694,7 @@ export function App() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      Edit Profile
+                      {lang === 'bn' ? 'প্রোফাইল পরিবর্তন' : 'Edit Profile'}
                     </button>
                     <button
                       type="button"
@@ -3704,7 +3708,7 @@ export function App() {
                         <polyline points="16 17 21 12 16 7" />
                         <line x1="21" y1="12" x2="9" y2="12" />
                       </svg>
-                      Sign Out
+                      {lang === 'bn' ? 'লগআউট' : 'Sign Out'}
                     </button>
                   </>
                 ) : (
@@ -3718,7 +3722,7 @@ export function App() {
                       }}
                       style={{ padding: '8px 20px', fontSize: 13 }}
                     >
-                      Sign In / Register
+                      {lang === 'bn' ? 'লগইন / নিবন্ধন' : 'Sign In / Register'}
                     </button>
                     <button
                       type="button"
@@ -3726,16 +3730,16 @@ export function App() {
                       onClick={handleQuickDemoLogin}
                       style={{ padding: '8px 16px', fontSize: 12.5 }}
                     >
-                      Demo Session
+                      {lang === 'bn' ? 'ডেমো সেশন' : 'Demo Session'}
                     </button>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* 2. Dual Column 3D Showcase: 3D Holographic ID Card + 3D Spatial Parcel Radar */}
+            {/* 2. Dual Column Hero: Agronomist Profile Card + Active Field Card */}
             <div className="profile-3d-hero-grid">
-              {/* Left Column: 3D Holographic Agronomist ID Card */}
+              {/* Left Column: Profile Card */}
               <div className="holo-card-container">
                 <div className="holo-id-card">
                   <div className="holo-shimmer-sweep" />
@@ -3743,7 +3747,7 @@ export function App() {
                   {/* Top: Microchip & Clearance */}
                   <div className="holo-card-top-row">
                     <div className="holo-chip-wrap">
-                      <div className="holo-microchip" title="Agronomist Profile" />
+                      <div className="holo-microchip" title="Profile Microchip" />
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(0, 223, 129, 0.7)" strokeWidth="2">
                         <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
                         <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
@@ -3751,14 +3755,14 @@ export function App() {
                         <line x1="12" y1="20" x2="12.01" y2="20"/>
                       </svg>
                     </div>
-                    <span className="holo-clearance-badge">NASA SPACE APPS 2026 • AGRO-ADVISORY</span>
+                    <span className="holo-clearance-badge">NASA SPACE APPS 2026</span>
                   </div>
 
-                  {/* Middle: 3D Rotating Orbit Avatar & Identity */}
+                  {/* Middle: Avatar & Identity */}
                   <div className="holo-avatar-stage">
                     <div className="orbit-avatar-wrapper">
                       <div className="orbit-core-sphere">
-                        {user ? user.name.slice(0, 2).toUpperCase() : 'AG'}
+                        {user ? (user.name || 'AG').slice(0, 2).toUpperCase() : 'AG'}
                       </div>
                       <div className="orbit-ring-1" />
                       <div className="orbit-ring-2" />
@@ -3778,24 +3782,28 @@ export function App() {
                     </div>
                   </div>
 
-                  {/* Holographic Specification Grid */}
+                  {/* Profile Specification Grid */}
                   <div className="holo-card-specs-grid">
                     <div className="holo-spec-box">
-                      <span className="holo-spec-label">Authority Source</span>
-                      <span className="holo-spec-value">PostgreSQL Synced</span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">Active Station</span>
+                      <span className="holo-spec-label">{lang === 'bn' ? 'ডাটাবেস সংরক্ষণ' : 'Storage Engine'}</span>
                       <span className="holo-spec-value">
-                        {userFarms.find(farm => farm.id === activeField?.farm_id)?.name || activeField?.name || 'Bogura Field'}
+                        {backendHealth?.database?.toLowerCase() === 'sqlite' || !backendHealth?.database
+                          ? (lang === 'bn' ? 'SQLite (Local) / সংরক্ষিত' : 'SQLite (Local) / Saved')
+                          : `${backendHealth.database} / Saved`}
                       </span>
                     </div>
                     <div className="holo-spec-box">
-                      <span className="holo-spec-label">Account Status</span>
-                      <span className="holo-spec-value">{user ? 'Signed in' : 'Guest / demo mode'}</span>
+                      <span className="holo-spec-label">{lang === 'bn' ? 'সক্রিয় খামার' : 'Active Farm'}</span>
+                      <span className="holo-spec-value">
+                        {userFarms.find(farm => farm.id === activeField?.farm_id)?.name || 'My Farm'}
+                      </span>
                     </div>
                     <div className="holo-spec-box">
-                      <span className="holo-spec-label">Member Since</span>
+                      <span className="holo-spec-label">{lang === 'bn' ? 'অ্যাকাউন্ট স্ট্যাটাস' : 'Account Status'}</span>
+                      <span className="holo-spec-value">{user ? (lang === 'bn' ? 'লগইনকৃত' : 'Signed in') : (lang === 'bn' ? 'ডেমো মোড' : 'Guest / demo mode')}</span>
+                    </div>
+                    <div className="holo-spec-box">
+                      <span className="holo-spec-label">{lang === 'bn' ? 'নিবন্ধন তারিখ' : 'Member Since'}</span>
                       <span className="holo-spec-value">
                         {user && user.created_at ? formatDate(user.created_at) : 'Oct 3, 2026'}
                       </span>
@@ -3806,7 +3814,7 @@ export function App() {
                   <div className="holo-card-actions">
                     <span style={{ fontSize: 11, color: 'var(--text-dim)', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span className="live-pulse-dot" style={{ width: 6, height: 6 }} />
-                      {user ? 'Signed in' : 'Guest / demo mode'}
+                      {user ? (lang === 'bn' ? 'সক্রিয় সেশন' : 'Active session') : (lang === 'bn' ? 'ডেমো মোড' : 'Demo session')}
                     </span>
                     <button
                       type="button"
@@ -3814,19 +3822,19 @@ export function App() {
                       onClick={openEditProfile}
                       style={{ fontSize: 12, fontWeight: 700 }}
                     >
-                      Configure Profile  →
+                      {lang === 'bn' ? 'প্রোফাইল সম্পাদন →' : 'Configure Profile →'}
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: 3D Spatial Parcel Radar & Topographic Terrain Card */}
+              {/* Right Column: Active Field Card with Map & 4 Telemetry Boxes */}
               <div className="spatial-terrain-card">
                 <div className="theme-card-header" style={{ marginBottom: 8 }}>
                   <div className="theme-card-title-group">
-                    <span className="theme-card-eyebrow">SPATIAL GIS & 3D TERRAIN RADAR</span>
+                    <span className="theme-card-eyebrow">{lang === 'bn' ? 'সক্রিয় জমি' : 'Active field'}</span>
                     <h3 className="theme-card-title" style={{ fontSize: 18 }}>
-                      {activeField ? (activeField.is_demo ? `${activeField.name}` : activeField.name) : (lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected')}
+                      {activeField ? activeField.name : (lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected')}
                     </h3>
                   </div>
                   <span className="source-tag live">
@@ -3835,10 +3843,12 @@ export function App() {
                 </div>
 
                 <p style={{ margin: '0 0 10px', fontSize: 12.5, color: 'var(--text-muted)' }}>
-                  Authoritative parcel boundary and high-resolution topography projected from PostgreSQL GIS.
+                  {lang === 'bn'
+                    ? 'ডাটাবেসে সংরক্ষিত জমির সীমানা ও স্যাটেলাইট স্থানাঙ্ক।'
+                    : 'Authoritative parcel boundary and location coordinates saved in database.'}
                 </p>
 
-                {/* 3D Perspective Terrain Viewport */}
+                {/* Satellite Viewport */}
                 <div className="spatial-terrain-viewport">
                   <div className="spatial-mesh-overlay" />
                   <GoogleFieldMapThumbnail
@@ -3864,33 +3874,62 @@ export function App() {
                   </div>
                 </div>
 
-                {/* 4 Spatial Telemetry Data Blocks */}
+                {/* 4 Key Boxes: Soil Texture, Organic Matter, Irrigation Capacity, Previous Crop */}
                 <div className="spatial-telemetry-row">
                   <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">Soil Texture</span>
+                    <span className="holo-spec-label">{lang === 'bn' ? 'মাটির ধরণ' : 'Soil Texture'}</span>
                     <strong style={{ fontSize: 13, color: '#f1f5f9', textTransform: 'capitalize' }}>
                       {activeField?.soil_texture ? activeField.soil_texture.replaceAll('_', ' ') : 'Loam'}
                     </strong>
                   </div>
                   <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">Organic Matter</span>
+                    <span className="holo-spec-label">{lang === 'bn' ? 'জৈব পদার্থ' : 'Organic Matter'}</span>
                     <strong style={{ fontSize: 13, color: 'var(--primary)' }}>
                       {formatNumber(activeField?.organic_matter, 1) || '2.5'}%
                     </strong>
                   </div>
                   <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">Irrigation Cap</span>
+                    <span className="holo-spec-label">{lang === 'bn' ? 'সেচ ধারণক্ষমতা' : 'Irrigation Cap'}</span>
                     <strong style={{ fontSize: 13, color: '#38bdf8' }}>
                       {formatNumber(activeField?.irrigation_capacity_mm, 0) || '90'} mm
                     </strong>
                   </div>
                   <div className="spatial-telemetry-item">
-                    <span className="holo-spec-label">Previous Crop</span>
+                    <span className="holo-spec-label">{lang === 'bn' ? 'পূর্ববর্তী ফসল' : 'Previous Crop'}</span>
                     <strong style={{ fontSize: 13, color: '#fbbf24' }}>
                       {activeField?.previous_crop || 'Maize'}
                     </strong>
                   </div>
                 </div>
+
+                {/* Honest SoilGrids row if texture/fractions available */}
+                {(() => {
+                  const tex = activeField?.soil_texture;
+                  const fractions = {
+                    clay_loam: { sand: 32, silt: 34, clay: 34 },
+                    loam: { sand: 40, silt: 40, clay: 20 },
+                    silty_loam: { sand: 20, silt: 65, clay: 15 },
+                    sandy_loam: { sand: 65, silt: 25, clay: 10 },
+                    silty_clay: { sand: 10, silt: 45, clay: 45 },
+                    clay: { sand: 15, silt: 25, clay: 60 },
+                  }[tex];
+                  if (!fractions) return null;
+                  return (
+                    <div style={{
+                      marginTop: 10,
+                      padding: '8px 12px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: 'var(--text-muted)'
+                    }}>
+                      {lang === 'bn'
+                        ? `মাটি (SoilGrids): বালি ${fractions.sand}% · পলি ${fractions.silt}% · কাদা ${fractions.clay}%`
+                        : `Soil (SoilGrids): Sand ${fractions.sand}% · Silt ${fractions.silt}% · Clay ${fractions.clay}%`}
+                    </div>
+                  );
+                })()}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
                   <button
@@ -3899,7 +3938,7 @@ export function App() {
                     onClick={() => handleSelectActiveField(activeField, true)}
                     style={{ fontSize: 12, fontWeight: 700 }}
                   >
-                    Open in Dashboard  →
+                    {lang === 'bn' ? 'ড্যাশবোর্ডে দেখুন →' : 'Open in Dashboard →'}
                   </button>
                   <button
                     type="button"
@@ -3907,140 +3946,132 @@ export function App() {
                     onClick={() => setActiveNav('field')}
                     style={{ padding: '6px 14px', fontSize: 12 }}
                   >
-                    Launch 3D Parcel Manager
+                    {lang === 'bn' ? 'জমি ব্যবস্থাপক' : 'Open Parcel Manager'}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* 3. 3D Holographic KPI Cubes Grid */}
-            <div className="profile-3d-kpi-grid">
-              <div className="kpi-3d-cube">
-                <div className="kpi-cube-top">
-                  <span className="kpi-cube-label">Managed Parcels</span>
-                  <div className="kpi-cube-icon">🗺️</div>
-                </div>
-                <div>
-                  <div className="kpi-cube-value">
-                    {!user ? 'Guest' : !fieldsLoaded ? 'Loading...' : `${userFields.length} Registered`}
-                  </div>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    {userFields.reduce((acc, f) => acc + (Number(f.area_ha) || 0), 0).toFixed(1)} ha total farm footprint
-                  </span>
-                </div>
-              </div>
-
-              <div className="kpi-3d-cube">
-                <div className="kpi-cube-top">
-                  <span className="kpi-cube-label">Active Field Target</span>
-                  <div className="kpi-cube-icon">🛰️</div>
-                </div>
-                <div>
-                  <div className="kpi-cube-value" style={{ color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {activeField ? (activeField.is_demo ? `${activeField.name}` : activeField.name) : (lang === 'bn' ? 'অনির্ধারিত' : 'Unassigned')}
-                  </div>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    {activeField ? (activeField.is_demo ? 'Demo Benchmark • Active for Analysis' : `Field ID #${activeField.id} • Active for Analysis`) : 'Target unassigned'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="kpi-3d-cube">
-                <div className="kpi-cube-top">
-                  <span className="kpi-cube-label">Optimization Stack</span>
-                  <div className="kpi-cube-icon">⚡</div>
-                </div>
-                <div>
-                  <div className="kpi-cube-value" style={{ color: '#38bdf8' }}>
-                    MILP + RL + ML
-                  </div>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Multi-objective Pareto engines active
-                  </span>
-                </div>
-              </div>
-
-              <div className="kpi-3d-cube">
-                <div className="kpi-cube-top">
-                  <span className="kpi-cube-label">Climate Telemetry</span>
-                  <div className="kpi-cube-icon">🌦️</div>
-                </div>
-                <div>
-                  <div className="kpi-cube-value" style={{ color: '#fbbf24' }}>
-                    NASA POWER Synced
-                  </div>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Empirical point telemetry hydrated
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 4. 3D Stratigraphy Soil Horizon Core & Physical Soil Passport */}
-            <div className="soil-3d-core-card">
-              <div className="theme-card-header" style={{ marginBottom: 4 }}>
+            {/* 3. Registered Farm Parcels Hub (Real count, total ha, Select and Delete buttons) */}
+            <div className="dash-card" style={{ marginTop: 24, padding: 20 }}>
+              <div className="theme-card-header" style={{ marginBottom: 14 }}>
                 <div className="theme-card-title-group">
-                  <span className="theme-card-eyebrow">PHYSICAL STRATIGRAPHY & SOIL HORIZONS</span>
-                  <h3 className="theme-card-title" style={{ fontSize: 17 }}>Active Horizon Depth Core & Soil Matrix</h3>
+                  <span className="theme-card-eyebrow">{lang === 'bn' ? 'নিবন্ধিত জমির তালিকা' : 'PARCEL REGISTRY'}</span>
+                  <h3 className="theme-card-title" style={{ fontSize: 18 }}>
+                    {lang === 'bn' ? 'আমার নিবন্ধিত জমিসমূহ' : 'Registered Farm Parcels'}
+                  </h3>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="field-count-pill" style={{ background: 'rgba(0, 223, 129, 0.15)', color: 'var(--primary)', border: '1px solid rgba(0, 223, 129, 0.3)', padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700 }}>
+                    {userFields.length} {lang === 'bn' ? 'টি জমি' : (userFields.length === 1 ? 'Field' : 'Fields')}
+                  </span>
+                  <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>
+                    ({userFields.reduce((acc, f) => acc + (Number(f.area_ha) || 0), 0).toFixed(1)} ha total)
+                  </span>
+                </div>
+              </div>
+
+              {userFields.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 16px', background: 'rgba(255, 255, 255, 0.02)', borderRadius: 12, border: '1px dashed var(--border-light)' }}>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-muted)' }}>
+                    {lang === 'bn' ? 'কোনো নিবন্ধিত জমি নেই।' : 'No registered farm parcels found.'}
+                  </p>
+                  <button
+                    type="button"
+                    className="dashboard-primary-run-btn"
+                    onClick={() => {
+                      setActiveNav('field');
+                      openAddFieldModal();
+                    }}
+                    style={{ fontSize: 12.5, padding: '7px 16px', margin: '0 auto' }}
+                  >
+                    {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Field'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {userFields.map(f => {
+                    const isSelected = activeField && String(f.id) === String(activeField.id);
+                    return (
+                      <div
+                        key={f.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '12px 16px',
+                          background: isSelected ? 'rgba(0, 223, 129, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                          border: `1px solid ${isSelected ? 'var(--primary, #10b981)' : 'var(--border-light)'}`,
+                          borderRadius: 10,
+                          flexWrap: 'wrap',
+                          gap: 12
+                        }}
+                      >
+                        <div style={{ minWidth: 200 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <strong style={{ fontSize: 14, color: '#f1f5f9' }}>{f.name}</strong>
+                            <span style={{ fontSize: 11, padding: '2px 6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, color: 'var(--text-dim)' }}>
+                              #{f.id}
+                            </span>
+                            {isSelected && (
+                              <span style={{ fontSize: 11, padding: '2px 8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)', borderRadius: 4, fontWeight: 700 }}>
+                                {lang === 'bn' ? 'সক্রিয়' : 'Active'}
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>
+                            {formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E • {f.area_ha ? `${f.area_ha} ha` : 'Area unrecorded'} • {f.soil_texture ? f.soil_texture.replaceAll('_', ' ') : 'Loam'}
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {!isSelected && (
+                            <button
+                              type="button"
+                              className="btn-field-action"
+                              onClick={() => handleSelectActiveField(f, false)}
+                              style={{ padding: '6px 12px', fontSize: 12 }}
+                            >
+                              {lang === 'bn' ? 'নির্বাচন করুন' : 'Select'}
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="btn-field-archive"
+                            onClick={() => handleArchiveField(f)}
+                            style={{ padding: '6px 12px', fontSize: 12 }}
+                            title={lang === 'bn' ? 'জমি মুছে ফেলুন' : 'Delete this field'}
+                          >
+                            {lang === 'bn' ? 'মুছে ফেলুন' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 16 }}>
                 <button
                   type="button"
-                  className="btn-outline-action"
-                  onClick={() => setActiveNav('field')}
+                  className="btn-secondary"
+                  onClick={() => {
+                    setActiveNav('field');
+                    openAddFieldModal();
+                  }}
+                  style={{ fontSize: 12.5, padding: '8px 16px' }}
                 >
-                  Edit Soil Core Parameters  →
+                  {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Field'}
                 </button>
-              </div>
-
-              <div className="soil-3d-core-flex">
-                {/* 3D Vertical Cylinder */}
-                <div className="soil-3d-cylinder">
-                  <div className="soil-cylinder-layer-a">A-Horizon (0–15 cm) • 2.4% OM (ISRIC SoilGrids)</div>
-                  <div className="soil-cylinder-layer-b">B-Horizon (15–40 cm) • FC 32%</div>
-                  <div className="soil-cylinder-layer-c">C-Horizon (40+ cm) • Drainage</div>
-                </div>
-
-                {/* Horizon Detailed Breakdown */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">A-Horizon Topsoil</span>
-                      <strong style={{ fontSize: 12.5, color: '#f1f5f9' }}>Organic Matter: 2.4% (ISRIC SoilGrids)</strong>
-                      <span style={{ fontSize: 10.5, color: 'var(--text-dim)' }}>High Microbial Biota & Rootzone</span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">B-Horizon Subsoil</span>
-                      <strong style={{ fontSize: 12.5, color: '#f1f5f9' }}>Clay Loam Substratum</strong>
-                      <span style={{ fontSize: 10.5, color: 'var(--text-dim)' }}>Field Capacity: 32% • PWP: 18%</span>
-                    </div>
-                    <div className="holo-spec-box">
-                      <span className="holo-spec-label">C-Horizon Bedrock</span>
-                      <strong style={{ fontSize: 12.5, color: '#f1f5f9' }}>Weathered Floor</strong>
-                      <span style={{ fontSize: 10.5, color: 'var(--text-dim)' }}>Ksat Drainage: 14.2 mm/h</span>
-                    </div>
-                  </div>
-
-                  {/* Proportional soil bar */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#111820', padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border-light)' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase' }}>USDA Texture Ratio:</span>
-                    <div style={{ flex: 1, display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: '32%', background: '#d97706' }} title="Sand 32%" />
-                      <div style={{ width: '34%', background: '#0284c7' }} title="Silt 34%" />
-                      <div style={{ width: '34%', background: '#16a34a' }} title="Clay 34%" />
-                    </div>
-                    <span style={{ fontSize: 11, color: '#f1f5f9' }}>Sand 32% • Silt 34% • Clay 34%</span>
-                  </div>
-                </div>
               </div>
             </div>
 
-            {/* 5. System Terminal Diagnostics & Registered Parcels Quick-Bar */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-              {/* Terminal Diagnostics */}
-              <div className="terminal-hud-card">
+            {/* Optional Developer Command Telemetry behind ?debug=1 */}
+            {typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('debug') === '1' && (
+              <div className="terminal-hud-card" style={{ marginTop: 24 }}>
                 <div className="terminal-hud-header">
                   <span style={{ color: 'var(--primary)', fontSize: 11.5, fontWeight: 700, letterSpacing: '0.06em' }}>
-                    ● SYSTEM COMMAND TELEMETRY [LIVE]
+                    ● SYSTEM COMMAND TELEMETRY [DEBUG MODE]
                   </span>
                   <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>PORT 8000 / 5173</span>
                 </div>
@@ -4048,83 +4079,11 @@ export function App() {
                   <div className="terminal-line-ok">[SYSTEM] Database Engine: {backendHealth?.database || 'sqlite'} ({backendHealth?.status || 'connected'})</div>
                   <div className="terminal-line-ok">[CLIMATE] NASA POWER data mode: {nasa?.data_mode || 'cache'}</div>
                   <div className="terminal-line-ok">[SOLVER] PuLP CBC MILP engine active</div>
-                  <div className="terminal-line-ok">[SOLVER_OK] MILP CBC dynamic rotation optimization Pareto active</div>
+                  <div className="terminal-line-ok">[SOLVER_OK] MILP CBC dynamic rotation optimization solver ready</div>
                   <div className="terminal-line-dim">[INFO] Active field target: {activeField ? `#${activeField.id} (${activeField.name})` : 'Unassigned'}</div>
                 </div>
               </div>
-
-              {/* Registered Farm Parcels Hub */}
-              <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div className="theme-card-header" style={{ marginBottom: 8 }}>
-                    <div className="theme-card-title-group">
-                      <span className="theme-card-eyebrow">POSTGRESQL PARCEL REGISTRY</span>
-                      <h3 className="theme-card-title" style={{ fontSize: 16 }}>Registered Farm Parcels</h3>
-                    </div>
-                    <span className="field-count-pill" style={{ background: 'rgba(0, 223, 129, 0.15)', color: 'var(--primary)', border: '1px solid rgba(0, 223, 129, 0.3)' }}>
-                      {userFields.length} Fields
-                    </span>
-                  </div>
-                  <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--text-muted)' }}>
-                    Field boundaries, stratigraphy cores, and Google Maps GPS markers are centralized in the dedicated manager.
-                  </p>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {userFields.slice(0, 2).map(f => (
-                      <div
-                        key={f.id}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '8px 12px',
-                          background: f.id === activeField?.id ? 'rgba(0, 223, 129, 0.08)' : '#18222b',
-                          border: `1px solid ${f.id === activeField?.id ? 'var(--primary)' : 'var(--border-light)'}`,
-                          borderRadius: 8
-                        }}
-                      >
-                        <div>
-                          <strong style={{ fontSize: 13, color: '#f1f5f9' }}>{f.name}</strong>
-                          <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                            {formatNumber(f.latitude, 4)}°, {formatNumber(f.longitude, 4)}° • {f.area_ha} ha
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-text-link"
-                          onClick={() => handleSelectActiveField(f, false)}
-                          style={{ fontSize: 11.5, fontWeight: 700 }}
-                        >
-                          {f.id === activeField?.id ? 'Active Field ✓' : 'Select Field'}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                  <button
-                    type="button"
-                    className="dashboard-primary-run-btn"
-                    onClick={() => setActiveNav('field')}
-                    style={{ flex: 1, justifyContent: 'center', fontSize: 12.5, padding: '8px 14px' }}
-                  >
-                    Open Field & Parcel Manager →
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={() => {
-                      setActiveNav('field');
-                      openAddFieldModal();
-                    }}
-                    style={{ fontSize: 12.5, padding: '8px 14px' }}
-                  >
-                    + Add Field
-                  </button>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 

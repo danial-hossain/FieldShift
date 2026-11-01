@@ -564,6 +564,11 @@ html, body {
   background: var(--sidebar-item-hover);
 }
 
+.sidebar-user-mini.active {
+  background: var(--sidebar-item-active, rgba(16, 185, 129, 0.15));
+  border: 1px solid var(--primary, #10b981);
+}
+
 .sidebar-user-avatar {
   width: 30px;
   height: 30px;
