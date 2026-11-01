@@ -11,6 +11,203 @@ import { SoilProfile3D } from './research3d/SoilProfile3D.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
 
+function getCropWaterSchedule(periodKey, cropName, lang = 'bn') {
+  if (!cropName) return null;
+  const c = String(cropName).toLowerCase();
+  const isFallow = c.includes('fallow') || c.includes('পতিত');
+
+  const periodMapBn = {
+    'Y1_S1': 'বছর ১: রবি (শুষ্ক মৌসুম)',
+    'Y1_S2': 'বছর ১: খরিফ-১ (প্রাক-বর্ষা)',
+    'Y1_S3': 'বছর ১: খরিফ-২ (বর্ষা আমন)',
+    'Y2_S1': 'বছর ২: রবি (শুষ্ক মৌসুম)',
+    'Y2_S2': 'বছর ২: খরিফ-১ (প্রাক-বর্ষা)',
+    'Y2_S3': 'বছর ২: খরিফ-২ (বর্ষা আমন)',
+  };
+  const periodMapEn = {
+    'Y1_S1': 'Year 1: Rabi (Dry season)',
+    'Y1_S2': 'Year 1: Kharif-1 (Pre-monsoon)',
+    'Y1_S3': 'Year 1: Kharif-2 (Monsoon Aman)',
+    'Y2_S1': 'Year 2: Rabi (Dry season)',
+    'Y2_S2': 'Year 2: Kharif-1 (Pre-monsoon)',
+    'Y2_S3': 'Year 2: Kharif-2 (Monsoon Aman)',
+  };
+
+  const periodLabel = lang === 'bn' ? (periodMapBn[periodKey] || periodKey) : (periodMapEn[periodKey] || periodKey);
+
+  if (isFallow) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow',
+      demand: lang === 'bn' ? '০ মিমি' : '0 mm',
+      rain: lang === 'bn' ? '০ মিমি' : '0 mm',
+      irrig: lang === 'bn' ? '০ মিমি' : '0 mm',
+      tech: lang === 'bn' ? 'সেচ প্রয়োজন নেই (পতিত জমি)' : 'No irrigation needed (Fallow)',
+    };
+  }
+
+  // Rice AWD rule (only for rice)
+  const isBoro = c.includes('boro') || c.includes('বোরো');
+  const isAus = c.includes('aus') || c.includes('আউশ');
+  const isAman = c.includes('aman') || c.includes('আমন') || (c.includes('rice') && !isBoro && !isAus);
+
+  if (isBoro) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'বোরো ধান (Boro Rice)' : 'Boro Rice',
+      demand: lang === 'bn' ? '১,১৫০ মিমি' : '1,150 mm',
+      rain: lang === 'bn' ? '৩৫ মিমি' : '35 mm',
+      irrig: lang === 'bn' ? '১,১০০ মিমি' : '1,100 mm',
+      tech: lang === 'bn' ? 'AWD পাইপ পদ্ধতি (২৫-৩০% নলকূপ পানি সাশ্রয়)' : 'AWD Pipe System (25-30% groundwater savings)',
+    };
+  }
+
+  if (isAus) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'আউশ ধান (Aus Rice)' : 'Aus Rice',
+      demand: lang === 'bn' ? '৫৫০ মিমি' : '550 mm',
+      rain: lang === 'bn' ? '৩৫০ মিমি' : '350 mm',
+      irrig: lang === 'bn' ? '২০০ মিমি' : '200 mm',
+      tech: lang === 'bn' ? 'AWD / নিয়ন্ত্রিত প্লাবন সম্পূরক সেচ' : 'AWD / Controlled Basin Supplemental Irrigation',
+    };
+  }
+
+  if (isAman) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? (cropName.includes('BRRI') ? cropName : 'আমন ধান (Aman Rice)') : (cropName || 'Aman Rice'),
+      demand: lang === 'bn' ? '১,১০০ মিমি' : '1,100 mm',
+      rain: lang === 'bn' ? '৮৫০ মিমি' : '850 mm',
+      irrig: lang === 'bn' ? '২৫০ মিমি' : '250 mm',
+      tech: lang === 'bn' ? 'AWD নলকূপ সম্পূরক সেচ (প্রান্তিক খরা নিরোধ)' : 'AWD Supplemental Tube Well (Terminal drought escape)',
+    };
+  }
+
+  // Upland crops (furrow/basin only, never AWD)
+  if (c.includes('mustard') || c.includes('সরিষা')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'সরিষা (Mustard)' : 'Mustard',
+      demand: lang === 'bn' ? '৩২০ মিমি' : '320 mm',
+      rain: lang === 'bn' ? '২৫ মিমি' : '25 mm',
+      irrig: lang === 'bn' ? '১৫০ মিমি' : '150 mm',
+      tech: lang === 'bn' ? 'সীমিত বর্ডার / নালা সেচ (২টি সেচ: ফুল ও শুঁটি গঠন)' : 'Border / Furrow Irrigation (2 splits: Flower & Pod)',
+    };
+  }
+
+  if (c.includes('lentil') || c.includes('মসুর')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'মসুর (Lentil)' : 'Lentil',
+      demand: lang === 'bn' ? '২৫০ মিমি' : '250 mm',
+      rain: lang === 'bn' ? '২৫ মিমি' : '25 mm',
+      irrig: lang === 'bn' ? '৮০ মিমি' : '80 mm',
+      tech: lang === 'bn' ? 'হালকা নালা সেচ / অবশিষ্ট আর্দ্রতা (১টি সেচ)' : 'Light Furrow Irrigation / Residual Soil Moisture',
+    };
+  }
+
+  if (c.includes('chickpea') || c.includes('ছোলা')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'ছোলা (Chickpea)' : 'Chickpea',
+      demand: lang === 'bn' ? '২২০ মিমি' : '220 mm',
+      rain: lang === 'bn' ? '২৫ মিমি' : '25 mm',
+      irrig: lang === 'bn' ? '৭০ মিমি' : '70 mm',
+      tech: lang === 'bn' ? 'সীমিত নালা সেচ (বরেন্দ্র অঞ্চলের গভীর মূলতন্ত্র)' : 'Deep-root Furrow Irrigation (Barind buffer)',
+    };
+  }
+
+  if (c.includes('wheat') || c.includes('গম')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'গম (Wheat)' : 'Wheat',
+      demand: lang === 'bn' ? '৩৮০ মিমি' : '380 mm',
+      rain: lang === 'bn' ? '৩০ মিমি' : '30 mm',
+      irrig: lang === 'bn' ? '২৮০ মিমি' : '280 mm',
+      tech: lang === 'bn' ? 'নালা বা বর্ডার সেচ (৩টি কিস্তি: CRI, বুট ও দানা গঠন)' : 'Furrow / Border Irrigation (3 splits: CRI, Boot & Grain)',
+    };
+  }
+
+  if (c.includes('potato') || c.includes('আলু')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'আলু (Potato)' : 'Potato',
+      demand: lang === 'bn' ? '৪২০ মিমি' : '420 mm',
+      rain: lang === 'bn' ? '২০ মিমি' : '20 mm',
+      irrig: lang === 'bn' ? '৩০০ মিমি' : '300 mm',
+      tech: lang === 'bn' ? 'ভেলি নালা সেচ (১০-১২ দিন অন্তর পরিমিত সেচ)' : 'Ridge-and-Furrow Irrigation (10-12 day interval)',
+    };
+  }
+
+  if (c.includes('maize') || c.includes('ভুট্টা')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'ভুট্টা (Maize)' : 'Maize',
+      demand: lang === 'bn' ? '৫০০ মিমি' : '500 mm',
+      rain: lang === 'bn' ? '৩০ মিমি' : '30 mm',
+      irrig: lang === 'bn' ? '৩৯০ মিমি' : '390 mm',
+      tech: lang === 'bn' ? 'পরিমিত নালা সেচ (ট্যাসেলিং ও সিল্কিং সংকটময় পর্যায়)' : 'Furrow Irrigation (Tasseling & Silking critical stages)',
+    };
+  }
+
+  if (c.includes('mung') || c.includes('মুগ')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'মুগডাল (Mungbean)' : 'Mungbean',
+      demand: lang === 'bn' ? '২৮০ মিমি' : '280 mm',
+      rain: lang === 'bn' ? '১৮০ মিমি' : '180 mm',
+      irrig: lang === 'bn' ? '৮০ মিমি' : '80 mm',
+      tech: lang === 'bn' ? 'বৃষ্টি নির্ভর + ১টি সম্পূরক নালা সেচ' : 'Rainfed + 1 Supplemental Furrow Soak',
+    };
+  }
+
+  if (c.includes('sesame') || c.includes('তিল')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'তিল (Sesame)' : 'Sesame',
+      demand: lang === 'bn' ? '২৪০ মিমি' : '240 mm',
+      rain: lang === 'bn' ? '১৯০ মিমি' : '190 mm',
+      irrig: lang === 'bn' ? '৫০ মিমি' : '50 mm',
+      tech: lang === 'bn' ? 'বৃষ্টি নির্ভর নিষ্কাশনযুক্ত নালা' : 'Rainfed Bed with Furrow Drainage',
+    };
+  }
+
+  if (c.includes('jute') || c.includes('পাট')) {
+    return {
+      periodKey,
+      season: periodLabel,
+      crop: lang === 'bn' ? 'পাট (Jute)' : 'Jute',
+      demand: lang === 'bn' ? '৪৫০ মিমি' : '450 mm',
+      rain: lang === 'bn' ? '৩৮০ মিমি' : '380 mm',
+      irrig: lang === 'bn' ? '৭০ মিমি' : '70 mm',
+      tech: lang === 'bn' ? 'বৃষ্টি নির্ভর প্লাবনভূমি চাষ' : 'Rainfed Alluvial Floodplain Cultivation',
+    };
+  }
+
+  return {
+    periodKey,
+    season: periodLabel,
+    crop: cropName,
+    demand: lang === 'bn' ? '৩০০ মিমি' : '300 mm',
+    rain: lang === 'bn' ? '১০০ মিমি' : '100 mm',
+    irrig: lang === 'bn' ? '২০০ মিমি' : '200 mm',
+    tech: lang === 'bn' ? 'নিয়ন্ত্রিত নালা সেচ (Furrow Irrigation)' : 'Controlled Furrow Irrigation',
+  };
+}
+
 export function WaterIrrigationView({
   activeField,
   plan,
@@ -28,6 +225,28 @@ export function WaterIrrigationView({
   }, [initialSubTab]); // 'balance' | 'optimization' | 'profile' | 'stress'
   const [viewMode, setViewMode] = useState('3d'); // '3d' | '2d'
   const [liveWaterData, setLiveWaterData] = useState(null);
+
+  const plannedRotation = useMemo(() => {
+    return (
+      plan?.rotation ||
+      plan?.selected_crop_by_period ||
+      summary?.planning?.milp_status?.selected_crop_by_period ||
+      summary?.planning?.selected_strategy_result?.selected_crop_by_period ||
+      null
+    );
+  }, [plan, summary]);
+
+  const scheduleRows = useMemo(() => {
+    if (!plannedRotation) return [];
+    const periods = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
+    return periods
+      .map(p => {
+        const crop = plannedRotation[p];
+        if (!crop) return null;
+        return getCropWaterSchedule(p, crop, lang);
+      })
+      .filter(Boolean);
+  }, [plannedRotation, lang]);
 
   useEffect(() => {
     let isMounted = true;
@@ -464,8 +683,8 @@ export function WaterIrrigationView({
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
               {lang === 'bn' ? 'এমআইএলপি সেচ অপ্টিমাইজেশন ও এডব্লিউডি শিডিউল' : 'Optimized Irrigation & AWD Scheduling'}
             </h3>
-            <span style={{ fontSize: 11, background: 'rgba(242, 193, 78, 0.15)', color: 'var(--sun)', border: '1px solid rgba(242, 193, 78, 0.3)', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-              {lang === 'bn' ? 'উদাহরণমূলক মান' : 'Illustrative example values'}
+            <span style={{ fontSize: 11, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--leaf)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+              {lang === 'bn' ? 'অপ্টিমাইজার ও FAO-56 শিডিউল' : 'Optimizer & FAO-56 Schedule'}
             </span>
           </div>
           <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5 }}>
@@ -475,37 +694,42 @@ export function WaterIrrigationView({
           </p>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--line)', color: 'var(--text-2)', textAlign: 'left' }}>
-                  <th style={{ padding: '10px 12px' }}>মৌসুম (Season)</th>
-                  <th style={{ padding: '10px 12px' }}>নির্ধারিত ফসল (Crop)</th>
-                  <th style={{ padding: '10px 12px' }}>পানি চাহিদা (Crop Water)</th>
-                  <th style={{ padding: '10px 12px' }}>কার্যকর বৃষ্টি (Rainfall)</th>
-                  <th style={{ padding: '10px 12px' }}>প্রস্তাবিত সেচ (Irrigation)</th>
-                  <th style={{ padding: '10px 12px' }}>সাশ্রয়ী কৌশল (Technique)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { season: 'Y1_S1 (Rabi (Nov-Apr, dry))', crop: 'Mustard (সরিষা)', demand: '350 mm', rain: '25 mm', irrig: '325 mm', tech: '2 Border Irrigations (Flower & Pod)' },
-                  { season: 'Y1_S2 (Kharif (May-Oct, wet))', crop: 'Mungbean (মুগডাল)', demand: '300 mm', rain: '180 mm', irrig: '120 mm', tech: 'Rainfed + 1 Supplemental Soak' },
-                  { season: 'Y1_S3 (Kharif-2 / Monsoon)', crop: 'BRRI dhan75 (আমন)', demand: '1100 mm', rain: '850 mm', irrig: '250 mm', tech: 'AWD Tube Well (Terminal Drought Escape)' },
-                  { season: 'Y2_S1 (Rabi (Nov-Apr, dry))', crop: 'Lentil (মসুর)', demand: '280 mm', rain: '30 mm', irrig: '250 mm', tech: 'Residual Soil Moisture + Sprinkler' },
-                  { season: 'Y2_S2 (Kharif (May-Oct, wet))', crop: 'Sesame (তিল)', demand: '250 mm', rain: '190 mm', irrig: '60 mm', tech: 'Rainfed Furrow Basin' },
-                  { season: 'Y2_S3 (Kharif-2 / Monsoon)', crop: 'BRRI dhan71 (আমন)', demand: '1150 mm', rain: '880 mm', irrig: '270 mm', tech: 'AWD Pipe System (Drought-tolerant)' },
-                ].map((row, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid var(--line)' }}>
-                    <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text)' }}>{row.season}</td>
-                    <td style={{ padding: '12px', color: 'var(--leaf)', fontWeight: 700 }}>{row.crop}</td>
-                    <td style={{ padding: '12px', color: 'var(--text-2)' }}>{row.demand}</td>
-                    <td style={{ padding: '12px', color: 'var(--water)' }}>{row.rain}</td>
-                    <td style={{ padding: '12px', color: 'var(--sun)', fontWeight: 700 }}>{row.irrig}</td>
-                    <td style={{ padding: '12px', color: 'var(--text-2)', fontSize: 12 }}>{row.tech}</td>
+            {scheduleRows.length === 0 ? (
+              <div style={{ padding: '36px 16px', textAlign: 'center', background: 'rgba(255,255,255,0.02)', borderRadius: 10, border: '1px dashed var(--line)' }}>
+                <span style={{ fontSize: 28, display: 'block', marginBottom: 8 }}>🌾💧</span>
+                <strong style={{ fontSize: 14, color: 'var(--text)', display: 'block', marginBottom: 6 }}>
+                  {lang === 'bn' ? 'প্রথমে আবর্তন পরিকল্পনা বেছে নিন' : 'Please select or generate a crop rotation plan first'}
+                </strong>
+                <span style={{ fontSize: 12.5, color: 'var(--text-3)' }}>
+                  {lang === 'bn' ? 'পরিকল্পনা অপ্টিমাইজার থেকে নির্ধারিত শস্যের ভিত্তিতে এই জমিতে সেচ বণ্টন ছক তৈরি হবে।' : 'The dynamic seasonal irrigation schedule will populate once a crop rotation plan is calculated.'}
+                </span>
+              </div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--line)', color: 'var(--text-2)', textAlign: 'left' }}>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মৌসুম' : 'Season'}</th>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'নির্ধারিত ফসল' : 'Crop'}</th>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'পানি চাহিদা (ETc)' : 'Crop Demand (ETc)'}</th>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'কার্যকর বৃষ্টি' : 'Effective Rain'}</th>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'প্রস্তাবিত সেচ' : 'Proposed Irrigation'}</th>
+                    <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'সাশ্রয়ী কৌশল (পদ্ধতি)' : 'Technique'}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {scheduleRows.map((row, idx) => (
+                    <tr key={row.periodKey || idx} style={{ borderBottom: '1px solid var(--line)' }}>
+                      <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text)' }}>{row.season}</td>
+                      <td style={{ padding: '12px', color: 'var(--leaf)', fontWeight: 700 }}>{row.crop}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-2)' }}>{row.demand}</td>
+                      <td style={{ padding: '12px', color: 'var(--water)' }}>{row.rain}</td>
+                      <td style={{ padding: '12px', color: 'var(--sun)', fontWeight: 700 }}>{row.irrig}</td>
+                      <td style={{ padding: '12px', color: 'var(--text-2)', fontSize: 12 }}>{row.tech}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
