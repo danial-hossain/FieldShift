@@ -114,7 +114,13 @@ def owned_field(db: DbSession, field_id: int, user: User) -> FarmField:
     if not field: raise HTTPException(404,"Field not found or not owned by this user.")
     owned_farm(db,field.farm_id,user); return field
 def row(value: Any) -> dict[str, Any]:
-    return {c.name:getattr(value,c.name) for c in value.__table__.columns}
+    res = {c.name: getattr(value, c.name) for c in value.__table__.columns}
+    if "existing_rotation" in res and isinstance(res["existing_rotation"], str):
+        try:
+            res["existing_rotation"] = json.loads(res["existing_rotation"])
+        except Exception:
+            pass
+    return res
 
 def finite_json_value(value: Any) -> Any:
     if isinstance(value, float) and not math.isfinite(value):
@@ -169,6 +175,7 @@ def use_field_record(data: dict[str, Any], field: FarmField, db: DbSession) -> d
         "power_cell": getattr(field, "power_cell", None),
         "imerg_cell": getattr(field, "imerg_cell", None),
         "soilgrids_soil": getattr(field, "soilgrids_soil", None),
+        "existing_rotation": getattr(field, "existing_rotation", None),
     })
     histories = list(db.scalars(
         select(FieldHistory)
@@ -490,6 +497,8 @@ def startup() -> None:
                 conn.execute(text("ALTER TABLE fields ADD COLUMN imerg_cell VARCHAR"))
             if "soilgrids_soil" not in cols:
                 conn.execute(text("ALTER TABLE fields ADD COLUMN soilgrids_soil VARCHAR"))
+            if "existing_rotation" not in cols:
+                conn.execute(text("ALTER TABLE fields ADD COLUMN existing_rotation JSON"))
     except Exception as e:
         logger.warning(f"Field table column migration notice: {e}")
 
@@ -671,6 +680,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             bool(allow_k2_fallow),
             int(data.get("min_cereals_per_year", 1)),
             str(hist_crops_param),
+            str(data.get("existing_rotation")),
         )
         if cache_key in _PLANNING_CACHE:
             return _PLANNING_CACHE[cache_key]
@@ -687,6 +697,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             min_cereals_per_year=int(data.get("min_cereals_per_year", 1)),
             seasonally_flooded=bool(is_haor),
             field_history_crops=hist_crops_param,
+            existing_rotation=data.get("existing_rotation"),
         )
         env_basis = milp_res.get("environment_basis")
         if not env_basis:
@@ -732,7 +743,11 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "plan_nitrogen_kg": milp_res.get("plan_nitrogen_kg"),
                     "nitrogen_delta_kg": milp_res.get("nitrogen_delta_kg"),
                     "baseline_rotation": milp_res.get("baseline_rotation"),
+                    "baseline_rotation_text_bn": milp_res.get("baseline_rotation_text_bn"),
+                    "baseline_rotation_text_en": milp_res.get("baseline_rotation_text_en"),
                     "is_assumed_baseline": milp_res.get("is_assumed_baseline"),
+                    "baseline_bare_days": milp_res.get("baseline_bare_days"),
+                    "plan_bare_days": milp_res.get("plan_bare_days"),
                 }
             }
         }))
@@ -1949,6 +1964,26 @@ def create_field(payload: Payload, user: User = Depends(require_user), db: DbSes
             except Exception:
                 pass
 
+    existing_rot = data.get("existing_rotation")
+    clean_rot = None
+    if isinstance(existing_rot, dict):
+        clean_rot = {
+            "rabi": str(existing_rot.get("rabi") or "").strip() or None,
+            "kharif1": str(existing_rot.get("kharif1") or "").strip() or None,
+            "kharif2": str(existing_rot.get("kharif2") or "").strip() or None,
+        }
+    elif isinstance(existing_rot, str) and existing_rot.strip():
+        try:
+            parsed = json.loads(existing_rot)
+            if isinstance(parsed, dict):
+                clean_rot = {
+                    "rabi": str(parsed.get("rabi") or "").strip() or None,
+                    "kharif1": str(parsed.get("kharif1") or "").strip() or None,
+                    "kharif2": str(parsed.get("kharif2") or "").strip() or None,
+                }
+        except Exception:
+            pass
+
     stamp = now()
     field = FarmField(
         farm_id=int(farm_id),
@@ -1966,6 +2001,7 @@ def create_field(payload: Payload, user: User = Depends(require_user), db: DbSes
         power_cell=p_cell,
         imerg_cell=i_cell,
         soilgrids_soil=s_soil,
+        existing_rotation=clean_rot,
         created_at=stamp,
         updated_at=stamp
     )
@@ -2064,6 +2100,29 @@ def update_field(field_id: int, payload: Payload, user: User = Depends(require_u
         field.imerg_cell = str(data["imerg_cell"]) if data["imerg_cell"] else None
     if "soilgrids_soil" in data:
         field.soilgrids_soil = str(data["soilgrids_soil"]) if data["soilgrids_soil"] else None
+    if "existing_rotation" in data:
+        existing_rot = data["existing_rotation"]
+        if isinstance(existing_rot, dict):
+            field.existing_rotation = {
+                "rabi": str(existing_rot.get("rabi") or "").strip() or None,
+                "kharif1": str(existing_rot.get("kharif1") or "").strip() or None,
+                "kharif2": str(existing_rot.get("kharif2") or "").strip() or None,
+            }
+        elif isinstance(existing_rot, str) and existing_rot.strip():
+            try:
+                parsed = json.loads(existing_rot)
+                if isinstance(parsed, dict):
+                    field.existing_rotation = {
+                        "rabi": str(parsed.get("rabi") or "").strip() or None,
+                        "kharif1": str(parsed.get("kharif1") or "").strip() or None,
+                        "kharif2": str(parsed.get("kharif2") or "").strip() or None,
+                    }
+                else:
+                    field.existing_rotation = None
+            except Exception:
+                field.existing_rotation = None
+        else:
+            field.existing_rotation = None
 
     if field.latitude is not None and field.longitude is not None:
         if not field.power_cell or "latitude" in data or "longitude" in data:

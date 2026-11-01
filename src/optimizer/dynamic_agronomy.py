@@ -549,7 +549,7 @@ def build_dynamic_crop_season_matrix(
     }
 
 
-def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops: Optional[Sequence[str]] = None) -> dict[str, Any]:
+def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops: Optional[Sequence[str]] = None, existing_rotation: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
     """Compute real water, profit, and nitrogen comparison between existing rotation and recommended plan."""
     selection = milp_res.get("selected_crop_by_period") or {}
     matrix = milp_res.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
@@ -596,7 +596,21 @@ def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops
         return "Fallow"
 
     is_assumed = True
-    if field_history_crops and len(field_history_crops) >= 2:
+    if existing_rotation and isinstance(existing_rotation, (dict, Mapping)):
+        r_rabi = existing_rotation.get("rabi") or existing_rotation.get("S1")
+        r_k1 = existing_rotation.get("kharif1") or existing_rotation.get("S2")
+        r_k2 = existing_rotation.get("kharif2") or existing_rotation.get("S3")
+        if r_rabi or r_k1 or r_k2:
+            b_s1 = match_crop(r_rabi or "Boro Rice")
+            b_s2 = match_crop(r_k1 or "Fallow")
+            b_s3 = match_crop(r_k2 or "Rice")
+            is_assumed = False
+        else:
+            b_s1 = match_crop("Boro Rice")
+            b_s2 = match_crop("Fallow")
+            b_s3 = match_crop("Rice")
+            is_assumed = True
+    elif field_history_crops and len(field_history_crops) >= 2:
         b_s1 = match_crop(field_history_crops[0])
         b_s2 = match_crop(field_history_crops[1])
         b_s3 = match_crop(field_history_crops[2]) if len(field_history_crops) > 2 else "Rice"
@@ -675,6 +689,17 @@ def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops
     if is_assumed:
         baseline_rotation_text_en += " (assumed)"
 
+    season_fallow_days = {"S1": 120, "S2": 75, "S3": 100}
+    b_bare_list, p_bare_list = [], []
+    for p in periods:
+        s_code = "S1" if "S1" in p else ("S2" if "S2" in p else "S3")
+        b_c = b_map[s_code]
+        p_c = selection.get(p, "Fallow")
+        b_bare_list.append(season_fallow_days[s_code] if b_c == "Fallow" else 20)
+        p_bare_list.append(season_fallow_days[s_code] if p_c == "Fallow" else 20)
+    base_bare_days = int(round(sum(b_bare_list) / num_years))
+    plan_bare_days = int(round(sum(p_bare_list) / num_years))
+
     return {
         "baseline_rotation": [b_s1, b_s2, b_s3],
         "baseline_rotation_text_bn": baseline_rotation_text_bn,
@@ -688,6 +713,8 @@ def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops
         "baseline_profit_bdt": base_profit,
         "plan_profit_bdt": plan_profit,
         "profit_delta_bdt": profit_delta,
+        "baseline_bare_days": base_bare_days,
+        "plan_bare_days": plan_bare_days,
         "baseline_nitrogen_kg": base_n,
         "plan_nitrogen_kg": plan_n,
         "nitrogen_delta_kg": n_delta,

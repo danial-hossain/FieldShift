@@ -53,6 +53,7 @@ class Field(Timestamped, Base):
     power_cell: Mapped[str | None] = mapped_column(String, nullable=True)
     imerg_cell: Mapped[str | None] = mapped_column(String, nullable=True)
     soilgrids_soil: Mapped[str | None] = mapped_column(String, nullable=True)
+    existing_rotation: Mapped[dict[str, Any] | None] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)
 
 class FieldHistory(Base):
     __tablename__ = "field_history"

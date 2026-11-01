@@ -9,6 +9,59 @@ import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
 import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast } from './ui/index.js';
 
+const RABI_OPTIONS = [
+  'Boro Rice', 'Wheat', 'Potato', 'Mustard', 'Lentil',
+  'Chickpea', 'Sunflower', 'Maize', 'Tomato', 'Fallow'
+];
+const KHARIF1_OPTIONS = [
+  'Fallow', 'Aus Rice', 'Mungbean', 'Sesame', 'Jute', 'Maize'
+];
+const KHARIF2_OPTIONS = [
+  'Rice', 'Fallow'
+];
+
+function normalizeRotation(rot, prevCrop) {
+  let parsed = rot;
+  if (typeof parsed === 'string') {
+    try { parsed = JSON.parse(parsed); } catch {}
+  }
+  let rabi = parsed?.rabi || prevCrop || 'Boro Rice';
+  if (!RABI_OPTIONS.includes(rabi)) {
+    const l = String(rabi).toLowerCase();
+    if (l.includes('boro') || l.includes('বোরো')) rabi = 'Boro Rice';
+    else if (l.includes('wheat') || l.includes('গম')) rabi = 'Wheat';
+    else if (l.includes('potato') || l.includes('আলু')) rabi = 'Potato';
+    else if (l.includes('mustard') || l.includes('সরিষা')) rabi = 'Mustard';
+    else if (l.includes('lentil') || l.includes('মসুর')) rabi = 'Lentil';
+    else if (l.includes('chickpea') || l.includes('ছোলা')) rabi = 'Chickpea';
+    else if (l.includes('sunflower') || l.includes('সূর্যমুখী')) rabi = 'Sunflower';
+    else if (l.includes('maize') || l.includes('ভুট্টা')) rabi = 'Maize';
+    else if (l.includes('tomato') || l.includes('টমেটো')) rabi = 'Tomato';
+    else if (l.includes('fallow') || l.includes('পতিত')) rabi = 'Fallow';
+    else rabi = 'Boro Rice';
+  }
+
+  let kharif1 = parsed?.kharif1 || 'Fallow';
+  if (!KHARIF1_OPTIONS.includes(kharif1)) {
+    const l = String(kharif1).toLowerCase();
+    if (l.includes('aus') || l.includes('আউশ')) kharif1 = 'Aus Rice';
+    else if (l.includes('mung') || l.includes('মুগ')) kharif1 = 'Mungbean';
+    else if (l.includes('sesame') || l.includes('তিল')) kharif1 = 'Sesame';
+    else if (l.includes('jute') || l.includes('পাট')) kharif1 = 'Jute';
+    else if (l.includes('maize') || l.includes('ভুট্টা')) kharif1 = 'Maize';
+    else kharif1 = 'Fallow';
+  }
+
+  let kharif2 = parsed?.kharif2 || 'Rice';
+  if (!KHARIF2_OPTIONS.includes(kharif2)) {
+    const l = String(kharif2).toLowerCase();
+    if (l.includes('fallow') || l.includes('পতিত')) kharif2 = 'Fallow';
+    else kharif2 = 'Rice';
+  }
+
+  return { rabi, kharif1, kharif2 };
+}
+
 export function MyFarmWorkspaceView({
   activeField,
   user,
@@ -31,17 +84,15 @@ export function MyFarmWorkspaceView({
   }, [initialSubTab]);
 
   // A1: Existing Rotation Baseline State
-  const [existingRotation, setExistingRotation] = useState(() => {
-    if (activeField?.existing_rotation && typeof activeField.existing_rotation === 'object') {
-      return activeField.existing_rotation;
-    }
-    return {
-      rabi: activeField?.previous_crop || 'Boro Rice',
-      kharif1: 'Fallow',
-      kharif2: 'Rice',
-    };
-  });
+  const [existingRotation, setExistingRotation] = useState(() =>
+    normalizeRotation(activeField?.existing_rotation, activeField?.previous_crop)
+  );
   const [baselineSaved, setBaselineSaved] = useState(false);
+  const [isSavingBaseline, setIsSavingBaseline] = useState(false);
+
+  useEffect(() => {
+    setExistingRotation(normalizeRotation(activeField?.existing_rotation, activeField?.previous_crop));
+  }, [activeField?.id, activeField?.existing_rotation, activeField?.previous_crop]);
   const [mapToast, setMapToast] = useState(null);
   const [isUpdatingCoords, setIsUpdatingCoords] = useState(false);
 
@@ -90,18 +141,47 @@ export function MyFarmWorkspaceView({
     }
   };
 
-  const handleSaveBaseline = () => {
-    if (!activeField) return;
-    const updated = {
-      ...activeField,
-      existing_rotation: existingRotation,
-      previous_crop: existingRotation.rabi,
-    };
-    if (typeof onSelectField === 'function') {
-      onSelectField(updated);
+  const handleSaveBaseline = async () => {
+    if (!activeField || activeField.id === 'demo' || isSavingBaseline) return;
+    setIsSavingBaseline(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+      const res = await reqFn(`/api/fields/${activeField.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          existing_rotation: existingRotation,
+          previous_crop: existingRotation.rabi,
+        })
+      });
+      const updated = res?.field || {
+        ...activeField,
+        existing_rotation: existingRotation,
+        previous_crop: existingRotation.rabi,
+      };
+      if (typeof onSelectField === 'function') {
+        onSelectField(updated);
+      }
+      setBaselineSaved(true);
+      setTimeout(() => setBaselineSaved(false), 3000);
+      setMapToast({
+        type: 'success',
+        message: lang === 'bn'
+          ? 'বিদ্যমান ফসল চক্র সফলভাবে সংরক্ষণ করা হয়েছে।'
+          : 'Existing rotation baseline saved successfully.'
+      });
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn'
+          ? `ফসল চক্র সংরক্ষণে ত্রুটি: ${err.message}`
+          : `Failed to save rotation: ${err.message}`
+      });
+    } finally {
+      setIsSavingBaseline(false);
     }
-    setBaselineSaved(true);
-    setTimeout(() => setBaselineSaved(false), 3000);
   };
 
 

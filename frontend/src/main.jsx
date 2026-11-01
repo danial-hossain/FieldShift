@@ -1434,6 +1434,19 @@ export function App() {
         throw new Error(lang === 'bn' ? `এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${tooClose.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `A field ("${tooClose.name}") already exists within 50 meters of these coordinates.`);
       }
 
+      let formRot = null;
+      if (fieldForm.crop && fieldForm.crop.trim()) {
+        const c = fieldForm.crop.trim();
+        const s = (fieldForm.season || 'rabi').toLowerCase();
+        if (s === 'kharif1') {
+          formRot = { rabi: 'Boro Rice', kharif1: c, kharif2: 'Rice' };
+        } else if (s === 'kharif2') {
+          formRot = { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: c };
+        } else {
+          formRot = { rabi: c, kharif1: 'Fallow', kharif2: 'Rice' };
+        }
+      }
+
       const payload = {
         name: trimmedName,
         latitude: latVal,
@@ -1446,7 +1459,8 @@ export function App() {
         crop: fieldForm.crop ? fieldForm.crop.trim() : null,
         previous_crop: fieldForm.crop ? fieldForm.crop.trim() : null,
         previous_crop_year: Number.isFinite(yrVal) ? yrVal : null,
-        seasonally_flooded: Boolean(fieldForm.seasonally_flooded)
+        seasonally_flooded: Boolean(fieldForm.seasonally_flooded),
+        existing_rotation: formRot
       };
       if (userFarms.length) {
         payload.farm_id = userFarms[0].id;

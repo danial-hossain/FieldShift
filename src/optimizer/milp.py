@@ -882,6 +882,7 @@ def optimize_rotation(
     min_cereals_per_year: int = 1,
     seasonally_flooded: Optional[bool] = None,
     field_history_crops: Optional[Sequence[str]] = None,
+    existing_rotation: Optional[Mapping[str, Any]] = None,
     solver: Optional[pulp.LpSolver] = None,
 ) -> dict[str, Any]:
     """Optimize a long-term rotation for the supplied periods and priorities."""
@@ -1029,7 +1030,7 @@ def optimize_rotation(
     if not hist_crops and metadata.get("history") is not None and hasattr(metadata["history"], "empty") and not metadata["history"].empty:
         if "crop" in metadata["history"].columns:
             hist_crops = [str(x) for x in metadata["history"]["crop"].dropna()]
-    comparison = compute_rotation_comparison(res_dict, field_history_crops=hist_crops)
+    comparison = compute_rotation_comparison(res_dict, field_history_crops=hist_crops, existing_rotation=existing_rotation)
     res_dict["baseline_comparison"] = comparison
     res_dict.update(comparison)
     return res_dict
