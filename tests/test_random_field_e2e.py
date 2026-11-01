@@ -29,8 +29,8 @@ from tests.random_field_factory import (
 )
 
 BASE_URL = os.environ.get("FIELDSHIFT_TEST_URL", "http://127.0.0.1:8000")
-TEST_EMAIL = "danialhossain2022@gmail.com"
-TEST_PASSWORD = "12345678"
+TEST_EMAIL = "test_runner@fieldshift.local"
+TEST_PASSWORD = "TestRunnerPass2026!"
 
 
 class RandomFieldEndToEndTest(unittest.TestCase):
@@ -42,12 +42,12 @@ class RandomFieldEndToEndTest(unittest.TestCase):
         cls.opener = urllib.request.build_opener(
             urllib.request.HTTPCookieProcessor(cls.cookie_jar)
         )
-        cls.auth_cookie = cls._login()
         cls.created_field_ids: list[int] = []
+        cls.auth_cookie = cls._login()
 
     @classmethod
     def _login(cls) -> str:
-        """Authenticate as demo researcher and acquire session cookie."""
+        """Authenticate as dedicated throwaway test user (test_runner@fieldshift.local)."""
         login_payload = json.dumps({"email": TEST_EMAIL, "password": TEST_PASSWORD}).encode("utf-8")
         req = urllib.request.Request(
             f"{BASE_URL}/api/auth/login",
@@ -59,13 +59,26 @@ class RandomFieldEndToEndTest(unittest.TestCase):
             with cls.opener.open(req, timeout=15) as res:
                 cookies = res.headers.get("Set-Cookie")
                 return cookies or ""
-        except Exception as e:
-            raise RuntimeError(f"Failed to authenticate with test backend at {BASE_URL}: {e}")
+        except Exception:
+            reg_payload = json.dumps({
+                "name": "Test Runner",
+                "email": TEST_EMAIL,
+                "password": TEST_PASSWORD
+            }).encode("utf-8")
+            reg_req = urllib.request.Request(
+                f"{BASE_URL}/api/auth/register",
+                data=reg_payload,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            )
+            with cls.opener.open(reg_req, timeout=15) as res:
+                cookies = res.headers.get("Set-Cookie")
+                return cookies or ""
 
     @classmethod
     def tearDownClass(cls):
         """Teardown created test fields to maintain clean database state."""
-        for f_id in cls.created_field_ids:
+        for f_id in list(cls.created_field_ids):
             try:
                 del_req = urllib.request.Request(
                     f"{BASE_URL}/api/fields/{f_id}",
@@ -76,6 +89,27 @@ class RandomFieldEndToEndTest(unittest.TestCase):
                     pass
             except Exception:
                 pass
+        cls.created_field_ids.clear()
+
+        # Clean any remaining fields belonging to this test runner
+        try:
+            list_req = urllib.request.Request(f"{BASE_URL}/api/fields", method="GET")
+            with cls.opener.open(list_req, timeout=10) as res:
+                data = json.loads(res.read().decode("utf-8"))
+                fields = data.get("fields", data) if isinstance(data, dict) else data
+                for f in fields:
+                    try:
+                        d_req = urllib.request.Request(
+                            f"{BASE_URL}/api/fields/{f['id']}",
+                            method="DELETE",
+                            headers={"Content-Type": "application/json"},
+                        )
+                        with cls.opener.open(d_req, timeout=10):
+                            pass
+                    except Exception:
+                        pass
+        except Exception:
+            pass
 
     def api_request(self, path: str, method: str = "GET", payload: dict | None = None) -> tuple[int, dict]:
         """Helper for authenticated API dispatch with resilient error capturing."""

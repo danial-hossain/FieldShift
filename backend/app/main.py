@@ -15,7 +15,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 from .database import Base, engine, get_db, is_postgres
@@ -2102,6 +2102,8 @@ def update_field(field_id: int, payload: Payload, user: User = Depends(require_u
 @app.delete("/api/fields/{field_id}")
 def delete_field(field_id: int, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
     field = owned_field(db, field_id, user)
+    db.execute(delete(FieldHistory).where(FieldHistory.field_id == field_id))
+    db.flush()
     db.delete(field)
     db.commit()
     return {"status": "deleted", "id": field_id}
