@@ -41,6 +41,9 @@ export function RealFarmCanvas3D({
           soil_texture: fieldProfile.soil_texture || null,
           rain_mm: fieldProfile.rain_mm != null ? fieldProfile.rain_mm : null,
           hasAlert: Boolean(hasAlert),
+          district: fieldProfile.district || null,
+          isCoastalSaline: Boolean(fieldProfile.isCoastalSaline || (fieldProfile.district && String(fieldProfile.district).toLowerCase().includes('satkhira'))),
+          isHaor: Boolean(fieldProfile.isHaor || (fieldProfile.district && String(fieldProfile.district).toLowerCase().includes('sunamganj'))),
         },
       ];
     }

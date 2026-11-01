@@ -18,6 +18,7 @@ import {
   createTilledSoilTexture,
   createTerracottaStrataTexture,
   createDirtPathTexture,
+  createSaltCrustTexture,
 } from './farmTextures.js';
 
 // Color Palette — Matte Pastels & Soil Strata (UI 4 & Phase 4 compliant)
@@ -198,6 +199,9 @@ export function ClayFarmScene({
       { r: 1, c: -1 },  { r: 1, c: 0 },
     ];
     positions.forEach((pos, idx) => {
+      const dist = String(base.district || '').toLowerCase();
+      const isCoastal = Boolean(base.isCoastalSaline || base.coastal_saline || dist.includes('satkhira') || dist.includes('khulna'));
+      const isHaor = Boolean(base.isHaor || dist.includes('sunamganj'));
       defaultBeds.push({
         id: `P-0${idx + 1}`,
         row: pos.r,
@@ -207,6 +211,9 @@ export function ClayFarmScene({
         soil_texture: base.soil_texture || base.soilType || 'loam',
         rain_mm: base.rain_mm != null ? base.rain_mm : null,
         hasAlert: idx === 0 && hasAlert,
+        district: base.district,
+        isCoastalSaline: isCoastal,
+        isHaor: isHaor,
       });
     });
     return defaultBeds;
@@ -332,7 +339,8 @@ export function ClayFarmScene({
       const soilTex = createTilledSoilTexture();
       const strataTex = createTerracottaStrataTexture();
       const dirtPathTex = createDirtPathTexture();
-      disposables.push(grassTex, soilTex, strataTex, dirtPathTex);
+      const saltCrustTex = createSaltCrustTexture();
+      disposables.push(grassTex, soilTex, strataTex, dirtPathTex, saltCrustTex);
 
       const matGrassTop = new THREE.MeshStandardMaterial({
         color: CLAY_PALETTE.grass,
@@ -717,12 +725,19 @@ export function ClayFarmScene({
         const overlay = getPlotOverlayInfo(plot, activeOverlay, lang);
         const isNeutralSoil = appearance.kind === 'soil';
 
-        const bedColor = isNeutralSoil ? '#8a5a3a' : overlay.color;
+        const isCoastalSaline = Boolean(plot.isCoastalSaline);
+        const isHaor = Boolean(plot.isHaor);
+
+        let bedColor = isNeutralSoil ? '#8a5a3a' : overlay.color;
+        if (isCoastalSaline && isNeutralSoil) {
+          bedColor = '#ded6c5'; // Pale mineral salt crust efflorescence tint (D1)
+        }
+
         const bedMat = new THREE.MeshStandardMaterial({
           color: bedColor,
-          map: isNeutralSoil ? soilTex : null,
-          roughness: 0.9,
-          metalness: 0,
+          map: isNeutralSoil ? (isCoastalSaline ? saltCrustTex : soilTex) : null,
+          roughness: isCoastalSaline ? 0.65 : 0.9,
+          metalness: isCoastalSaline ? 0.08 : 0,
         });
         disposables.push(bedMat);
 
@@ -747,6 +762,15 @@ export function ClayFarmScene({
             furrowMesh.position.set(posX + ox, 1.43, posZ);
             furrowMesh.receiveShadow = true;
             sceneGroup.add(furrowMesh);
+
+            // Haor wetland inundated waterlogged furrow during monsoon (D1)
+            if (isHaor) {
+              const waterFurrowGeo = new THREE.BoxGeometry(0.12, 0.03, bedDepth - 0.28);
+              const waterFurrowMesh = new THREE.Mesh(waterFurrowGeo, waterSheetMat);
+              waterFurrowMesh.position.set(posX + ox, 1.44, posZ);
+              sceneGroup.add(waterFurrowMesh);
+              disposables.push(waterFurrowGeo);
+            }
           });
 
           // Sparse small sprouts (#7fae4f) along the furrows

@@ -176,3 +176,34 @@ export function createDirtPathTexture() {
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
+
+
+/**
+ * Coastal Saline salt-crust texture: pale earthy loam with white-grey mineral efflorescence crystallization.
+ */
+export function createSaltCrustTexture() {
+  const env = createSafeCanvas(256, 256);
+  if (!env) return new THREE.Texture();
+
+  const { canvas, ctx } = env;
+  ctx.fillStyle = '#9b806d';
+  ctx.fillRect(0, 0, 256, 256);
+
+  const crusts = ['#f4f1ea', '#e8e2d5', '#dfd7c8', '#ffffff'];
+  for (let i = 0; i < 400; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const r = 1 + Math.random() * 4;
+    ctx.fillStyle = crusts[Math.floor(Math.random() * crusts.length)];
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(2, 2);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
