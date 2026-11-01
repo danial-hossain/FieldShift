@@ -412,7 +412,7 @@ export function SixSeasonRecommendationView({
         yieldTonHa: dynamicYieldTHa,
         yieldMaundBigha: dynamicYieldTHa != null ? Number(((dynamicYieldTHa * 25) / 7.47).toFixed(1)) : null,
         totalHarvestTons,
-        waterReqMm: irrigationReqMm != null ? irrigationReqMm : cropEtMm,
+        waterReqMm: irrigationReqMm != null ? Math.round(irrigationReqMm) : (cropEtMm != null ? Math.round(cropEtMm) : null),
         cropEtMm,
         irrigationReqMm,
         durationDays: cropMeta?.duration ?? null,
@@ -437,7 +437,7 @@ export function SixSeasonRecommendationView({
   const aggregateMetrics = useMemo(() => {
     const totalHarvestTons = sixSeasonRecommendations.reduce((sum, s) => sum + (s.totalHarvestTons || 0), 0);
     const avgYieldTonHa = Number((sixSeasonRecommendations.reduce((sum, s) => sum + (s.yieldTonHa || 0), 0) / 6).toFixed(2));
-    const totalWaterReqMm = sixSeasonRecommendations.reduce((sum, s) => sum + (s.waterReqMm || 0), 0);
+    const totalWaterReqMm = Math.round(sixSeasonRecommendations.reduce((sum, s) => sum + (s.waterReqMm || 0), 0));
     const totalNetProfitBdtHa = sixSeasonRecommendations.reduce((sum, s) => sum + (s.netProfitBdtHa || 0), 0);
     const totalParcelRevenueBdt = sixSeasonRecommendations.reduce((sum, s) => sum + (s.totalParcelProfitBdt || 0), 0);
     const legumeCount = sixSeasonRecommendations.filter(s => s.cropMeta?.is_legume || s.isLegume).length;
@@ -1898,14 +1898,15 @@ export function SixSeasonRecommendationView({
 
           {/* 3. Residue SOM Contribution */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
               🍂 {lang === 'bn' ? 'জৈব কার্বন বৃদ্ধি (SOM)' : 'Residue & OM Gain'}
+              <PlainLanguagePopover termKey="soil_organic_carbon" lang={lang} />
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--sun)', marginTop: 4 }}>
               +{soilHealthIndicators.somContributionPct}% <span style={{ fontSize: 12 }}>SOC</span>
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'মূল ও সবুজ পাতার অবশিষ্টাংশ' : 'From root mass & legume residue'}
+              {lang === 'bn' ? 'সরল নিয়মভিত্তিক অনুমান • মূল ও পাতার অবশিষ্টাংশ' : 'Rule-based heuristic • Root & crop residue'}
             </div>
           </div>
 
@@ -1924,15 +1925,15 @@ export function SixSeasonRecommendationView({
 
           {/* 5. Erosion Cover Index */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
               🌧️ {lang === 'bn' ? 'মৃত্তিকা আচ্ছাদন সূচক' : 'Erosion Cover Index'}
-              <PlainLanguagePopover termKey="soil_moisture" lang={lang} />
+              <PlainLanguagePopover termKey="erosion_cover" lang={lang} />
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
               {soilHealthIndicators.erosionCoverPct}%
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'বর্ষাকালে মাটির ক্ষয় রোধ' : 'Living canopy during rainstorms'}
+              {lang === 'bn' ? 'সরল নিয়মভিত্তিক অনুমান • বর্ষায় ক্যানোপি সুরক্ষা' : 'Rule-based heuristic • Living canopy during rainstorms'}
             </div>
           </div>
         </div>
@@ -2322,7 +2323,7 @@ export function SixSeasonRecommendationView({
                     <span>{y.s1?.cropMeta ? y.s1.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (y.s1?.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</span>
                   </strong>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {y.s1?.durationDays != null ? `${y.s1.durationDays} days • ` : ''}{y.s1?.waterReqMm != null ? `${y.s1.waterReqMm} mm • ` : ''}Yield {y.s1?.yieldTonHa != null ? `${y.s1.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                    {y.s1?.durationDays != null ? `${y.s1.durationDays} days • ` : ''}{y.s1?.waterReqMm != null ? `${Math.round(y.s1.waterReqMm)} mm • ` : ''}Yield {y.s1?.yieldTonHa != null ? `${y.s1.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                   </div>
                 </div>
 
@@ -2337,7 +2338,7 @@ export function SixSeasonRecommendationView({
                     <span>{y.s2?.cropMeta ? y.s2.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (y.s2?.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</span>
                   </strong>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {y.s2?.durationDays != null ? `${y.s2.durationDays} days • ` : ''}{y.s2?.waterReqMm != null ? `${y.s2.waterReqMm} mm • ` : ''}Yield {y.s2?.yieldTonHa != null ? `${y.s2.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                    {y.s2?.durationDays != null ? `${y.s2.durationDays} days • ` : ''}{y.s2?.waterReqMm != null ? `${Math.round(y.s2.waterReqMm)} mm • ` : ''}Yield {y.s2?.yieldTonHa != null ? `${y.s2.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                   </div>
                 </div>
               </div>

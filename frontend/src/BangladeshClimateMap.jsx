@@ -24,7 +24,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
   // Layer color schemes and metadata
   const LAYER_META = {
     grace: {
-      titleBn: 'নাসা গ্রেস-এফও ভূগর্ভস্থ পানি ট্রেন্ড (GRACE-FO Mascon)',
+      titleBn: 'GRACE-FO মোট পানি সঞ্চয়ের প্রবণতা (ভূগর্ভস্থ + ভূপৃষ্ঠ + মাটির পানি)',
       titleEn: 'NASA GRACE-FO Groundwater Trend (JPL RL06.3M)',
       unit: 'cm/yr',
       colorScale: (val) => {

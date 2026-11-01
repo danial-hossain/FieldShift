@@ -530,7 +530,7 @@ export function WaterIrrigationView({
           <div style={{ background: 'rgba(2, 6, 23, 0.5)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: 10, padding: '12px 14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: fieldTelemetry.graceColor }}>
-                🛰️ {lang === 'bn' ? 'নাসা গ্রেস-এফও ভূগর্ভস্থ পানি ট্রেন্ড' : 'NASA GRACE-FO JPL RL06.3M Mascon'}
+                🛰️ {lang === 'bn' ? 'GRACE-FO মোট পানি সঞ্চয়ের প্রবণতা (ভূগর্ভস্থ + ভূপৃষ্ঠ + মাটির পানি)' : 'NASA GRACE-FO Total Water Storage Trend (JPL RL06.3M)'}
               </span>
               <span style={{ fontSize: 10, color: 'var(--text-3)' }}>2002–2024</span>
             </div>
