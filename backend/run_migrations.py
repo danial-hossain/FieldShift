@@ -14,7 +14,10 @@ from typing import Sequence
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(PROJECT_ROOT / ".env")
 VERSIONS_DIR = PROJECT_ROOT / "backend" / "alembic" / "versions"
 
 

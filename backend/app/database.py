@@ -14,7 +14,10 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 
+from dotenv import load_dotenv
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
 SQLITE_PATH = PROJECT_ROOT / "data" / "fieldshift.db"
 DEFAULT_SQLITE_URL = f"sqlite:///{SQLITE_PATH.as_posix()}"
 
