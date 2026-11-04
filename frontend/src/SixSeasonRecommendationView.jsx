@@ -683,6 +683,108 @@ export function SixSeasonRecommendationView({
     document.body.removeChild(link);
   };
 
+  // Baseline resolution before conditional returns (ensures unconditional hook calls)
+  const rawBaselineEarly = activePlanData?.baselineRotation;
+  const baselineCropsEarly = Array.isArray(rawBaselineEarly)
+    ? rawBaselineEarly
+    : rawBaselineEarly && typeof rawBaselineEarly === 'object'
+      ? Object.values(rawBaselineEarly)
+      : null;
+
+  // G1 Hero 3D Beds Mapping
+  const seasonMeta = {
+    Y1_S1: { bn: '১ম বছর রবি', en: 'Year 1 Rabi', months: 'Nov - Apr', color: '#f59e0b' },
+    Y1_S2: { bn: '১ম বছর খরিপ-১', en: 'Year 1 Kharif-1', months: 'Apr - Jun', color: '#10b981' },
+    Y1_S3: { bn: '১ম বছর খরিপ-২', en: 'Year 1 Kharif-2', months: 'Jul - Oct', color: '#38bdf8' },
+    Y2_S1: { bn: '২য় বছর রবি', en: 'Year 2 Rabi', months: 'Nov - Apr', color: '#f59e0b' },
+    Y2_S2: { bn: '২য় বছর খরিপ-১', en: 'Year 2 Kharif-1', months: 'Apr - Jun', color: '#10b981' },
+    Y2_S3: { bn: '২য় বছর খরিপ-২', en: 'Year 2 Kharif-2', months: 'Jul - Oct', color: '#38bdf8' },
+  };
+
+  const periodKeys = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
+
+  // Current plan crop sequence
+  const planCropMap = activePlanData?.rotation || {};
+  
+  // Baseline crop sequence
+  const baselineCropMap = {
+    Y1_S1: baselineCropsEarly?.[0] || 'Boro Rice',
+    Y1_S2: baselineCropsEarly?.[1] || 'Fallow',
+    Y1_S3: baselineCropsEarly?.[2] || ['R', 'i', 'c', 'e'].join(''),
+    Y2_S1: baselineCropsEarly?.[0] || 'Boro Rice',
+    Y2_S2: baselineCropsEarly?.[1] || 'Fallow',
+    Y2_S3: baselineCropsEarly?.[2] || ['R', 'i', 'c', 'e'].join(''),
+  };
+
+  const activeCrops = compareWithBaseline ? baselineCropMap : planCropMap;
+
+  const farm3dBeds = useMemo(() => {
+    return periodKeys.map(k => {
+      const c = activeCrops[k] || 'Fallow';
+      const mEntry = activePlanData?.cropSeasonMatrix?.[k]?.[c] || {};
+      const waterReq = mEntry?.water_balance?.irrigation_required_mm || (c === 'Boro Rice' ? 850 : (c.includes(['R', 'i', 'c', 'e'].join('')) ? 350 : 80));
+      return {
+        id: k,
+        label: seasonMeta[k]?.[lang] || k,
+        crop: c,
+        season: seasonMeta[k]?.months,
+        waterDepthMm: waterReq,
+        growthStage: 0.9,
+        stress: {
+          heat: activePlanData?.risk?.heat?.level === 'high',
+          drought: activePlanData?.risk?.drought?.level === 'high',
+        }
+      };
+    });
+  }, [activeCrops, activePlanData, lang, compareWithBaseline]);
+
+  // Selected period details for side panel
+  const activeSelectedPeriod = selectedPeriodKey || 'Y1_S1';
+  const selectedCropName = activeCrops[activeSelectedPeriod] || 'Mustard';
+  const selectedPeriodMatrix = activePlanData?.cropSeasonMatrix?.[activeSelectedPeriod] || {};
+  const selectedCropEntry = selectedPeriodMatrix[selectedCropName] || {};
+  const selectedCropYieldTonHa = selectedCropEntry.yield_ton_ha || selectedCropEntry.yield_ton_per_ha || 3.5;
+  const selectedCropYieldMaund = (selectedCropYieldTonHa * 7.4749 * (1000 / 37.32) / 7.4749).toFixed(1);
+  const selectedCropMargin = selectedCropEntry.dynamic_gross_margin_bdt_ha != null
+    ? Math.round(selectedCropEntry.dynamic_gross_margin_bdt_ha)
+    : 75000;
+  const selectedCropIrrig = selectedCropEntry.water_balance?.irrigation_required_mm != null
+    ? Math.round(selectedCropEntry.water_balance.irrigation_required_mm)
+    : 80;
+
+  // Alternatives for this season (next 2 best crops)
+  const candidateAlternatives = useMemo(() => {
+    const list = Object.entries(selectedPeriodMatrix)
+      .filter(([c]) => c !== selectedCropName && c !== 'Fallow')
+      .map(([c, data]) => ({
+        crop: c,
+        score: Math.round((data.objective_score || data.dynamic_gross_margin_bdt_ha || 50000) / 1000),
+        margin: Math.round(data.dynamic_gross_margin_bdt_ha || 40000),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2);
+
+    if (list.length === 0) {
+      if (activeSelectedPeriod.includes('S1')) {
+        return [
+          { crop: 'Wheat', score: 85, margin: 68000 },
+          { crop: 'Potato', score: 80, margin: 95000 }
+        ];
+      } else if (activeSelectedPeriod.includes('S2')) {
+        return [
+          { crop: 'Sesame', score: 78, margin: 52000 },
+          { crop: 'Aus Rice', score: 72, margin: 48000 }
+        ];
+      } else {
+        return [
+          { crop: 'Fallow', score: 60, margin: 0 }
+        ];
+      }
+    }
+    return list;
+  }, [selectedPeriodMatrix, selectedCropName, activeSelectedPeriod]);
+
+
   if (loading) {
     return (
       <div className="six-season-recommendation-workspace" style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
@@ -861,98 +963,7 @@ export function SixSeasonRecommendationView({
 
 
 
-  // G1 Hero 3D Beds Mapping
-  const seasonMeta = {
-    Y1_S1: { bn: '১ম বছর রবি', en: 'Year 1 Rabi', months: 'Nov - Apr', color: '#f59e0b' },
-    Y1_S2: { bn: '১ম বছর খরিপ-১', en: 'Year 1 Kharif-1', months: 'Apr - Jun', color: '#10b981' },
-    Y1_S3: { bn: '১ম বছর খরিপ-২', en: 'Year 1 Kharif-2', months: 'Jul - Oct', color: '#38bdf8' },
-    Y2_S1: { bn: '২য় বছর রবি', en: 'Year 2 Rabi', months: 'Nov - Apr', color: '#f59e0b' },
-    Y2_S2: { bn: '২য় বছর খরিপ-১', en: 'Year 2 Kharif-1', months: 'Apr - Jun', color: '#10b981' },
-    Y2_S3: { bn: '২য় বছর খরিপ-২', en: 'Year 2 Kharif-2', months: 'Jul - Oct', color: '#38bdf8' },
-  };
 
-  const periodKeys = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
-
-  // Current plan crop sequence
-  const planCropMap = activePlanData.rotation || {};
-  
-  // Baseline crop sequence
-  const baselineCropMap = {
-    Y1_S1: baselineCrops?.[0] || 'Boro Rice',
-    Y1_S2: baselineCrops?.[1] || 'Fallow',
-    Y1_S3: baselineCrops?.[2] || ['R', 'i', 'c', 'e'].join(''),
-    Y2_S1: baselineCrops?.[0] || 'Boro Rice',
-    Y2_S2: baselineCrops?.[1] || 'Fallow',
-    Y2_S3: baselineCrops?.[2] || ['R', 'i', 'c', 'e'].join(''),
-  };
-
-  const activeCrops = compareWithBaseline ? baselineCropMap : planCropMap;
-
-  const farm3dBeds = useMemo(() => {
-    return periodKeys.map(k => {
-      const c = activeCrops[k] || 'Fallow';
-      const mEntry = activePlanData.cropSeasonMatrix?.[k]?.[c] || {};
-      const waterReq = mEntry?.water_balance?.irrigation_required_mm || (c === 'Boro Rice' ? 850 : (c.includes(['R', 'i', 'c', 'e'].join('')) ? 350 : 80));
-      return {
-        id: k,
-        label: seasonMeta[k]?.[lang] || k,
-        crop: c,
-        season: seasonMeta[k]?.months,
-        waterDepthMm: waterReq,
-        growthStage: 0.9,
-        stress: {
-          heat: activePlanData.risk?.heat?.level === 'high',
-          drought: activePlanData.risk?.drought?.level === 'high',
-        }
-      };
-    });
-  }, [activeCrops, activePlanData, lang, compareWithBaseline]);
-
-  // Selected period details for side panel
-  const activeSelectedPeriod = selectedPeriodKey || 'Y1_S1';
-  const selectedCropName = activeCrops[activeSelectedPeriod] || 'Mustard';
-  const selectedPeriodMatrix = activePlanData.cropSeasonMatrix?.[activeSelectedPeriod] || {};
-  const selectedCropEntry = selectedPeriodMatrix[selectedCropName] || {};
-  const selectedCropYieldTonHa = selectedCropEntry.yield_ton_ha || selectedCropEntry.yield_ton_per_ha || 3.5;
-  const selectedCropYieldMaund = (selectedCropYieldTonHa * 7.4749 * (1000 / 37.32) / 7.4749).toFixed(1);
-  const selectedCropMargin = selectedCropEntry.dynamic_gross_margin_bdt_ha != null
-    ? Math.round(selectedCropEntry.dynamic_gross_margin_bdt_ha)
-    : 75000;
-  const selectedCropIrrig = selectedCropEntry.water_balance?.irrigation_required_mm != null
-    ? Math.round(selectedCropEntry.water_balance.irrigation_required_mm)
-    : 80;
-
-  // Alternatives for this season (next 2 best crops)
-  const candidateAlternatives = useMemo(() => {
-    const list = Object.entries(selectedPeriodMatrix)
-      .filter(([c]) => c !== selectedCropName && c !== 'Fallow')
-      .map(([c, data]) => ({
-        crop: c,
-        score: Math.round((data.objective_score || data.dynamic_gross_margin_bdt_ha || 50000) / 1000),
-        margin: Math.round(data.dynamic_gross_margin_bdt_ha || 40000),
-      }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 2);
-
-    if (list.length === 0) {
-      if (activeSelectedPeriod.includes('S1')) {
-        return [
-          { crop: 'Wheat', score: 85, margin: 68000 },
-          { crop: 'Potato', score: 80, margin: 95000 }
-        ];
-      } else if (activeSelectedPeriod.includes('S2')) {
-        return [
-          { crop: 'Sesame', score: 78, margin: 52000 },
-          { crop: 'Aus Rice', score: 72, margin: 48000 }
-        ];
-      } else {
-        return [
-          { crop: 'Fallow', score: 60, margin: 0 }
-        ];
-      }
-    }
-    return list;
-  }, [selectedPeriodMatrix, selectedCropName, activeSelectedPeriod]);
 
   // Scientific Evidence Onset Stats
   const pVal = advisoryOnset?.comparison?.p_value != null ? advisoryOnset.comparison.p_value : 0.2991;
