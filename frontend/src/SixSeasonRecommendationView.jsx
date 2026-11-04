@@ -30,6 +30,7 @@ import {
 } from './sixSeasonEngine.js';
 import { SixSeasonTrajectory3D } from './research3d/SixSeasonTrajectory3D.jsx';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
+import { haToBigha } from './three/farmSceneHelpers.js';
 import { CropIllustration } from './ui/CropIllustration.jsx';
 import { BangladeshClimateMap } from './BangladeshClimateMap.jsx';
 import { PlainLanguagePopover, SaaoNotice } from './PlainLanguagePopover.jsx';
