@@ -20,6 +20,7 @@ export function FarmPlanningView({
   user,
   userFields = [],
   lang = 'bn',
+  theme = 'dark',
   onNavigate,
   onRunWorkflow,
   initialSubTab = 'milp',
@@ -87,6 +88,7 @@ export function FarmPlanningView({
           onNavigateTab={(t) => setSubTab(t)}
           onBack={() => setSubTab('milp')}
           lang={lang}
+          theme={theme}
           onRunWorkflow={onRunWorkflow}
         />
       )}

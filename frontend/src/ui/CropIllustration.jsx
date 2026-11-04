@@ -138,3 +138,4 @@ export function CropIllustration({ cropName, size = 64, className = '' }) {
 }
 
 export default CropIllustration;
+

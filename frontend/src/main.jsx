@@ -34,7 +34,7 @@ import {
   runCounterfactualRequest,
 } from './counterfactual.js';
 import './styles.css';
-import { Toast } from './ui/index.js';
+import { Toast, Modal } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
 import {
@@ -3772,6 +3772,7 @@ export function App() {
             user={user}
             userFields={userFields}
             lang={lang}
+            theme={theme}
             onNavigate={handleNavigate}
             onRunWorkflow={runAnalysis}
             initialSubTab={farmPlanningSubTab}

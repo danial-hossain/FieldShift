@@ -452,6 +452,15 @@ export function MyFarmWorkspaceView({
     fetchHistory();
   }, [fetchHistory]);
 
+  const handleFieldDeleteClick = (fieldToDelete) => {
+    if (!fieldToDelete) return;
+    if (onArchiveField) {
+      onArchiveField(fieldToDelete);
+    } else if (onDeleteField) {
+      onDeleteField(fieldToDelete);
+    }
+  };
+
   // M6: Form state to add past seasonal record
 
   const [newHistorySeason, setNewHistorySeason] = useState('রবি');
@@ -775,40 +784,47 @@ export function MyFarmWorkspaceView({
                     key={f.id}
                     variant="glass"
                     style={{
-                      border: isSelected ? '1px solid var(--primary, #10b981)' : '1px solid var(--line)',
-                      background: isSelected ? 'rgba(16, 185, 129, 0.04)' : undefined,
+                      border: isSelected ? '1.5px solid #10b981' : '1px solid var(--line, rgba(255,255,255,0.12))',
+                      background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface-card, rgba(16, 28, 22, 0.7))',
+                      borderRadius: 14,
+                      padding: 18,
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      boxShadow: isSelected ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none',
+                      transition: 'all 0.2s ease'
                     }}
                   >
                     <div>
-                      {/* Top Row: Name & Completeness Chip */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                      {/* Top Row: Name, ID, District & Completeness Badge */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
                         <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 18 }}>🌱</span>
+                            <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 800, color: 'var(--text)' }}>
                               {f.name}
                             </h3>
-                            <span style={{ fontSize: 11, padding: '1px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', color: 'var(--text-3)' }}>
+                            <span style={{ fontSize: 10.5, padding: '1px 7px', borderRadius: 999, background: 'rgba(255,255,255,0.08)', color: 'var(--text-3)', fontWeight: 600 }}>
                               #{f.id}
                             </span>
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-                            {f.district ? f.district.toUpperCase() : 'BOGURA'} • {formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E
+                          <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ color: 'var(--water)', fontWeight: 700 }}>{f.district ? f.district.toUpperCase() : 'BOGURA'}</span>
+                            <span>•</span>
+                            <span>{formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E</span>
                           </div>
                         </div>
 
                         {/* Completeness Chip */}
                         <span
                           style={{
-                            fontSize: 11,
+                            fontSize: 10.5,
                             fontWeight: 700,
-                            padding: '2px 8px',
+                            padding: '3px 8px',
                             borderRadius: 6,
-                            background: comp.score >= 80 ? 'rgba(34, 197, 94, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                            background: comp.score >= 80 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                             color: comp.score >= 80 ? '#4ade80' : '#fbbf24',
-                            border: `1px solid ${comp.score >= 80 ? 'rgba(34, 197, 94, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+                            border: `1px solid ${comp.score >= 80 ? 'rgba(34, 197, 94, 0.35)' : 'rgba(245, 158, 11, 0.35)'}`,
                             whiteSpace: 'nowrap'
                           }}
                         >
@@ -817,28 +833,28 @@ export function MyFarmWorkspaceView({
                       </div>
 
                       {/* Specs Row */}
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12.5, margin: '12px 0', borderTop: '1px solid var(--line)', paddingTop: 10 }}>
-                        <div>
-                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'আয়তন:' : 'Area:'}</span>
-                          <strong style={{ color: 'var(--text)' }}>{bigha} {lang === 'bn' ? 'বিঘা' : 'bigha'}</strong>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: 12.5, margin: '14px 0 10px', borderTop: '1px solid var(--line)', paddingTop: 12 }}>
+                        <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'আয়তন (Area):' : 'Area:'}</span>
+                          <strong style={{ color: 'var(--sun, #f59e0b)', fontSize: 13 }}>{bigha} {lang === 'bn' ? 'বিঘা' : 'bigha'}</strong>
                           <span style={{ fontSize: 11, color: 'var(--text-3)' }}> ({f.area_ha || 1.0} ha)</span>
                         </div>
-                        <div>
-                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'মাটি:' : 'Soil:'}</span>
-                          <strong style={{ color: 'var(--text)' }}>{soilInfo.nameBn}</strong>
+                        <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'মাটির শ্রেণি (Soil):' : 'Soil Class:'}</span>
+                          <strong style={{ color: 'var(--text)', fontSize: 13 }}>{soilInfo.nameBn}</strong>
                         </div>
-                        <div style={{ gridColumn: 'span 2' }}>
-                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 11 }}>{lang === 'bn' ? 'বর্তমান আবর্তন:' : 'Current Rotation:'}</span>
-                          <span style={{ color: 'var(--leaf, #10b981)', fontWeight: 600 }}>{rotText}</span>
+                        <div style={{ gridColumn: 'span 2', background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
+                          <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'বর্তমান আবর্তন (Current Rotation):' : 'Current Rotation:'}</span>
+                          <span style={{ color: 'var(--leaf, #10b981)', fontWeight: 700, fontSize: 12.5 }}>{rotText}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Actions Row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
                       <div>
                         {isSelected ? (
-                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--primary, #10b981)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16, 185, 129, 0.15)', padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                             <span>✓</span>
                             <span>{lang === 'bn' ? 'সক্রিয় জমি' : 'Active Field'}</span>
                           </span>
@@ -847,13 +863,14 @@ export function MyFarmWorkspaceView({
                             variant="secondary"
                             size="xs"
                             onClick={() => onSelectField && onSelectField(f)}
+                            style={{ fontWeight: 600 }}
                           >
-                            {lang === 'bn' ? 'নির্বাচন' : 'Select'}
+                            {lang === 'bn' ? 'নির্বাচন করুন' : 'Select Field'}
                           </Button>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: 6 }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
                         <Button
                           variant="secondary"
                           size="xs"
@@ -863,17 +880,14 @@ export function MyFarmWorkspaceView({
                             setSubTab('details');
                           }}
                         >
-                          {lang === 'bn' ? 'সম্পাদনা' : 'Edit'}
+                          ✏️ {lang === 'bn' ? 'সম্পাদনা' : 'Edit'}
                         </Button>
                         <Button
                           variant="danger"
                           size="xs"
-                          onClick={() => {
-                            if (onArchiveField) onArchiveField(f);
-                            else if (onDeleteField) onDeleteField(f);
-                          }}
+                          onClick={() => handleFieldDeleteClick(f)}
                         >
-                          {lang === 'bn' ? 'মুছুন' : 'Delete'}
+                          🗑️ {lang === 'bn' ? 'মুছুন' : 'Delete'}
                         </Button>
                       </div>
                     </div>

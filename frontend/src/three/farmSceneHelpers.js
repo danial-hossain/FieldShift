@@ -53,3 +53,4 @@ export function haToBigha(ha) {
   if (ha == null || isNaN(ha)) return null;
   return (Number(ha) * 7.4749).toFixed(1);
 }
+

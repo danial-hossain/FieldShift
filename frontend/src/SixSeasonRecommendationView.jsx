@@ -61,6 +61,7 @@ export function SixSeasonRecommendationView({
   onNavigateTab,
   onBack,
   lang = 'bn',
+  theme = 'dark',
   onSelectField,
   onRunWorkflow,
   defaultDistrict = '',

@@ -35,3 +35,4 @@ test('FarmScene3D: FARM_PALETTE conforms to natural matte clay diorama standards
   assert.ok(FARM_PALETTE.soil_base);
   assert.ok(FARM_PALETTE.soil_drought);
 });
+
