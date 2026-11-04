@@ -1,9 +1,9 @@
 export function normalizeSeasonCode(seasonStr, lang = 'bn') {
   if (!seasonStr) return '--';
   const s = String(seasonStr).trim().toLowerCase();
-  if (s === 'dry' || s === 'rabi' || s === 'রবি') return lang === 'bn' ? 'রবি' : 'Rabi';
-  if (s === 'monsoon' || s === 'kharif2' || s === 'kharif-2' || s === 'খরিফ-২' || s === 'খরিপ-২') return lang === 'bn' ? 'খরিফ-২' : 'Kharif-2';
-  if (s === 'kharif1' || s === 'kharif-1' || s === 'খরিফ-১' || s === 'খরিপ-১') return lang === 'bn' ? 'খরিফ-১' : 'Kharif-1';
+  if (s.includes('রবি') || s.includes('rabi') || s.includes('dry')) return lang === 'bn' ? 'রবি' : 'Rabi';
+  if (s.includes('খরিপ-১') || s.includes('খরিফ-১') || s.includes('kharif-1') || s.includes('kharif1')) return lang === 'bn' ? 'খরিফ-১' : 'Kharif-1';
+  if (s.includes('খরিপ-২') || s.includes('খরিফ-২') || s.includes('kharif-2') || s.includes('kharif2') || s.includes('monsoon')) return lang === 'bn' ? 'খরিফ-২' : 'Kharif-2';
   return seasonStr;
 }
 
@@ -467,35 +467,62 @@ export function MyFarmWorkspaceView({
   // Filter crops strictly by allowed seasons
   const availableSeasonCrops = useMemo(() => {
     const s = String(newHistorySeason || '').trim().toLowerCase();
-    if (s.includes('রবি') || s.includes('rabi') || s.includes('dry')) {
-      return [
-        { value: 'Boro Rice', label: lang === 'bn' ? 'বোরো ধান (Boro Rice)' : 'Boro Rice' },
-        { value: 'Potato', label: lang === 'bn' ? 'গোল আলু (Potato)' : 'Potato' },
-        { value: 'Mustard', label: lang === 'bn' ? 'সরিষা (Mustard)' : 'Mustard' },
-        { value: 'Wheat', label: lang === 'bn' ? 'গম (Wheat)' : 'Wheat' },
-        { value: 'Lentil', label: lang === 'bn' ? 'মসুর ডাল (Lentil)' : 'Lentil' },
-        { value: 'Chickpea', label: lang === 'bn' ? 'ছোলা (Chickpea)' : 'Chickpea' },
-        { value: 'Sunflower', label: lang === 'bn' ? 'সূর্যমুখী (Sunflower)' : 'Sunflower' },
-        { value: 'Maize', label: lang === 'bn' ? 'ভুট্টা (Maize)' : 'Maize' },
-        { value: 'Tomato', label: lang === 'bn' ? 'টমেটো (Tomato)' : 'Tomato' },
-        { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
-      ];
-    }
-    if (s.includes('খরিপ-১') || s.includes('খরিফ-১') || s.includes('kharif1') || s.includes('kharif-1')) {
-      return [
-        { value: 'Aus Rice', label: lang === 'bn' ? 'আউশ ধান (Aus Rice)' : 'Aus Rice' },
-        { value: 'Mungbean', label: lang === 'bn' ? 'মুগডাল (Mungbean)' : 'Mungbean' },
-        { value: 'Sesame', label: lang === 'bn' ? 'তিল (Sesame)' : 'Sesame' },
-        { value: 'Jute', label: lang === 'bn' ? 'পাট (Jute)' : 'Jute' },
-        { value: 'Maize', label: lang === 'bn' ? 'গ্রীষ্মকালীন ভুট্টা (Summer Maize)' : 'Summer Maize' },
-        { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
-      ];
-    }
-    return [
-      { value: 'Rice', label: lang === 'bn' ? 'রোপা আমন ধান (T.Aman Rice)' : 'T.Aman Rice' },
-      { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
-    ];
+    const base = (s.includes('রবি') || s.includes('rabi') || s.includes('dry'))
+      ? [
+          { value: 'Boro Rice', label: lang === 'bn' ? 'বোরো ধান (Boro Rice)' : 'Boro Rice' },
+          { value: 'Potato', label: lang === 'bn' ? 'গোল আলু (Potato)' : 'Potato' },
+          { value: 'Mustard', label: lang === 'bn' ? 'সরিষা (Mustard)' : 'Mustard' },
+          { value: 'Wheat', label: lang === 'bn' ? 'গম (Wheat)' : 'Wheat' },
+          { value: 'Lentil', label: lang === 'bn' ? 'মসুর ডাল (Lentil)' : 'Lentil' },
+          { value: 'Chickpea', label: lang === 'bn' ? 'ছোলা (Chickpea)' : 'Chickpea' },
+          { value: 'Sunflower', label: lang === 'bn' ? 'সূর্যমুখী (Sunflower)' : 'Sunflower' },
+          { value: 'Maize', label: lang === 'bn' ? 'ভুট্টা (Maize)' : 'Maize' },
+          { value: 'Tomato', label: lang === 'bn' ? 'টমেটো (Tomato)' : 'Tomato' },
+          { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+        ]
+      : (s.includes('খরিপ-১') || s.includes('খরিফ-১') || s.includes('kharif1') || s.includes('kharif-1'))
+      ? [
+          { value: 'Aus Rice', label: lang === 'bn' ? 'আউশ ধান (Aus Rice)' : 'Aus Rice' },
+          { value: 'Mungbean', label: lang === 'bn' ? 'মুগডাল (Mungbean)' : 'Mungbean' },
+          { value: 'Sesame', label: lang === 'bn' ? 'তিল (Sesame)' : 'Sesame' },
+          { value: 'Jute', label: lang === 'bn' ? 'পাট (Jute)' : 'Jute' },
+          { value: 'Maize', label: lang === 'bn' ? 'গ্রীষ্মকালীন ভুট্টা (Summer Maize)' : 'Summer Maize' },
+          { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+        ]
+      : [
+          { value: 'Rice', label: lang === 'bn' ? 'রোপা আমন ধান (T.Aman Rice)' : 'T.Aman Rice' },
+          { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি (Fallow)' : 'Fallow' },
+        ];
+    return [...base, { value: '__other__', label: lang === 'bn' ? '➕ অন্যান্য (নিজে লিখুন)' : '➕ Other (Custom)' }];
   }, [newHistorySeason, lang]);
+
+  const [customCropName, setCustomCropName] = useState('');
+
+  const handleDeleteHistory = async (historyId) => {
+    if (!activeField?.id || !historyId) return;
+    if (typeof window !== 'undefined' && !window.confirm(lang === 'bn' ? 'আপনি কি এই রেকর্ডটি মুছে ফেলতে চান?' : 'Are you sure you want to delete this record?')) {
+      return;
+    }
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+      await reqFn(`/api/fields/${activeField.id}/history/${historyId}`, {
+        method: 'DELETE'
+      });
+      await fetchHistory();
+      setMapToast({
+        type: 'success',
+        message: lang === 'bn' ? 'রেকর্ড মুছে ফেলা হয়েছে।' : 'Record deleted successfully.'
+      });
+    } catch (err) {
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn' ? `মুছতে ব্যর্থ: ${err.message}` : `Delete failed: ${err.message}`
+      });
+    }
+  };
 
   const handleAddHistory = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -515,12 +542,17 @@ export function MyFarmWorkspaceView({
         return res.json();
       });
 
+      const finalCrop = newHistoryCrop === '__other__' ? customCropName.trim() : newHistoryCrop.trim();
+      if (!finalCrop) {
+        setIsSubmittingHistory(false);
+        return;
+      }
       await reqFn(`/api/fields/${activeField.id}/history`, {
         method: 'POST',
         body: JSON.stringify({
           season: newHistorySeason,
           year: yearVal,
-          crop: newHistoryCrop.trim(),
+          crop: finalCrop,
           yield_ton_per_ha: yieldTonHa,
           water_applied_mm: waterVal,
           notes: newHistoryNotes.trim() || null
@@ -528,6 +560,7 @@ export function MyFarmWorkspaceView({
       });
 
       setNewHistoryCrop('');
+      setCustomCropName('');
       setNewHistoryYield('');
       setNewHistoryWater('');
       setNewHistoryNotes('');
@@ -1586,6 +1619,7 @@ export function MyFarmWorkspaceView({
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'ফলন (দ্বৈত একক)' : 'Yield (Dual Unit)'}</th>
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'সেচ' : 'Water Applied'}</th>
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মন্তব্য / মাটির প্রভাব' : 'Notes / Soil Impact'}</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>{lang === 'bn' ? 'পদক্ষেপ' : 'Action'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1613,6 +1647,24 @@ export function MyFarmWorkspaceView({
                           </td>
                           <td style={{ padding: '12px', color: 'var(--text-2)' }}>
                             {row.notes || '--'}
+                          </td>
+                          <td style={{ padding: '12px', textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              title={lang === 'bn' ? 'রেকর্ড মুছুন' : 'Delete record'}
+                              onClick={() => handleDeleteHistory(row.id)}
+                              style={{
+                                background: 'transparent',
+                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                color: '#f87171',
+                                cursor: 'pointer',
+                                fontSize: 12
+                              }}
+                            >
+                              🗑️
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1671,6 +1723,15 @@ export function MyFarmWorkspaceView({
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
+                    {newHistoryCrop === '__other__' && (
+                      <input
+                        type="text"
+                        placeholder={lang === 'bn' ? 'ফসলের নাম লিখুন' : 'Enter custom crop name'}
+                        value={customCropName}
+                        onChange={e => setCustomCropName(e.target.value)}
+                        style={{ marginTop: 6, width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
+                      />
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>

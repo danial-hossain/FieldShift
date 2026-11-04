@@ -44,11 +44,11 @@ export function SourceChip({
     bg = 'rgba(14, 165, 233, 0.12)';
     color = '#0284c7';
     border = '1px solid rgba(14, 165, 233, 0.28)';
-  } else if (s.includes('class') || s.includes('গড় মান') || s.includes('মাপা নয়')) {
+  } else if (s.includes('class') || s.includes('average') || s.includes('গড়') || s.includes('মাপা নয়')) {
     label = size === 'xs' ? (lang === 'bn' ? 'গড় মান' : 'Class Avg') : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Class Average (Not Measured)');
-    bg = 'rgba(148, 163, 184, 0.1)';
-    color = '#94a3b8';
-    border = '1px solid rgba(148, 163, 184, 0.2)';
+    bg = 'rgba(148, 163, 184, 0.18)';
+    color = 'var(--text-main, #e2e8f0)';
+    border = '1px solid rgba(148, 163, 184, 0.38)';
   } else if (s.includes('offline') || s.includes('অফলাইন')) {
     label = size === 'xs' ? (lang === 'bn' ? 'অফলাইন' : 'Offline') : (lang === 'bn' ? 'SoilGrids তথ্য পাওয়া যায়নি (অফলাইন)' : 'SoilGrids unavailable (offline)');
     bg = 'rgba(239, 68, 68, 0.1)';

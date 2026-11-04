@@ -1872,16 +1872,21 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
         for i, item in enumerate(raw_completed):
             if not isinstance(item, dict):
                 raise HTTPException(422, f"Completed season {i + 1} must be a recorded season object.")
+            parts = item.get("parts") or item.get("part_split") or []
             crop_name = item.get("crop") or item.get("crop_planted") or item.get("crop_name")
+            if not crop_name and parts and isinstance(parts, list):
+                crop_name = parts[0].get("crop")
             if not isinstance(crop_name, str) or not crop_name.strip():
                 raise HTTPException(422, f"Completed season {i + 1} must include its recorded crop.")
             completed_seasons.append({
                 "period": item.get("period") or f"Y{1+(i//2)}_S{1+(i%2)}",
                 "crop": crop_name.strip(),
                 "crop_planted": crop_name.strip(),
+                "parts": parts,
                 "yield_kg_ha": item.get("yield_kg_ha"),
                 "actual_yield_t_ha": (float(item["yield_kg_ha"]) / 1000.0) if item.get("yield_kg_ha") is not None else item.get("actual_yield_t_ha"),
                 "actual_water_mm": item.get("water_applied_mm") or item.get("actual_water_mm"),
+                "outcome": item.get("outcome", "normal"),
             })
     else:
         completed_seasons = []
@@ -2950,6 +2955,19 @@ def create_field_history(field_id: str, payload: Payload, user: User | None = De
     db.commit()
     db.refresh(item)
     return {"status": "created", "history": row(item)}
+
+@app.delete("/api/fields/{field_id}/history/{history_id}")
+def delete_field_history(field_id: str, history_id: int, user: User | None = Depends(optional_user), db: DbSession = Depends(get_db)):
+    numeric_id = int(field_id) if str(field_id).isdigit() else None
+    h = db.get(FieldHistory, history_id)
+    if not h:
+        return {"status": "not_found", "message": "Record not found"}
+    if numeric_id and h.field_id != numeric_id:
+        return {"status": "error", "message": "Field mismatch"}
+    db.delete(h)
+    db.commit()
+    return {"status": "deleted", "id": history_id}
+
 
 
 @app.post("/api/fields/{field_id}/enrich")

@@ -157,23 +157,61 @@ def run_adaptive_replan(
     )
     sh_tracker = initial_sh
 
-    # Part A: Completed seasons
+    # Part A: Completed seasons (supporting split parts per G2)
     for idx in range(num_completed):
         c_record = completed_seasons[idx] if idx < len(completed_seasons) else {}
-        actual_crop = c_record.get("crop", initial_crops[idx])
-        combined_crops.append(actual_crop)
+        parts = c_record.get("parts") or []
         orig_crop = initial_crops[idx]
-        c_info = crop_lookup.get(actual_crop, {})
-        orig_info = crop_lookup.get(orig_crop, {})
 
-        y_actual = safe_num(c_record.get("actual_yield_t_ha"), safe_num(c_info.get("expected_yield"), 2.0))
-        price = safe_num(c_info.get("market_price"), 25000.0)
-        cost = safe_num(c_info.get("production_cost"), 40000.0)
-        margin = y_actual * price - cost
-        water = safe_num(c_record.get("actual_water_mm"), safe_num(c_info.get("water_requirement"), 400.0))
-        is_leg = bool(c_info.get("is_legume", False))
-        sh_tracker = max(20.0, min(85.0, sh_tracker + (+6.0 if is_leg else -1.5)))
+        if parts and isinstance(parts, list):
+            total_share = sum(safe_num(p.get("areaShare", p.get("area_share", 0.0))) for p in parts)
+            if total_share <= 0:
+                total_share = 1.0
+            norm_parts = []
+            part_margins = []
+            part_waters = []
+            leg_fraction = 0.0
+            for p in parts:
+                p_crop = p.get("crop", "Mustard")
+                p_share = safe_num(p.get("areaShare", p.get("area_share", 1.0 / len(parts)))) / total_share
+                p_info = crop_lookup.get(p_crop, {})
+                p_yield = safe_num(p.get("yield_t_ha", p.get("actual_yield_t_ha")), safe_num(p_info.get("expected_yield"), 2.0))
+                p_price = safe_num(p_info.get("market_price"), 25000.0)
+                p_cost = safe_num(p_info.get("production_cost"), 40000.0)
+                p_margin = p_yield * p_price - p_cost
+                p_water = safe_num(p_info.get("water_requirement"), 350.0)
+                if bool(p_info.get("is_legume", False)):
+                    leg_fraction += p_share
+                part_margins.append(p_margin * p_share)
+                part_waters.append(p_water * p_share)
+                norm_parts.append({
+                    "crop": p_crop,
+                    "area_share": round(p_share, 3),
+                    "yield_t_ha": round(p_yield, 2),
+                    "gross_margin_bdt_ha": round(p_margin, 2),
+                })
+            margin = sum(part_margins)
+            water = safe_num(c_record.get("actual_water_mm"), sum(part_waters))
+            y_actual = sum(p["yield_t_ha"] * p["area_share"] for p in norm_parts)
+            actual_crop = " + ".join(f"{p['crop']} ({int(p['area_share']*100)}%)" for p in norm_parts)
+            primary_part = max(norm_parts, key=lambda x: x["area_share"])
+            updated_state.previous_crop = primary_part["crop"]
+            p_info = crop_lookup.get(primary_part["crop"], {})
+            updated_state.previous_crop_family = p_info.get("family", "Unknown")
+            updated_state.previous_crop_is_legume = leg_fraction >= 0.3
+            sh_tracker = max(20.0, min(85.0, sh_tracker + (+6.0 * leg_fraction - 1.5 * (1.0 - leg_fraction))))
+        else:
+            actual_crop = c_record.get("crop", initial_crops[idx])
+            c_info = crop_lookup.get(actual_crop, {})
+            y_actual = safe_num(c_record.get("actual_yield_t_ha"), safe_num(c_info.get("expected_yield"), 2.0))
+            price = safe_num(c_info.get("market_price"), 25000.0)
+            cost = safe_num(c_info.get("production_cost"), 40000.0)
+            margin = y_actual * price - cost
+            water = safe_num(c_record.get("actual_water_mm"), safe_num(c_info.get("water_requirement"), 400.0))
+            is_leg = bool(c_info.get("is_legume", False))
+            sh_tracker = max(20.0, min(85.0, sh_tracker + (+6.0 if is_leg else -1.5)))
 
+        combined_crops.append(actual_crop)
         comparison_breakdown.append({
             "period": periods[idx],
             "period_label": canonical_periods[idx],
@@ -188,6 +226,7 @@ def run_adaptive_replan(
             "water_mm": round(water, 1),
             "soil_health_after": round(sh_tracker, 1),
             "note": f"Historical season completed with {actual_crop}.",
+            "parts": c_record.get("parts"),
         })
 
     # Part B: Remaining replanned seasons
@@ -244,6 +283,26 @@ def run_adaptive_replan(
     total_replan_water = sum(s["water_mm"] for s in comparison_breakdown)
     elapsed_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
 
+    initial_total_profit = sum(
+        (safe_num(crop_lookup.get(c, {}).get("expected_yield", 2.0)) * safe_num(crop_lookup.get(c, {}).get("market_price"), 25000.0) - safe_num(crop_lookup.get(c, {}).get("production_cost"), 40000.0))
+        for c in initial_crops
+    ) * field_area_ha
+    initial_total_water = sum(
+        safe_num(crop_lookup.get(c, {}).get("water_requirement"), 400.0)
+        for c in initial_crops
+    )
+    initial_legume_count = sum(1 for c in initial_crops if crop_lookup.get(c, {}).get("is_legume"))
+    replan_legume_count = sum(1 for c in combined_crops if any(crop_lookup.get(part.strip(), {}).get("is_legume") for part in str(c).split("+")))
+
+    plan_change = {
+        "old_sequence": initial_crops,
+        "new_sequence": combined_crops,
+        "changed_periods": [p for p, o, n in zip(periods, initial_crops, combined_crops) if o != n],
+        "profit_delta_bdt": round(total_replan_profit - initial_total_profit, 2),
+        "water_delta_mm": round(total_replan_water - initial_total_water, 1),
+        "nitrogen_delta_kg": (replan_legume_count - initial_legume_count) * 35.0,
+    }
+
     return {
         "status": "ok",
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -299,6 +358,7 @@ def run_adaptive_replan(
         ],
         "seasonal_comparison": comparison_breakdown,
         "why_changed_explanations": why_changed_explanations,
+        "plan_change": plan_change,
         "scientific_disclaimer": (
             "Adaptive replanning executes mathematical branch-and-bound optimization re-initialized "
             "from verified field conditions and historical plantings."
