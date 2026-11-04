@@ -594,6 +594,104 @@ export function MyFarmWorkspaceView({
     }
   };
 
+
+  const [isCreatingSample, setIsCreatingSample] = useState(false);
+
+  const handleCreateSampleField = async () => {
+    setIsCreatingSample(true);
+    try {
+      const reqFn = typeof request === 'function' ? request : (async (p, opts) => {
+        const res = await fetch(p, { ...opts, headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) } });
+        return res.json();
+      });
+
+      const samplePayload = {
+        name: lang === 'bn' ? 'বগুড়া বহুমুখী কৃষি খামার (Model Farm)' : 'Bogura Multi-Crop Model Farm',
+        district: 'bogura',
+        division: 'Rajshahi',
+        upazila: 'Sadar',
+        area_ha: 1.0,
+        latitude: 24.8500,
+        longitude: 89.3700,
+        soil_texture: 'loam',
+        soil_ph: 6.5,
+        organic_matter: 2.2,
+        irrigation_capacity_mm: 800,
+        irrigation_source: 'shallow_tubewell',
+        crop: 'rice',
+        seasonally_flooded: false,
+        existing_rotation: {
+          rabi: 'Boro Rice',
+          kharif1: 'Fallow',
+          kharif2: 'T. Aman Rice'
+        }
+      };
+
+      const res = await reqFn('/api/fields', {
+        method: 'POST',
+        body: JSON.stringify(samplePayload)
+      });
+
+      if (res && res.field) {
+        try {
+          await reqFn('/api/fields/' + res.field.id + '/history', {
+            method: 'POST',
+            body: JSON.stringify({
+              season: 'Rabi',
+              year: 2024,
+              crop: 'Boro Rice',
+              yield_ton_per_ha: 6.2,
+              water_applied_mm: 750,
+              notes: 'নমুনা ফলন রেকর্ড'
+            })
+          });
+          await reqFn('/api/fields/' + res.field.id + '/history', {
+            method: 'POST',
+            body: JSON.stringify({
+              season: 'Kharif-1',
+              year: 2024,
+              crop: 'Fallow',
+              yield_ton_per_ha: 0,
+              water_applied_mm: 0,
+              notes: 'পতিত জমি'
+            })
+          });
+          await reqFn('/api/fields/' + res.field.id + '/history', {
+            method: 'POST',
+            body: JSON.stringify({
+              season: 'Kharif-2',
+              year: 2024,
+              crop: 'T. Aman Rice',
+              yield_ton_per_ha: 4.5,
+              water_applied_mm: 200,
+              notes: 'রোপা আমন'
+            })
+          });
+          await reqFn('/api/fields/' + res.field.id + '/enrich', { method: 'POST' });
+        } catch (e) {
+          console.warn('Sample history enrichment note:', e);
+        }
+
+        if (onSelectField) onSelectField(res.field);
+        setMapToast({
+          type: 'success',
+          message: lang === 'bn' ? 'বগুড়া মডেল খামার সফলভাবে তৈরি হয়েছে!' : 'Bogura Model Farm created successfully!'
+        });
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+    } catch (err) {
+      console.error('Error creating sample field:', err);
+      setMapToast({
+        type: 'error',
+        message: lang === 'bn' ? ('ত্রুটি: ' + err.message) : ('Error: ' + err.message)
+      });
+    } finally {
+      setIsCreatingSample(false);
+    }
+  };
+
   // Filtered fields for Tab 1
   const filteredFields = useMemo(() => {
     if (!searchQuery.trim()) return userFields;
@@ -643,7 +741,7 @@ export function MyFarmWorkspaceView({
   ];
 
   return (
-    <div className="my-farm-workspace" style={{ padding: '8px 0 32px 0', maxWidth: 1400, margin: '0 auto' }}>
+    <div className="my-farm-workspace" style={{ padding: '16px 24px 48px', maxWidth: 1680, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
       
       {/* Top Header Card */}
       <Card variant="glass" style={{ marginBottom: 20 }}>
@@ -670,7 +768,18 @@ export function MyFarmWorkspaceView({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateSampleField}
+              disabled={isCreatingSample}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: '#10b981', color: '#10b981' }}
+              title={lang === 'bn' ? 'আবর্তন ও সেচ পরীক্ষা করতে ১ হেক্টর মডেল খামার যোগ করুন' : 'Add 1 ha model farm to test rotation'}
+            >
+              <span>🌾</span>
+              <span>{isCreatingSample ? (lang === 'bn' ? 'তৈরি হচ্ছে...' : 'Creating...') : (lang === 'bn' ? 'নমুনা জমি যোগ করুন' : 'Add Sample Field')}</span>
+            </Button>
             <Button
               variant="primary"
               size="sm"
@@ -711,7 +820,7 @@ export function MyFarmWorkspaceView({
                 onSelectField={(f) => {
                   if (onSelectField) onSelectField(f);
                 }}
-                height="320px"
+                height="420px"
               />
             </div>
           </Card>
@@ -762,9 +871,15 @@ export function MyFarmWorkspaceView({
                   : (lang === 'bn' ? 'এখনো কোনো জমি যোগ করা হয়নি। "+ নতুন জমি" বোতামে ক্লিক করুন।' : 'No fields added yet. Click "+ Add New Field" to begin.')
                 }
                 action={
-                  <Button variant="primary" size="sm" onClick={onAddField}>
-                    {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add New Field'}
-                  </Button>
+                  <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 12 }}>
+                    <Button variant="primary" size="md" onClick={handleCreateSampleField} disabled={isCreatingSample} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span>🌾</span>
+                      <span>{isCreatingSample ? (lang === 'bn' ? 'তৈরি হচ্ছে...' : 'Creating...') : (lang === 'bn' ? 'নমুনা জমি তৈরি করুন (বগুড়া মডেল খামার)' : 'Add Sample Bogura Model Farm')}</span>
+                    </Button>
+                    <Button variant="outline" size="md" onClick={onAddField}>
+                      + {lang === 'bn' ? 'নতুন জমি যোগ করুন' : 'Add New Field'}
+                    </Button>
+                  </div>
                 }
               />
             </Card>

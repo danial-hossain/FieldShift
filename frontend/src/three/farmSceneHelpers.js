@@ -54,3 +54,16 @@ export function haToBigha(ha) {
   return (Number(ha) * 7.4749).toFixed(1);
 }
 
+export function isWebGLAvailable() {
+  try {
+    if (typeof window === 'undefined' || !window.WebGLRenderingContext) return false;
+    const canvas = document.createElement('canvas');
+    return Boolean(
+      canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
+    );
+  } catch (e) {
+    return false;
+  }
+}
+
+

@@ -64,10 +64,10 @@ export function SixSeasonRecommendationView({
   theme = 'dark',
   onSelectField,
   onRunWorkflow,
-  defaultDistrict = '',
+  defaultDistrict = 'bogura',
 }) {
   const { t } = useTranslation(lang);
-  const district = activeField?.district || defaultDistrict || '';
+  const district = activeField?.district || defaultDistrict || 'bogura';
 
   // A1: Compute Farmer Existing Rotation Baseline
   const baselineRotationList = useMemo(() => {

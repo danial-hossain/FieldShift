@@ -23,9 +23,10 @@ import {
   FARM_PALETTE,
   getCropCategory,
   haToBigha,
+  isWebGLAvailable,
 } from './farmSceneHelpers.js';
 
-export { FARM_PALETTE, getCropCategory, haToBigha };
+export { FARM_PALETTE, getCropCategory, haToBigha, isWebGLAvailable };
 
 export function FarmScene3D({
   beds = [],

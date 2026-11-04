@@ -14874,7 +14874,7 @@ select option {
 .main-content,
 .main-wrapper > main,
 .dashboard-main-view {
-  max-width: 1440px !important;
+  max-width: 1680px !important;
   margin: 0 auto !important;
   padding: 0 24px 40px 24px !important;
   box-sizing: border-box !important;
@@ -15083,6 +15083,7 @@ select option {
 
 /* Universal Page Container: max 1680px, 24px gaps */
 .app-shell .main-content > div,
+.my-farm-workspace,
 .farmer-home-container,
 .six-season-recommendation-workspace,
 .farm-planning-container,
