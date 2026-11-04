@@ -33,10 +33,10 @@ export function FarmPlanningView({
   }, [initialSubTab]); // 'milp' | 'replan' | 'comparison'
 
   const subTabs = [
-    { id: 'milp', label: lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনা (MILP)' : '1. 6-Season Rotation Planner', icon: '🌾' },
-    { id: 'advisory', label: lang === 'bn' ? 'নাসা ধান রোপণ উপদেষ্টা' : '2. NASA Rice Planting Advisory', icon: '🌱' },
-    { id: 'replan', label: lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা (Adaptive Replan)' : '3. Adaptive Next-Season Replan', icon: '🔄' },
-    { id: 'comparison', label: lang === 'bn' ? 'তুলনামূলক ল্যাব (MILP vs RL vs Rule)' : '4. 3-Way Comparison Lab', icon: '🧪' },
+    { id: 'milp', label: lang === 'bn' ? '১. ৬-মৌসুম পরিকল্পনা (6-Season Plan)' : '1. 6-Season Rotation Plan', icon: '🌾' },
+    { id: 'replan', label: lang === 'bn' ? '২. অভিযোজিত পুনঃপরিকল্পনা (Adaptive Replan)' : '2. Adaptive Next-Season Replan', icon: '🔄' },
+    { id: 'stress', label: lang === 'bn' ? '৩. জলবায়ু চাপ পরীক্ষা (Stress Test)' : '3. Climate Stress Test', icon: '⚡' },
+    { id: 'comparison', label: lang === 'bn' ? '৪. কৌশল তুলনা (Compare Strategies)' : '4. Compare Strategies', icon: '🔬' },
   ];
 
   return (

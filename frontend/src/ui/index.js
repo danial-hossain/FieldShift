@@ -25,4 +25,5 @@ export { SegmentedControl } from './SegmentedControl.jsx';
 export { SliderWithLabels } from './SliderWithLabels.jsx';
 export { ChartCard } from './ChartCard.jsx';
 export { SourceChip } from './SourceChip.jsx';
+export { CropIllustration } from './CropIllustration.jsx';
 export * from './Icons.jsx';
