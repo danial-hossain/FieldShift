@@ -92,6 +92,65 @@ class FeatureExpansionTestSuite(unittest.TestCase):
         self.assertIn("most_water_efficient", trade_offs)
         self.assertIn("honest_evaluation_summary", trade_offs)
         self.assertTrue(result["export_csv"].startswith("Evaluation Dimension"))
+        milp_method = next(method for method in result["methods"] if method["id"] == "milp")
+        self.assertTrue(milp_method["decision_explanation"]["period_reasons"])
+
+    def test_saved_rotation_is_compared_as_a_fourth_strategy(self):
+        result = run_three_way_comparison(
+            self.state,
+            self.power,
+            crops=self.crops,
+            features=self.features,
+            priority="balanced",
+            existing_rotation={
+                "rabi": "Lentil",
+                "kharif1": "Maize",
+                "kharif2": "Rice",
+            },
+            existing_rotation_source="saved_field_rotation",
+        )
+
+        method = next(item for item in result["methods"] if item["id"] == "existing_rotation")
+        self.assertEqual(method["baseline_source"], "saved_field_rotation")
+        self.assertEqual(method["baseline_completeness"], 1.0)
+        self.assertEqual(len(method["rotation"]), 6)
+        self.assertEqual(method["evaluation_basis"], "common_dynamic_agronomic_matrix")
+
+    def test_incomplete_saved_rotation_is_not_projected_as_farmer_practice(self):
+        result = run_three_way_comparison(
+            self.state,
+            self.power,
+            crops=self.crops,
+            features=self.features,
+            priority="balanced",
+            existing_rotation={"rabi": "Lentil", "kharif1": "Maize"},
+            existing_rotation_source="saved_field_rotation",
+        )
+
+        self.assertNotIn("existing_rotation", {item["id"] for item in result["methods"]})
+        self.assertEqual(result["baseline_provenance"]["status"], "incomplete_unavailable")
+        self.assertAlmostEqual(result["baseline_provenance"]["completeness"], 2 / 3)
+
+    def test_saved_history_baseline_retains_historical_year(self):
+        result = run_three_way_comparison(
+            self.state,
+            self.power,
+            crops=self.crops,
+            features=self.features,
+            priority="balanced",
+            existing_rotation={
+                "rabi": "Lentil",
+                "kharif1": "Maize",
+                "kharif2": "Rice",
+            },
+            existing_rotation_source="saved_field_history",
+            existing_rotation_year=2023,
+        )
+
+        method = next(item for item in result["methods"] if item["id"] == "existing_rotation")
+        self.assertEqual(method["name"], "Saved Farmer Rotation History")
+        self.assertIn("2023", method["provenance"])
+        self.assertEqual(result["baseline_provenance"]["historical_period"], 2023)
 
     def test_crop_failure_and_recovery_simulator(self):
         result = simulate_crop_failure_and_recovery(

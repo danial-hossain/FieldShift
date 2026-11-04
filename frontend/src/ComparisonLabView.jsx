@@ -55,6 +55,18 @@ export function ComparisonLabView({
     return null;
   }, [comparisonLab, analysisResult]);
 
+  const fieldInputKey = JSON.stringify({
+    id: activeField?.id || 'demo',
+    latitude: activeField?.latitude ?? null,
+    longitude: activeField?.longitude ?? null,
+    area_ha: activeField?.area_ha ?? null,
+    soil_texture: activeField?.soil_texture ?? null,
+    soil_ph: activeField?.soil_ph ?? null,
+    organic_matter: activeField?.organic_matter ?? null,
+    irrigation_capacity_mm: activeField?.irrigation_capacity_mm ?? null,
+    existing_rotation: activeField?.existing_rotation ?? null,
+  });
+
   // Track the last evaluated (fieldId, priority) pair to prevent infinite loops
   const lastFetchKeyRef = useRef(null);
 
@@ -85,6 +97,8 @@ export function ComparisonLabView({
         area_ha: isDemo ? 10.0 : Number(activeField.area_ha),
         field_size_ha: isDemo ? 10.0 : Number(activeField.area_ha),
         priority: selectedPriority,
+        soil_texture: activeField?.soil_texture ?? undefined,
+        existing_rotation: activeField?.existing_rotation ?? undefined,
       };
 
       if (activeField?.soil_ph != null && Number.isFinite(Number(activeField.soil_ph))) {
@@ -132,8 +146,10 @@ export function ComparisonLabView({
 
   // Synchronize on mount or when field or priority changes
   useEffect(() => {
-    const currentKey = `${activeField?.id || 'demo'}_${priority}`;
-    if (cachedData && (cachedData.priority === priority || !cachedData.priority)) {
+    const currentKey = `${fieldInputKey}_${priority}`;
+    const expectedFieldId = String(activeField?.id || 'demo');
+    const cachedFieldMatches = String(cachedData?.field_id || '') === expectedFieldId;
+    if (cachedData && cachedFieldMatches && (cachedData.priority === priority || !cachedData.priority)) {
       setLabData(cachedData);
       setIsStale(false);
       setError('');
@@ -142,11 +158,10 @@ export function ComparisonLabView({
       lastFetchKeyRef.current = currentKey;
       runLabComparison(priority);
     }
-  }, [activeField?.id, priority, cachedData]);
+  }, [fieldInputKey, priority, cachedData]);
 
   const handlePriorityChange = (newP) => {
     setPriority(newP);
-    runLabComparison(newP);
   };
 
   const handleExportCSV = () => {
@@ -178,6 +193,7 @@ export function ComparisonLabView({
   const milpMethod = methods.find(m => m.id === 'milp') || null;
   const rlMethod = methods.find(m => m.id === 'rl') || null;
   const ruleMethod = methods.find(m => m.id === 'rule_based') || null;
+  const existingRotationMethod = methods.find(m => m.id === 'existing_rotation') || null;
   const tradeOffs = labData?.trade_off_analysis || {};
   const seasons = Array.isArray(labData?.seasons) && labData.seasons.length > 0 ? labData.seasons : null;
 
@@ -201,7 +217,7 @@ export function ComparisonLabView({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
               <span className="badge badge-accent" style={{ background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 700 }}>
-                P0 SCIENTIFIC BENCHMARK
+                RESEARCH MODEL COMPARISON
               </span>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                 Field: <strong style={{ color: 'var(--text-main)' }}>
@@ -210,10 +226,10 @@ export function ComparisonLabView({
               </span>
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-              MILP vs RL vs Rule-Based Comparison Lab
+              Rotation Strategy Comparison Lab
             </h2>
             <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: 13, maxWidth: 780 }}>
-              Evaluates Mixed-Integer Linear Programming, Reinforcement Learning sequential Q-policy, and a deterministic agronomic rule baseline under identical environmental history, field area, and planning horizons.
+              Evaluates MILP, synthetic RL, and rule-based strategies against a common two-year crop-season matrix. A saved farmer rotation is included when complete; field totals require a known area, and soil outputs are model proxies.
             </p>
           </div>
 
@@ -375,7 +391,15 @@ export function ComparisonLabView({
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
-            Solves multi-season integer constraints via branch-and-bound. Guarantees global optimality for the specified objective.
+            {milpMethod?.optimality_guarantee || 'Solver optimality status unavailable.'} Results are model outputs, not field-validated outcomes.
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 16 }}>
+            {milpMethod?.decision_explanation?.strategy_summary || 'MILP explanation unavailable.'}
+            {(milpMethod?.decision_explanation?.period_reasons || []).slice(0, 3).map((reason) => (
+              <div key={reason.period} style={{ marginTop: 6 }}>
+                <strong>{reason.period} — {reason.crop}:</strong> {reason.why_selected || reason.why_this_crop}
+              </div>
+            ))}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
@@ -394,7 +418,7 @@ export function ComparisonLabView({
             </div>
 
             <div style={{ background: 'var(--bg-root)', padding: '10px 12px', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Water Consumption</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Modeled Irrigation Requirement</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-blue)', marginTop: 2 }}>
                 {milpMethod?.water_requirement_mm != null && Number.isFinite(Number(milpMethod.water_requirement_mm))
                   ? `${formatNumber(milpMethod.water_requirement_mm, 0)} mm`
@@ -486,7 +510,7 @@ export function ComparisonLabView({
             </div>
 
             <div style={{ background: 'var(--bg-root)', padding: '10px 12px', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Water Consumption</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Modeled Irrigation Requirement</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-blue)', marginTop: 2 }}>
                 {rlMethod?.water_requirement_mm != null && Number.isFinite(Number(rlMethod.water_requirement_mm))
                   ? `${formatNumber(rlMethod.water_requirement_mm, 0)} mm`
@@ -578,7 +602,7 @@ export function ComparisonLabView({
             </div>
 
             <div style={{ background: 'var(--bg-root)', padding: '10px 12px', borderRadius: 8 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Water Consumption</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Modeled Irrigation Requirement</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent-blue)', marginTop: 2 }}>
                 {ruleMethod?.water_requirement_mm != null && Number.isFinite(Number(ruleMethod.water_requirement_mm))
                   ? `${formatNumber(ruleMethod.water_requirement_mm, 0)} mm`
@@ -626,6 +650,36 @@ export function ComparisonLabView({
                 Runtime: {ruleMethod?.runtime_ms != null && Number.isFinite(Number(ruleMethod.runtime_ms)) ? `${ruleMethod.runtime_ms} ms` : '—'}
               </div>
             </div>
+
+            {existingRotationMethod && (
+              <div className="dash-card" style={{ borderTop: '4px solid #94a3b8', position: 'relative' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                  Saved farmer rotation · projected over common horizon
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, margin: '2px 0 12px' }}>
+                  {existingRotationMethod.name}
+                </h3>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+                  {existingRotationMethod.provenance}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-main)', marginBottom: 8 }}>
+                  Gross margin estimate: {existingRotationMethod.profit_bdt_per_ha != null
+                    ? `৳${formatNumber(existingRotationMethod.profit_bdt_per_ha, 0)}/ha`
+                    : 'Not available'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-main)', marginBottom: 8 }}>
+                  Modeled irrigation requirement: {existingRotationMethod.water_requirement_mm != null
+                    ? `${formatNumber(existingRotationMethod.water_requirement_mm, 0)} mm`
+                    : 'Not available'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-main)' }}>
+                  {existingRotationMethod.rotation_sequence || 'Rotation not available'}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginTop: 10 }}>
+                  Historical period not recorded. Pattern repeated across modeled horizon; constraint validation unavailable.
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: 10 }}>
@@ -658,6 +712,7 @@ export function ComparisonLabView({
                   <th style={{ padding: '10px 12px', color: 'var(--primary)' }}>Method A: MILP Optimizer</th>
                   <th style={{ padding: '10px 12px', color: 'var(--accent-purple)' }}>Method B: RL Policy</th>
                   <th style={{ padding: '10px 12px', color: 'var(--accent-amber)' }}>Method C: Rule Baseline</th>
+                  {existingRotationMethod && <th style={{ padding: '10px 12px', color: '#94a3b8' }}>Saved Farmer Rotation</th>}
                 </tr>
               </thead>
               <tbody>
@@ -665,6 +720,7 @@ export function ComparisonLabView({
                   const milpCrop = getCropForSeason(milpMethod, seasonLabel, idx);
                   const rlCrop = getCropForSeason(rlMethod, seasonLabel, idx);
                   const ruleCrop = getCropForSeason(ruleMethod, seasonLabel, idx);
+                  const existingCrop = getCropForSeason(existingRotationMethod, seasonLabel, idx);
 
                   return (
                     <tr key={seasonLabel} style={{ borderBottom: '1px solid var(--border-light)' }}>
@@ -689,6 +745,11 @@ export function ComparisonLabView({
                           {ruleCrop}
                         </span>
                       </td>
+                      {existingRotationMethod && (
+                        <td style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--text-main)' }}>
+                          {existingCrop}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -714,24 +775,24 @@ export function ComparisonLabView({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginBottom: 18 }}>
           {/* Highest Profit Winner */}
           <div style={{ background: 'var(--bg-root)', padding: 14, borderRadius: 10, border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase' }}>Highest Profit Winner</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase' }}>Highest modeled gross margin (estimate)</div>
             <div style={{ fontSize: 16, fontWeight: 800, margin: '4px 0', color: 'var(--text-main)' }}>
               {profitWinner.hasWinner ? (
                 <>
                   {profitWinner.method} (৳{formatNumber(profitWinner.value, 0)}/ha)
                 </>
               ) : (
-                <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>Winner unavailable (data incomplete)</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: 14 }}>No comparable ranking available</span>
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {profitWinner.explanation || 'Comparative profit metrics are incomplete across methods.'}
+              {profitWinner.explanation || 'Model-based estimates only; crop economics are illustrative and are not farm outcomes.'}
             </div>
           </div>
 
           {/* Hydrologic Conservation */}
           <div style={{ background: 'var(--bg-root)', padding: 14, borderRadius: 10, border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase' }}>Hydrologic Conservation</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase' }}>Modeled irrigation requirement (estimate)</div>
             <div style={{ fontSize: 16, fontWeight: 800, margin: '4px 0', color: 'var(--text-main)' }}>
               {waterWinner.hasWinner ? (
                 <>
@@ -742,7 +803,7 @@ export function ComparisonLabView({
               )}
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              {waterWinner.explanation || 'Water consumption metrics are incomplete across methods.'}
+              {waterWinner.explanation || 'No ranking is shown when a strategy result or common input metric is missing.'}
             </div>
           </div>
 
@@ -769,11 +830,7 @@ export function ComparisonLabView({
             Scientific Integrity &amp; Methodological Boundary Disclosure
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-main)', lineHeight: 1.6 }}>
-            {tradeOffs?.honest_evaluation_summary || (
-              "MILP delivers provable global mathematical optimality for the modeled objective function, strictly satisfying all constraints without manual tuning. " +
-              "The RL policy can adapt dynamically per-season but relies on heuristic future value estimation and simulation dynamics; it is not empirically field-validated. " +
-              "The Rule-Based baseline provides high transparency and zero runtime overhead but sacrifices economic yield due to rigid heuristic rules."
-            )}
+            {tradeOffs?.honest_evaluation_summary || 'Comparison results are model estimates, not measured farm outcomes. The RL policy is synthetic and not field-validated; soil metrics are proxies.'}
           </div>
         </div>
         <SaaoNotice lang={lang} />

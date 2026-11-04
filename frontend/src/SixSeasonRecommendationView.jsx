@@ -90,7 +90,7 @@ export function SixSeasonRecommendationView({
     const prefix = profitPerHaYear > 0 ? '+' : '';
     const perHaText = `${prefix}${formatCurrency(profitPerHaYear, langCode)}/ha`;
     const note = langCode === 'bn' ? 'উদাহরণমূলক দাম' : 'illustrative price';
-    if (areaHa && Number.isFinite(Number(areaHa)) && Number(areaHa) > 0 && Math.abs(Number(areaHa) - 1.0) > 0.05) {
+    if (areaHa && Number.isFinite(Number(areaHa)) && Number(areaHa) > 0) {
       const total = Math.round(profitPerHaYear * Number(areaHa));
       const totalPrefix = total > 0 ? '+' : '';
       const totalLabel = langCode === 'bn' ? 'মোট খামারে' : 'total farm';
@@ -128,7 +128,6 @@ export function SixSeasonRecommendationView({
 
   const [noPowerTiller, setNoPowerTiller] = useState(false);
   const [labourShortage, setLabourShortage] = useState(false);
-  const [marketPreferences, setMarketPreferences] = useState(['Mustard', 'Lentil', 'Potato', 'Maize']);
   const [showConstraintsPanel, setShowConstraintsPanel] = useState(false);
 
   const bestSuitedStrategy = useMemo(() => {
@@ -142,9 +141,8 @@ export function SixSeasonRecommendationView({
   const bindingConstraints = useMemo(() => {
     const list = [];
     list.push(lang === 'bn' ? 'প্রতি মৌসুমে ১টি একক শস্য নির্বাচন (৬ মৌসুম)' : 'Single crop per season (6 periods)');
-    list.push(lang === 'bn' ? 'বোটানিক্যাল পরিবার পর্যায়ক্রম ও রোগ প্রতিরোধ (২৯০টি বিধি)' : 'Botanical family transition constraints (290 rules)');
-    list.push(lang === 'bn' ? 'মাটি স্বাস্থ্য বিধি: প্রতি ৩ মৌসুমে ন্যূনতম ১টি ডালশস্য (BNF)' : 'Soil Health: Min 1 legume every 3 seasons (BNF)');
-    list.push(lang === 'bn' ? 'খাদ্য নিরাপত্তা নীতি: বছরে ন্যূনতম ১টি খাদ্যশস্য (ভাত/গম/ভুট্টা)' : 'Food Security: Min 1 cereal per year');
+    list.push(lang === 'bn' ? 'বোটানিক্যাল পরিবার পর্যায়ক্রম ও রোগ প্রতিরোধ' : 'Botanical family transition constraints');
+    list.push(lang === 'bn' ? 'মডেল বিধি: প্রতি ৩ মৌসুমে ন্যূনতম ১টি ডালশস্য' : 'Model rule: at least one legume every 3 seasons');
     if (waterAvailability === 'limited') {
       list.push(lang === 'bn' ? 'আবদ্ধ সেচ সীমা: সর্বোচ্চ ৪০০ মিমি (Limited Irrigation Cap)' : 'Binding Cap: Limited Irrigation (400 mm max)');
     } else if (waterAvailability === 'none') {
@@ -154,7 +152,7 @@ export function SixSeasonRecommendationView({
       list.push(lang === 'bn' ? 'টিলার সীমাবদ্ধতা: আলু ও নিবিড় কন্দশস্য বাদ (No Heavy Tiller)' : 'Equipment Limit: Potato/Tuber excluded');
     }
     if (labourShortage) {
-      list.push(lang === 'bn' ? 'শ্রম সংকট সীমাবদ্ধতা: উচ্চ শ্রমঘন নিড়ানি ফসল বর্জিত' : 'Labour Shortage: Intensive weeding crops excluded');
+      list.push(lang === 'bn' ? 'শ্রম সংকট সংরক্ষিত; ফসলভিত্তিক শ্রম-চাহিদার তথ্য না থাকায় সলভার এটি প্রয়োগ করতে পারে না' : 'Labour shortage recorded; optimizer cannot apply it without crop-level labor-demand data');
     }
     const distLower = (district || '').toLowerCase();
     const isHaor = Boolean(activeField?.seasonally_flooded) || ['sunamganj', 'netrokona', 'kishoreganj', 'habiganj'].includes(distLower);
@@ -194,8 +192,8 @@ export function SixSeasonRecommendationView({
     const bodyBase = {
       district: district || 'bogura',
       field_id: activeField?.id !== 'demo' && activeField?.id ? activeField.id : undefined,
-      latitude: activeField?.latitude != null ? Number(activeField.latitude) : 24.85,
-      longitude: activeField?.longitude != null ? Number(activeField.longitude) : 89.37,
+      latitude: activeField?.latitude != null ? Number(activeField.latitude) : undefined,
+      longitude: activeField?.longitude != null ? Number(activeField.longitude) : undefined,
       field_size_ha: fieldAreaHa || undefined,
       area_ha: fieldAreaHa || undefined,
       seasonally_flooded: Boolean(activeField?.seasonally_flooded),
@@ -205,6 +203,8 @@ export function SixSeasonRecommendationView({
       irrigation_capacity_mm: waterAvailability === 'none' ? 0 : (waterAvailability === 'limited' ? 400 : (activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : 1200)),
       existing_rotation: activeField?.existing_rotation || undefined,
       history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
+      no_power_tiller: noPowerTiller,
+      labour_shortage: labourShortage,
     };
 
     Promise.all(
@@ -234,7 +234,25 @@ export function SixSeasonRecommendationView({
       });
 
     return () => { isCancelled = true; };
-  }, [district, reloadKey, activeField?.id, activeField?.area_ha, activeField?.irrigation_capacity_mm, activeField?.existing_rotation, waterAvailability]);
+  }, [
+    district,
+    reloadKey,
+    activeField?.id,
+    activeField?.area_ha,
+    activeField?.latitude,
+    activeField?.longitude,
+    activeField?.soil_texture,
+    activeField?.soil_ph,
+    activeField?.organic_matter,
+    activeField?.irrigation_capacity_mm,
+    activeField?.existing_rotation,
+    activeField?.seasonally_flooded,
+    activeField?.crop_history,
+    activeField?.history,
+    waterAvailability,
+    noPowerTiller,
+    labourShortage,
+  ]);
 
   // Extract field area (no hardcoded fallback)
   const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;
@@ -273,9 +291,13 @@ export function SixSeasonRecommendationView({
 
     const baselineBareDays = baselineComparison?.baseline_bare_days ?? solverResult?.baseline_bare_days ?? planningData?.baseline_bare_days ?? null;
     const planBareDays = baselineComparison?.plan_bare_days ?? solverResult?.plan_bare_days ?? planningData?.plan_bare_days ?? null;
+    const nitrogenEstimateMethod = baselineComparison?.nitrogen_estimate_method ?? solverResult?.nitrogen_estimate_method ?? null;
+    const bareSoilEstimateMethod = baselineComparison?.bare_soil_estimate_method ?? solverResult?.bare_soil_estimate_method ?? null;
 
     const baselineRotation = baselineComparison?.baseline_rotation || solverResult?.baseline_rotation || planningData?.baseline_rotation || null;
     const isAssumedBaseline = baselineComparison?.is_assumed_baseline ?? solverResult?.is_assumed_baseline ?? planningData?.is_assumed_baseline ?? true;
+    const baselineSource = baselineComparison?.baseline_source ?? solverResult?.baseline_source ?? null;
+    const baselineHistoricalPeriod = baselineComparison?.baseline_historical_period ?? solverResult?.baseline_historical_period ?? null;
 
     return {
       strategyId: selectedStrategy,
@@ -287,6 +309,8 @@ export function SixSeasonRecommendationView({
       solverStatus,
       environmentBasis,
       climateSource: activePlanResponse?.climate_source,
+      fieldDataSources: activePlanResponse?.summary?.field_state?.field_data_sources || {},
+      coordinatesSource: activePlanResponse?.summary?.field_state?.coordinates_source || null,
       cropSeasonMatrix,
       decisionExplanation: solverResult?.decision_explanation || {},
       fallbackReasons: {},
@@ -302,8 +326,12 @@ export function SixSeasonRecommendationView({
       nitrogenDeltaKg,
       baselineBareDays,
       planBareDays,
+      nitrogenEstimateMethod,
+      bareSoilEstimateMethod,
       baselineRotation,
       isAssumedBaseline,
+      baselineSource,
+      baselineHistoricalPeriod,
       risk: solverResult?.risk || planningData?.risk || activePlanResponse?.risk || null,
     };
   }, [activePlanResponse, selectedStrategy, summary]);
@@ -454,45 +482,16 @@ export function SixSeasonRecommendationView({
 
   const soilHealthIndicators = useMemo(() => {
     const families = new Set();
-    (sixSeasonRecommendations || []).forEach(s => {
-      const crop = (s.cropName || '').toLowerCase();
-      if (crop.includes('rice') || crop.includes('ধান') || crop.includes('boro') || crop.includes('aman') || crop.includes('aus')) {
-        families.add('Poaceae');
-      } else if (crop.includes('lentil') || crop.includes('mung') || crop.includes('chickpea') || crop.includes('ডাল') || crop.includes('মুগ')) {
-        families.add('Fabaceae');
-      } else if (crop.includes('mustard') || crop.includes('সরিষা')) {
-        families.add('Brassicaceae');
-      } else if (crop.includes('maize') || crop.includes('ভুট্টা') || crop.includes('wheat') || crop.includes('গম')) {
-        families.add('Poaceae');
-      } else if (crop.includes('jute') || crop.includes('পাট')) {
-        families.add('Malvaceae');
-      } else if (crop.includes('potato') || crop.includes('আলু')) {
-        families.add('Solanaceae');
-      } else if (!crop.includes('fallow') && !crop.includes('পতিত')) {
-        families.add('Other');
+    (sixSeasonRecommendations || []).forEach(({ cropMeta }) => {
+      if (typeof cropMeta?.family === 'string' && cropMeta.family.trim()) {
+        families.add(cropMeta.family.trim());
       }
     });
 
-    const familyCount = Math.max(2, families.size);
-    const bnfKg = Math.round((aggregateMetrics.legumeCount || 1) * 35);
-    const ureaSavedBdt = Math.round(bnfKg * 38);
-    const annualBareDays = Math.max(20, Math.round(75 - (aggregateMetrics.legumeCount || 1) * 18));
-    const somContributionPct = Number((0.15 + (aggregateMetrics.legumeCount || 1) * 0.08).toFixed(2));
-    const pestBreakRating = familyCount >= 3
-      ? (lang === 'bn' ? 'উচ্চ (কার্যকর রোগ প্রতিরোধ)' : 'High (Effective Break)')
-      : (lang === 'bn' ? 'মাঝারি (পরিমিত প্রতিরোধ)' : 'Medium (Moderate Break)');
-    const erosionCoverPct = Math.min(95, Math.round(65 + (aggregateMetrics.legumeCount || 1) * 10));
-
     return {
-      annualBareDays,
-      bnfKg,
-      ureaSavedBdt,
-      somContributionPct,
-      pestBreakRating,
-      familyCount,
-      erosionCoverPct
+      familyCount: families.size,
     };
-  }, [sixSeasonRecommendations, aggregateMetrics, lang]);
+  }, [sixSeasonRecommendations]);
 
 
   // Selected season deep-dive details
@@ -736,20 +735,46 @@ export function SixSeasonRecommendationView({
   const rotationTextBn = year1RotationList.map(c => translateCropName(c, 'bn')).join(' → ');
   const rotationTextEn = year1RotationList.map(c => translateCropName(c, 'en')).join(' → ');
 
-  const baselineCrops = activePlanData.baselineRotation || (district.toLowerCase() === 'sunamganj' ? ['Boro Rice', 'Fallow', 'Fallow'] : ['Boro Rice', 'Fallow', ['R', 'i', 'c', 'e'].join('')]);
-  const isAssumed = activePlanData.isAssumedBaseline;
-  const baselineRotationBn = baselineCrops.map(c => translateCropName(c, 'bn')).join(' → ') + (isAssumed ? ' (ধরে নেওয়া)' : '');
-  const baselineRotationEn = baselineCrops.map(c => translateCropName(c, 'en')).join(' → ') + (isAssumed ? ' (assumed)' : '');
+  const rawBaseline = activePlanData.baselineRotation;
+  const baselineCrops = Array.isArray(rawBaseline)
+    ? rawBaseline
+    : rawBaseline && typeof rawBaseline === 'object'
+      ? Object.values(rawBaseline)
+      : null;
+  const isAssumed = Boolean(baselineCrops && activePlanData.isAssumedBaseline);
+  const baselineQualifierBn = activePlanData.baselineSource === 'saved_field_history'
+    ? ` (সংরক্ষিত ইতিহাস${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
+    : activePlanData.baselineSource === 'saved_field_rotation'
+      ? ' (সংরক্ষিত জমির প্রোফাইল; সময়কাল অনির্দিষ্ট)'
+      : activePlanData.baselineSource === 'request_supplied_rotation'
+        ? ' (অনুরোধে দেওয়া; যাচাইকৃত নয়)'
+        : isAssumed ? ' (ধরে নেওয়া)' : '';
+  const baselineQualifierEn = activePlanData.baselineSource === 'saved_field_history'
+    ? ` (saved history${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
+    : activePlanData.baselineSource === 'saved_field_rotation'
+      ? ' (saved field profile; period unknown)'
+      : activePlanData.baselineSource === 'request_supplied_rotation'
+        ? ' (request-supplied; unverified)'
+        : isAssumed ? ' (assumed)' : '';
+  const baselineRotationBn = baselineCrops
+    ? baselineCrops.map(c => translateCropName(c, 'bn')).join(' → ') + baselineQualifierBn
+    : 'তথ্য অনুপলভ্য';
+  const baselineRotationEn = baselineCrops
+    ? baselineCrops.map(c => translateCropName(c, 'en')).join(' → ') + baselineQualifierEn
+    : 'Unavailable';
 
-  const deltaProfit = activePlanData.deltaProfit != null ? Math.round(activePlanData.deltaProfit) : 0;
-  const waterSavingsMm = activePlanData.waterSavingsMm != null ? Math.round(activePlanData.waterSavingsMm) : 0;
-  const planIrrigationMm = activePlanData.planIrrigationMm != null ? Math.round(activePlanData.planIrrigationMm) : 0;
-  const extraNkg = activePlanData.nitrogenDeltaKg != null ? Math.round(activePlanData.nitrogenDeltaKg) : (activePlanData.planNitrogenKg != null ? Math.round(activePlanData.planNitrogenKg) : 0);
+  const hasBaseline = Boolean(baselineCrops?.length);
+  const deltaProfit = hasBaseline && activePlanData.deltaProfit != null ? Math.round(activePlanData.deltaProfit) : null;
+  const waterSavingsMm = hasBaseline && activePlanData.waterSavingsMm != null ? Math.round(activePlanData.waterSavingsMm) : null;
+  const planIrrigationMm = hasBaseline && activePlanData.planIrrigationMm != null ? Math.round(activePlanData.planIrrigationMm) : null;
+  const extraNkg = hasBaseline && activePlanData.nitrogenDeltaKg != null ? Math.round(activePlanData.nitrogenDeltaKg) : null;
 
-  const totalFarmDelta = hasArea && fieldAreaHa !== 1.0 && deltaProfit ? Math.round(deltaProfit * fieldAreaHa) : null;
+  const totalFarmDelta = hasArea && deltaProfit != null ? Math.round(deltaProfit * fieldAreaHa) : null;
 
   let profitPhraseBn;
-  if (deltaProfit > 0) {
+  if (deltaProfit == null) {
+    profitPhraseBn = 'সম্ভাব্য লাভের তুলনা অনুপলভ্য';
+  } else if (deltaProfit > 0) {
     profitPhraseBn = `${toBanglaDigits(Math.round(deltaProfit).toLocaleString())} টাকা বেশি সম্ভাব্য লাভ/হেক্টর ${totalFarmDelta ? `(মোট খামারে: +${toBanglaDigits(totalFarmDelta.toLocaleString())} টাকা, উদাহরণমূলক)` : '(উদাহরণমূলক)'}`;
   } else if (deltaProfit === 0) {
     profitPhraseBn = `সম্ভাব্য লাভ সমান (উদাহরণমূলক)`;
@@ -758,7 +783,9 @@ export function SixSeasonRecommendationView({
   }
 
   let profitPhraseEn;
-  if (deltaProfit > 0) {
+  if (deltaProfit == null) {
+    profitPhraseEn = 'profit comparison unavailable';
+  } else if (deltaProfit > 0) {
     profitPhraseEn = `+${deltaProfit.toLocaleString()} BDT/ha profit ${totalFarmDelta ? `(total farm: +${totalFarmDelta.toLocaleString()} BDT, illustrative)` : '(illustrative)'}`;
   } else if (deltaProfit === 0) {
     profitPhraseEn = `match baseline profit (illustrative)`;
@@ -767,7 +794,9 @@ export function SixSeasonRecommendationView({
   }
 
   let waterPhraseBn;
-  if (waterSavingsMm > 0) {
+  if (waterSavingsMm == null) {
+    waterPhraseBn = 'সেচ তুলনা অনুপলভ্য';
+  } else if (waterSavingsMm > 0) {
     waterPhraseBn = `বছরে ~${toBanglaDigits(Math.round(waterSavingsMm))} মিমি কম সেচ`;
   } else if (waterSavingsMm === 0) {
     waterPhraseBn = `বছরে সেচ প্রয়োজন সমান (~${toBanglaDigits(Math.round(planIrrigationMm))} মিমি/বছর)`;
@@ -776,7 +805,9 @@ export function SixSeasonRecommendationView({
   }
 
   let nPhraseBn;
-  if (extraNkg > 0) {
+  if (extraNkg == null) {
+    nPhraseBn = 'নাইট্রোজেন প্রভাবের মডেল অনুমান অনুপলভ্য';
+  } else if (extraNkg > 0) {
     nPhraseBn = `${toBanglaDigits(Math.round(extraNkg))} কেজি বেশি নাইট্রোজেন`;
   } else if (extraNkg === 0) {
     nPhraseBn = `নাইট্রোজেন স্তর অপরিবর্তিত`;
@@ -785,11 +816,11 @@ export function SixSeasonRecommendationView({
   }
 
   const answerFirstSentence = lang === 'bn'
-    ? `আপনার ${activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'বগুড়ার'} ${formatNumber(fieldAreaHa || 1, 1)} হেক্টর জমিতে বর্তমান ${baselineRotationBn} এর বদলে ${rotationTextBn} করলে ${waterPhraseBn}, ${nPhraseBn}, ${profitPhraseBn}।`
-    : `By switching from ${baselineRotationEn} to ${rotationTextEn} on your ${formatNumber(fieldAreaHa || 1, 1)} ha parcel in ${activeField?.district || 'Bogura'}, you ${waterSavingsMm > 0 ? `save ~${waterSavingsMm} mm irrigation water` : (waterSavingsMm === 0 ? `match baseline irrigation (~${planIrrigationMm} mm/yr)` : `use ~${Math.abs(waterSavingsMm)} mm more irrigation water`)}, ${extraNkg >= 0 ? `add ${extraNkg} kg soil nitrogen` : `use ${Math.abs(extraNkg)} kg soil nitrogen`}, and achieve an estimated ${profitPhraseEn}.`;
+    ? `আপনার ${activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'নির্বাচিত জেলার'} ${hasArea ? `${formatNumber(fieldAreaHa, 1)} হেক্টর` : 'জমিতে'} ${baselineRotationBn} এবং ${rotationTextBn} মডেল তুলনা: ${waterPhraseBn}, ${nPhraseBn}, ${profitPhraseBn}।`
+    : `Model comparison for your ${hasArea ? `${formatNumber(fieldAreaHa, 1)} ha parcel` : 'field'} in ${activeField?.district || 'the selected district'}: ${baselineRotationEn} vs ${rotationTextEn}; ${waterSavingsMm == null ? 'irrigation comparison unavailable' : (waterSavingsMm > 0 ? `estimated irrigation saving ~${waterSavingsMm} mm` : (waterSavingsMm === 0 ? `modeled irrigation matches baseline (~${planIrrigationMm} mm/yr)` : `estimated irrigation use increases ~${Math.abs(waterSavingsMm)} mm`))}; ${extraNkg == null ? 'nitrogen proxy unavailable' : `modeled nitrogen proxy delta ${extraNkg} kg/ha`}; ${profitPhraseEn}.`;
 
-  const profitSmsBn = deltaProfit >= 0 ? `লাভ +${deltaProfit}টাকা` : `লাভ ${deltaProfit}টাকা (লাভ কম, কিন্তু পানি/মাটি সুরক্ষিত)`;
-  const waterSmsBn = waterSavingsMm > 0 ? `সেচ সাশ্রয় ~${waterSavingsMm}মিমি` : (waterSavingsMm === 0 ? `সেচ সমান (${planIrrigationMm}মিমি)` : `সেচ +${Math.abs(waterSavingsMm)}মিমি`);
+  const profitSmsBn = deltaProfit == null ? 'লাভের তুলনা অনুপলভ্য' : (deltaProfit >= 0 ? `লাভ +${deltaProfit}টাকা` : `লাভ ${deltaProfit}টাকা`);
+  const waterSmsBn = waterSavingsMm == null ? 'সেচ তুলনা অনুপলভ্য' : (waterSavingsMm > 0 ? `সেচ সাশ্রয় ~${waterSavingsMm}মিমি` : (waterSavingsMm === 0 ? `সেচ সমান (${planIrrigationMm ?? '—'}মিমি)` : `সেচ +${Math.abs(waterSavingsMm)}মিমি`));
   const smsText = `FieldShift: ${activeField?.name || 'খামার'} (${activeField?.district || 'বগুড়ার'}) পরামর্শ: ${rotationTextBn}। ${waterSmsBn}, ${profitSmsBn}। স্থানীয় SAAO-র সাথে যাচাই করুন।`;
 
   const isCoastalSaline = Boolean(
@@ -815,8 +846,8 @@ export function SixSeasonRecommendationView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <DataSourceTag
               source={activePlanData.climateSource?.district
-                ? `NASA POWER climatology 2001-2025 · ${activePlanData.climateSource.district.charAt(0).toUpperCase() + activePlanData.climateSource.district.slice(1)}`
-                : (activePlanData.environmentBasis || `NASA POWER climatology 2001-2025 · ${district.toUpperCase()}`)}
+                ? `${activePlanData.climateSource.dataset || 'NASA POWER'} ${activePlanData.climateSource.years || 'period unavailable'} · ${activePlanData.climateSource.district.charAt(0).toUpperCase() + activePlanData.climateSource.district.slice(1)}`
+                : (activePlanData.climateSource?.dataset || activePlanData.environmentBasis || 'NASA POWER provenance unavailable')}
             />
             <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', marginLeft: 8 }}>
               {activePlanData.solverStatus ? `Solver: ${activePlanData.solverStatus}` : (lang === 'bn' ? 'সলভার স্ট্যাটাস: তথ্য নেই' : 'Solver: No data')}
@@ -935,47 +966,41 @@ export function SixSeasonRecommendationView({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
           <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              💰 {lang === 'bn' ? 'নিট মুনাফা পরিবর্তন' : 'Net Margin Delta'}
+              💰 {lang === 'bn' ? 'মডেলকৃত মুনাফার পরিবর্তন' : 'Modeled Gross-Margin Delta'}
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: deltaProfit >= 0 ? '#10b981' : '#f59e0b' }}>
-              {deltaProfit >= 0 ? `+${toBanglaDigits(deltaProfit.toLocaleString())}` : toBanglaDigits(deltaProfit.toLocaleString())} ৳/ha
+            <div style={{ fontSize: 24, fontWeight: 800, color: deltaProfit == null ? 'var(--text-muted)' : deltaProfit >= 0 ? '#10b981' : '#f59e0b' }}>
+              {deltaProfit == null ? '—' : `${deltaProfit >= 0 ? '+' : ''}${toBanglaDigits(deltaProfit.toLocaleString())} ৳/ha`}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {deltaProfit >= 0
-                ? (lang === 'bn' ? 'বিদ্যমান আবর্তনের চেয়ে বেশি লাভ' : 'Higher profit vs current baseline')
-                : (lang === 'bn' ? 'লাভ কম, কিন্তু পানি/মাটির উপকার' : 'Lower profit, but water/soil benefits')}
+              {deltaProfit == null
+                ? (lang === 'bn' ? 'তুলনাযোগ্য লাভের তথ্য অনুপলভ্য' : 'Comparable profit data unavailable')
+                : (lang === 'bn' ? 'মডেল অনুমান; মাঠের ফল নয়' : `Model estimate vs ${isAssumed ? 'assumed' : 'saved'} baseline; not a farm outcome`)}
             </div>
           </div>
 
           <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WaterIcon size={15} /> {lang === 'bn' ? 'সেচ পানির পরিবর্তন' : 'Irrigation Delta'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WaterIcon size={15} /> {lang === 'bn' ? 'মডেলকৃত সেচের পরিবর্তন' : 'Modeled Irrigation Delta'}</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: waterSavingsMm >= 0 ? '#38bdf8' : '#f59e0b' }}>
-              {waterSavingsMm > 0
+            <div style={{ fontSize: 24, fontWeight: 800, color: waterSavingsMm == null ? 'var(--text-muted)' : waterSavingsMm >= 0 ? '#38bdf8' : '#f59e0b' }}>
+              {waterSavingsMm == null ? '—' : waterSavingsMm > 0
                 ? `~${toBanglaDigits(waterSavingsMm)} মিমি সাশ্রয়`
                 : (waterSavingsMm === 0 ? `০ মিমি (সমান)` : `+${toBanglaDigits(Math.abs(waterSavingsMm))} মিমি বেশি`)}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {waterSavingsMm > 0
-                ? (lang === 'bn' ? 'বোরো বিকল্পে ভূগর্ভস্থ পানি রক্ষা' : 'Groundwater conservation via low-water crops')
-                : (waterSavingsMm === 0
-                  ? (lang === 'bn' ? 'ভূ-উপরিস্থ পানির ব্যবহার অপরিবর্তিত' : 'Surface water use matches baseline')
-                  : (lang === 'bn' ? 'ফসল নিবিড়তায় সেচ সামান্য বৃদ্ধি' : 'Slightly higher water for extra crop'))}
+              {lang === 'bn' ? 'মডেল হিসাব; বাস্তব মাঠ পরিমাপ নয়' : 'Model estimate; not a measured farm outcome'}
             </div>
           </div>
 
           <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
             <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RotationIcon size={15} /> {lang === 'bn' ? 'জৈব নাইট্রোজেন পরিবর্তন' : 'Soil Nitrogen Delta'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RotationIcon size={15} /> {lang === 'bn' ? 'মডেলকৃত নাইট্রোজেন প্রক্সি' : 'Modeled Nitrogen-Effect Proxy'}</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: extraNkg >= 0 ? '#10b981' : '#f59e0b' }}>
-              {extraNkg >= 0 ? `+${toBanglaDigits(extraNkg)}` : toBanglaDigits(extraNkg)} কেজি N/ha
+            <div style={{ fontSize: 24, fontWeight: 800, color: extraNkg == null ? 'var(--text-muted)' : extraNkg >= 0 ? '#10b981' : '#f59e0b' }}>
+              {extraNkg == null ? '—' : `${extraNkg >= 0 ? '+' : ''}${toBanglaDigits(extraNkg)} কেজি N/ha`}
             </div>
             <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {extraNkg >= 0
-                ? (lang === 'bn' ? 'ডালশস্যের প্রাকৃতিক শিকড় সংবন্ধন' : 'Natural BNF enrichment from pulses')
-                : (lang === 'bn' ? 'অন্যান্য ফসলে পরিমিত নাইট্রোজেন' : 'Moderate nitrogen replenishment')}
+              {lang === 'bn' ? 'ডালশস্যের শ্রেণিবিন্যাসভিত্তিক প্রক্সি; মাটি পরীক্ষা নয়' : 'Legume-category proxy; not a soil test'}
             </div>
           </div>
         </div>
@@ -1055,7 +1080,7 @@ export function SixSeasonRecommendationView({
                 {lang === 'bn' ? 'কৃষকের অগ্রাধিকার ও সম্পদ সীমাবদ্ধতা ইনপুট (Farmer Priorities & Constraints)' : 'Farmer Priorities & Resource Constraints'}
               </h3>
               <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {lang === 'bn' ? 'সেচ প্রাপ্যতা, যন্ত্রপাতির সীমাবদ্ধতা ও ওজনের ভিত্তিতে এমআইএলপি সলভার বাস্তবায়ন' : 'Tailor the optimization solver to exact field water, equipment, and market conditions'}
+                {lang === 'bn' ? 'সেচ, যন্ত্রপাতি ও অগ্রাধিকার সলভারে পাঠানো হয়; শ্রম-চাহিদার তথ্য অনুপলভ্য হলে তা সতর্কতায় দেখানো হয়' : 'Water, equipment, and priorities reach the solver; unsupported labor data is disclosed rather than silently applied'}
               </span>
             </div>
           </div>
@@ -1462,12 +1487,12 @@ export function SixSeasonRecommendationView({
               </div>
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
                 {selectedStrategy === 'profit_focused'
-                  ? (lang === 'bn' ? 'উচ্চ মূল্যের ডাল ও তেলবীজ সমন্বয়ে ৬ মৌসুমে নগদ আয় সর্বোচ্চ করে, সাথে প্রতি ৩ মৌসুমে ন্যূনতম ১টি ডাল ফসলের নিয়ম নিশ্চিত করে।' : 'Maximizes cash gross margin across 6 seasons while strictly adhering to the 3-season legume BNF rotation requirement.')
+                  ? (lang === 'bn' ? 'মডেলকৃত মোট মুনাফার ওজন বেশি; ফসলের বাজারদর ও উৎপাদন-খরচ অনুমানভিত্তিক, মাঠের ফল নয়।' : 'Weights modeled gross margin more heavily while retaining rotation constraints; crop economics are estimates, not farm outcomes.')
                   : selectedStrategy === 'water_efficiency'
-                  ? (lang === 'bn' ? 'রবি মৌসুমে বোরো ধানের বিকল্প হিসেবে কম সেচনির্ভর ডাল/তেলবীজ অন্তর্ভুক্ত করে ভূগর্ভস্থ পানির স্তর রক্ষা করে।' : 'Eliminates dry-season aquifer depletion by rotating low-water pulses and oilseeds, cutting deep tubewell pumping.')
+                  ? (lang === 'bn' ? 'মডেলকৃত সেচের প্রয়োজনকে বেশি ওজন দেয়; এটি ভূগর্ভস্থ পানির ব্যবহার বা স্তর পরিমাপ করে না।' : 'Weights modeled irrigation requirement more heavily; this does not measure groundwater use or aquifer levels.')
                   : selectedStrategy === 'soil_health'
-                  ? (lang === 'bn' ? 'ডাল ফসলের মাধ্যমে বায়ুমণ্ডলীয় নাইট্রোজেন সংবন্ধন এবং জৈব কার্বন বৃদ্ধি করে কৃত্রিম ইউরিয়ার ওপর নির্ভরতা হ্রাস করে।' : 'Maximizes biological nitrogen fixation (BNF) and organic root biomass return, replenishing depleted soil organic matter.')
-                  : (lang === 'bn' ? 'লাভজনকতা, ভূগর্ভস্থ পানি সাশ্রয় এবং মাটির জৈব উর্বরতার মধ্যে গাণিতিক সর্বোত্তম ভারসাম্য রক্ষা করে।' : 'Optimal multi-objective compromise balancing economic return, groundwater preservation, and biological soil health.')}
+                  ? (lang === 'bn' ? 'মাটির লক্ষ্য ফসল-শ্রেণিভিত্তিক প্রক্সি ব্যবহার করে; নাইট্রোজেন বা জৈব পদার্থের পরিবর্তন পরিমাপ করা হয় না।' : 'The soil objective uses crop-category proxies; nitrogen and organic-matter changes are not measured.')
+                  : (lang === 'bn' ? 'মডেলকৃত লাভ, সেচ-প্রয়োজন ও মাটি প্রক্সির ওজনের ভারসাম্য; মাঠে যাচাইকৃত ফল নয়।' : 'Balances modeled margin, irrigation requirement, and soil-proxy weights; not a field-validated outcome.')}
               </p>
             </div>
 
@@ -1484,8 +1509,8 @@ export function SixSeasonRecommendationView({
               </div>
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
                 {lang === 'bn'
-                  ? `NASA POWER ২৫ বছরের উপাত্ত (${activeField?.latitude ? Number(activeField.latitude).toFixed(2) : '24.85'}°N, ${activeField?.longitude ? Number(activeField.longitude).toFixed(2) : '89.37'}°E) এবং SoilGrids ${activeField?.soil_texture || 'loam'} মাটির পানিশোষণ ক্ষমতা অনুসারে ক্যালিব্রেট করা।`
-                  : `Validated with 25-yr NASA POWER agro-climatology at ${activeField?.latitude ? Number(activeField.latitude).toFixed(2) : '24.85'}°N and ISRIC SoilGrids 250m hydraulic properties for ${activeField?.soil_texture || 'loam'} soil.`}
+                  ? `${activePlanData.climateSource?.dataset || 'NASA POWER'} (${activePlanData.climateSource?.years || 'সময়সীমা অনুপলভ্য'}; ${activePlanData.climateSource?.data_mode || 'মোড অনুপলভ্য'}) দূরবর্তী গ্রিডভিত্তিক তথ্য—সরাসরি জমির পরিমাপ নয়। অবস্থান: ${activePlanData.fieldDataSources?.coordinates || 'অনুপলভ্য'}; মাটি উৎস: গঠন ${activePlanData.fieldDataSources?.soil_texture || 'অনুপলভ্য'}, pH ${activePlanData.fieldDataSources?.soil_ph || 'অনুপলভ্য'}, জৈব পদার্থ ${activePlanData.fieldDataSources?.organic_matter || 'অনুপলভ্য'}; সেচ-সক্ষমতা ${activePlanData.fieldDataSources?.irrigation_capacity || 'অনুপলভ্য'}।`
+                  : `${activePlanData.climateSource?.dataset || 'NASA POWER'} (${activePlanData.climateSource?.years || 'time range unavailable'}; ${activePlanData.climateSource?.data_mode || 'mode unavailable'}) supplies remote gridded data, not a direct field measurement. Location source: ${activePlanData.fieldDataSources?.coordinates || 'unavailable'}; soil sources: texture ${activePlanData.fieldDataSources?.soil_texture || 'unavailable'}, pH ${activePlanData.fieldDataSources?.soil_ph || 'unavailable'}, organic matter ${activePlanData.fieldDataSources?.organic_matter || 'unavailable'}; irrigation capacity source: ${activePlanData.fieldDataSources?.irrigation_capacity || 'unavailable'}.`}
               </p>
             </div>
 
@@ -1497,7 +1522,7 @@ export function SixSeasonRecommendationView({
               <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
                 <div>• {lang === 'bn' ? 'অতিরিক্ত লাভ:' : 'Net Profit Delta:'} <strong style={{ color: 'var(--leaf)' }}>{formatProfitWithTotal(activePlanData.deltaProfit, fieldAreaHa, lang)}</strong></div>
                 <div>• {lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Water Saved:'} <strong style={{ color: 'var(--water)' }}>{activePlanData.waterSavingsMm != null ? `${activePlanData.waterSavingsMm > 0 ? `+${Math.round(activePlanData.waterSavingsMm)}` : Math.round(activePlanData.waterSavingsMm)} mm/বছর` : '—'}</strong></div>
-                <div>• {lang === 'bn' ? 'মাটি সুরক্ষা:' : 'Soil Protection:'} <strong style={{ color: 'var(--leaf)' }}>{activePlanData.nitrogenDeltaKg != null ? `${activePlanData.nitrogenDeltaKg >= 0 ? `+${Math.round(activePlanData.nitrogenDeltaKg)}` : Math.round(activePlanData.nitrogenDeltaKg)} kg N/ha` : '—'}</strong></div>
+                <div>• {lang === 'bn' ? 'নাইট্রোজেন প্রক্সি পরিবর্তন:' : 'Nitrogen Proxy Delta:'} <strong style={{ color: 'var(--leaf)' }}>{activePlanData.nitrogenDeltaKg != null ? `${activePlanData.nitrogenDeltaKg >= 0 ? `+${Math.round(activePlanData.nitrogenDeltaKg)}` : Math.round(activePlanData.nitrogenDeltaKg)} kg N/ha` : '—'}</strong></div>
               </div>
             </div>
 
@@ -1511,8 +1536,8 @@ export function SixSeasonRecommendationView({
               </div>
               <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
                 {lang === 'bn'
-                  ? '০.৫° গ্রিডে স্থানীয় সেচনালা বা ভূগর্ভস্থ বিদ্যুৎ/ডিজেল খরচ অন্তর্ভুক্ত নয়। দৈনিক স্থানীয় হাটের দর জাতীয় বেঞ্চমার্ক থেকে সামান্য ভিন্ন হতে পারে।'
-                  : '0.5° gridded satellite observations average village-level micro-drainage. Local tubewell electricity tariffs and spot mandi prices require ground review.'}
+                  ? 'NASA POWER-এর দূরবর্তী গ্রিডভিত্তিক জলবায়ু তথ্য সরাসরি জমির পরিমাপ নয়। মাটির পরীক্ষা, সেচের বাস্তব সক্ষমতা, পানি-মান, স্থানীয় বাজারদর ও ফসলের রোগঝুঁকি স্থানীয়ভাবে যাচাই করুন।'
+                  : 'NASA POWER climate values are remote gridded data, not field measurements. Verify soil tests, actual irrigation capacity, water quality, local prices, and crop-specific pest risks locally.'}
               </p>
             </div>
 
@@ -1856,11 +1881,11 @@ export function SixSeasonRecommendationView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 20 }}>🌱</span>
             <strong style={{ fontSize: 14, color: 'var(--leaf)' }}>
-              {lang === 'bn' ? 'মাটির স্বাস্থ্য, পুষ্টি ও ক্ষয়রোধ সূচক (Soil Health & Ecological Indicators)' : 'Soil Health & Ecological Sustainability Indicators'}
+              {lang === 'bn' ? 'মাটির স্বাস্থ্য ও পরিবেশ সূচক (মডেল প্রক্সি)' : 'Soil Health and Ecological Indicators (Model Proxies)'}
             </strong>
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? '৬-মৌসুম আবর্তনভিত্তিক বার্ষিক হিসাব' : 'Annualized across 6-season rotation'}
+            {lang === 'bn' ? 'পরিমাপকৃত মাটির ফল নয়; স্থানীয় যাচাই প্রয়োজন' : 'Not measured soil outcomes; local review required'}
           </span>
         </div>
 
@@ -1868,72 +1893,68 @@ export function SixSeasonRecommendationView({
           {/* 1. Bare Field Exposure Days */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🛡️ {lang === 'bn' ? 'নগ্ন মাটি অনাবৃত দিন' : 'Bare-Field Days'}
+              🛡️ {lang === 'bn' ? 'অনাবৃত মাটির দিন (মডেল অনুমান)' : 'Bare-Soil Days (Model Estimate)'}
               <PlainLanguagePopover termKey="ndvi" lang={lang} />
             </span>
-            <div style={{ fontSize: 20, fontWeight: 800, color: (activePlanData.planBareDays ?? 60) <= 65 ? 'var(--leaf)' : '#f59e0b', marginTop: 4 }}>
-              {activePlanData.planBareDays != null ? activePlanData.planBareDays : soilHealthIndicators.annualBareDays} {lang === 'bn' ? 'দিন/বছর' : 'days/yr'}
+            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
+              {activePlanData.planBareDays != null ? `${activePlanData.planBareDays} ${lang === 'bn' ? 'দিন/বছর' : 'days/yr'}` : '—'}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn'
-                ? `বিদ্যমান বেসলাইনে ${activePlanData.baselineBareDays != null ? activePlanData.baselineBareDays : 115} দিনের তুলনায় সাশ্রয়`
-                : `vs ${activePlanData.baselineBareDays != null ? activePlanData.baselineBareDays : 115} days in current baseline`}
+              {activePlanData.bareSoilEstimateMethod || (lang === 'bn' ? 'অনুমান অনুপলভ্য' : 'Estimate unavailable')}
             </div>
           </div>
 
           {/* 2. Biological Nitrogen Fixed */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🌿 {lang === 'bn' ? 'জৈব নাইট্রোজেন সংবন্ধন' : 'Biological N Fixed'}
+              🌿 {lang === 'bn' ? 'নাইট্রোজেন অবদানের প্রক্সি' : 'Nitrogen-Contribution Proxy'}
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
-              +{activePlanData.planNitrogenKg != null ? Math.round(activePlanData.planNitrogenKg) : soilHealthIndicators.bnfKg} <span style={{ fontSize: 12 }}>kg N/ha</span>
+              {activePlanData.planNitrogenKg != null ? `~${Math.round(activePlanData.planNitrogenKg)} kg N/ha` : '—'}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn'
-                ? `ইউরিয়া সাশ্রয়: ~৳${Math.round((activePlanData.planNitrogenKg != null ? activePlanData.planNitrogenKg : soilHealthIndicators.bnfKg) * 38)}`
-                : `Urea cost saved: ~৳${Math.round((activePlanData.planNitrogenKg != null ? activePlanData.planNitrogenKg : soilHealthIndicators.bnfKg) * 38)}`}
+              {activePlanData.nitrogenEstimateMethod || (lang === 'bn' ? 'প্রক্সি অনুপলভ্য; মাটি পরীক্ষা নয়' : 'Proxy unavailable; not a soil test')}
             </div>
           </div>
 
           {/* 3. Residue SOM Contribution */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
-              🍂 {lang === 'bn' ? 'জৈব কার্বন বৃদ্ধি (SOM)' : 'Residue & OM Gain'}
+              🍂 {lang === 'bn' ? 'জৈব পদার্থ / কার্বন পরিবর্তন' : 'Organic Matter / Carbon Change'}
               <PlainLanguagePopover termKey="soil_organic_carbon" lang={lang} />
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--sun)', marginTop: 4 }}>
-              +{soilHealthIndicators.somContributionPct}% <span style={{ fontSize: 12 }}>SOC</span>
+              —
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'সরল নিয়মভিত্তিক অনুমান • মূল ও পাতার অবশিষ্টাংশ' : 'Rule-based heuristic • Root & crop residue'}
+              {lang === 'bn' ? 'জমির পরিমাপ বা যাচাইকৃত মডেল অনুপলভ্য' : 'Field measurement or validated model unavailable'}
             </div>
           </div>
 
           {/* 4. Pest-Break Cycle */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🔬 {lang === 'bn' ? 'কীটপতঙ্গ/রোগ চক্র দমন' : 'Pest-Break Rating'}
+              🔬 {lang === 'bn' ? 'ফসল পরিবারের বৈচিত্র্য প্রক্সি' : 'Crop-Family Diversity Proxy'}
             </span>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--water)', marginTop: 6 }}>
-              {soilHealthIndicators.pestBreakRating}
+              {soilHealthIndicators.familyCount > 0 ? soilHealthIndicators.familyCount : '—'}
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {soilHealthIndicators.familyCount} {lang === 'bn' ? 'টি স্বতন্ত্র উদ্ভিদ পরিবার' : 'distinct botanical families'}
+              {lang === 'bn' ? 'পরিবার; কীট/রোগের ফল অনুমান করে না' : 'families; does not predict pest or disease outcomes'}
             </div>
           </div>
 
           {/* 5. Erosion Cover Index */}
           <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
-              🌧️ {lang === 'bn' ? 'মৃত্তিকা আচ্ছাদন সূচক' : 'Erosion Cover Index'}
+              🌧️ {lang === 'bn' ? 'ক্ষয় / মাটি আচ্ছাদন' : 'Erosion / Soil Cover'}
               <PlainLanguagePopover termKey="erosion_cover" lang={lang} />
             </span>
             <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
-              {soilHealthIndicators.erosionCoverPct}%
+              —
             </div>
             <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'সরল নিয়মভিত্তিক অনুমান • বর্ষায় ক্যানোপি সুরক্ষা' : 'Rule-based heuristic • Living canopy during rainstorms'}
+              {lang === 'bn' ? 'ক্ষয় বা আচ্ছাদনের পরিমাপ অনুপলভ্য' : 'Erosion or ground-cover measurements unavailable'}
             </div>
           </div>
         </div>
@@ -2021,10 +2042,16 @@ export function SixSeasonRecommendationView({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 16 }}>🚜</span>
                     <span style={{ color: 'var(--text-muted, #94a3b8)' }}>
-                      {lang === 'bn' ? 'বিদ্যমান কৃষক অভ্যাস (বেসলাইন)' : 'Existing Practice (Baseline)'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--text-dim, #64748b)', marginTop: 2 }}>{lang === 'bn' ? 'আমার খামার পেজে নির্ধারিত' : 'From My Farm profile'}</div>
+                              {activePlanData.isAssumedBaseline
+                                ? (lang === 'bn' ? 'ধরে নেওয়া রেফারেন্স (প্রকৃত ইতিহাস নয়)' : 'Assumed Reference (not farmer history)')
+                                : (lang === 'bn' ? 'সংরক্ষিত আবর্তন প্যাটার্ন (প্রক্ষেপিত)' : 'Saved Rotation Pattern (projected)')}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 10, color: 'var(--text-dim, #64748b)', marginTop: 2 }}>
+                            {activePlanData.isAssumedBaseline
+                              ? (lang === 'bn' ? 'তুলনার জন্য নমুনা; কৃষকের নিশ্চিত অভ্যাস নয়' : 'Illustrative comparison only; not verified farmer practice')
+                              : (lang === 'bn' ? 'সংরক্ষিত তিন-মৌসুমের প্যাটার্ন প্রতি বছরে পুনরাবৃত্ত' : 'Saved three-season pattern repeated for each projected year')}
+                          </div>
                 </td>
                 <td style={{ padding: '12px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
@@ -2048,10 +2075,10 @@ export function SixSeasonRecommendationView({
                   {activePlanData.baselineIrrigationMm != null ? `${Math.round(activePlanData.baselineIrrigationMm)} mm` : '—'}
                 </td>
                 <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--sun)' }}>
-                  {activePlanData.baselineNitrogenKg != null ? `${Math.round(activePlanData.baselineNitrogenKg)} kg N` : '0 kg N'}
+                  {activePlanData.baselineNitrogenKg != null ? `${Math.round(activePlanData.baselineNitrogenKg)} kg N (estimate)` : '—'}
                 </td>
                 <td style={{ padding: '12px 14px', fontWeight: 900, color: 'var(--text-dim, #64748b)' }}>
-                  0.420
+                  —
                 </td>
                 <td style={{ padding: '12px 14px', fontSize: 11, color: 'var(--alert)', fontWeight: 700 }}>
                   ⚠️ {!baselineCrops.some(c => CROP_DATABASE[c]?.is_legume) ? (lang === 'bn' ? 'ডাল ফসলহীন (উচ্চ ক্ষয়)' : '0 Legumes (N Depletion)') : (lang === 'bn' ? 'সীমিত বৈচিত্র্য' : 'Limited Diversity')}

@@ -104,7 +104,6 @@ def test_api_water_plan_endpoint():
     assert data["water_balance_summary"]["irrigation_events_count"] >= 0
     assert len(data["daily_plan"]) > 50
 
-    # Fallback to defaults when parameters omitted
+    # Missing field inputs must not silently use Bogura/1 ha defaults.
     resp_default = client.get("/api/water/plan")
-    assert resp_default.status_code == 200
-    assert resp_default.json()["status"] == "ok"
+    assert resp_default.status_code == 422

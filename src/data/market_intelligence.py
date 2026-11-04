@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import csv
 import io
+import math
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
@@ -376,11 +377,14 @@ def get_market_overview(
     district: Optional[str] = None,
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    area_ha: float = 1.0,
+    area_ha: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Retrieve full catalog of market prices, FAOSTAT national demand balance, and field profitability."""
     import pandas as pd
     from pathlib import Path
+
+    if area_ha is not None and (not math.isfinite(float(area_ha)) or float(area_ha) <= 0):
+        raise ValueError("Field area must be a positive number.")
 
     # Load FAOSTAT BD trade balance
     faostat_file = Path(__file__).resolve().parents[2] / "data" / "market" / "faostat_bd.csv"
@@ -392,7 +396,7 @@ def get_market_overview(
 
     # Optional dynamic field evaluation if location provided
     field_dynamic_metrics: dict[str, dict[str, Any]] = {}
-    if district or (latitude is not None and longitude is not None):
+    if area_ha is not None and (district or (latitude is not None and longitude is not None)):
         try:
             from src.compute.advisory_service import DISTRICT_REGISTRY, load_district_climate_data, nearest_district
             from src.data.crops import load_crop_knowledge
@@ -536,8 +540,9 @@ def get_market_overview(
                 "irrigation_pumping_cost_bdt_ha": round(pumping_cost, 1),
                 "total_cost_bdt_ha": round(float(data["default_cost_bdt_ha"]) + pumping_cost, 1),
                 "net_profit_bdt_per_ha": dyn_margin,
-                "net_profit_total_bdt": round(dyn_margin * area_ha, 1),
+                "net_profit_total_bdt": round(dyn_margin * area_ha, 1) if area_ha is not None else None,
                 "formula": "Net profit = dynamic_yield * price - (cultivation_cost + pumping_cost)",
+                "result_basis": "location-specific model estimate",
             }
         else:
             # Baseline default profitability
@@ -547,7 +552,7 @@ def get_market_overview(
             rev = yld * price_t
             margin = rev - cost
             item["field_profitability"] = {
-                "is_suitable_for_field": True,
+                "is_suitable_for_field": None,
                 "dynamic_yield_t_ha": yld,
                 "selling_price_bdt_t": price_t,
                 "gross_revenue_bdt_ha": round(rev, 2),
@@ -555,8 +560,9 @@ def get_market_overview(
                 "irrigation_pumping_cost_bdt_ha": 0.0,
                 "total_cost_bdt_ha": cost,
                 "net_profit_bdt_per_ha": round(margin, 2),
-                "net_profit_total_bdt": round(margin * area_ha, 2),
+                "net_profit_total_bdt": round(margin * area_ha, 2) if area_ha is not None else None,
                 "formula": "Net profit = yield * price - cost",
+                "result_basis": "catalog per-hectare estimate; field suitability unavailable",
             }
 
         # Attach nearby producing districts from BBS agricultural hubs
@@ -589,7 +595,19 @@ def get_market_overview(
         item["nearby_producing_districts"] = nearby_districts[:4]
 
         # Calculate location-based suitability score based on climate, soil, rain reliability, and economics
-        is_suit = bool(item["field_profitability"].get("is_suitable_for_field", True))
+        if not dyn:
+            item["location_ranking"] = {
+                "status": "unavailable",
+                "suitability_score": None,
+                "climate_suitability": "Unavailable",
+                "rain_reliability": "Unavailable",
+                "economics_score": None,
+                "national_deficit_priority": import_dep >= 0.35,
+            }
+            catalog.append(item)
+            continue
+
+        is_suit = bool(item["field_profitability"].get("is_suitable_for_field"))
         climate_score = 35.0 if is_suit else 10.0
         soil_score = 20.0
         pumping = float(item["field_profitability"].get("irrigation_pumping_cost_bdt_ha", 0.0))
@@ -600,6 +618,7 @@ def get_market_overview(
         total_suitability = round(climate_score + soil_score + rain_rel_score + econ_score + deficit_bonus, 1)
 
         item["location_ranking"] = {
+            "status": "calculated",
             "suitability_score": total_suitability,
             "climate_suitability": "Optimal" if is_suit else "Marginal / Infeasible",
             "rain_reliability": "High (Low Pumping Deficit)" if pumping < 2000 else "Moderate Irrigation Required",
@@ -609,10 +628,21 @@ def get_market_overview(
 
         catalog.append(item)
 
-    if district or (latitude is not None and longitude is not None):
-        catalog.sort(key=lambda x: x["location_ranking"]["suitability_score"], reverse=True)
-        for idx, item in enumerate(catalog, start=1):
-            item["location_ranking"]["rank"] = idx
+    if area_ha is not None and (district or (latitude is not None and longitude is not None)):
+        catalog.sort(
+            key=lambda item: (
+                item["location_ranking"]["suitability_score"] is not None,
+                item["location_ranking"]["suitability_score"] or 0,
+            ),
+            reverse=True,
+        )
+        for item in catalog:
+            if item["location_ranking"]["suitability_score"] is not None:
+                item["location_ranking"]["rank"] = sum(
+                    1 for other in catalog
+                    if other["location_ranking"]["suitability_score"] is not None
+                    and other["location_ranking"]["suitability_score"] > item["location_ranking"]["suitability_score"]
+                ) + 1
 
     return {
         "metadata": {
@@ -635,6 +665,7 @@ def get_market_overview(
                 "commercial_crops": commercial_crops,
                 "staple_crops": staple_crops,
             },
+            "location_suitability_available": bool(field_dynamic_metrics),
             "disclaimer": "Retail prices represent consumer shelf benchmarks and must NOT be treated as farmgate revenues without accounting for transportation, trader margins, and spoilage.",
         },
         "crops": catalog,

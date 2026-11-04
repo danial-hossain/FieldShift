@@ -23,20 +23,9 @@ const PERIOD_LABELS = [
   { id: 'Y2_S3', labelEn: 'Y2 Kharif-2 (Monsoon)', labelBn: 'বছর ২ খরিফ-২ (বর্ষা)' },
 ];
 
-const CROP_WATER_ESTIMATES = {
-  rice: 650, 'boro rice': 750, 'aman rice': 500, 'aus rice': 450,
-  wheat: 300, maize: 480, potato: 380, mustard: 220,
-  lentil: 200, chickpea: 210, mungbean: 230, soybean: 320,
-  sesame: 240, sunflower: 340, jute: 420, fallow: 0,
-};
-
-function getCropWaterMm(cropName) {
-  if (!cropName) return 0;
-  const key = String(cropName).toLowerCase().trim();
-  for (const [k, v] of Object.entries(CROP_WATER_ESTIMATES)) {
-    if (key.includes(k)) return v;
-  }
-  return 350;
+function getCropWaterMm(method, index) {
+  const period = PERIOD_LABELS[index]?.id;
+  return parseFiniteMetric(method?.waterByPeriod?.[period] ?? method?.water_by_period_mm?.[period]);
 }
 
 function getCropColor(cropName) {
@@ -80,6 +69,7 @@ export function Comparison3Way3D({
   const milpRaw = labData?.methods?.find?.(m => m.id === 'milp') || labData?.comparison?.milp;
   const rlRaw = labData?.methods?.find?.(m => m.id === 'rl') || labData?.comparison?.rl;
   const ruleRaw = labData?.methods?.find?.(m => m.id === 'rule_based') || labData?.comparison?.rule_based;
+  const existingRaw = labData?.methods?.find?.(m => m.id === 'existing_rotation') || null;
 
   // Extract metrics strictly without invented fallbacks
   const milp = useMemo(() => ({
@@ -106,49 +96,40 @@ export function Comparison3Way3D({
     rotation: parseRotationList(ruleRaw?.rotation || ruleRaw?.rotation_sequence),
   }), [ruleRaw]);
 
-  // Existing rotation from field history or baseline
   const existing = useMemo(() => {
-    const hist = activeField?.history || [];
-    let crops = [];
-    if (hist.length > 0) {
-      crops = hist.map(h => h.crop).filter(Boolean);
-    } else if (activeField?.previous_crop) {
-      crops = [activeField.previous_crop, 'Fallow', activeField.previous_crop, 'Fallow', activeField.previous_crop, 'Fallow'];
-    } else {
-      crops = ['Boro Rice', 'Fallow', 'T.Aman Rice', 'Boro Rice', 'Fallow', 'T.Aman Rice'];
-    }
-    // Pad to 6
-    while (crops.length < 6) {
-      crops.push(crops[crops.length % Math.max(1, crops.length)] || 'Rice');
-    }
+    const crops = parseRotationList(existingRaw?.rotation || existingRaw?.rotation_sequence);
     return {
-      name: lang === 'bn' ? 'বর্তমান বেসলাইন (Existing Practice)' : 'Existing Farmer Baseline',
+      name: lang === 'bn' ? 'সংরক্ষিত আবর্তন প্যাটার্ন' : 'Saved Farmer Rotation Pattern',
       color: '#94a3b8',
-      rotation: crops.slice(0, 6),
-      profit: null,
-      water: crops.slice(0, 6).reduce((acc, c) => acc + getCropWaterMm(c), 0),
+      rotation: crops,
+      profit: parseFiniteMetric(existingRaw?.profit_bdt_per_ha),
+      water: parseFiniteMetric(existingRaw?.water_requirement_mm),
+      waterByPeriod: existingRaw?.water_by_period_mm,
     };
-  }, [activeField, lang]);
+  }, [existingRaw, lang]);
 
-  const rows = useMemo(() => [
-    {
+  const rows = useMemo(() => {
+    const result = [
+      ...(existingRaw ? [{
       id: 'existing',
-      label: lang === 'bn' ? '১. বিদ্যমান প্র্যাকটিস (Existing Baseline)' : '1. Existing Farmer Practice',
+      label: lang === 'bn' ? 'সংরক্ষিত কৃষক আবর্তন' : 'Saved Farmer Rotation',
       color: '#94a3b8',
-      badge: lang === 'bn' ? 'ঐতিহাসিক রেফারেন্স' : 'Baseline',
+      badge: lang === 'bn' ? 'প্রক্ষেপিত রেফারেন্স' : 'Projected Baseline',
       crops: existing.rotation,
       profit: existing.profit,
       water: existing.water,
+      waterByPeriod: existing.waterByPeriod,
       x: -6.0,
-    },
+      }] : []),
     {
       id: 'milp',
       label: lang === 'bn' ? '২. PuLP CBC MILP (গাণিতিক অপ্টিমাম)' : '2. PuLP CBC MILP Optimum',
       color: '#00df81',
       badge: lang === 'bn' ? 'গ্লোবাল অপটিমাম' : 'Global Optimum',
-      crops: (milp.rotation.length >= 6 ? milp.rotation : ['Sunflower', 'Soybean', 'Rice', 'Chickpea', 'Sesame', 'Rice']).slice(0, 6),
+      crops: milp.rotation.slice(0, 6),
       profit: milp.profit,
       water: milp.water,
+      waterByPeriod: milpRaw?.water_by_period_mm,
       x: -2.0,
     },
     {
@@ -156,9 +137,10 @@ export function Comparison3Way3D({
       label: lang === 'bn' ? '৩. Q-Learning RL (অভিযোজিত পলিসি)' : '3. Sequential Q-Learning RL',
       color: '#38bdf8',
       badge: lang === 'bn' ? 'অভিযোজিত পলিসি' : 'Adaptive Policy',
-      crops: (rl.rotation.length >= 6 ? rl.rotation : ['Mustard', 'Boro Rice', 'Aman Rice', 'Lentil', 'Aus Rice', 'Aman Rice']).slice(0, 6),
+      crops: rl.rotation.slice(0, 6),
       profit: rl.profit,
       water: rl.water,
+      waterByPeriod: rlRaw?.water_by_period_mm,
       x: 2.0,
     },
     {
@@ -166,12 +148,14 @@ export function Comparison3Way3D({
       label: lang === 'bn' ? '৪. কৃষিতাত্ত্বিক নিয়ম (Agronomic Rule Baseline)' : '4. Agronomic Rule Baseline',
       color: '#f59e0b',
       badge: lang === 'bn' ? 'হিউরিস্টিক নিয়ম' : 'Agronomic Rule',
-      crops: (rule.rotation.length >= 6 ? rule.rotation : ['Wheat', 'Jute', 'T.Aman Rice', 'Mustard', 'Boro Rice', 'Fallow']).slice(0, 6),
+      crops: rule.rotation.slice(0, 6),
       profit: rule.profit,
       water: rule.water,
+      waterByPeriod: ruleRaw?.water_by_period_mm,
       x: 6.0,
-    },
-  ], [existing, milp, rl, rule, lang]);
+    }];
+    return result;
+  }, [existingRaw, existing, milp, milpRaw, rl, rlRaw, rule, ruleRaw, lang]);
 
   const handleSceneReady = ({ scene }) => {
     const parentGroup = new THREE.Group();
@@ -199,8 +183,8 @@ export function Comparison3Way3D({
       // 6 Season Blocks per row (along z: -4.5 to +4.5)
       row.crops.forEach((crop, sIdx) => {
         const zPos = -4.2 + sIdx * 1.68;
-        const waterMm = getCropWaterMm(crop);
-        const blockHeight = Math.max(0.3, (waterMm / 800) * 2.2);
+        const waterMm = getCropWaterMm(row, sIdx);
+        const blockHeight = waterMm === null ? 0.3 : Math.max(0.3, (waterMm / 800) * 2.2);
         const cColor = getCropColor(crop);
 
         const blockGeo = new THREE.BoxGeometry(1.9, blockHeight, 1.4);
@@ -229,12 +213,12 @@ export function Comparison3Way3D({
         <div>
           <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>📊</span>
-            <span>{lang === 'bn' ? '৪-সমান্তরাল মৌসুম টাইমলাইন তুলনা (Existing vs MILP vs RL vs Rule)' : '4-Row Parallel Season Timelines (Existing vs MILP vs RL vs Rule)'}</span>
+            <span>{lang === 'bn' ? 'ঘূর্ণন কৌশল তুলনা (সংরক্ষিত আবর্তন উপলভ্য হলে দেখানো হবে)' : 'Rotation Strategy Comparison (saved rotation shown when available)'}</span>
           </h4>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#94a3b8' }}>
             {lang === 'bn'
-              ? '৬ মৌসুমের সমান্তরাল আবর্তন: ব্লকের উচ্চতা ও রঙ সেচ জলের চাহিদা (mm) ও ফসলের বোটানিক্যাল শ্রেণি নির্দেশ করে।'
-              : '6-season parallel rotations: block height and color scale with seasonal water demand (mm) and botanical crop family.'}
+              ? 'মৌসুমি রঙ ফসলের শ্রেণি দেখায়; ব্লকের উচ্চতা কেবল API-তে প্রাপ্ত সেচ চাহিদা দেখায়।'
+              : 'Crop colors show crop type; block height uses only irrigation requirements returned by the API.'}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6, background: 'rgba(15, 23, 42, 0.6)', padding: 4, borderRadius: 8, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
@@ -291,7 +275,7 @@ export function Comparison3Way3D({
             </span>
           </div>
 
-          {/* 4 Parallel Rows */}
+          {/* Strategy rows */}
           {rows.map(row => (
             <div
               key={row.id}
@@ -313,10 +297,11 @@ export function Comparison3Way3D({
               </div>
 
               {/* 6 Season Blocks */}
-              {row.crops.map((crop, idx) => {
-                const waterMm = getCropWaterMm(crop);
-                const color = getCropColor(crop);
-                const heightPct = Math.min(100, Math.max(25, (waterMm / 750) * 100));
+              {PERIOD_LABELS.map((period, idx) => {
+                const crop = row.crops[idx] || null;
+                const waterMm = getCropWaterMm(row, idx);
+                const color = crop ? getCropColor(crop) : '#475569';
+                const heightPct = waterMm === null ? 0 : Math.min(100, Math.max(25, (waterMm / 750) * 100));
 
                 return (
                   <div
@@ -349,10 +334,10 @@ export function Comparison3Way3D({
                     />
                     <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
                       <span style={{ fontSize: 11, fontWeight: 800, color: '#f8fafc', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {crop}
+                        {crop || (lang === 'bn' ? 'তথ্য নেই' : 'Unavailable')}
                       </span>
                       <span style={{ fontSize: 9.5, color: color, fontWeight: 700 }}>
-                        {waterMm > 0 ? `${waterMm} mm` : (lang === 'bn' ? 'পতিত' : 'Fallow')}
+                        {waterMm !== null ? `${Math.round(waterMm)} mm` : (lang === 'bn' ? 'সেচ তথ্য নেই' : 'No water data')}
                       </span>
                     </div>
                   </div>
@@ -381,7 +366,7 @@ export function Comparison3Way3D({
             cameraTarget={[0, 0.5, 0]}
             hudTitle="3D MULTI-SEASON ROTATION FOOTPRINT (HEIGHT = WATER USE)"
             hudMetrics={[
-              `Field: ${activeField?.name || 'Bogura Demo'}`,
+              `Field: ${activeField?.name || (lang === 'bn' ? 'অবস্থান অনুপলভ্য' : 'Location unavailable')}`,
               `Priority: ${priority.toUpperCase()}`,
               milp.profit !== null ? `MILP: ৳${Math.round(milp.profit / 1000)}k` : 'MILP: —',
               rl.profit !== null ? `RL: ৳${Math.round(rl.profit / 1000)}k` : 'RL: —'
@@ -404,7 +389,7 @@ export function Comparison3Way3D({
                   <span style={{ color: r.color, fontWeight: 700, fontSize: 10 }}>{r.badge}</span>
                 </div>
                 <div style={{ color: '#cbd5e1', marginTop: 3 }}>
-                  {lang === 'bn' ? 'প্রথম ফসল' : 'First crop'}: <strong>{r.crops[0] || '—'}</strong> · {lang === 'bn' ? 'পানি' : 'Water'}: <strong>{r.water ? `${Math.round(r.water)} mm` : '—'}</strong>
+                  {lang === 'bn' ? 'প্রথম ফসল' : 'First crop'}: <strong>{r.crops[0] || '—'}</strong> · {lang === 'bn' ? 'পানি' : 'Water'}: <strong>{r.water !== null && r.water !== undefined ? `${Math.round(r.water)} mm` : '—'}</strong>
                 </div>
               </div>
             ))}

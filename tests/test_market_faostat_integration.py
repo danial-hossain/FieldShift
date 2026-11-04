@@ -67,6 +67,9 @@ def test_market_overview_groupings_and_national_need():
     assert nn["import_dependency_pct"] >= 35.0
     assert nn["domestic_deficit_tonnes"] > 300000
     assert "FAOSTAT" in nn["source"]
+    assert data["metadata"]["location_suitability_available"] is False
+    assert mustard["location_ranking"]["suitability_score"] is None
+    assert mustard["field_profitability"]["net_profit_total_bdt"] is None
 
 
 def test_profit_calculator_unification_with_dynamic_agronomy():

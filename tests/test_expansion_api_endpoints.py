@@ -11,8 +11,13 @@ Tests:
 """
 
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
+
+import pandas as pd
 from fastapi.testclient import TestClient
 
+from backend.app import main
 from backend.app.main import app
 
 
@@ -40,6 +45,16 @@ class ExpansionApiEndpointsTest(unittest.TestCase):
         self.assertTrue(any("NASA POWER" in n for n in sensor_names))
         self.assertTrue(any("SMAP" in n for n in sensor_names))
         self.assertTrue(any("Sentinel-2" in n for n in sensor_names))
+
+    def test_get_satellite_readiness_requires_coordinates(self):
+        response = self.client.get("/api/satellite/readiness")
+        self.assertEqual(response.status_code, 422)
+
+    def test_field_enrichment_rejects_missing_field_inputs(self):
+        with patch.dict(main.app.dependency_overrides, {main.require_user: lambda: None}):
+            response = self.client.post("/api/fields/demo/enrich", json={})
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("coordinates and area are required", response.json()["detail"])
 
     def test_post_lab_compare(self):
         payload = {
@@ -82,6 +97,13 @@ class ExpansionApiEndpointsTest(unittest.TestCase):
         self.assertIn("binding_constraints", data)
         self.assertEqual(len(data["recovery_plan"]), 6)
 
+    def test_post_crop_failure_recovery_requires_field_inputs(self):
+        response = self.client.post(
+            "/api/scenarios/crop-failure-recovery",
+            json={"field_id": "demo", "failure_type": "drought_shock"},
+        )
+        self.assertEqual(response.status_code, 422)
+
     def test_post_workflow_replan(self):
         payload = {
             "field_id": "demo",
@@ -108,6 +130,27 @@ class ExpansionApiEndpointsTest(unittest.TestCase):
         self.assertEqual(data["completed_seasons_count"], 1)
         self.assertIn("replanned_schedule", data)
         self.assertIn("financial_projection", data)
+        self.assertEqual(data["location_provenance"]["source"], "assumed demo district reference")
+
+    def test_post_workflow_replan_rejects_incomplete_farmer_history(self):
+        response = self.client.post(
+            "/api/workflow/replan",
+            json={
+                "field_id": "demo",
+                "completed_seasons": 2,
+                "last_season_crop": "Rice",
+                "area_ha": 1,
+            },
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("each completed season", response.json()["detail"])
+
+    def test_post_weather_uncertainty_requires_field_inputs(self):
+        response = self.client.post(
+            "/api/scenarios/weather-uncertainty",
+            json={"field_id": "demo", "field_state": {}},
+        )
+        self.assertEqual(response.status_code, 422)
 
     def test_post_weather_uncertainty(self):
         payload = {
@@ -122,6 +165,41 @@ class ExpansionApiEndpointsTest(unittest.TestCase):
         self.assertEqual(data["status"], "ok")
         self.assertEqual(len(data["scenarios"]), 5)
         self.assertIn("robustness_analysis", data)
+
+    def test_location_weather_does_not_invent_missing_climate_variables(self):
+        legacy = SimpleNamespace(
+            _location_weather=lambda data: {
+                "status": "ok",
+                "weather": {},
+            }
+        )
+        climate = pd.DataFrame([{
+            "date": "2026-03-01",
+            "temperature": 28.5,
+            "rainfall": 2.0,
+        }])
+        with (
+            patch.object(main, "legacy_workflow_module", return_value=legacy),
+            patch(
+                "src.compute.advisory_service.load_district_climate_data",
+                return_value=(climate, "offline"),
+            ),
+            patch(
+                "src.compute.advisory_service.nearest_district",
+                return_value="bogura",
+            ),
+        ):
+            response = self.client.post(
+                "/api/location/weather",
+                json={"latitude": 24.85, "longitude": 89.37},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(body["series"][0]["temperature"], 28.5)
+        self.assertIsNone(body["series"][0]["humidity"])
+        self.assertIsNone(body["summary"]["temp_max"])
+        self.assertEqual(body["summary"]["start_date"], "2026-03-01")
 
     def test_outcomes_record_and_get(self):
         record_payload = {

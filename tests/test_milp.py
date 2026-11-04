@@ -85,6 +85,19 @@ class MilpTests(unittest.TestCase):
         )
         self.assertTrue(all(result["selected_crop_by_period"].values()))
 
+    def test_farmer_equipment_exclusion_reaches_solver(self):
+        result = self.optimize(excluded_crops=["Potato"])
+        self.assertEqual(result["status"], "optimal")
+        self.assertNotIn("Potato", result["selected_crop_by_period"].values())
+        self.assertEqual(
+            result["constraint_summary"]["farmer_excluded_crops"],
+            ["Potato"],
+        )
+
+    def test_unknown_farmer_crop_exclusion_is_rejected(self):
+        with self.assertRaisesRegex(ValueError, "Unknown excluded crop"):
+            self.optimize(excluded_crops=["not-a-crop"])
+
     def test_decision_variables_are_binary(self):
         _, metadata = build_milp_model(
             self.state, self.crops, field_history=self.history
@@ -316,7 +329,8 @@ class MilpTests(unittest.TestCase):
     def test_provenance_reports_input_sources_and_rules(self):
         result = self.optimize()
         self.assertEqual(result["provenance"]["environment"]["source"], "NASA_POWER")
-        self.assertEqual(result["provenance"]["environment"]["data_status"], "observed")
+        self.assertEqual(result["provenance"]["environment"]["data_status"], "remote_observed")
+        self.assertEqual(result["provenance"]["environment"]["observation_type"], "remote_gridded")
         self.assertEqual(result["provenance"]["crop_knowledge"]["source"], ["demo"])
         self.assertTrue(
             result["provenance"]["crop_knowledge"]["economic_values_are_illustrative"]

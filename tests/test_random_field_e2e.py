@@ -310,6 +310,9 @@ class RandomFieldEndToEndTest(unittest.TestCase):
         # 3. Test next-season replan endpoint
         replan_payload = {
             "field_id": field_id,
+            "latitude": random_field["latitude"],
+            "longitude": random_field["longitude"],
+            "area_ha": random_field["area_ha"],
             "completed_seasons": 1,
             "last_season_crop": random_field["crop"],
             "soil_ph": random_field["soil_ph"],

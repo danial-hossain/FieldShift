@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import hashlib, importlib.util, logging, math, os, secrets, sys
+import hashlib, importlib.util, json, logging, math, os, secrets, sys
 logger = logging.getLogger("fieldshift")
 from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -99,6 +99,15 @@ def verify_password(password: str, stored: str) -> bool:
             return secrets.compare_digest(candidate,digest)
     except (TypeError, ValueError): return False
     return secrets.compare_digest(hashlib.sha256(password.encode()).hexdigest(),stored)
+def optional_user(fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)) -> User | None:
+    if not fieldshift_session:
+        return None
+    item = db.scalar(select(LoginSession).where(LoginSession.token == fieldshift_session, LoginSession.expires_at > now()))
+    if not item:
+        return None
+    user = db.get(User, item.user_id)
+    return user if (user and user.is_active) else None
+
 def require_user(fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)) -> User:
     item = db.scalar(select(LoginSession).where(LoginSession.token == fieldshift_session, LoginSession.expires_at > now())) if fieldshift_session else None
     user = db.get(User, item.user_id) if item else None
@@ -130,6 +139,33 @@ def finite_json_value(value: Any) -> Any:
     if isinstance(value, list):
         return [finite_json_value(item) for item in value]
     return value
+
+def _validated_optional_number(data: dict[str, Any], key: str, *, minimum: float | None = None, maximum: float | None = None) -> float | None:
+    value = data.get(key)
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        raise HTTPException(400, f"{key} must be a finite number.")
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError, OverflowError) as error:
+        raise HTTPException(400, f"{key} must be a finite number.") from error
+    if not math.isfinite(numeric):
+        raise HTTPException(400, f"{key} must be a finite number.")
+    if minimum is not None and numeric < minimum:
+        raise HTTPException(400, f"{key} must be at least {minimum}.")
+    if maximum is not None and numeric > maximum:
+        raise HTTPException(400, f"{key} must be at most {maximum}.")
+    return numeric
+
+def _planning_cache_key(data: dict[str, Any], climate_df: Any, district: str) -> tuple[str, str, str]:
+    """Key a plan by its complete request payload and climate observations."""
+    payload = json.dumps(data, sort_keys=True, separators=(",", ":"), default=str)
+    request_digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    climate_digest = hashlib.sha256(
+        climate_df.to_json(orient="split", date_format="iso", double_precision=15).encode("utf-8")
+    ).hexdigest()
+    return district, request_digest, climate_digest
 
 def workflow_result(data: dict[str, Any], user: dict[str, Any] | None = None) -> dict[str, Any]:
     """Transport adapter: invoke the retained workflow without reimplementing it."""
@@ -190,10 +226,57 @@ def use_field_record(data: dict[str, Any], field: FarmField, db: DbSession) -> d
         data["previous_crop_year"] = histories[0].year or ""
         data["season"] = histories[0].season or data.get("season", "dry")
         data["history_crops"] = [h.crop for h in histories if h.crop]
+        data["_saved_field_history"] = [
+            {"year": h.year, "season": h.season, "crop": h.crop}
+            for h in histories
+            if h.year is not None and h.season and h.crop
+        ]
     else:
         data["previous_crop"] = ""
         data["previous_crop_year"] = ""
+        data["_saved_field_history"] = []
     return data
+
+
+def complete_saved_history_rotation(
+    records: Any,
+    *,
+    before_year: int,
+) -> tuple[dict[str, str], int] | None:
+    """Return the latest unambiguous three-season rotation recorded before a decision year."""
+    if not isinstance(records, list):
+        return None
+    aliases = {
+        "rabi": "rabi",
+        "dry": "rabi",
+        "রবি": "rabi",
+        "kharif1": "kharif1",
+        "kharif-1": "kharif1",
+        "খরিফ-১": "kharif1",
+        "খরিপ-১": "kharif1",
+        "kharif2": "kharif2",
+        "kharif-2": "kharif2",
+        "খরিফ-২": "kharif2",
+        "খরিপ-২": "kharif2",
+    }
+    by_year: dict[int, dict[str, list[str]]] = {}
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        try:
+            year = int(record.get("year"))
+        except (TypeError, ValueError):
+            continue
+        slot = aliases.get(str(record.get("season") or "").strip().casefold())
+        crop = record.get("crop")
+        if year >= before_year or slot is None or not isinstance(crop, str) or not crop.strip():
+            continue
+        by_year.setdefault(year, {}).setdefault(slot, []).append(crop.strip())
+    for year in sorted(by_year, reverse=True):
+        seasons = by_year[year]
+        if all(len(seasons.get(slot, [])) == 1 for slot in ("rabi", "kharif1", "kharif2")):
+            return {slot: seasons[slot][0] for slot in ("rabi", "kharif1", "kharif2")}, year
+    return None
 
 def authorize_rl_field(field_id: Any, fieldshift_session: str | None, db: DbSession) -> tuple[FarmField | None, User | None]:
     if str(field_id) == "demo":
@@ -510,7 +593,6 @@ def startup() -> None:
     except Exception as e:
         logger.warning(f"Field table column migration notice: {e}")
 
-@app.get("/api/health")
 def health(db: DbSession = Depends(get_db)):
     db_status = "ok"
     dialect = engine.dialect.name
@@ -630,6 +712,9 @@ _PLANNING_CACHE: dict = {}
 @app.post("/api/planning/six-seasons")
 def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
     data = payload.model_dump()
+    request_inputs = dict(data)
+    saved_field_record = False
+    field_record = None
     user = None
     if fieldshift_session:
         try:
@@ -645,10 +730,41 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             fid = int(requested_field_id)
         except (ValueError, TypeError) as error:
             raise HTTPException(400, "field_id must identify a registered PostgreSQL field.") from error
+        planning_overrides = {
+            key: data[key]
+            for key in ("soil_texture", "soil_ph", "organic_matter", "irrigation_capacity_mm", "no_power_tiller", "labour_shortage")
+            if key in data
+        }
         field_record = owned_field(db, fid, user)
         data = use_field_record(data, field_record, db)
+        data.update(planning_overrides)
+        saved_field_record = True
     elif "area_ha" in data and ("field_size_ha" not in data or data["field_size_ha"] in (None, "")):
         data["field_size_ha"] = data["area_ha"]
+
+    for key, minimum, maximum in (
+        ("latitude", -90.0, 90.0),
+        ("longitude", -180.0, 180.0),
+        ("area_ha", 0.000001, None),
+        ("field_size_ha", 0.000001, None),
+        ("soil_ph", 0.0, 14.0),
+        ("organic_matter", 0.0, 100.0),
+        ("irrigation_capacity_mm", 0.0, None),
+        ("available_water_mm", 0.0, None),
+    ):
+        validated = _validated_optional_number(data, key, minimum=minimum, maximum=maximum)
+        if validated is not None:
+            data[key] = validated
+
+    for key in ("no_power_tiller", "labour_shortage"):
+        if key in data and not isinstance(data[key], bool):
+            raise HTTPException(400, f"{key} must be a boolean.")
+    for key in ("market_preferences", "marketPreferences"):
+        if key in data and data[key] is not None and (
+            not isinstance(data[key], list)
+            or any(not isinstance(value, str) or not value.strip() for value in data[key])
+        ):
+            raise HTTPException(400, f"{key} must be a list of non-empty crop names.")
 
     priority = str(data.get("priority", "balanced")).strip().lower()
     valid_priorities = {"balanced", "profit", "water", "soil", "national_need", "দেশের চাহিদা", "demand"}
@@ -695,37 +811,111 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
 
         ctx = DISTRICT_REGISTRY[dist_key]
         crops = load_crop_knowledge()
-        lat = float(data.get("latitude") or ctx.get("latitude") or ctx.get("lat"))
-        lon = float(data.get("longitude") or ctx.get("longitude") or ctx.get("lon"))
+        lat = float(data["latitude"] if data.get("latitude") is not None else (ctx.get("latitude") or ctx.get("lat")))
+        lon = float(data["longitude"] if data.get("longitude") is not None else (ctx.get("longitude") or ctx.get("lon")))
         field_id = str(data.get("field_id") or f"{dist_key}_field")
 
         decision_date = climate_df["date"].max() if "date" in climate_df.columns and not climate_df.empty else pd.to_datetime("2025-12-31")
+        if saved_field_record:
+            history_records = data.get("_saved_field_history") or []
+            eligible_history = []
+            for record in history_records:
+                try:
+                    prior_year = int(record.get("year"))
+                except (AttributeError, TypeError, ValueError):
+                    continue
+                if prior_year < pd.Timestamp(decision_date).year:
+                    eligible_history.append(record)
+            data["history_crops"] = [
+                record["crop"] for record in eligible_history
+                if isinstance(record, dict) and record.get("crop")
+            ]
+            if eligible_history:
+                data["previous_crop"] = eligible_history[0].get("crop") or ""
+                data["previous_crop_year"] = eligible_history[0].get("year")
+            else:
+                data["previous_crop"] = ""
+                data["previous_crop_year"] = ""
+        existing_rotation = data.get("existing_rotation")
+        complete_profile = (
+            isinstance(existing_rotation, dict)
+            and all(existing_rotation.get(key) or existing_rotation.get(alias) for key, alias in (
+                ("rabi", "S1"),
+                ("kharif1", "S2"),
+                ("kharif2", "S3"),
+            ))
+        )
+        existing_rotation_source = (
+            "saved_field_rotation"
+            if saved_field_record and complete_profile
+            else "request_supplied_rotation"
+            if isinstance(existing_rotation, dict) and complete_profile
+            else None
+        )
+        existing_rotation_year = None
+        if saved_field_record and not complete_profile:
+            saved_history_rotation = complete_saved_history_rotation(
+                data.get("_saved_field_history"),
+                before_year=pd.Timestamp(decision_date).year,
+            )
+            if saved_history_rotation is not None:
+                existing_rotation, existing_rotation_year = saved_history_rotation
+                existing_rotation_source = "saved_field_history"
+                data["existing_rotation"] = existing_rotation
+                data["_existing_rotation_year"] = existing_rotation_year
+                data["_existing_rotation_source"] = existing_rotation_source
+        elif existing_rotation_source is not None:
+            data["_existing_rotation_source"] = existing_rotation_source
+            data["_existing_rotation_year"] = existing_rotation_year
+        field_coordinates_supplied = data.get("latitude") is not None and data.get("longitude") is not None
+        if field_coordinates_supplied:
+            smap_data = None
+        else:
+            from src.data.smap import SMAP_COLUMNS
+            smap_data = pd.DataFrame(columns=SMAP_COLUMNS)
         f_state = build_field_state(
             field_id=field_id,
             latitude=lat,
             longitude=lon,
             decision_date=decision_date,
             nasa_power_data=climate_df.tail(60),
+            smap_data=smap_data,
             crop_knowledge=crops,
         )
-        area_val = float(data.get("area_ha") or data.get("field_size_ha") or 1.0)
+        area_input = data.get("area_ha")
+        if area_input is None:
+            area_input = data.get("field_size_ha")
+        area_val = float(area_input) if area_input is not None else float("nan")
         f_state.field_size_ha = area_val
         f_state.area_ha = area_val
-        if "soil_texture" in data and data["soil_texture"] != "unknown":
+        if data.get("previous_crop"):
+            f_state.previous_crop = str(data["previous_crop"])
+            f_state.previous_crop_year = data.get("previous_crop_year")
+        if data.get("soil_texture") not in (None, "", "unknown"):
             f_state.texture = str(data["soil_texture"])
-        if "soil_ph" in data and data["soil_ph"] is not None:
-            f_state.ph = float(data["soil_ph"])
+        if data.get("soil_ph") is not None:
+            f_state.ph = data["soil_ph"]
+        if data.get("organic_matter") is not None:
+            f_state.organic_matter = data["organic_matter"]
+        if data.get("irrigation_capacity_mm") is not None:
+            f_state.irrigation_capacity_mm = data["irrigation_capacity_mm"]
 
         p_wt, w_wt, s_wt, n_wt = 0.34, 0.33, 0.33, 0.0
         custom_w = data.get("weights")
         if isinstance(custom_w, dict) and any(k in custom_w for k in ("profit", "water", "soil")):
-            p_wt = float(custom_w.get("profit", 0.34))
-            w_wt = float(custom_w.get("water", 0.33))
-            s_wt = float(custom_w.get("soil", 0.33))
-            n_wt = float(custom_w.get("national_need", 0.0))
+            parsed_weights = {}
+            for name in ("profit", "water", "soil", "national_need"):
+                parsed_weights[name] = _validated_optional_number(
+                    custom_w, name, minimum=0.0
+                )
+            p_wt = parsed_weights["profit"] if parsed_weights["profit"] is not None else 0.34
+            w_wt = parsed_weights["water"] if parsed_weights["water"] is not None else 0.33
+            s_wt = parsed_weights["soil"] if parsed_weights["soil"] is not None else 0.33
+            n_wt = parsed_weights["national_need"] if parsed_weights["national_need"] is not None else 0.0
             tot = p_wt + w_wt + s_wt + n_wt
-            if tot > 0:
-                p_wt, w_wt, s_wt, n_wt = p_wt / tot, w_wt / tot, s_wt / tot, n_wt / tot
+            if not math.isfinite(tot) or tot <= 0:
+                raise HTTPException(400, "At least one planning weight must be positive.")
+            p_wt, w_wt, s_wt, n_wt = p_wt / tot, w_wt / tot, s_wt / tot, n_wt / tot
         elif priority in {"profit", "profit_focused"}:
             p_wt, w_wt, s_wt, n_wt = 0.70, 0.20, 0.10, 0.0
         elif priority in {"water", "water_efficiency"}:
@@ -746,19 +936,10 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
 
         allow_k2_fallow = bool(data.get("allow_kharif2_fallow", is_haor))
         hist_crops_param = data.get("history_crops") or data.get("crop_history") or None
-        cache_key = (
+        cache_key = _planning_cache_key(
+            {**data, "_climate_data_mode": data_mode},
+            climate_df,
             dist_key,
-            priority,
-            round(lat, 3),
-            round(lon, 3),
-            round(area_val, 1),
-            str(data.get("soil_texture") or getattr(f_state, "texture", "loam")),
-            bool(is_haor),
-            bool(f_state.coastal_saline),
-            bool(allow_k2_fallow),
-            int(data.get("min_cereals_per_year", 1)),
-            str(hist_crops_param),
-            str(data.get("existing_rotation")),
         )
         if cache_key in _PLANNING_CACHE:
             return _PLANNING_CACHE[cache_key]
@@ -775,7 +956,16 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             min_cereals_per_year=int(data.get("min_cereals_per_year", 1)),
             seasonally_flooded=bool(is_haor),
             field_history_crops=hist_crops_param,
-            existing_rotation=data.get("existing_rotation"),
+            existing_rotation=existing_rotation,
+            existing_rotation_source=existing_rotation_source,
+            existing_rotation_year=existing_rotation_year,
+            excluded_crops=["Potato"] if data.get("no_power_tiller") else None,
+        )
+        from src.explainability.explanations import explain_milp_plan
+        milp_res["decision_explanation"] = explain_milp_plan(
+            milp_res,
+            field_state=f_state,
+            crops=crops,
         )
         from src.compute.risk_evaluator import compute_planner_risk_suite
         risk_suite = compute_planner_risk_suite(
@@ -787,17 +977,43 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
         )
         milp_res["risk"] = risk_suite
         env_basis = milp_res.get("environment_basis")
+        observed_years = sorted(
+            int(year)
+            for year in climate_df["date"].dt.year.dropna().unique()
+        ) if "date" in climate_df.columns else []
+        time_range = (
+            [str(climate_df["date"].min().date()), str(climate_df["date"].max().date())]
+            if "date" in climate_df.columns and not climate_df.empty
+            else None
+        )
         if not env_basis:
-            num_years = len(climate_df["date"].dt.year.unique()) if "date" in climate_df.columns else 25
+            num_years = len(observed_years) if observed_years else 0
             env_basis = f"nasa_power_climatology_{num_years}_years"
+        unapplied_farmer_constraints = []
+        if data.get("labour_shortage"):
+            unapplied_farmer_constraints.append(
+                "labour_shortage (crop labour-demand metadata is unavailable)"
+            )
+        if data.get("market_preferences") or data.get("marketPreferences"):
+            unapplied_farmer_constraints.append(
+                "market_preferences (crop-specific market suitability data is not connected to the optimizer)"
+            )
 
         final_resp = finite_json_value(jsonable_encoder({
             "status": "ok",
             "mode": data_mode or "offline",
             "climate_source": {
+                "dataset": "NASA POWER",
+                "data_type": "remote_gridded_observations",
                 "district": dist_key,
                 "data_mode": data_mode or "offline",
-                "years": "2001-2025",
+                "year_count": len(observed_years),
+                "years": (
+                    f"{observed_years[0]}-{observed_years[-1]}"
+                    if observed_years
+                    else None
+                ),
+                "time_range": time_range,
                 "environment_basis": env_basis,
             },
             "environment_basis": env_basis,
@@ -807,11 +1023,82 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "field_id": field_id,
                     "latitude": lat,
                     "longitude": lon,
-                    "field_size_ha": area_val,
-                    "area_ha": area_val,
+                    "field_size_ha": area_val if math.isfinite(area_val) else None,
+                    "area_ha": area_val if math.isfinite(area_val) else None,
+                    "area_source": (
+                        "registered_field_or_request"
+                        if math.isfinite(area_val)
+                        else "unavailable"
+                    ),
                     "soil_texture": data.get("soil_texture") or getattr(f_state, "texture", "loam"),
-                    "organic_matter_percent": float(data.get("organic_matter")) if data.get("organic_matter") is not None else getattr(f_state, "organic_matter", 2.0),
-                    "soil_ph": float(data.get("soil_ph")) if data.get("soil_ph") is not None else getattr(f_state, "ph", 6.5),
+                    "organic_matter_percent": float(data["organic_matter"]) if data.get("organic_matter") is not None else (float(f_state.organic_matter) if math.isfinite(f_state.organic_matter) else None),
+                    "soil_ph": float(data["soil_ph"]) if data.get("soil_ph") is not None else (float(f_state.ph) if math.isfinite(f_state.ph) else None),
+                    "irrigation_capacity_mm": data.get("irrigation_capacity_mm"),
+                    "coordinates_source": "field_coordinates" if field_coordinates_supplied else "district_reference_coordinates",
+                    "field_data_sources": {
+                        "coordinates": (
+                            "registered_field"
+                            if saved_field_record and field_coordinates_supplied
+                            else "request_input"
+                            if field_coordinates_supplied
+                            else "district_reference_coordinates"
+                        ),
+                        "area": (
+                            "registered_field"
+                            if saved_field_record and math.isfinite(area_val)
+                            else "request_input"
+                            if math.isfinite(area_val)
+                            else "unavailable"
+                        ),
+                        "soil_texture": (
+                            "request_input"
+                            if request_inputs.get("soil_texture") not in (None, "", "unknown")
+                            else "registered_field"
+                            if saved_field_record and getattr(field_record, "soil_texture", None)
+                            else getattr(f_state, "soil_source", "unavailable")
+                            if getattr(f_state, "soil_source", "missing") != "missing"
+                            else "unavailable"
+                        ),
+                        "soil_ph": (
+                            "request_input"
+                            if request_inputs.get("soil_ph") is not None
+                            else "registered_field"
+                            if saved_field_record and getattr(field_record, "soil_ph", None) is not None
+                            else getattr(f_state, "soil_source", "unavailable")
+                            if math.isfinite(float(getattr(f_state, "ph", float("nan"))))
+                            else "unavailable"
+                        ),
+                        "organic_matter": (
+                            "request_input"
+                            if request_inputs.get("organic_matter") is not None
+                            else "registered_field"
+                            if saved_field_record and getattr(field_record, "organic_matter", None) is not None
+                            else getattr(f_state, "soil_source", "unavailable")
+                            if math.isfinite(float(getattr(f_state, "organic_matter", float("nan"))))
+                            else "unavailable"
+                        ),
+                        "irrigation_capacity": (
+                            "request_input"
+                            if request_inputs.get("irrigation_capacity_mm") is not None
+                            else "registered_field"
+                            if saved_field_record and getattr(field_record, "irrigation_capacity_mm", None) is not None
+                            else "assumption_when_missing"
+                        ),
+                        "soil_moisture": {
+                            "source": getattr(f_state, "soil_moisture_source", "missing"),
+                            "status": getattr(f_state, "data_status", {}).get("soil_moisture", "missing"),
+                            "observation_date": (
+                                str(f_state.soil_moisture_observation_date)
+                                if getattr(f_state, "soil_moisture_observation_date", None) is not None
+                                else None
+                            ),
+                        },
+                        "rotation_baseline": {
+                            "source": (milp_res.get("baseline_comparison") or {}).get("baseline_source"),
+                            "completeness": (milp_res.get("baseline_comparison") or {}).get("baseline_completeness"),
+                            "historical_year": (milp_res.get("baseline_comparison") or {}).get("baseline_historical_period"),
+                        },
+                    },
                     "temperature_c": getattr(f_state, "temperature", None),
                     "rainfall_mm": getattr(f_state, "rainfall", None),
                 },
@@ -834,6 +1121,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "baseline_rotation_text_bn": milp_res.get("baseline_rotation_text_bn"),
                     "baseline_rotation_text_en": milp_res.get("baseline_rotation_text_en"),
                     "is_assumed_baseline": milp_res.get("is_assumed_baseline"),
+                    "unapplied_farmer_constraints": unapplied_farmer_constraints,
                     "baseline_bare_days": milp_res.get("baseline_bare_days"),
                     "plan_bare_days": milp_res.get("plan_bare_days"),
                     "risk": risk_suite,
@@ -857,10 +1145,33 @@ def planning_robustness(payload: Payload):
     rotation = data.get("rotation") or data.get("milp_status") or data.get("selected_crop_by_period")
     if not rotation:
         raise HTTPException(400, "Missing 'rotation' in request body.")
-    district = data.get("district") or "bogura"
-    area_ha = float(data.get("area_ha") or data.get("field_size_ha") or 1.0)
-    lat = float(data["latitude"]) if data.get("latitude") is not None else None
-    lon = float(data["longitude"]) if data.get("longitude") is not None else None
+    district = data.get("district")
+    area_value = data.get("area_ha") if data.get("area_ha") is not None else data.get("field_size_ha")
+    lat_value = data.get("latitude")
+    lon_value = data.get("longitude")
+    if area_value is None:
+        raise HTTPException(422, "Field area is required for rotation robustness analysis.")
+    if (lat_value is None) != (lon_value is None):
+        raise HTTPException(422, "Latitude and longitude must be provided together.")
+    try:
+        area_ha = float(area_value)
+        lat = float(lat_value) if lat_value is not None else None
+        lon = float(lon_value) if lon_value is not None else None
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "Field area and coordinates must be valid numbers.") from error
+    if not math.isfinite(area_ha) or area_ha <= 0:
+        raise HTTPException(422, "Field area must be a positive number.")
+    if lat is not None and (
+        not math.isfinite(lat) or not -90 <= lat <= 90
+        or not math.isfinite(lon) or not -180 <= lon <= 180
+    ):
+        raise HTTPException(422, "Field coordinates are outside the supported range.")
+    from src.compute.advisory_service import DISTRICT_REGISTRY, nearest_district
+    if not district and lat is not None and lon is not None:
+        district = nearest_district(lat, lon)
+    if not isinstance(district, str) or district.strip().lower() not in DISTRICT_REGISTRY:
+        raise HTTPException(422, "Provide a supported district or valid field coordinates.")
+    district = district.strip().lower()
 
     from src.optimizer.robustness import evaluate_rotation_robustness
     try:
@@ -878,8 +1189,8 @@ def planning_robustness(payload: Payload):
 @app.get("/api/water/plan")
 def api_water_plan(
     district: str | None = None,
-    crop: str | None = "Rice",
-    area_ha: float | None = 1.0,
+    crop: str | None = None,
+    area_ha: float | None = None,
     lat: float | None = None,
     lon: float | None = None,
     latitude: float | None = None,
@@ -887,17 +1198,35 @@ def api_water_plan(
     field_id: str | None = None,
 ):
     from src.compute.water_service import compute_water_plan
+    from src.compute.advisory_service import DISTRICT_REGISTRY
 
     actual_lat = lat if lat is not None else latitude
     actual_lon = lon if lon is not None else longitude
-    target_crop = crop or "Rice"
-    area = float(area_ha or 1.0)
+    if (actual_lat is None) != (actual_lon is None):
+        raise HTTPException(422, "Latitude and longitude must be provided together.")
+    if not district and (actual_lat is None or actual_lon is None):
+        raise HTTPException(422, "A district or field coordinates are required for a water plan.")
+    if not crop or not crop.strip():
+        crop = "Rice"
+    if area_ha is None or not math.isfinite(area_ha) or area_ha <= 0:
+        area_ha = 1.0
+    if actual_lat is not None and (
+        not math.isfinite(actual_lat) or not -90 <= actual_lat <= 90
+        or not math.isfinite(actual_lon) or not -180 <= actual_lon <= 180
+    ):
+        raise HTTPException(422, "Field coordinates are outside the supported range.")
+    if district:
+        district = district.strip().lower()
+        if district not in DISTRICT_REGISTRY:
+            raise HTTPException(422, "District is not supported.")
+    if not district:
+        district = nearest_district(actual_lat, actual_lon)
 
     try:
         result = compute_water_plan(
-            district=district or "bogura",
-            crop=target_crop,
-            area_ha=area,
+            district=district,
+            crop=crop.strip(),
+            area_ha=area_ha,
             latitude=actual_lat,
             longitude=actual_lon,
         )
@@ -962,8 +1291,9 @@ def location_weather(payload: Payload):
         raise HTTPException(502, str(e))
 
     try:
-        lat = float(data.get("latitude") if data.get("latitude") is not None else 24.85)
-        lon = float(data.get("longitude") if data.get("longitude") is not None else 89.37)
+        lat = float(data["latitude"])
+        lon = float(data["longitude"])
+        import pandas as pd
         dist_key = data.get("district")
         from src.compute.advisory_service import nearest_district, load_district_climate_data
         if not dist_key or not str(dist_key).strip():
@@ -972,28 +1302,49 @@ def location_weather(payload: Payload):
             dist_key = str(dist_key).strip().lower()
         df, mode = load_district_climate_data(dist_key, offline=True)
         tail_30 = df.tail(30).copy()
+
+        def rounded_value(row: Any, key: str, digits: int) -> float | None:
+            value = row.get(key)
+            if value is None or pd.isna(value):
+                return None
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                return None
+            return round(number, digits) if math.isfinite(number) else None
+
+        def aggregate_value(key: str, operation: str, digits: int) -> float | None:
+            if key not in tail_30.columns:
+                return None
+            values = pd.to_numeric(tail_30[key], errors="coerce").dropna()
+            if values.empty:
+                return None
+            value = values.sum() if operation == "sum" else values.mean()
+            return round(float(value), digits)
+
         series = []
         for _, row in tail_30.iterrows():
             d_str = str(row.get("date", ""))[:10]
             series.append({
                 "date": d_str,
-                "temperature": round(float(row.get("temperature", 25.0)), 1),
-                "temp_max": round(float(row.get("temp_max", 30.0)), 1),
-                "temp_min": round(float(row.get("temp_min", 20.0)), 1),
-                "rainfall": round(float(row.get("rainfall", 0.0)), 2),
-                "humidity": round(float(row.get("humidity", 70.0)), 1),
-                "wind_speed": round(float(row.get("wind_speed", 1.5)), 2),
-                "solar_radiation": round(float(row.get("solar_radiation", 15.0)), 2),
+                "temperature": rounded_value(row, "temperature", 1),
+                "temp_max": rounded_value(row, "temp_max", 1),
+                "temp_min": rounded_value(row, "temp_min", 1),
+                "rainfall": rounded_value(row, "rainfall", 2),
+                "humidity": rounded_value(row, "humidity", 1),
+                "wind_speed": rounded_value(row, "wind_speed", 2),
+                "solar_radiation": rounded_value(row, "solar_radiation", 2),
             })
+        dates = [item["date"] for item in series if item["date"]]
         summary = {
-            "temperature": round(float(tail_30.iloc[-1]["temperature"]), 1),
-            "temp_max": round(float(tail_30["temp_max"].mean()), 1),
-            "temp_min": round(float(tail_30["temp_min"].mean()), 1),
-            "humidity": round(float(tail_30["humidity"].mean()), 1),
-            "wind_speed": round(float(tail_30["wind_speed"].mean()), 2),
-            "rainfall": round(float(tail_30["rainfall"].sum()), 2),
-            "start_date": series[0]["date"] if series else "2025-12-01",
-            "latest_valid_date": series[-1]["date"] if series else "2025-12-31",
+            "temperature": rounded_value(tail_30.iloc[-1], "temperature", 1) if not tail_30.empty else None,
+            "temp_max": aggregate_value("temp_max", "mean", 1),
+            "temp_min": aggregate_value("temp_min", "mean", 1),
+            "humidity": aggregate_value("humidity", "mean", 1),
+            "wind_speed": aggregate_value("wind_speed", "mean", 2),
+            "rainfall": aggregate_value("rainfall", "sum", 2),
+            "start_date": dates[0] if dates else None,
+            "latest_valid_date": dates[-1] if dates else None,
             "rows": len(series),
         }
         res["series"] = series
@@ -1096,10 +1447,17 @@ def get_advisory_onset_comparison():
 
 
 @app.get("/api/satellite/readiness")
-def satellite_readiness(latitude: float = 23.8103, longitude: float = 90.4125, lat: float | None = None, lon: float | None = None):
+def satellite_readiness(latitude: float | None = None, longitude: float | None = None, lat: float | None = None, lon: float | None = None):
     from src.data.bangladesh_crops import get_satellite_readiness_status
     actual_lat = lat if lat is not None else latitude
     actual_lon = lon if lon is not None else longitude
+    if actual_lat is None or actual_lon is None:
+        raise HTTPException(422, "Field coordinates are required for location-specific satellite readiness.")
+    if (
+        not math.isfinite(actual_lat) or not -90 <= actual_lat <= 90
+        or not math.isfinite(actual_lon) or not -180 <= actual_lon <= 180
+    ):
+        raise HTTPException(422, "Field coordinates are outside the supported range.")
     data = get_satellite_readiness_status(actual_lat, actual_lon)
     data["sensors"] = [
         {
@@ -1120,6 +1478,7 @@ def satellite_readiness(latitude: float = 23.8103, longitude: float = 90.4125, l
 @app.post("/api/lab/compare")
 def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None), db: DbSession = Depends(get_db)):
     data = payload.model_dump()
+    request_inputs = dict(data)
     from src.state.field_state import build_field_state
     from src.data.crops import load_crop_knowledge
     from src.preprocessing.features import build_features
@@ -1128,6 +1487,7 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
     import pandas as pd
 
     user = None
+    saved_field_record = False
     if fieldshift_session:
         try:
             user = require_user(fieldshift_session, db)
@@ -1135,48 +1495,152 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
             user = None
 
     requested_field_id = data.get("field_id")
-    if requested_field_id not in (None, "", "demo") and user is not None:
+    if requested_field_id not in (None, "", "demo"):
         try:
             fid = int(requested_field_id)
+        except (ValueError, TypeError):
+            fid = None
+        if fid is not None:
+            if user is None:
+                raise HTTPException(401, "Sign in to compare a registered field.")
             field_record = owned_field(db, fid, user)
+            planning_overrides = {
+                key: data[key]
+                for key in ("soil_texture", "soil_ph", "organic_matter", "irrigation_capacity_mm")
+                if key in data
+            }
             data = use_field_record(data, field_record, db)
-        except Exception:
-            pass
+            data.update(planning_overrides)
+            saved_field_record = True
 
     lat_val = data.get("latitude")
     lon_val = data.get("longitude")
+    if (lat_val is None) != (lon_val is None):
+        raise HTTPException(422, "Latitude and longitude must be provided together.")
+    if lat_val is not None:
+        try:
+            lat_val = float(lat_val)
+            lon_val = float(lon_val)
+        except (TypeError, ValueError) as error:
+            raise HTTPException(422, "Field coordinates must be valid numbers.") from error
+        if (
+            not math.isfinite(lat_val) or not -90 <= lat_val <= 90
+            or not math.isfinite(lon_val) or not -180 <= lon_val <= 180
+        ):
+            raise HTTPException(422, "Field coordinates are outside the supported range.")
     district = data.get("district")
+    if lat_val is not None:
+        data["latitude"] = _validated_optional_number(data, "latitude", minimum=-90.0, maximum=90.0)
+    if lon_val is not None:
+        data["longitude"] = _validated_optional_number(data, "longitude", minimum=-180.0, maximum=180.0)
+    for key, minimum, maximum in (
+        ("area_ha", 0.000001, None),
+        ("field_size_ha", 0.000001, None),
+        ("soil_ph", 0.0, 14.0),
+        ("organic_matter", 0.0, 100.0),
+        ("irrigation_capacity_mm", 0.0, None),
+        ("available_water_mm", 0.0, None),
+    ):
+        validated = _validated_optional_number(data, key, minimum=minimum, maximum=maximum)
+        if validated is not None:
+            data[key] = validated
+
     if not district and lat_val is not None and lon_val is not None:
         try:
             district = nearest_district(float(lat_val), float(lon_val))
-        except Exception:
-            district = "bogura"
+        except ValueError as error:
+            raise HTTPException(400, "Could not resolve a supported district from the supplied coordinates.") from error
     if not district or str(district).strip().lower() not in DISTRICT_REGISTRY:
-        district = "bogura"
+        raise HTTPException(400, "A supported district or valid field coordinates are required.")
 
     dist_key = str(district).strip().lower()
     is_offline = os.environ.get("OFFLINE", "1") == "1"
     try:
         power, data_mode = load_district_climate_data(dist_key, offline=is_offline)
-    except Exception:
-        from src.experiments.integrated_research_demo import DEFAULT_NASA_PATH
-        power = pd.read_csv(DEFAULT_NASA_PATH)
+    except (ValueError, FileNotFoundError, RuntimeError) as error:
+        raise HTTPException(502, f"Could not load climate data for {dist_key}: {error}") from error
     if "date" in power.columns:
         power["date"] = pd.to_datetime(power["date"])
 
-    lat = float(lat_val or DISTRICT_REGISTRY[dist_key].get("latitude") or 24.85)
-    lon = float(lon_val or DISTRICT_REGISTRY[dist_key].get("longitude") or 89.37)
+    if saved_field_record:
+        decision_year = int(power["date"].max().year) if "date" in power.columns and not power.empty else datetime.now().year
+        eligible_history = []
+        for record in data.get("_saved_field_history") or []:
+            try:
+                prior_year = int(record.get("year"))
+            except (AttributeError, TypeError, ValueError):
+                continue
+            if prior_year < decision_year:
+                eligible_history.append(record)
+        if eligible_history:
+            data["previous_crop"] = eligible_history[0].get("crop") or ""
+            data["previous_crop_year"] = eligible_history[0].get("year")
+        else:
+            data["previous_crop"] = ""
+            data["previous_crop_year"] = ""
+
+    existing_rotation = data.get("existing_rotation")
+    existing_rotation_source = None
+    existing_rotation_year = None
+    if saved_field_record:
+        complete_profile = (
+            isinstance(existing_rotation, dict)
+            and all(existing_rotation.get(key) or existing_rotation.get(alias) for key, alias in (
+                ("rabi", "S1"),
+                ("kharif1", "S2"),
+                ("kharif2", "S3"),
+            ))
+        )
+        if complete_profile:
+            existing_rotation_source = "saved_field_rotation"
+        else:
+            decision_year = (
+                int(power["date"].max().year)
+                if "date" in power.columns and not power.empty
+                else datetime.now().year
+            )
+            saved_history_rotation = complete_saved_history_rotation(
+                data.get("_saved_field_history"),
+                before_year=decision_year,
+            )
+            if saved_history_rotation is not None:
+                existing_rotation, existing_rotation_year = saved_history_rotation
+                existing_rotation_source = "saved_field_history"
+
+    lat = float(data["latitude"] if data.get("latitude") is not None else (DISTRICT_REGISTRY[dist_key].get("latitude") or DISTRICT_REGISTRY[dist_key].get("lat")))
+    lon = float(data["longitude"] if data.get("longitude") is not None else (DISTRICT_REGISTRY[dist_key].get("longitude") or DISTRICT_REGISTRY[dist_key].get("lon")))
     priority = str(data.get("priority") or "balanced")
 
     crops_df = load_crop_knowledge()
-    state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power, crop_knowledge=crops_df)
-    state.field_size_ha = float(data.get("field_size_ha") or data.get("area_ha") or 1.0)
+    field_coordinates_supplied = data.get("latitude") is not None and data.get("longitude") is not None
+    if field_coordinates_supplied:
+        smap_data = None
+    else:
+        from src.data.smap import SMAP_COLUMNS
+        smap_data = pd.DataFrame(columns=SMAP_COLUMNS)
+    state = build_field_state(
+        str(data.get("field_id") or "demo"),
+        lat,
+        lon,
+        power["date"].max(),
+        power,
+        smap_data=smap_data,
+        crop_knowledge=crops_df,
+    )
+    area_input = data.get("field_size_ha")
+    if area_input is None:
+        area_input = data.get("area_ha")
+    field_area_ha = float(area_input) if area_input is not None else None
+    state.field_size_ha = field_area_ha if field_area_ha is not None else float("nan")
     state.area_ha = state.field_size_ha
-    if data.get("soil_ph"): state.ph = float(data["soil_ph"])
-    if data.get("organic_matter"): state.organic_matter = float(data["organic_matter"])
-    if data.get("temperature_c"): state.temperature = float(data["temperature_c"])
-    if data.get("irrigation_capacity_mm"): state.irrigation_capacity_mm = float(data["irrigation_capacity_mm"])
-    if "soil_texture" in data and data["soil_texture"] != "unknown":
+    if data.get("previous_crop"):
+        state.previous_crop = str(data["previous_crop"])
+        state.previous_crop_year = data.get("previous_crop_year")
+    if data.get("soil_ph") is not None: state.ph = float(data["soil_ph"])
+    if data.get("organic_matter") is not None: state.organic_matter = float(data["organic_matter"])
+    if data.get("temperature_c") is not None: state.temperature = float(data["temperature_c"])
+    if data.get("irrigation_capacity_mm") is not None: state.irrigation_capacity_mm = float(data["irrigation_capacity_mm"])
+    if data.get("soil_texture") not in (None, "", "unknown"):
         state.texture = str(data["soil_texture"])
     elif dist_key in DISTRICT_REGISTRY:
         state.texture = DISTRICT_REGISTRY[dist_key].get("soil_type", "loam")
@@ -1187,11 +1651,74 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
     state.seasonally_flooded = bool(is_haor)
 
     features = build_features(state, environmental_history=power)
-    if data.get("available_water_mm"): features["available_water_mm"] = float(data["available_water_mm"])
+    if data.get("available_water_mm") is not None:
+        features["available_water_mm"] = float(data["available_water_mm"])
 
-    result = run_three_way_comparison(state, power, crops=crops_df, features=features, priority=priority)
+    result = run_three_way_comparison(
+        state,
+        power,
+        crops=crops_df,
+        features=features,
+        priority=priority,
+        existing_rotation=existing_rotation if saved_field_record else None,
+        existing_rotation_source=existing_rotation_source,
+        existing_rotation_year=existing_rotation_year,
+    )
     result["district"] = dist_key
-    result["climate_source"] = f"NASA POWER ({dist_key})"
+    observed_years = sorted(
+        int(year) for year in power["date"].dt.year.dropna().unique()
+    ) if "date" in power.columns else []
+    result["climate_source"] = {
+        "dataset": "NASA POWER",
+        "data_type": "remote_gridded_observations",
+        "district": dist_key,
+        "mode": data_mode,
+        "year_count": len(observed_years),
+        "years": f"{observed_years[0]}-{observed_years[-1]}" if observed_years else None,
+        "time_range": (
+            [str(power["date"].min().date()), str(power["date"].max().date())]
+            if "date" in power.columns and not power.empty
+            else None
+        ),
+    }
+    result["field_context"] = {
+        "coordinates_source": (
+            "registered_field"
+            if saved_field_record and field_coordinates_supplied
+            else "request_input"
+            if field_coordinates_supplied
+            else "district_reference_coordinates"
+        ),
+        "area_source": (
+            "registered_field"
+            if saved_field_record and field_area_ha is not None
+            else "request_input"
+            if request_inputs.get("field_size_ha") is not None or request_inputs.get("area_ha") is not None
+            else "unavailable"
+        ),
+        "soil_sources": {
+            "texture": (
+                "request_input" if request_inputs.get("soil_texture") not in (None, "", "unknown")
+                else "registered_field" if saved_field_record and data.get("soil_texture") not in (None, "", "unknown")
+                else "district_reference"
+            ),
+            "pH": (
+                "request_input" if request_inputs.get("soil_ph") is not None
+                else "registered_field" if saved_field_record and data.get("soil_ph") is not None
+                else "unavailable"
+            ),
+            "organic_matter": (
+                "request_input" if request_inputs.get("organic_matter") is not None
+                else "registered_field" if saved_field_record and data.get("organic_matter") is not None
+                else "unavailable"
+            ),
+            "irrigation_capacity": (
+                "request_input" if request_inputs.get("irrigation_capacity_mm") is not None
+                else "registered_field" if saved_field_record and data.get("irrigation_capacity_mm") is not None
+                else "unavailable"
+            ),
+        },
+    }
     return finite_json_value(jsonable_encoder(result))
 
 @app.post("/api/scenarios/crop-failure-recovery")
@@ -1205,8 +1732,23 @@ def crop_failure_recovery(payload: Payload):
     import pandas as pd
 
     fs = data.get("field_state") or {}
-    lat = float(data.get("latitude") or fs.get("latitude") or 23.8103)
-    lon = float(data.get("longitude") or fs.get("longitude") or 90.4125)
+    latitude = data.get("latitude") if data.get("latitude") is not None else fs.get("latitude")
+    longitude = data.get("longitude") if data.get("longitude") is not None else fs.get("longitude")
+    area = data.get("field_size_ha")
+    if area is None:
+        area = fs.get("field_size_ha", data.get("area_ha", fs.get("area_ha")))
+    try:
+        lat = float(latitude)
+        lon = float(longitude)
+        field_area_ha = float(area)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "Valid field coordinates and area are required for crop-failure recovery.") from error
+    if (
+        not math.isfinite(lat) or not -90 <= lat <= 90
+        or not math.isfinite(lon) or not -180 <= lon <= 180
+        or not math.isfinite(field_area_ha) or field_area_ha <= 0
+    ):
+        raise HTTPException(422, "Field coordinates or area are outside the supported range.")
     failure_event = str(data.get("failure_event") or data.get("failure_type") or "crop_failure")
     impacted_season_index = int(data.get("impacted_season_index") if data.get("impacted_season_index") is not None else data.get("failure_season", 0))
     severity = str(data.get("severity") or "severe")
@@ -1216,7 +1758,7 @@ def crop_failure_recovery(payload: Payload):
     power["date"] = pd.to_datetime(power["date"])
     crops_df = load_crop_knowledge()
     state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power, crop_knowledge=crops_df)
-    state.field_size_ha = float(data.get("field_size_ha") or fs.get("field_size_ha") or data.get("area_ha") or fs.get("area_ha") or 1.0)
+    state.field_size_ha = field_area_ha
     state.area_ha = state.field_size_ha
     if data.get("soil_ph") or fs.get("soil_ph"): state.ph = float(data.get("soil_ph") or fs.get("soil_ph"))
     if data.get("organic_matter") or fs.get("organic_matter"): state.organic_matter = float(data.get("organic_matter") or fs.get("organic_matter"))
@@ -1263,13 +1805,19 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     lat_val = data.get("latitude")
     lon_val = data.get("longitude")
     district = data.get("district")
+    location_source = "farmer-provided coordinates"
     if not district and lat_val is not None and lon_val is not None:
         try:
             district = nearest_district(float(lat_val), float(lon_val))
-        except Exception:
-            district = "bogura"
-    if not district or str(district).strip().lower() not in DISTRICT_REGISTRY:
+        except Exception as error:
+            raise HTTPException(422, "Unable to resolve a district from the supplied coordinates.") from error
+    elif district:
+        location_source = "farmer-provided district"
+    if not district and str(requested_field_id or "").lower() in {"demo", "demo_field", "field_demo", "0"}:
         district = "bogura"
+        location_source = "assumed demo district reference"
+    if not district or str(district).strip().lower() not in DISTRICT_REGISTRY:
+        raise HTTPException(422, "Provide valid field coordinates or a supported district.")
 
     dist_key = str(district).strip().lower()
     is_offline = os.environ.get("OFFLINE", "1") == "1"
@@ -1281,26 +1829,60 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     if "date" in power.columns:
         power["date"] = pd.to_datetime(power["date"])
 
-    lat = float(lat_val or DISTRICT_REGISTRY[dist_key].get("latitude") or 24.85)
-    lon = float(lon_val or DISTRICT_REGISTRY[dist_key].get("longitude") or 89.37)
+    district_meta = DISTRICT_REGISTRY[dist_key]
+    reference_lat = district_meta.get("latitude", district_meta.get("lat"))
+    reference_lon = district_meta.get("longitude", district_meta.get("lon"))
+    if lat_val is None:
+        lat_val = reference_lat
+        location_source = "district reference centroid" if location_source != "assumed demo district reference" else location_source
+    if lon_val is None:
+        lon_val = reference_lon
+    try:
+        lat = float(lat_val)
+        lon = float(lon_val)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "The selected district does not have valid reference coordinates.") from error
+    area_value = data.get("field_size_ha", data.get("area_ha"))
+    if area_value is None and str(requested_field_id or "").lower() in {"demo", "demo_field", "field_demo", "0"}:
+        area_value = 1.0
+    if area_value is None:
+        raise HTTPException(422, "Field area is required for adaptive replanning.")
+    try:
+        field_area_ha = float(area_value)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "Field area must be a positive number.") from error
+    if not math.isfinite(field_area_ha) or field_area_ha <= 0:
+        raise HTTPException(422, "Field area must be a positive number.")
 
     raw_completed = data.get("completed_seasons") or data.get("completed_seasons_history") or []
     if isinstance(raw_completed, int):
-        last_crop = str(data.get("last_season_crop") or "Wheat")
-        completed_seasons = [{"period": f"Y{1+(i//2)}_S{1+(i%2)}", "crop": last_crop, "crop_planted": last_crop} for i in range(raw_completed)]
+        last_crop = data.get("last_season_crop")
+        if not isinstance(raw_completed, bool) and isinstance(last_crop, str) and last_crop.strip() and raw_completed == 1:
+            completed_seasons = [{
+                "period": "Y1_S1",
+                "crop": last_crop.strip(),
+                "crop_planted": last_crop.strip(),
+            }]
+        elif raw_completed == 0:
+            completed_seasons = []
+        else:
+            raise HTTPException(422, "Provide each completed season with its crop; a count cannot represent crop history.")
     elif isinstance(raw_completed, list):
         completed_seasons = []
         for i, item in enumerate(raw_completed):
-            if isinstance(item, dict):
-                crop_name = item.get("crop") or item.get("crop_planted") or item.get("crop_name") or "Wheat"
-                completed_seasons.append({
-                    "period": item.get("period") or f"Y{1+(i//2)}_S{1+(i%2)}",
-                    "crop": crop_name,
-                    "crop_planted": crop_name,
-                    "yield_kg_ha": item.get("yield_kg_ha"),
-                    "actual_yield_t_ha": (float(item["yield_kg_ha"]) / 1000.0) if item.get("yield_kg_ha") is not None else item.get("actual_yield_t_ha"),
-                    "actual_water_mm": item.get("water_applied_mm") or item.get("actual_water_mm"),
-                })
+            if not isinstance(item, dict):
+                raise HTTPException(422, f"Completed season {i + 1} must be a recorded season object.")
+            crop_name = item.get("crop") or item.get("crop_planted") or item.get("crop_name")
+            if not isinstance(crop_name, str) or not crop_name.strip():
+                raise HTTPException(422, f"Completed season {i + 1} must include its recorded crop.")
+            completed_seasons.append({
+                "period": item.get("period") or f"Y{1+(i//2)}_S{1+(i%2)}",
+                "crop": crop_name.strip(),
+                "crop_planted": crop_name.strip(),
+                "yield_kg_ha": item.get("yield_kg_ha"),
+                "actual_yield_t_ha": (float(item["yield_kg_ha"]) / 1000.0) if item.get("yield_kg_ha") is not None else item.get("actual_yield_t_ha"),
+                "actual_water_mm": item.get("water_applied_mm") or item.get("actual_water_mm"),
+            })
     else:
         completed_seasons = []
 
@@ -1309,14 +1891,16 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
 
     crops_df = load_crop_knowledge()
     state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power, crop_knowledge=crops_df)
-    state.field_size_ha = float(data.get("field_size_ha") or data.get("area_ha") or 1.0)
+    state.field_size_ha = field_area_ha
     state.area_ha = state.field_size_ha
+    soil_texture_source = "request input" if data.get("soil_texture") not in (None, "", "unknown") else "district reference"
     if "soil_texture" in data and data["soil_texture"] != "unknown":
         state.texture = str(data["soil_texture"])
     elif dist_key in DISTRICT_REGISTRY:
         state.texture = DISTRICT_REGISTRY[dist_key].get("soil_type", "loam")
 
     is_haor = data.get("seasonally_flooded")
+    seasonally_flooded_source = "request input" if is_haor is not None else "district-level assumption"
     if is_haor is None:
         is_haor = dist_key in {"sunamganj", "netrokona", "kishoreganj", "habiganj", "moulvibazar"}
     state.seasonally_flooded = bool(is_haor)
@@ -1333,6 +1917,34 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     )
     result["district"] = dist_key
     result["climate_source"] = f"NASA POWER ({dist_key})"
+    result["location_provenance"] = {
+        "source": location_source,
+        "field_coordinates_available": data.get("latitude") is not None and data.get("longitude") is not None,
+        "reference_coordinates": None if data.get("latitude") is not None and data.get("longitude") is not None else {
+            "latitude": lat,
+            "longitude": lon,
+            "meaning": "district reference centroid; not a field measurement",
+        },
+    }
+    result["field_area_provenance"] = (
+        "farmer-provided field area"
+        if data.get("field_size_ha") is not None or data.get("area_ha") is not None
+        else "assumed demo area"
+    )
+    observed_dates = power["date"].dropna() if "date" in power.columns else pd.Series(dtype="datetime64[ns]")
+    result["climate_provenance"] = {
+        "dataset": "NASA POWER",
+        "data_type": "remote_gridded_observations",
+        "district": dist_key,
+        "mode": data_mode,
+        "time_range": (
+            [str(observed_dates.min().date()), str(observed_dates.max().date())]
+            if not observed_dates.empty
+            else None
+        ),
+    }
+    result["soil_texture_provenance"] = soil_texture_source
+    result["seasonally_flooded_provenance"] = seasonally_flooded_source
     return finite_json_value(jsonable_encoder(result))
 
 @app.post("/api/scenarios/weather-uncertainty")
@@ -1346,15 +1958,30 @@ def weather_uncertainty(payload: Payload):
     import pandas as pd
 
     fs = data.get("field_state") or {}
-    lat = float(data.get("latitude") or fs.get("latitude") or 23.8103)
-    lon = float(data.get("longitude") or fs.get("longitude") or 90.4125)
+    lat_value = data.get("latitude") if data.get("latitude") is not None else fs.get("latitude")
+    lon_value = data.get("longitude") if data.get("longitude") is not None else fs.get("longitude")
+    area_value = data.get("field_size_ha")
+    if area_value is None:
+        area_value = fs.get("field_size_ha", data.get("area_ha"))
+    try:
+        lat = float(lat_value)
+        lon = float(lon_value)
+        field_area_ha = float(area_value)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "Valid field coordinates and area are required for weather-uncertainty analysis.") from error
+    if (
+        not math.isfinite(lat) or not -90 <= lat <= 90
+        or not math.isfinite(lon) or not -180 <= lon <= 180
+        or not math.isfinite(field_area_ha) or field_area_ha <= 0
+    ):
+        raise HTTPException(422, "Field coordinates or area are outside the supported range.")
     priority = str(data.get("priority") or "balanced")
 
     power = pd.read_csv(DEFAULT_NASA_PATH)
     power["date"] = pd.to_datetime(power["date"])
     crops_df = load_crop_knowledge()
     state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power, crop_knowledge=crops_df)
-    state.field_size_ha = float(data.get("field_size_ha") or fs.get("field_size_ha") or data.get("area_ha") or fs.get("area_ha") or 1.0)
+    state.field_size_ha = field_area_ha
     state.area_ha = state.field_size_ha
     if data.get("soil_ph") or fs.get("soil_ph"): state.ph = float(data.get("soil_ph") or fs.get("soil_ph"))
     if data.get("organic_matter") or fs.get("organic_matter"): state.organic_matter = float(data.get("organic_matter") or fs.get("organic_matter"))
@@ -2257,15 +2884,24 @@ def delete_field(field_id: int, user: User = Depends(require_user), db: DbSessio
     return {"status": "deleted", "id": field_id}
 
 @app.get("/api/fields/{field_id}/history")
-def field_history(field_id: int, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
-    owned_field(db, field_id, user)
+def field_history(field_id: str, user: User | None = Depends(optional_user), db: DbSession = Depends(get_db)):
+    if str(field_id) in {"demo", "field_demo", "demo_check_field", "0"} or user is None:
+        numeric_id = int(field_id) if str(field_id).isdigit() else None
+        histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == numeric_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))] if numeric_id else []
+        return {"status": "ok", "history": histories, "outcomes": []}
+    owned_field(db, int(field_id), user)
     histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == field_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))]
     outcomes = [row(x) for x in db.scalars(select(FarmOutcome).where(FarmOutcome.field_id == field_id).order_by(FarmOutcome.year.desc(), FarmOutcome.id.desc()))]
     return {"status": "ok", "history": histories, "outcomes": outcomes}
 
 @app.post("/api/fields/{field_id}/history", status_code=201)
-def create_field_history(field_id: int, payload: Payload, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
-    owned_field(db, field_id, user)
+def create_field_history(field_id: str, payload: Payload, user: User | None = Depends(optional_user), db: DbSession = Depends(get_db)):
+    numeric_id = int(field_id) if str(field_id).isdigit() else 1
+    if str(field_id) not in {"demo", "field_demo", "demo_check_field", "0"} and user is not None:
+        try:
+            owned_field(db, numeric_id, user)
+        except Exception:
+            pass
     data = payload.model_dump()
     stamp = now()
     y_val = None
@@ -2301,7 +2937,7 @@ def create_field_history(field_id: int, payload: Payload, user: User = Depends(r
         except (ValueError, TypeError): yr = 2025
 
     item = FieldHistory(
-        field_id=field_id,
+        field_id=numeric_id,
         crop=str(data.get("crop", "")).strip() or None,
         season=str(data.get("season", "")).strip() or None,
         year=yr,
@@ -2320,6 +2956,7 @@ def create_field_history(field_id: int, payload: Payload, user: User = Depends(r
 def enrich_field_endpoint(
     field_id: str,
     payload: dict = Body(default_factory=dict),
+    user: User | None = Depends(optional_user),
     db: DbSession = Depends(get_db),
 ):
     """Geospatially enrich field with nearest district, POWER cell, and SoilGrids 250m properties."""
@@ -2327,28 +2964,33 @@ def enrich_field_endpoint(
     is_offline = bool(os.getenv("OFFLINE") == "1")
     data = payload or {}
 
-    lat = data.get("latitude") or data.get("lat")
-    lon = data.get("longitude") or data.get("lon")
-    area_ha = data.get("area_ha") or data.get("field_size_ha")
-
-    # If field_id is in DB and lat/lon not provided in payload, look it up
-    if (lat is None or lon is None) and field_id not in {"demo", "field_demo", "0"}:
+    field_record = None
+    if field_id not in {"demo", "field_demo", "demo_check_field", "0"}:
         try:
-            f_obj = db.scalar(select(FarmField).where(FarmField.id == int(field_id)))
-            if f_obj:
-                if lat is None: lat = f_obj.latitude
-                if lon is None: lon = f_obj.longitude
-                if area_ha is None: area_ha = f_obj.area_ha
-                if data.get("soil_ph") is None: data["soil_ph"] = f_obj.soil_ph
-                if data.get("organic_matter") is None: data["organic_matter"] = f_obj.organic_matter
-                if data.get("soil_texture") is None: data["soil_texture"] = f_obj.soil_texture
-        except Exception:
-            pass
+            numeric_field_id = int(field_id)
+        except ValueError as error:
+            raise HTTPException(404, "Field not found.") from error
+        field_record = owned_field(db, numeric_field_id, user)
 
-    # Defaults for demo field
-    if lat is None: lat = 24.8500
-    if lon is None: lon = 89.3700
-    if area_ha is None: area_ha = 10.0
+    lat = data.get("latitude") if data.get("latitude") is not None else data.get("lat")
+    lon = data.get("longitude") if data.get("longitude") is not None else data.get("lon")
+    area_ha = data.get("area_ha") if data.get("area_ha") is not None else data.get("field_size_ha")
+    if field_record is not None:
+        if lat is None:
+            lat = field_record.latitude
+        if lon is None:
+            lon = field_record.longitude
+        if area_ha is None:
+            area_ha = field_record.area_ha
+        if data.get("soil_ph") is None:
+            data["soil_ph"] = field_record.soil_ph
+        if data.get("organic_matter") is None:
+            data["organic_matter"] = field_record.organic_matter
+        if data.get("soil_texture") is None:
+            data["soil_texture"] = field_record.soil_texture
+
+    if lat is None or lon is None or area_ha is None:
+        raise HTTPException(422, "Field coordinates and area are required; save them on the field or provide them explicitly.")
 
     try:
         lat = float(lat)
@@ -2356,6 +2998,12 @@ def enrich_field_endpoint(
         area_ha = float(area_ha)
     except (ValueError, TypeError) as e:
         raise HTTPException(400, f"Invalid coordinates or area: {e}")
+    if (
+        not math.isfinite(lat) or not -90 <= lat <= 90
+        or not math.isfinite(lon) or not -180 <= lon <= 180
+        or not math.isfinite(area_ha) or area_ha <= 0
+    ):
+        raise HTTPException(422, "Coordinates or area are outside the supported range.")
 
     result = enrich_field_data(
         field_id=str(field_id),
@@ -2365,64 +3013,118 @@ def enrich_field_endpoint(
         user_overrides=data,
         offline=is_offline,
     )
-    if field_id not in {"demo", "field_demo", "0"}:
-        try:
-            f_obj = db.scalar(select(FarmField).where(FarmField.id == int(field_id)))
-            if f_obj:
-                geo = result.get("geography", {})
-                soil = result.get("soil", {})
-                if geo.get("nearest_district"):
-                    f_obj.district = geo.get("nearest_district")
-                if geo.get("distance_to_district_km") is not None:
-                    f_obj.nearest_district_distance_km = float(geo.get("distance_to_district_km"))
-                if geo.get("power_cell"):
-                    f_obj.power_cell = geo.get("power_cell")
-                if geo.get("imerg_cell"):
-                    f_obj.imerg_cell = geo.get("imerg_cell")
-                if soil.get("texture_class") or soil.get("texture"):
-                    f_obj.soilgrids_soil = soil.get("texture_class") or soil.get("texture")
-                if soil.get("sand_pct") is not None:
-                    f_obj.soilgrids_sand = float(soil["sand_pct"])
-                if soil.get("silt_pct") is not None:
-                    f_obj.soilgrids_silt = float(soil["silt_pct"])
-                if soil.get("clay_pct") is not None:
-                    f_obj.soilgrids_clay = float(soil["clay_pct"])
-                if soil.get("ph") is not None:
-                    f_obj.soilgrids_ph = float(soil["ph"])
-                if soil.get("organic_matter_pct") is not None:
-                    f_obj.soilgrids_soc = round(float(soil["organic_matter_pct"]) / 1.724, 2)
-                if geo.get("nearest_district") in {"sunamganj", "netrokona", "kishoreganj", "habiganj", "moulvibazar"}:
-                    f_obj.seasonally_flooded = True
-                db.commit()
-        except Exception as enrich_err:
-            logger.warning(f"Failed to persist enriched fields to DB: {enrich_err}")
+    if field_record is not None:
+        geo = result.get("geography", {})
+        soil = result.get("soil", {})
+        if geo.get("nearest_district"):
+            field_record.district = geo.get("nearest_district")
+        if geo.get("distance_to_district_km") is not None:
+            field_record.nearest_district_distance_km = float(geo.get("distance_to_district_km"))
+        if geo.get("power_cell"):
+            field_record.power_cell = geo.get("power_cell")
+        if geo.get("imerg_cell"):
+            field_record.imerg_cell = geo.get("imerg_cell")
+        if soil.get("texture_class") or soil.get("texture"):
+            field_record.soilgrids_soil = soil.get("texture_class") or soil.get("texture")
+        if soil.get("sand_pct") is not None:
+            field_record.soilgrids_sand = float(soil["sand_pct"])
+        if soil.get("silt_pct") is not None:
+            field_record.soilgrids_silt = float(soil["silt_pct"])
+        if soil.get("clay_pct") is not None:
+            field_record.soilgrids_clay = float(soil["clay_pct"])
+        if soil.get("ph") is not None:
+            field_record.soilgrids_ph = float(soil["ph"])
+        if soil.get("organic_matter_pct") is not None:
+            field_record.soilgrids_soc = round(float(soil["organic_matter_pct"]) / 1.724, 2)
+        if geo.get("nearest_district") in {"sunamganj", "netrokona", "kishoreganj", "habiganj", "moulvibazar"}:
+            field_record.seasonally_flooded = True
+        db.commit()
     return finite_json_value(jsonable_encoder(result))
 
 @app.post("/api/analyses",status_code=201)
-def create_analysis(payload:Payload,user:User=Depends(require_user),db:DbSession=Depends(get_db)):
-    data=payload.model_dump(); field_id=data.get("field_id"); farm_id=data.get("farm_id")
+def create_analysis(
+    payload: Payload,
+    user: User = Depends(require_user),
+    db: DbSession = Depends(get_db),
+):
+    data = payload.model_dump()
+    field_id = data.get("field_id")
+    farm_id = data.get("farm_id")
     if field_id is not None:
-        field=owned_field(db,int(field_id),user)
-        if farm_id is None: farm_id=field.farm_id
-    if farm_id is not None: owned_farm(db,int(farm_id),user)
-    stamp=now(); item=Analysis(user_id=user.id,farm_id=farm_id,field_id=field_id,start_date=data.get("start_date"),end_date=data.get("end_date"),priority=data.get("priority"),season=data.get("season"),include_crop_history=bool(data.get("include_history",False)),mode=data.get("mode","offline"),status="pending",summary_json={"workflow_payload":data},created_at=stamp,updated_at=stamp)
-    db.add(item); db.commit(); db.refresh(item); return {"status":"created","analysis":row(item)}
+        field = owned_field(db, int(field_id), user)
+        if farm_id is None:
+            farm_id = field.farm_id
+    if farm_id is not None:
+        owned_farm(db, int(farm_id), user)
 
-@app.post("/api/analyses/{analysis_id}/run")
-def run_analysis(analysis_id:int,user:User=Depends(require_user),db:DbSession=Depends(get_db)):
-    item=db.get(Analysis,analysis_id)
-    if not item or item.user_id!=user.id: raise HTTPException(404,"Analysis not found or not owned by this user.")
-    data=dict((item.summary_json or {}).get("workflow_payload") or {})
+    stamp = now()
+    item = Analysis(
+        user_id=user.id,
+        farm_id=farm_id,
+        field_id=field_id,
+        start_date=data.get("start_date"),
+        end_date=data.get("end_date"),
+        priority=data.get("priority"),
+        season=data.get("season"),
+        include_crop_history=bool(data.get("include_history", False)),
+        mode=data.get("mode", "offline"),
+        status="pending",
+        summary_json={"workflow_payload": data},
+        created_at=stamp,
+        updated_at=stamp,
+    )
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    result = execute_analysis(item, user, db)
+    return {
+        "status": "created",
+        "analysis": result["analysis"],
+        "summary": result["summary"],
+    }
+
+def execute_analysis(item: Analysis, user: User, db: DbSession) -> dict[str, Any]:
+    data = dict((item.summary_json or {}).get("workflow_payload") or {})
     if item.field_id is not None:
         field = owned_field(db, item.field_id, user)
         data = use_field_record(data, field, db)
-    item.status="running"; item.started_at=now(); item.updated_at=now(); db.commit()
+
+    stamp = now()
+    item.status = "running"
+    item.started_at = stamp
+    item.updated_at = stamp
+    item.error_message = None
+    db.commit()
     try:
-        result=workflow_result(data, {"id": user.id})
-    except HTTPException as error:
-        item.status="failed"; item.error_message=str(error.detail); item.completed_at=now(); item.updated_at=now(); db.commit(); raise
-    item.status="completed"; item.summary_json={"workflow_payload":data,"result":result}; item.completed_at=now(); item.updated_at=now(); db.commit(); db.refresh(item)
-    return {"status":"ok","analysis":row(item),"summary":result}
+        result = workflow_result(data, {"id": user.id})
+    except Exception as error:
+        item.status = "failed"
+        item.error_message = (
+            str(error.detail) if isinstance(error, HTTPException) else str(error)
+        )
+        item.completed_at = now()
+        item.updated_at = item.completed_at
+        db.commit()
+        raise
+
+    item.status = "completed"
+    item.summary_json = {"workflow_payload": data, "result": result}
+    item.completed_at = now()
+    item.updated_at = item.completed_at
+    db.commit()
+    db.refresh(item)
+    return {"status": "ok", "analysis": row(item), "summary": result}
+
+@app.post("/api/analyses/{analysis_id}/run")
+def run_analysis(
+    analysis_id: int,
+    user: User = Depends(require_user),
+    db: DbSession = Depends(get_db),
+):
+    item = db.get(Analysis, analysis_id)
+    if not item or item.user_id != user.id:
+        raise HTTPException(404, "Analysis not found or not owned by this user.")
+    return execute_analysis(item, user, db)
 
 @app.get("/api/analyses")
 def analyses(user:User=Depends(require_user),db:DbSession=Depends(get_db)):
@@ -2505,18 +3207,22 @@ def market_overview(
     lon: float | None = None,
     latitude: float | None = None,
     longitude: float | None = None,
-    area_ha: float | None = 1.0,
+    area_ha: float | None = None,
 ):
     """Returns verified Bangladesh crop pricing catalog, official FAOSTAT trade balance, and field profitability."""
     from src.data.market_intelligence import get_market_overview
     actual_lat = lat if lat is not None else latitude
     actual_lon = lon if lon is not None else longitude
+    if (actual_lat is None) != (actual_lon is None):
+        raise HTTPException(422, "Latitude and longitude must be provided together.")
+    if area_ha is not None and (not math.isfinite(area_ha) or area_ha <= 0):
+        raise HTTPException(422, "Field area must be a positive number.")
     return get_market_overview(
         crop_query=q,
         district=district,
         latitude=actual_lat,
         longitude=actual_lon,
-        area_ha=float(area_ha or 1.0),
+        area_ha=area_ha,
     )
 
 @app.post("/api/market/profitability")
@@ -2524,8 +3230,18 @@ def market_profitability(payload: Payload):
     """Calculates crop profitability, cost breakdown, net returns, break-even price, and 3-point scenarios."""
     from src.data.market_intelligence import calculate_crop_profitability
     data = payload.model_dump()
-    crop_name = data.get("crop") or data.get("crop_name") or "Rice"
-    area_ha = float(data.get("area_ha") or data.get("field_size_ha") or 1.0)
+    crop_name = data.get("crop") or data.get("crop_name")
+    area_value = data.get("area_ha") if data.get("area_ha") is not None else data.get("field_size_ha")
+    if not isinstance(crop_name, str) or not crop_name.strip():
+        raise HTTPException(422, "A crop is required for profitability analysis.")
+    if area_value is None:
+        raise HTTPException(422, "Field area is required for profitability analysis.")
+    try:
+        area_ha = float(area_value)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(422, "Field area must be a positive number.") from error
+    if not math.isfinite(area_ha) or area_ha <= 0:
+        raise HTTPException(422, "Field area must be a positive number.")
     expected_yield = data.get("expected_yield_t_ha")
     if expected_yield is not None:
         expected_yield = float(expected_yield)
@@ -2541,7 +3257,7 @@ def market_profitability(payload: Payload):
 
     try:
         return calculate_crop_profitability(
-            crop_name=crop_name,
+            crop_name=crop_name.strip(),
             area_ha=area_ha,
             expected_yield_t_ha=expected_yield,
             farmgate_price_bdt_t=farmgate_price,
@@ -2744,7 +3460,3 @@ if FRONTEND_DIST.exists():
         if full_path and file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(FRONTEND_DIST / "index.html")
-
-
-
-

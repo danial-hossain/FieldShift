@@ -291,12 +291,29 @@ export function WaterIrrigationView({
 
   useEffect(() => {
     let isMounted = true;
+    if (!activeField) {
+      setFetchedPlanning(null);
+      return () => { isMounted = false; };
+    }
+    if (
+      !activeField.district &&
+      (activeField.latitude == null || activeField.longitude == null)
+    ) {
+      setFetchedPlanning(null);
+      return () => { isMounted = false; };
+    }
     const body = activeField?.id && activeField.id !== 'demo'
       ? { field_id: activeField.id, priority: 'balanced' }
       : {
-          district: activeField?.district || 'bogura',
-          area_ha: activeField?.area_ha || activeField?.field_size_ha || 1.0,
-          soil_texture: activeField?.soil_texture || 'loam',
+          field_id: activeField?.id || 'demo',
+          latitude: activeField?.latitude,
+          longitude: activeField?.longitude,
+          district: activeField?.district,
+          area_ha: activeField?.area_ha ?? activeField?.field_size_ha,
+          soil_texture: activeField?.soil_texture,
+          soil_ph: activeField?.soil_ph,
+          organic_matter: activeField?.organic_matter,
+          irrigation_capacity_mm: activeField?.irrigation_capacity_mm,
           priority: 'balanced'
         };
 
@@ -351,8 +368,24 @@ export function WaterIrrigationView({
 
   useEffect(() => {
     let isMounted = true;
-    const dist = activeField?.district || 'bogura';
-    request(`/api/water/plan?district=${encodeURIComponent(dist)}`)
+    const crop = plannedRotation?.Y1_S1;
+    const area = activeField?.area_ha ?? activeField?.field_size_ha;
+    const hasLocation = Boolean(
+      activeField?.district ||
+      (activeField?.latitude != null && activeField?.longitude != null)
+    );
+    if (!hasLocation || !crop || !Number.isFinite(Number(area)) || Number(area) <= 0) {
+      setLiveWaterData(null);
+      return () => { isMounted = false; };
+    }
+    const params = new URLSearchParams({
+      crop,
+      area_ha: String(area),
+    });
+    if (activeField?.district) params.set('district', activeField.district);
+    if (activeField?.latitude != null) params.set('latitude', String(activeField.latitude));
+    if (activeField?.longitude != null) params.set('longitude', String(activeField.longitude));
+    request(`/api/water/plan?${params.toString()}`)
       .then(data => {
         if (isMounted && data?.status === 'ok') {
           setLiveWaterData(data);
@@ -360,12 +393,13 @@ export function WaterIrrigationView({
       })
       .catch(() => {});
     return () => { isMounted = false; };
-  }, [activeField?.district]);
+  }, [activeField?.district, activeField?.latitude, activeField?.longitude, activeField?.area_ha, activeField?.field_size_ha, plannedRotation]);
 
   // Field soil & irrigation parameters
-  const soilTexture = activeField?.soil_texture || 'loam';
-  const areaHa = activeField?.area_ha != null ? Number(activeField.area_ha) : 10.0;
-  const irrigCapMm = activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : 450;
+  const soilTextureIsAssumed = !activeField?.soil_texture || activeField.soil_texture === 'unknown';
+  const soilTexture = soilTextureIsAssumed ? 'loam' : activeField.soil_texture;
+  const areaHa = activeField?.area_ha != null ? Number(activeField.area_ha) : null;
+  const irrigCapMm = activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : null;
 
   // Hydrological calculations (FAO-56 standards)
   const soilWaterSpecs = useMemo(() => {
@@ -557,7 +591,8 @@ export function WaterIrrigationView({
                   borderRadius: 999,
                 }}
               >
-                {activeField?.name || 'Bogura Demo Field'} ({formatNumber(areaHa, 1)} ha)
+                {activeField?.name || (lang === 'bn' ? 'ক্ষেত নির্বাচন করুন' : 'Field not selected')}
+                {areaHa != null ? ` (${formatNumber(areaHa, 1)} ha)` : ''}
               </span>
             </div>
             <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 900, color: 'var(--text)' }}>
@@ -720,10 +755,13 @@ export function WaterIrrigationView({
             {lang === 'bn' ? 'মোট ধারণক্ষমতা (TAW)' : 'Total Available Water (TAW)'}
           </span>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--water)', marginTop: 4 }}>
-            {tawMm} mm
+            {soilTextureIsAssumed
+              ? (lang === 'bn' ? 'তথ্য নেই' : 'No field soil data')
+              : `${tawMm} mm`}
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {soilTexture.replace('_', ' ')} (0–{zRootM * 100} cm root zone)
+            {soilTexture.replace('_', ' ')}{soilTextureIsAssumed ? ' (default model assumption)' : ''}
+            {' '}(0–{zRootM * 100} cm root zone)
           </span>
         </div>
 
@@ -732,10 +770,14 @@ export function WaterIrrigationView({
             {lang === 'bn' ? 'সহজলভ্য আর্দ্রতা (RAW)' : 'Readily Available Water (RAW)'}
           </span>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
-            {rawMm} mm
+            {soilTextureIsAssumed
+              ? (lang === 'bn' ? 'তথ্য নেই' : 'No field soil data')
+              : `${rawMm} mm`}
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {Math.round(soilWaterSpecs.p * 100)}% depletion threshold without stress
+            {soilTextureIsAssumed
+              ? (lang === 'bn' ? 'মাটির তথ্য সংরক্ষিত নয়' : 'Field soil texture is unavailable')
+              : `${Math.round(soilWaterSpecs.p * 100)}% depletion threshold without stress`}
           </span>
         </div>
 
@@ -760,7 +802,7 @@ export function WaterIrrigationView({
             {lang === 'bn' ? 'সেচ নলকূপ সীমা' : 'Borewell / Canal Limit'}
           </span>
           <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--sun)', marginTop: 4 }}>
-            {irrigCapMm} mm
+            {irrigCapMm != null ? `${irrigCapMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
           </div>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
             Max seasonal delivery per parcel
@@ -925,4 +967,3 @@ export function WaterIrrigationView({
 }
 
 export default WaterIrrigationView;
-

@@ -21,10 +21,20 @@ export function SatelliteReadinessView({
   const [selectedSensor, setSelectedSensor] = useState('nasa_power');
 
   const fetchReadiness = useCallback(async () => {
+    if (activeField?.latitude == null || activeField?.longitude == null) {
+      setReadiness(null);
+      setError('Select a field with saved coordinates to check location-specific satellite readiness.');
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      const res = await request('/api/satellite/readiness');
+      const params = new URLSearchParams({
+        latitude: String(activeField.latitude),
+        longitude: String(activeField.longitude),
+      });
+      const res = await request(`/api/satellite/readiness?${params.toString()}`);
       if (res && res.status === 'ok') {
         setReadiness(res);
       } else {
@@ -35,7 +45,7 @@ export function SatelliteReadinessView({
     } finally {
       setLoading(false);
     }
-  }, [request]);
+  }, [activeField?.latitude, activeField?.longitude, request]);
 
   useEffect(() => {
     fetchReadiness();

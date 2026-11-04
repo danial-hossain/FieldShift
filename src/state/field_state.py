@@ -23,7 +23,7 @@ NASA_POWER_COLUMNS = [
     "wind_speed",
     "solar_radiation",
 ]
-STATUS_NAMES = ("observed", "synthetic", "demo", "missing")
+STATUS_NAMES = ("observed", "remote_observed", "synthetic", "demo", "missing")
 STATE_STATUS_KEYS = (
     "environment",
     "soil_moisture",
@@ -75,7 +75,7 @@ def _validate_status_mapping(statuses: Mapping[str, str]) -> dict[str, str]:
     invalid = [status for status in normalized.values() if status not in STATUS_NAMES]
     if invalid:
         raise ValueError(
-            "data_status values must be observed, synthetic, demo, or missing."
+            "data_status values must be observed, remote_observed, synthetic, demo, or missing."
         )
     return normalized
 
@@ -452,7 +452,7 @@ def build_field_state(
         if crop_row is not None
         else "missing"
     )
-    environment_status = "observed" if power_row is not None else "missing"
+    environment_status = "remote_observed" if power_row is not None else "missing"
     soil_moisture_status = (
         smap_status if np.isfinite(soil_moisture) else "missing"
     )
@@ -499,7 +499,7 @@ def build_field_state(
         previous_crop_season=(
             _optional_text(history_row["season"]) if history_row is not None else None
         ),
-        environment_source="NASA_POWER",
+        environment_source="NASA POWER gridded remote observations",
         soil_moisture_source=smap_source,
         soil_source=_optional_text(soil_row["source"]) if soil_row is not None else "missing",
         crop_source=_optional_text(crop_row["source"]) if crop_row is not None else "missing",

@@ -326,31 +326,33 @@ def compute_crop_soil_suitability(
 ) -> tuple[float, str]:
     """Calculate soil suitability factor [0.0, 1.20] based on crop-specific texture, pH, OM, and coastal salinity."""
     crop_name = str(crop.get("crop", "")).lower().strip()
-    ph = getattr(field_state, "ph", 6.5)
-    if ph is None or not math.isfinite(ph):
-        ph = 6.5
-    om = getattr(field_state, "organic_matter", 2.0)
-    if om is None or not math.isfinite(om):
-        om = 2.0
-    texture = str(getattr(field_state, "texture", "loam") or "loam").lower().strip()
+    ph_value = getattr(field_state, "ph", None)
+    ph = float(ph_value) if ph_value is not None and math.isfinite(float(ph_value)) else None
+    om_value = getattr(field_state, "organic_matter", None)
+    om = float(om_value) if om_value is not None and math.isfinite(float(om_value)) else None
+    texture_value = getattr(field_state, "texture", None)
+    texture = str(texture_value).lower().strip() if texture_value else None
     dist = str(getattr(field_state, "district", "") or "").lower().strip()
 
     ph_min = float(crop.get("min_ph", 5.5))
     ph_max = float(crop.get("max_ph", 7.5))
     ph_opt = (ph_min + ph_max) / 2.0
 
-    if ph < ph_min - 0.3 or ph > ph_max + 0.3:
+    if ph is not None and (ph < ph_min - 0.3 or ph > ph_max + 0.3):
         return 0.0, f"Soil pH {ph:.1f} out of acceptable range [{ph_min}, {ph_max}]"
 
-    half_ph_range = max(0.5, (ph_max - ph_min) / 2.0)
-    ph_factor = max(0.5, 1.0 - 0.35 * (abs(ph - ph_opt) / half_ph_range))
+    if ph is None:
+        ph_factor = 1.0
+    else:
+        half_ph_range = max(0.5, (ph_max - ph_min) / 2.0)
+        ph_factor = max(0.5, 1.0 - 0.35 * (abs(ph - ph_opt) / half_ph_range))
 
-    # Organic matter multiplier (2.0% baseline)
-    om_factor = max(0.85, min(1.15, 1.0 + 0.04 * (om - 2.0)))
+    # Missing soil measurements are neutral, not silently imputed as field values.
+    om_factor = max(0.85, min(1.15, 1.0 + 0.04 * (om - 2.0))) if om is not None else 1.0
 
     # Crop-specific soil texture suitability factor
     crop_tex_map = CROP_SOIL_TEXTURE_SUITABILITY.get(crop_name, {})
-    tex_factor = crop_tex_map.get(texture, 1.00)
+    tex_factor = crop_tex_map.get(texture, 1.00) if texture is not None else 1.00
 
     # Coastal salinity check in dry winter season (Rabi)
     salinity_factor = 1.00
@@ -364,7 +366,14 @@ def compute_crop_soil_suitability(
             salinity_factor = 1.08  # Salt-tolerant coastal recommendation
 
     soil_factor = round(ph_factor * om_factor * tex_factor * salinity_factor, 4)
-    return soil_factor, f"pH={ph:.1f}, OM={om:.1f}%, Texture={texture} (factor={soil_factor:.2f})"
+    soil_inputs = (
+        f"pH={ph:.1f}" if ph is not None else "pH unavailable"
+    ) + (
+        f", OM={om:.1f}%" if om is not None else ", OM unavailable"
+    ) + (
+        f", Texture={texture}" if texture is not None else ", Texture unavailable"
+    )
+    return soil_factor, f"{soil_inputs} (factor={soil_factor:.2f}; missing measurements neutral)"
 
 
 def compute_crop_water_balance(
@@ -378,7 +387,8 @@ def compute_crop_water_balance(
     is_haor = (dist in HAOR_DISTRICTS) or bool(getattr(field_state, "seasonally_flooded", False))
 
     irrig_cap = getattr(field_state, "irrigation_capacity_mm", None)
-    if irrig_cap is None or not math.isfinite(irrig_cap):
+    capacity_is_assumed = irrig_cap is None or not math.isfinite(irrig_cap)
+    if capacity_is_assumed:
         if is_haor and env.season_index == 1:
             # Haor wetland basin: abundant surface water from beels and rivers for winter Boro
             irrig_cap = 1200.0
@@ -414,6 +424,12 @@ def compute_crop_water_balance(
         "irrigation_required_mm": irrig_req,
         "irrigation_supplied_mm": irrig_supplied,
         "irrigation_capacity_mm": irrig_cap,
+        "irrigation_capacity_is_assumed": capacity_is_assumed,
+        "irrigation_capacity_source": (
+            "assumed_haor_1200_mm" if capacity_is_assumed and is_haor and env.season_index == 1
+            else "assumed_default_400_mm" if capacity_is_assumed
+            else "farmer_or_field_input"
+        ),
         "water_deficit_mm": water_deficit,
         "water_stress_factor": water_factor,
         "is_water_feasible": is_water_feasible,
@@ -549,16 +565,22 @@ def build_dynamic_crop_season_matrix(
     }
 
 
-def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops: Optional[Sequence[str]] = None, existing_rotation: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
+def compute_rotation_comparison(
+    milp_res: Mapping[str, Any],
+    field_history_crops: Optional[Sequence[str]] = None,
+    existing_rotation: Optional[Mapping[str, Any]] = None,
+    existing_rotation_source: Optional[str] = None,
+    existing_rotation_year: Optional[int] = None,
+) -> dict[str, Any]:
     """Compute real water, profit, and nitrogen comparison between existing rotation and recommended plan."""
     selection = milp_res.get("selected_crop_by_period") or {}
     matrix = milp_res.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
     periods = list(milp_res.get("planning_periods") or ["Y1_S1", "Y1_S2", "Y1_S3", "Y2_S1", "Y2_S2", "Y2_S3"])
     available_crops = set(matrix.get(periods[0], {}).keys()) if periods and periods[0] in matrix else set()
 
-    def match_crop(name: Any) -> str:
+    def match_crop(name: Any) -> Optional[str]:
         if not name:
-            return "Fallow"
+            return None
         n = str(name).lower().strip()
         if "boro" in n:
             return "Boro Rice" if "Boro Rice" in available_crops else "Rice"
@@ -593,54 +615,49 @@ def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops
         for c in available_crops:
             if c.lower() == n:
                 return c
-        return "Fallow"
+        return None
 
     is_assumed = True
+    baseline_source = "assumed_reference"
     if existing_rotation and isinstance(existing_rotation, (dict, Mapping)):
         r_rabi = existing_rotation.get("rabi") or existing_rotation.get("S1")
         r_k1 = existing_rotation.get("kharif1") or existing_rotation.get("S2")
         r_k2 = existing_rotation.get("kharif2") or existing_rotation.get("S3")
-        if r_rabi or r_k1 or r_k2:
-            b_s1 = match_crop(r_rabi or "Boro Rice")
-            b_s2 = match_crop(r_k1 or "Fallow")
-            b_s3 = match_crop(r_k2 or "Rice")
+        mapped = [match_crop(r_rabi), match_crop(r_k1), match_crop(r_k2)]
+        if all(mapped):
+            b_s1, b_s2, b_s3 = mapped
             is_assumed = False
-        else:
-            b_s1 = match_crop("Boro Rice")
-            b_s2 = match_crop("Fallow")
-            b_s3 = match_crop("Rice")
-            is_assumed = True
-    elif field_history_crops and len(field_history_crops) >= 2:
-        b_s1 = match_crop(field_history_crops[0])
-        b_s2 = match_crop(field_history_crops[1])
-        b_s3 = match_crop(field_history_crops[2]) if len(field_history_crops) > 2 else "Rice"
-        is_assumed = False
-    else:
+            baseline_source = existing_rotation_source or "saved_field_rotation"
+    if is_assumed:
         b_s1 = match_crop("Boro Rice")
         b_s2 = match_crop("Fallow")
         b_s3 = match_crop("Rice")
         is_assumed = True
 
-    b_map = {"S1": b_s1, "S2": b_s2, "S3": b_s3}
+    b_map = (
+        {"S1": b_s1, "S2": b_s2, "S3": b_s3}
+        if all((b_s1, b_s2, b_s3))
+        else {}
+    )
 
     b_irrig_list, b_profit_list, b_n_list = [], [], []
     p_irrig_list, p_profit_list, p_n_list = [], [], []
 
     for p in periods:
         s_code = "S1" if "S1" in p else ("S2" if "S2" in p else "S3")
-        b_c = b_map[s_code]
+        b_c = b_map.get(s_code)
         p_c = selection.get(p, "Fallow")
 
-        b_entry = matrix.get(p, {}).get(b_c, {})
+        b_entry = matrix.get(p, {}).get(b_c, {}) if b_c else {}
         p_entry = matrix.get(p, {}).get(p_c, {})
 
         b_wb = b_entry.get("water_balance", {})
         p_wb = p_entry.get("water_balance", {})
 
-        b_irrig_list.append(float(b_wb.get("irrigation_required_mm", 0.0)))
+        b_irrig_list.append(float(b_wb.get("irrigation_required_mm", 0.0)) if b_entry else 0.0)
         p_irrig_list.append(float(p_wb.get("irrigation_required_mm", 0.0)))
 
-        b_profit_list.append(float(b_entry.get("dynamic_gross_margin_bdt_ha", 0.0)))
+        b_profit_list.append(float(b_entry.get("dynamic_gross_margin_bdt_ha", 0.0)) if b_entry else 0.0)
         p_profit_list.append(float(p_entry.get("dynamic_gross_margin_bdt_ha", 0.0)))
 
         b_n_list.append(35.0 if b_entry.get("is_legume") else 0.0)
@@ -681,41 +698,60 @@ def compute_rotation_comparison(milp_res: Mapping[str, Any], field_history_crops
     b_s1_bn = crop_names_bn.get(b_s1, b_s1)
     b_s2_bn = crop_names_bn.get(b_s2, b_s2)
     b_s3_bn = crop_names_bn.get(b_s3, b_s3)
-    baseline_rotation_text_bn = f"{b_s1_bn} → {b_s2_bn} → {b_s3_bn}"
+    baseline_rotation_text_bn = f"{b_s1_bn} → {b_s2_bn} → {b_s3_bn}" if b_map else "উপলভ্য নয়"
     if is_assumed:
         baseline_rotation_text_bn += " (ধরে নেওয়া)"
 
-    baseline_rotation_text_en = f"{b_s1} -> {b_s2} -> {b_s3}"
+    baseline_rotation_text_en = f"{b_s1} -> {b_s2} -> {b_s3}" if b_map else "Unavailable"
     if is_assumed:
         baseline_rotation_text_en += " (assumed)"
+
+    baseline_label_en = {
+        "saved_field_rotation": "Saved field rotation profile",
+        "saved_field_history": "Saved farmer history",
+        "request_supplied_rotation": "Request-supplied rotation scenario (not verified)",
+    }.get(baseline_source, "Assumed reference")
+    baseline_label_bn = {
+        "saved_field_rotation": "সংরক্ষিত জমির আবর্তন প্রোফাইল",
+        "saved_field_history": "সংরক্ষিত কৃষক-প্রদত্ত ইতিহাস",
+        "request_supplied_rotation": "অনুরোধে দেওয়া আবর্তন (যাচাইকৃত নয়)",
+    }.get(baseline_source, "ধরে নেওয়া রেফারেন্স")
 
     season_fallow_days = {"S1": 120, "S2": 75, "S3": 100}
     b_bare_list, p_bare_list = [], []
     for p in periods:
         s_code = "S1" if "S1" in p else ("S2" if "S2" in p else "S3")
-        b_c = b_map[s_code]
+        b_c = b_map.get(s_code)
         p_c = selection.get(p, "Fallow")
-        b_bare_list.append(season_fallow_days[s_code] if b_c == "Fallow" else 20)
+        b_bare_list.append(
+            season_fallow_days[s_code] if b_c == "Fallow" else 20 if b_c else 0
+        )
         p_bare_list.append(season_fallow_days[s_code] if p_c == "Fallow" else 20)
     base_bare_days = int(round(sum(b_bare_list) / num_years))
     plan_bare_days = int(round(sum(p_bare_list) / num_years))
 
     return {
-        "baseline_rotation": [b_s1, b_s2, b_s3],
+        "baseline_rotation": [b_s1, b_s2, b_s3] if b_map else None,
         "baseline_rotation_text_bn": baseline_rotation_text_bn,
         "baseline_rotation_text_en": baseline_rotation_text_en,
         "is_assumed_baseline": is_assumed,
-        "baseline_label_bn": "ধরে নেওয়া" if is_assumed else "সংরক্ষিত ইতিহাস",
-        "baseline_label_en": "Assumed" if is_assumed else "Saved History",
-        "baseline_irrigation_mm": base_irrig,
-        "plan_irrigation_mm": plan_irrig,
-        "water_savings_mm": water_saving,
-        "baseline_profit_bdt": base_profit,
+        "baseline_source": baseline_source,
+        "baseline_historical_period": existing_rotation_year,
+        "baseline_completeness": 1.0 if not is_assumed else 0.0,
+        "baseline_label_bn": baseline_label_bn,
+        "baseline_label_en": baseline_label_en,
+        "baseline_irrigation_mm": base_irrig if b_map else None,
+        "plan_irrigation_mm": plan_irrig if b_map else None,
+        "water_savings_mm": water_saving if b_map else None,
+        "baseline_profit_bdt": base_profit if b_map else None,
         "plan_profit_bdt": plan_profit,
-        "profit_delta_bdt": profit_delta,
-        "baseline_bare_days": base_bare_days,
+        "profit_delta_bdt": profit_delta if b_map else None,
+        "baseline_bare_days": base_bare_days if b_map else None,
         "plan_bare_days": plan_bare_days,
-        "baseline_nitrogen_kg": base_n,
+        "baseline_nitrogen_kg": base_n if b_map else None,
         "plan_nitrogen_kg": plan_n,
-        "nitrogen_delta_kg": n_delta,
+        "nitrogen_delta_kg": n_delta if b_map else None,
+        "nitrogen_estimate_method": "illustrative 35 kg N/ha per legume season; not measured fixation",
+        "bare_soil_estimate_method": "fixed seasonal fallow and crop-cover day assumptions; not measured ground cover",
+        "metric_period_basis": "annualized mean across the modeled planning horizon",
     }

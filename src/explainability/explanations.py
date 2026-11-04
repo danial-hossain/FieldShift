@@ -140,10 +140,23 @@ def explain_milp_plan(
     crop_lookup = {row["crop"]: row.to_dict() for _, row in crop_df.iterrows()}
 
     field_temp = getattr(field_state, "temperature", None) if field_state else None
-    field_ph = getattr(field_state, "ph", 6.5) if field_state else 6.5
-    field_texture = getattr(field_state, "texture", "loam") if field_state else "loam"
-    field_size = getattr(field_state, "field_size_ha", 1.0) if field_state else 1.0
-    irr_cap = getattr(field_state, "irrigation_capacity_mm", 400.0) if field_state else 400.0
+    field_ph = getattr(field_state, "ph", None) if field_state else None
+    raw_field_size = getattr(field_state, "field_size_ha", None) if field_state else None
+    field_size = (
+        float(raw_field_size)
+        if isinstance(raw_field_size, (int, float, np.number))
+        and np.isfinite(float(raw_field_size))
+        and float(raw_field_size) > 0
+        else None
+    )
+    raw_irr_cap = getattr(field_state, "irrigation_capacity_mm", None) if field_state else None
+    irr_cap = (
+        float(raw_irr_cap)
+        if isinstance(raw_irr_cap, (int, float, np.number))
+        and np.isfinite(float(raw_irr_cap))
+        and float(raw_irr_cap) >= 0
+        else None
+    )
 
     p_w = float(effective_weights.get("profit", 0.5))
     w_w = float(effective_weights.get("water", 0.3))
@@ -173,17 +186,17 @@ def explain_milp_plan(
     elif strategy_name == "water_focused" or (w_w > p_w and w_w > s_w):
         strategy_summary = (
             f"Active Strategy: {strategy_title} ({round(w_w * 100)}% Water, {round(p_w * 100)}% Profit, {round(s_w * 100)}% Soil). "
-            "The optimizer prioritizes water conservation and drought resilience by selecting crops with minimal water footprints."
+            "The optimizer prioritizes modeled crop water requirements; this does not measure groundwater use or field water outcomes."
         )
     elif strategy_name == "soil_focused" or (s_w > p_w and s_w > w_w):
         strategy_summary = (
             f"Active Strategy: {strategy_title} ({round(s_w * 100)}% Soil Health, {round(p_w * 100)}% Profit, {round(w_w * 100)}% Water). "
-            "The optimizer prioritizes long-term soil regeneration, biological nitrogen fixation, and organic matter carryover."
+            "The soil objective uses model proxies such as crop-family/legume categories; nitrogen and organic-matter changes are not measured."
         )
     else:
         strategy_summary = (
             f"Active Strategy: {strategy_title} ({round(p_w * 100)}% Profit, {round(w_w * 100)}% Water, {round(s_w * 100)}% Soil). "
-            "The optimizer balances commercial returns, water use, and soil biological health."
+            "The optimizer balances estimated crop economics, modeled water requirements, and soil proxies; outputs are not field-validated."
         )
 
     # Build per-period explanations
@@ -201,44 +214,72 @@ def explain_milp_plan(
         is_legume = bool(crop_meta.get("is_legume", False))
         season_env = seasonal_envs.get(period) if isinstance(seasonal_envs, Mapping) else None
 
-        season_type = "Dry/Rabi" if (idx % 2 == 0) else "Wet/Kharif"
-        year_num = (idx // 2) + 1
-        season_num = (idx % 2) + 1
+        season_types = ("Dry/Rabi", "Kharif-1/Pre-Monsoon", "Kharif-2/Wet")
+        season_type = season_types[idx % len(season_types)]
+        year_num = (idx // len(season_types)) + 1
+        season_num = (idx % len(season_types)) + 1
         clean_season_label = f"Year {year_num} · Season {season_num} · {season_type}"
 
+        dyn_crop = (dyn_matrix.get(period) or {}).get(crop_name) if dyn_matrix else None
+        wb = dyn_crop.get("water_balance") if isinstance(dyn_crop, Mapping) else None
+        required_metrics = (
+            dyn_crop.get("dynamic_yield_t_ha"),
+            dyn_crop.get("dynamic_gross_margin_bdt_ha"),
+            dyn_crop.get("normalized_water_score"),
+            dyn_crop.get("normalized_soil_score"),
+            wb.get("crop_et_mm") if isinstance(wb, Mapping) else None,
+            wb.get("effective_rainfall_mm") if isinstance(wb, Mapping) else None,
+            wb.get("irrigation_supplied_mm") if isinstance(wb, Mapping) else None,
+            wb.get("water_deficit_mm") if isinstance(wb, Mapping) else None,
+        ) if isinstance(dyn_crop, Mapping) else ()
+        if not isinstance(dyn_crop, Mapping) or any(
+            value is None
+            or not isinstance(value, (int, float, np.number))
+            or not np.isfinite(float(value))
+            for value in required_metrics
+        ):
+            period_reasons.append({
+                "period": period,
+                "season_label": clean_season_label,
+                "crop": crop_name,
+                "family": crop_family,
+                "is_legume": is_legume,
+                "why_this_crop": "Selected by the solver; season-level evaluation evidence is unavailable.",
+                "why_selected": "The solver selected this crop, but no matching dynamic crop-season evidence was returned.",
+                "feasibility_bullets": ["Season-level yield, water, soil, and objective evidence is unavailable."],
+                "expected_performance": None,
+                "alternatives_considered": [],
+                "constraints_active": constraint_summary,
+            })
+            previous_crop_name = crop_name
+            previous_family = crop_family
+            continue
+
         if hasattr(season_env, "season_name"):
-            season_temp = getattr(season_env, "mean_temperature_c", field_temp or 26.0)
-            season_rain = getattr(season_env, "rainfall_mm", 0.0)
+            season_temp = getattr(season_env, "mean_temperature_c", field_temp)
+            season_rain = getattr(season_env, "rainfall_mm", None)
         elif isinstance(season_env, Mapping):
-            season_temp = season_env.get("mean_temperature_c", field_temp or 26.0)
-            season_rain = season_env.get("rainfall_mm", 0.0)
+            season_temp = season_env.get("mean_temperature_c", field_temp)
+            season_rain = season_env.get("rainfall_mm")
         else:
-            season_temp = field_temp or 26.0
-            season_rain = 50.0
+            season_temp = field_temp
+            season_rain = None
 
         # Retrieve dynamic crop metrics
-        dyn_crop = (dyn_matrix.get(period) or {}).get(crop_name) if dyn_matrix else None
-        if dyn_crop:
-            yield_val = float(dyn_crop.get("dynamic_yield_t_ha", crop_meta.get("expected_yield", 1.0)))
-            margin = float(dyn_crop.get("dynamic_gross_margin_bdt_ha", 0.0))
-            wb = dyn_crop.get("water_balance", {})
-            water_req = float(wb.get("crop_et_mm", crop_meta.get("water_requirement", 400.0)))
-            eff_rain = float(wb.get("effective_rainfall_mm", 0.0))
-            irr_supplied = float(wb.get("irrigation_supplied_mm", min(water_req, irr_cap)))
-            unmet_deficit = float(wb.get("water_deficit_mm", 0.0))
-            norm_w = float(dyn_crop.get("normalized_water_score", 0.5))
-            norm_s = float(dyn_crop.get("normalized_soil_score", 0.5))
-        else:
-            yield_val = float(crop_meta.get("expected_yield") or 1.0)
-            price_val = float(crop_meta.get("market_price") or 50000.0)
-            cost_val = float(crop_meta.get("production_cost") or 30000.0)
-            margin = yield_val * price_val - cost_val
-            water_req = float(crop_meta.get("water_requirement") or 400.0)
-            eff_rain = float(season_rain) * 0.8
-            irr_supplied = min(max(0.0, water_req - eff_rain), irr_cap)
-            unmet_deficit = max(0.0, water_req - eff_rain - irr_supplied)
-            norm_w = max(0.0, min(1.0, (1200.0 - water_req) / 950.0))
-            norm_s = 0.8 if is_legume else 0.4
+        yield_val = float(dyn_crop["dynamic_yield_t_ha"])
+        margin = float(dyn_crop["dynamic_gross_margin_bdt_ha"])
+        water_req = float(wb["crop_et_mm"])
+        eff_rain = float(wb["effective_rainfall_mm"])
+        irr_supplied = float(wb["irrigation_supplied_mm"])
+        unmet_deficit = float(wb["water_deficit_mm"])
+        norm_w = float(dyn_crop["normalized_water_score"])
+        norm_s = float(dyn_crop["normalized_soil_score"])
+        season_temp_text = (
+            f"{season_temp:.1f}°C"
+            if isinstance(season_temp, (int, float, np.number))
+            and np.isfinite(float(season_temp))
+            else "unavailable"
+        )
 
         norm_p = max(0.0, min(1.0, (margin + 50000.0) / 450000.0))
         comp_score = round(p_w * norm_p + w_w * norm_w + s_w * norm_s, 3)
@@ -250,9 +291,10 @@ def explain_milp_plan(
         max_ph = float(crop_meta.get("max_ph", 7.5))
 
         why_this_crop = (
-            f"{crop_name} is well suited to this season because the seasonal temperature ({season_temp:.1f}°C) "
-            f"is within its preferred range [{min_t:g}, {max_t:g}]°C and its {crop_family} botanical family "
-            f"fits the crop rotation sequence after {previous_crop_name or 'the prior crop'}."
+            f"{crop_name} is selected for this season; seasonal temperature is "
+            f"{season_temp_text} "
+            f"(preferred range [{min_t:g}, {max_t:g}]°C), and its {crop_family} botanical family "
+            f"{'differs from saved previous family ' + previous_family if previous_family else 'is evaluated under within-horizon rotation constraints; previous field crop is unavailable'}."
         )
 
         # Strategy-specific Why selected
@@ -264,18 +306,17 @@ def explain_milp_plan(
         elif strategy_name in ("water_focused", "water_efficiency"):
             why_selected = (
                 f"{crop_name} was preferred because its low water footprint ({water_req:.0f} mm ET) "
-                f"provided the best protection against drought and aquifer stress under the Water Efficiency strategy."
+                f"contributed to the active water-efficiency objective."
             )
         elif strategy_name in ("soil_focused", "soil_health"):
             if is_legume:
                 why_selected = (
-                    f"{crop_name} was preferred because its biological nitrogen fixation and organic residue contribution "
-                    "provided the greatest soil-regeneration benefit under the Soil Health strategy."
+                    f"{crop_name} was preferred because the soil proxy classifies it as a legume and assigns it a modeled "
+                    "soil-benefit contribution; this is not a measured nitrogen or soil-health outcome."
                 )
             else:
                 why_selected = (
-                    f"{crop_name} was preferred because its deep root structure and high organic biomass contribution "
-                    "rebuild depleted soil structure while alternating botanical families."
+                    f"{crop_name} was selected within the modeled rotation constraints; its soil effects are not measured."
                 )
         else:
             why_selected = (
@@ -284,15 +325,25 @@ def explain_milp_plan(
             )
 
         # Feasibility bullet list
-        ph_str = f"Soil pH {field_ph:.1f} is within supported range [{min_ph:g}, {max_ph:g}]." if (field_ph is not None and not (isinstance(field_ph, float) and math.isnan(field_ph))) else f"Soil pH: Not available (supported range: [{min_ph:g}, {max_ph:g}])."
+        ph_str = (
+            f"Soil pH {field_ph:.1f} is within supported range [{min_ph:g}, {max_ph:g}]."
+            if field_ph is not None
+            and isinstance(field_ph, (int, float, np.number))
+            and np.isfinite(float(field_ph))
+            else f"Soil pH: Not available (supported range: [{min_ph:g}, {max_ph:g}])."
+        )
         feasibility_bullets = [
-            f"Temperature suitable: {season_temp:.1f}°C is within {crop_name}'s preferred range [{min_t:g}, {max_t:g}]°C.",
-            f"Rotation compatible: {crop_name} ({crop_family}) alternates cleanly with previous {previous_family or 'crop'}.",
+            f"Seasonal temperature: {season_temp_text}; preferred range [{min_t:g}, {max_t:g}]°C.",
+            (
+                f"Rotation compatible: {crop_name} ({crop_family}) differs from saved previous family {previous_family}."
+                if previous_family
+                else "Previous field crop is unavailable; only within-horizon rotation constraints can be explained."
+            ),
             f"Soil suitable: {ph_str}",
             f"Water feasible: Expected requirement {water_req:.0f} mm vs available {eff_rain + irr_supplied:.0f} mm (deficit {unmet_deficit:.0f} mm).",
         ]
         if is_legume:
-            feasibility_bullets.append(f"Soil benefit: {crop_name} is a nitrogen-fixing {crop_family} legume that boosts residual nitrogen.")
+            feasibility_bullets.append(f"Soil proxy assumption: {crop_name} is classified as a nitrogen-fixing {crop_family} legume; nitrogen outcomes are not measured.")
         elif crop_family in ("Pedaliaceae", "Brassicaceae"):
             feasibility_bullets.append(f"Soil benefit: {crop_name} ({crop_family}) provides taproot soil aeration and organic biomass residue (non-legume).")
 
@@ -305,25 +356,42 @@ def explain_milp_plan(
             alt_legume = bool(alt_meta.get("is_legume", False))
             alt_dyn = (dyn_matrix.get(period) or {}).get(alt_name) if dyn_matrix else None
 
-            if alt_dyn:
-                alt_yield = float(alt_dyn.get("dynamic_yield_t_ha", alt_meta.get("expected_yield", 1.0)))
-                alt_margin = float(alt_dyn.get("dynamic_gross_margin_bdt_ha", 0.0))
-                alt_wb = alt_dyn.get("water_balance", {})
-                alt_water = float(alt_wb.get("crop_et_mm", alt_meta.get("water_requirement", 400.0)))
-                alt_nw = float(alt_dyn.get("normalized_water_score", 0.5))
-                alt_ns = float(alt_dyn.get("normalized_soil_score", 0.5))
-                alt_feasible = bool(alt_dyn.get("is_feasible", True))
-            else:
-                alt_yield = float(alt_meta.get("expected_yield") or 1.0)
-                alt_price = float(alt_meta.get("market_price") or 50000.0)
-                alt_cost = float(alt_meta.get("production_cost") or 30000.0)
-                alt_margin = alt_yield * alt_price - alt_cost
-                alt_water = float(alt_meta.get("water_requirement") or 400.0)
-                alt_nw = max(0.0, min(1.0, (1200.0 - alt_water) / 950.0))
-                alt_ns = 0.8 if alt_legume else 0.4
-                alt_min_t = float(alt_meta.get("min_temperature", 0))
-                alt_max_t = float(alt_meta.get("max_temperature", 50))
-                alt_feasible = (season_temp >= alt_min_t) and (season_temp <= alt_max_t)
+            if not isinstance(alt_dyn, Mapping) or not isinstance(alt_dyn.get("water_balance"), Mapping):
+                alternatives.append({
+                    "crop": alt_name,
+                    "family": alt_fam,
+                    "is_legume": alt_legume,
+                    "expected_performance": None,
+                    "feasible": None,
+                    "reason_not_chosen": "Dynamic crop-season evidence is unavailable.",
+                })
+                continue
+            alt_yield = alt_dyn.get("dynamic_yield_t_ha")
+            alt_margin = alt_dyn.get("dynamic_gross_margin_bdt_ha")
+            alt_wb = alt_dyn["water_balance"]
+            alt_water = alt_wb.get("crop_et_mm")
+            alt_norm_water = alt_dyn.get("normalized_water_score")
+            alt_norm_soil = alt_dyn.get("normalized_soil_score")
+            if any(
+                value is None or not isinstance(value, (int, float, np.number))
+                or not np.isfinite(float(value))
+                for value in (alt_yield, alt_margin, alt_water, alt_norm_water, alt_norm_soil)
+            ):
+                alternatives.append({
+                    "crop": alt_name,
+                    "family": alt_fam,
+                    "is_legume": alt_legume,
+                    "expected_performance": None,
+                    "feasible": None,
+                    "reason_not_chosen": "Dynamic crop-season metrics are incomplete.",
+                })
+                continue
+            alt_yield = float(alt_yield)
+            alt_margin = float(alt_margin)
+            alt_water = float(alt_water)
+            alt_nw = float(alt_norm_water)
+            alt_ns = float(alt_norm_soil)
+            alt_feasible = bool(alt_dyn.get("is_feasible", True))
 
             alt_np = max(0.0, min(1.0, (alt_margin + 50000.0) / 450000.0))
             alt_score = round(p_w * alt_np + w_w * alt_nw + s_w * alt_ns, 3)
@@ -331,8 +399,14 @@ def explain_milp_plan(
             # Determine specific model reason why alternative was not selected
             score_diff = comp_score - alt_score
             if not alt_feasible:
-                if alt_water > (eff_rain + irr_cap + 100):
+                if irr_cap is not None and alt_water > (eff_rain + irr_cap + 100):
                     reason = f"Not feasible: seasonal water requirement ({alt_water:.0f} mm) exceeded available water budget."
+                elif (
+                    season_temp is None
+                    or not isinstance(season_temp, (int, float, np.number))
+                    or not np.isfinite(float(season_temp))
+                ):
+                    reason = "Not feasible: seasonal temperature evidence is unavailable."
                 else:
                     reason = f"Not feasible: seasonal temperature ({season_temp:.1f}°C) is outside preferred range."
             elif previous_family and alt_fam == previous_family:
@@ -366,8 +440,8 @@ def explain_milp_plan(
         alternatives.sort(key=lambda a: (a.get("feasible", True), a.get("composite_score", 0.0)), reverse=True)
 
         key_takeaway = (
-            f"{crop_name} delivers the best multi-objective trade-off for {clean_season_label} "
-            f"under the current {strategy_title} strategy."
+            f"{crop_name} was selected by the whole-rotation solver for {clean_season_label} "
+            f"under the modeled {strategy_title} objective."
         )
 
         period_reasons.append({
@@ -401,7 +475,11 @@ def explain_milp_plan(
             "unmet_deficit_mm": round(unmet_deficit, 1),
             "rotation_benefit": (
                 f"{crop_name} ({crop_family}) follows {previous_family or 'prior crop'} to maintain botanical diversity. "
-                + (f"As a Fabaceae legume, it satisfies the nitrogen-fixation interval requirement." if is_legume else "It provides taproot aeration and organic biomass residue.")
+                + (
+                    "The model classifies it as a legume for its nitrogen-contribution proxy; outcomes are unmeasured."
+                    if is_legume
+                    else "Soil effects are not measured by this comparison."
+                )
             ),
             "objective_benefit": {
                 "profit_contribution_bdt": round(margin, 2),
@@ -418,8 +496,8 @@ def explain_milp_plan(
             "alternatives_considered": alternatives[:4],
             "key_takeaway": key_takeaway,
             "why_beat_alternatives": (
-                f"{crop_name} achieved the highest weighted score ({comp_score:.3f} / 1.00) among feasible candidates "
-                f"while satisfying family succession and legume frequency requirements."
+                f"{crop_name} was selected by the whole-rotation solver. The displayed score ({comp_score:.3f}) is a "
+                "model estimate and does not isolate the effect of this crop from other periods or constraints."
             ),
         })
         previous_crop_name = crop_name
@@ -428,17 +506,21 @@ def explain_milp_plan(
     # Identify multi-year rotation pattern
     crop_seq = [selected.get(p, "Unknown") for p in periods_list]
     pattern_summary = []
-    for yr in range(len(periods_list) // 2):
-        s1 = crop_seq[yr * 2] if (yr * 2) < len(crop_seq) else "—"
-        s2 = crop_seq[yr * 2 + 1] if (yr * 2 + 1) < len(crop_seq) else "—"
-        pattern_summary.append(f"Year {yr + 1}: {s1}  ->  {s2}")
+    for yr in range((len(periods_list) + 2) // 3):
+        s1 = crop_seq[yr * 3] if (yr * 3) < len(crop_seq) else "—"
+        s2 = crop_seq[yr * 3 + 1] if (yr * 3 + 1) < len(crop_seq) else "—"
+        s3 = crop_seq[yr * 3 + 2] if (yr * 3 + 2) < len(crop_seq) else "—"
+        pattern_summary.append(f"Year {yr + 1}: {s1} -> {s2} -> {s3}")
 
-    is_repeating = len(set(pattern_summary)) == 1 and len(pattern_summary) > 1
+    is_repeating = (
+        len(crop_seq) >= 6
+        and crop_seq[:3] == crop_seq[3:6]
+    )
     if is_repeating:
-        pair_text = f"{crop_seq[0]} (Dry/Rabi) and {crop_seq[1]} (Wet/Kharif)"
+        pair_text = " -> ".join(crop_seq[:3])
         pattern_explanation = (
-            f"The optimizer consistently alternates {pair_text} across all 3 years because "
-            "this complementary pair maintained stable seasonal feasibility and provided the highest aggregate "
+            f"The optimizer repeats the three-season sequence {pair_text} across the modeled years because "
+            "it was selected under the modeled seasonal feasibility and objective "
             f"weighted return under the active {strategy_title} strategy."
         )
     else:
@@ -451,7 +533,11 @@ def explain_milp_plan(
         "profit": profit,
         "water": water,
         "soil": soil,
-        "profit_bdt_total": profit * (field_size or 1.0) if profit is not None else None,
+        "profit_bdt_total": (
+            profit * field_size
+            if profit is not None and field_size is not None
+            else None
+        ),
         "normalized": normalized_components,
     }
 
@@ -485,6 +571,10 @@ def explain_milp_plan(
             "total_candidate_crops": len(crop_df),
             "feasible_candidate_crops": len(crop_df) - len(constraint_summary.get("static_compatibility_exclusions", [])),
             "excluded_crops": constraint_summary.get("static_compatibility_exclusions", []),
+        },
+        "soil_health_disclosure": {
+            "metric_type": "proxy_estimate_not_measured",
+            "nitrogen_assumption": "Legume classifications contribute a model proxy; field nitrogen and soil changes are not measured.",
         },
     }
 

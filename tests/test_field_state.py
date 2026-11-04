@@ -151,8 +151,8 @@ class FieldStateTests(unittest.TestCase):
 
     def test_provenance_distinguishes_observed_and_synthetic_sources(self):
         state = self.build()
-        self.assertEqual(state.environment_source, "NASA_POWER")
-        self.assertEqual(state.data_status["environment"], "observed")
+        self.assertEqual(state.environment_source, "NASA POWER gridded remote observations")
+        self.assertEqual(state.data_status["environment"], "remote_observed")
         self.assertEqual(state.soil_moisture_source, "demo")
         self.assertEqual(state.soil_source, "demo")
         self.assertEqual(state.history_source, "demo")

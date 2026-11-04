@@ -22,6 +22,7 @@ def test_comparison_lab_all_three_methods():
     assert res.status_code == 200
     data = res.json()
     assert data["status"] in ("ok", "success", "optimal")
+    assert data["field_context"]["area_source"] == "unavailable"
     
     # Must contain all three methods
     methods_list = data.get("methods", [])
@@ -37,6 +38,12 @@ def test_comparison_lab_all_three_methods():
         assert "water_requirement_mm" in m_data or "mean_water_mm" in m_data
         assert "rotation" in m_data or "rotation_sequence" in m_data
         assert m_data.get("runtime_ms") is not None
+        assert m_data.get("total_field_profit_bdt") is None
+
+    milp_explanation = method_by_id["milp"]["decision_explanation"]
+    assert milp_explanation["period_reasons"]
+    assert milp_explanation["soil_health_disclosure"]["metric_type"] == "proxy_estimate_not_measured"
+    assert data["soil_health_disclosure"]["metric_type"] == "proxy_estimate_not_measured"
 
     # Trade-off analysis
     trade_off = data.get("trade_off_analysis", {})
@@ -73,6 +80,7 @@ def test_workflow_replan_mid_cycle_adaptation():
     res = client.post("/api/workflow/replan", json={
         "latitude": 24.37,
         "longitude": 88.60,
+        "area_ha": 1.0,
         "field_id": "demo_field_replan",
         "completed_seasons": completed,
         "updated_field_conditions": updated_conditions,
@@ -103,6 +111,7 @@ def test_workflow_replan_empty_completed():
     res = client.post("/api/workflow/replan", json={
         "latitude": 24.37,
         "longitude": 88.60,
+        "area_ha": 1.0,
         "completed_seasons": [],
         "updated_field_conditions": {},
         "priority": "balanced",

@@ -34,6 +34,7 @@ DEFAULT_PERIODS = (
 OBJECTIVE_COMPONENTS = ("profit", "water", "soil", "national_need")
 STATUS_MAP = {
     "observed": "observed",
+    "remote_observed": "remote_observed",
     "synthetic": "synthetic",
     "demo": "synthetic",
     "missing": "unknown",
@@ -437,6 +438,7 @@ def build_milp_model(
     allow_kharif2_fallow: bool = False,
     min_cereals_per_year: int = 1,
     seasonally_flooded: Optional[bool] = None,
+    excluded_crops: Optional[Sequence[str]] = None,
 ):
     """Build and return a PuLP problem and its prepared model metadata.
 
@@ -483,6 +485,14 @@ def build_milp_model(
 
     objective = _objective_data(crop_frame)
     candidate_names = list(crop_frame["crop"])
+    crop_names_by_key = {name.casefold(): name for name in candidate_names}
+    excluded_names = []
+    for name in excluded_crops or ():
+        matched = crop_names_by_key.get(str(name).strip().casefold())
+        if matched is None:
+            raise ValueError(f"Unknown excluded crop: {name}")
+        if matched not in excluded_names:
+            excluded_names.append(matched)
     included_components = [
         component
         for component, status in objective["component_status"].items()
@@ -509,6 +519,12 @@ def build_milp_model(
             pulp.lpSum(variables[(crop, period)] for crop in candidate_names) == 1,
             f"one_crop_{period}",
         )
+
+    for crop_name in excluded_names:
+        for period in periods:
+            problem += variables[(crop_name, period)] == 0, (
+                f"farmer_excluded_{candidate_names.index(crop_name)}_{periods.index(period)}"
+            )
 
     excluded_static = [
         name for name in candidate_names if not eligibility[name]
@@ -770,6 +786,7 @@ def build_milp_model(
         },
         "eligibility": eligibility,
         "excluded_static": excluded_static,
+        "excluded_crops": excluded_names,
         "season_suitability_exclusions": season_suitability_exclusions,
         "first_period_blocked": first_period_blocked,
         "legume_names": legume_names,
@@ -802,10 +819,15 @@ def _result_provenance(field_state, crops: pd.DataFrame, history: pd.DataFrame):
         else [getattr(field_state, "data_status", {}).get("history", "missing")]
     )
     statuses = getattr(field_state, "data_status", {}) or {}
+    environment_source = getattr(field_state, "environment_source", "missing")
+    environment_status = statuses.get("environment", "missing")
+    if "nasa_power" in str(environment_source).casefold() and environment_status == "observed":
+        environment_status = "remote_observed"
     return {
         "environment": {
-            "source": getattr(field_state, "environment_source", "missing"),
-            "data_status": statuses.get("environment", "missing"),
+            "source": environment_source,
+            "observation_type": "remote_gridded" if "nasa_power" in str(environment_source).casefold() else "field_or_station",
+            "data_status": environment_status,
             "observation_date": getattr(
                 field_state, "environment_observation_date", None
             ),
@@ -846,10 +868,11 @@ def _result_data_status(field_state, metadata: Mapping[str, Any]) -> dict[str, A
     crop_statuses = list(
         dict.fromkeys(metadata["crops"]["data_status"].astype(str).tolist())
     )
+    environment_status = getattr(field_state, "data_status", {}).get("environment", "missing")
+    if "nasa_power" in str(getattr(field_state, "environment_source", "")).casefold() and environment_status == "observed":
+        environment_status = "remote_observed"
     return {
-        "environment": getattr(field_state, "data_status", {}).get(
-            "environment", "missing"
-        ),
+        "environment": environment_status,
         "soil": getattr(field_state, "data_status", {}).get("soil", "missing"),
         "soil_moisture": getattr(field_state, "data_status", {}).get(
             "soil_moisture", "missing"
@@ -883,6 +906,9 @@ def optimize_rotation(
     seasonally_flooded: Optional[bool] = None,
     field_history_crops: Optional[Sequence[str]] = None,
     existing_rotation: Optional[Mapping[str, Any]] = None,
+    existing_rotation_source: Optional[str] = None,
+    existing_rotation_year: Optional[int] = None,
+    excluded_crops: Optional[Sequence[str]] = None,
     solver: Optional[pulp.LpSolver] = None,
 ) -> dict[str, Any]:
     """Optimize a long-term rotation for the supplied periods and priorities."""
@@ -903,6 +929,7 @@ def optimize_rotation(
         allow_kharif2_fallow=allow_kharif2_fallow,
         min_cereals_per_year=min_cereals_per_year,
         seasonally_flooded=seasonally_flooded,
+        excluded_crops=excluded_crops,
     )
     tmp_dir = None
     if solver is None:
@@ -968,6 +995,7 @@ def optimize_rotation(
 
     constraints = {
         "one_crop_per_period": len(metadata["periods"]),
+        "farmer_excluded_crops": metadata["excluded_crops"],
         "family_transition_constraints": metadata[
             "family_transition_constraint_count"
         ],
@@ -1030,7 +1058,13 @@ def optimize_rotation(
     if not hist_crops and metadata.get("history") is not None and hasattr(metadata["history"], "empty") and not metadata["history"].empty:
         if "crop" in metadata["history"].columns:
             hist_crops = [str(x) for x in metadata["history"]["crop"].dropna()]
-    comparison = compute_rotation_comparison(res_dict, field_history_crops=hist_crops, existing_rotation=existing_rotation)
+    comparison = compute_rotation_comparison(
+        res_dict,
+        field_history_crops=hist_crops,
+        existing_rotation=existing_rotation,
+        existing_rotation_source=existing_rotation_source,
+        existing_rotation_year=existing_rotation_year,
+    )
     res_dict["baseline_comparison"] = comparison
     res_dict.update(comparison)
     return res_dict
@@ -1059,6 +1093,7 @@ def _empty_result(
         },
         "constraint_summary": {
             "one_crop_per_period": len(metadata["periods"]),
+            "farmer_excluded_crops": metadata["excluded_crops"],
             "family_transition_constraints": metadata[
                 "family_transition_constraint_count"
             ],

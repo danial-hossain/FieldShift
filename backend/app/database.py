@@ -68,12 +68,20 @@ if raw_env_url:
         DATABASE_URL = raw_env_url
         connect_args = {"check_same_thread": False}
     else:
-        DATABASE_URL, connect_args = normalize_database_url(raw_env_url)
-        engine_kwargs.update({
-            "pool_recycle": 300,
-            "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
-            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
-        })
+        parsed_url = make_url(raw_env_url.strip())
+        pg_host = parsed_url.host or "localhost"
+        pg_port = parsed_url.port or 5432
+        if _is_pg_available(pg_host, pg_port):
+            DATABASE_URL, connect_args = normalize_database_url(raw_env_url)
+            engine_kwargs.update({
+                "pool_recycle": 300,
+                "pool_size": int(os.getenv("DB_POOL_SIZE", "5")),
+                "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "10")),
+            })
+        else:
+            print(f"[database] PostgreSQL host '{pg_host}' unreachable. Falling back to local SQLite for offline autonomy.")
+            DATABASE_URL = DEFAULT_SQLITE_URL
+            connect_args = {"check_same_thread": False}
 elif _is_pg_available("localhost", 5433):
     DATABASE_URL = "postgresql+psycopg://fieldshift:fieldshift@localhost:5433/fieldshift"
     connect_args = {"connect_timeout": 3}

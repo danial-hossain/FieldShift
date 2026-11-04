@@ -80,6 +80,14 @@ def test_market_profitability_api():
     assert "optimistic" in data["scenarios"]
     assert "downside" in data["scenarios"]
 
+
+def test_market_profitability_requires_field_area():
+    response = client.post(
+        "/api/market/profitability",
+        json={"crop": "Rice", "expected_yield_t_ha": 4.0},
+    )
+    assert response.status_code == 422
+
 def test_market_export_api():
     response = client.get("/api/market/export")
     assert response.status_code == 200
