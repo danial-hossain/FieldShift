@@ -1272,10 +1272,19 @@ export function FarmScene3D({
       plantBed,
       applyCameraPreset,
       controls,
+      renderer,
     };
+    if (typeof window !== 'undefined') {
+      window.__farm3dRenderer = renderer;
+      window.__farm3d = container.__farm3d;
+    }
 
     // 13. Comprehensive Disposal on Unmount
     return () => {
+      if (typeof window !== 'undefined') {
+        if (window.__farm3dRenderer === renderer) window.__farm3dRenderer = null;
+        if (window.__farm3d === container.__farm3d) window.__farm3d = null;
+      }
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', onResize);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
