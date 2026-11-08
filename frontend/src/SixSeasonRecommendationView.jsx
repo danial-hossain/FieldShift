@@ -1168,11 +1168,11 @@ export function SixSeasonRecommendationView({
             🎯 {lang === 'bn' ? 'কৌশল:' : 'Strategy:'}
           </span>
           {[
-            { id: 'baseline', labelBn: 'বর্তমান (বেসলাইন)', labelEn: 'Current (Baseline)' },
-            { id: 'balanced', labelBn: 'ভারসাম্যপূর্ণ', labelEn: 'Balanced' },
-            { id: 'profit_focused', labelBn: 'সর্বোচ্চ লাভ', labelEn: 'Profit' },
-            { id: 'water_efficiency', labelBn: 'পানি সাশ্রয়ী', labelEn: 'Water Saving' },
-            { id: 'soil_health', labelBn: 'মাটি স্বাস্থ্য', labelEn: 'Soil Health' },
+            { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current' },
+            { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced' },
+            { id: 'profit_focused', labelBn: 'লাভ', labelEn: 'Profit' },
+            { id: 'water_efficiency', labelBn: 'পানি সাশ্রয়', labelEn: 'Water saving' },
+            { id: 'soil_health', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil health' },
           ].map(s => {
             const isActive = s.id === 'baseline' ? compareWithBaseline : (!compareWithBaseline && selectedStrategy === s.id);
             return (
@@ -1262,19 +1262,15 @@ export function SixSeasonRecommendationView({
         <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.02))', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
           <FarmScene3D
             beds={farm3dBeds}
-            weather={{
-              rainMul: 1.0,
-              tempDelta: 0.0,
-              event: activePlanData.risk?.drought?.level === 'high' ? 'drought' : 'none',
-            }}
-            onBedClick={(bed) => setSelectedPeriodKey(bed.id)}
+            selectedBedIndex={periodKeys.indexOf(activeSelectedPeriod)}
             selectedBedId={activeSelectedPeriod}
+            onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
             cameraPreset="iso"
             fieldAreaHa={fieldAreaHa || 1.0}
-            fieldName={activeField?.name || 'খামার প্লট'}
+            fieldName={activeField?.name || (lang === 'bn' ? 'বগুড়া মডেল খামার' : 'Bogura Model Farm')}
             theme={theme || 'dark'}
             lang={lang}
-            height={440}
+            height={500}
           />
         </div>
 
@@ -1300,11 +1296,11 @@ export function SixSeasonRecommendationView({
                 <span>{lang === 'bn' ? 'কেন এই ফসল এখানে? (MILP সলভার কারণ):' : 'Why this crop here? (MILP Rationale):'}</span>
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                {selectedCropName === 'Fallow'
+                {selectedCropName === 'Fallow' || selectedCropName.toLowerCase().includes('পতিত')
                   ? (lang === 'bn' ? 'জলাবদ্ধতা বা মাটির বিশ্রাম ও শুষ্ক মৌসুমে পানি সাশ্রয়ের জন্য পতিত রাখা হয়েছে।' : 'Fallow period for soil moisture recovery and flood basin resting.')
                   : (lang === 'bn'
-                      ? `তাপমাত্রার অনুকূলতা ৯২%, পানির চাহিদা সাশ্রয়ী (${selectedCropIrrig} মিমি), এবং মাটির পুষ্টি উপযোগিতা ৯৫%। ডালশস্য হিসেবে বায়বীয় নাইট্রোজেন সংযোজন করে পরবর্তী আমন ধানের সার খরচ সাশ্রয় করে।`
-                      : `Temperature suitability 92%, water demand efficient (${selectedCropIrrig} mm), and soil suitability 95%. Biological nitrogen fixation enriches soil N for subsequent monsoon crops.`)}
+                      ? `তাপমাত্রার অনুকূলতা ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, পানির চাহিদা সাশ্রয়ী (${selectedCropIrrig} মিমি), এবং মাটির পুষ্টি উপযোগিতা ${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%। ${selectedCropEntry.is_legume ? 'ডালশস্য হিসেবে শিকড়ে বায়বীয় নাইট্রোজেন সংযোজন করে পরবর্তী আমন ধানের সার খরচ সাশ্রয় করে।' : 'পরবর্তী ফসলের সাথে বোটানিক্যাল রোগচক্র ভেঙে দেয় এবং সর্বোত্তম প্রান্তিক মুনাফা নিশ্চিত করে।'} MILP অপ্টিমাইজেশন মডেল দ্বারা সেরা মনোনীত।`
+                      : `Temperature suitability ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, irrigation demand efficient (${selectedCropIrrig} mm), and soil suitability ${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%. ${selectedCropEntry.is_legume ? 'Biological nitrogen fixation enriches soil N for subsequent monsoon crops.' : 'Breaks botanical disease cycles and maximizes marginal returns.'} Ranked #1 by PuLP MILP solver.`)}
               </div>
             </div>
 
