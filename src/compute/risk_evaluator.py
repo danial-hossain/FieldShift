@@ -34,9 +34,11 @@ def compute_planner_risk_suite(
     years = sorted(df_eval["date"].dt.year.unique())
     n_years = len(years) or 24
 
-    # 1. Drought: share of years with dry spell >= 7 consecutive days < 2 mm in Kharif-1 (April - May)
+    # 1. Drought: share of years with dry spell >= 15 consecutive days < 2 mm during sensitive flowering window
+    # In Kharif-1 / pre-monsoon (April - May) flowering period
     k1_df = df_eval[df_eval["date"].dt.month.isin([4, 5])]
-    drought_years_count = 0
+    drought_15d_count = 0
+    drought_7d_count = 0
     for y in years:
         y_rain = k1_df[k1_df["date"].dt.year == y]["rainfall"].tolist()
         streak = 0
@@ -48,11 +50,13 @@ def compute_planner_risk_suite(
                     max_streak = streak
             else:
                 streak = 0
+        if max_streak >= 15:
+            drought_15d_count += 1
         if max_streak >= 7:
-            drought_years_count += 1
+            drought_7d_count += 1
 
-    drought_share = drought_years_count / n_years if n_years else 0.0
-    drought_level = "low" if drought_share < 0.20 else ("medium" if drought_share <= 0.40 else "high")
+    drought_share = drought_15d_count / n_years if n_years else 0.0
+    drought_level = "low" if drought_share < 0.20 else ("medium" if drought_share <= 0.50 else "high")
     drought_color = "#10b981" if drought_level == "low" else ("#f59e0b" if drought_level == "medium" else "#ef4444")
     drought_bn = "কম" if drought_level == "low" else ("মাঝারি" if drought_level == "medium" else "উচ্চ")
 
@@ -123,6 +127,22 @@ def compute_planner_risk_suite(
     bare_color = "#10b981" if bare_level == "low" else ("#f59e0b" if bare_level == "medium" else "#ef4444")
     bare_bn = "কম" if bare_level == "low" else ("মাঝারি" if bare_level == "medium" else "উচ্চ")
 
+    # 6. Cold Stress: T2M_MIN < 10 °C for >= 3 days in Dec-Jan
+    cold_df = df_eval[df_eval["date"].dt.month.isin([12, 1])]
+    tmin_col = "temp_min" if "temp_min" in cold_df.columns else ("T2M_MIN" if "T2M_MIN" in cold_df.columns else "temperature")
+    cold_years_count = 0
+    total_cold_days = 0
+    for y in years:
+        y_cold_days = int((cold_df[cold_df["date"].dt.year == y][tmin_col] < 10.0).sum())
+        total_cold_days += y_cold_days
+        if y_cold_days >= 3:
+            cold_years_count += 1
+    cold_share = cold_years_count / n_years if n_years else 0.0
+    cold_level = "low" if cold_share < 0.25 else ("medium" if cold_share <= 0.60 else "high")
+    cold_color = "#10b981" if cold_level == "low" else ("#f59e0b" if cold_level == "medium" else "#ef4444")
+    cold_bn = "কম" if cold_level == "low" else ("মাঝারি" if cold_level == "medium" else "উচ্চ")
+    mean_cold_days = total_cold_days / n_years if n_years else 0.0
+
     return {
         "drought": {
             "id": "drought",
@@ -132,10 +152,11 @@ def compute_planner_risk_suite(
             "levelBn": drought_bn,
             "color": drought_color,
             "value_pct": round(drought_share * 100, 1),
-            "years_affected": drought_years_count,
+            "years_affected": drought_15d_count,
             "total_years": n_years,
-            "whyBn": f"{n_years} বছরের মধ্যে {drought_years_count} বছর খরিফ-১-এ ≥৭ দিন শুকনো (বৃষ্টি <২ মিমি)",
-            "whyEn": f"{drought_years_count} of {n_years} years experienced a ≥7-day dry spell (<2 mm) during Kharif-1",
+            "years_affected_7d": drought_7d_count,
+            "whyBn": f"{n_years} বছরের মধ্যে {drought_15d_count} বছর সংবেদনশীল পর্যায়ে ≥১৫ দিন শুকনো (বৃষ্টি <২ মিমি) · ≥৭ দিন শুকনো: {drought_7d_count} বছর",
+            "whyEn": f"{drought_15d_count} of {n_years} years had a ≥15-day dry spell during crop sensitive stage (≥7-day spell in {drought_7d_count} of {n_years} years)",
         },
         "heavy_rain": {
             "id": "heavy_rain",
@@ -191,5 +212,19 @@ def compute_planner_risk_suite(
             "baseline_bare_days": base_bare,
             "whyBn": f"বিদ্যমান আবর্তনে বছরে {base_bare} দিন নগ্ন মাটি, প্রস্তাবিত আবর্তনে {plan_bare} দিন",
             "whyEn": f"{base_bare} bare days/yr in current rotation vs {plan_bare} days/yr in plan",
+        },
+        "cold_stress": {
+            "id": "cold_stress",
+            "labelBn": "শৈত্যপ্রবাহ ঝুঁকি",
+            "labelEn": "Cold Stress Risk",
+            "level": cold_level,
+            "levelBn": cold_bn,
+            "color": cold_color,
+            "value_pct": round(cold_share * 100, 1),
+            "years_affected": cold_years_count,
+            "total_years": n_years,
+            "days_per_year": round(mean_cold_days, 1),
+            "whyBn": f"{n_years} বছরের মধ্যে {cold_years_count} বছর ডিসে–জানু মাসে ≥৩ দিন তাপমাত্রা <১০°C (গড়ে {round(mean_cold_days, 1)} দিন/বছর)",
+            "whyEn": f"{cold_years_count} of {n_years} years had ≥3 days with min temp <10°C in Dec-Jan (avg {round(mean_cold_days, 1)} days/yr)",
         },
     }

@@ -541,6 +541,7 @@ export function SixSeasonRecommendationView({
         rawRisk.heat,
         rawRisk.late_monsoon || rawRisk.onset,
         rawRisk.bare_soil || rawRisk.erosion,
+        rawRisk.cold_stress || rawRisk.cold,
       ].filter(Boolean);
     }
     return [
@@ -549,6 +550,7 @@ export function SixSeasonRecommendationView({
       { id: 'heat', labelBn: 'তাপপ্রবাহ ঝুঁকি', labelEn: 'Heat Stress Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'ফসল পরিপক্বতার পূর্বে অতিরিক্ত তাপমাত্রা বৃদ্ধি নেই।', whyEn: 'No extreme heat anomaly during flowering.' },
       { id: 'late_monsoon', labelBn: 'বর্ষা বিলম্ব', labelEn: 'Late Monsoon', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'অনসেট পরিসংখ্যান স্বাভাবিক সীমার মধ্যে।', whyEn: 'Monsoon onset within normal climatological window.' },
       { id: 'bare_soil', labelBn: 'পতিত মাটি ঝুঁকি', labelEn: 'Bare Soil Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'পরিকল্পনায় পতিত দিনের সংখ্যা হ্রাস করা হয়েছে।', whyEn: 'Bare soil exposure is minimized in the proposed plan.' },
+      { id: 'cold_stress', labelBn: 'শৈত্যপ্রবাহ ঝুঁকি', labelEn: 'Cold Stress Risk', level: 'low', levelBn: 'কম', color: '#10b981', whyBn: 'শীত মৌসুমে তীব্র শৈত্যপ্রবাহের ঝুঁকি স্বাভাবিক সীমার মধ্যে।', whyEn: 'Cold stress risk in Dec-Jan is within normal bounds.' },
     ];
   }, [activePlanData?.risk, summary?.planning?.risk, activePlanResponse?.risk]);
 
@@ -1539,7 +1541,7 @@ export function SixSeasonRecommendationView({
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {riskSuite.slice(0, 4).map(r => (
+            {riskSuite.map(r => (
               <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-2)' }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color }} />
