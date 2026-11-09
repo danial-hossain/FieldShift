@@ -2932,13 +2932,14 @@ def delete_field(field_id: int, user: User = Depends(require_user), db: DbSessio
 
 @app.get("/api/fields/{field_id}/history")
 def field_history(field_id: str, user: User | None = Depends(optional_user), db: DbSession = Depends(get_db)):
+    numeric_id = int(field_id) if str(field_id).isdigit() else None
     if str(field_id) in {"demo", "field_demo", "demo_check_field", "0"} or user is None:
-        numeric_id = int(field_id) if str(field_id).isdigit() else None
         histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == numeric_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))] if numeric_id else []
         return {"status": "ok", "history": histories, "outcomes": []}
-    owned_field(db, int(field_id), user)
-    histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == field_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))]
-    outcomes = [row(x) for x in db.scalars(select(FarmOutcome).where(FarmOutcome.field_id == field_id).order_by(FarmOutcome.year.desc(), FarmOutcome.id.desc()))]
+    if numeric_id is not None:
+        owned_field(db, numeric_id, user)
+    histories = [row(x) for x in db.scalars(select(FieldHistory).where(FieldHistory.field_id == numeric_id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))] if numeric_id else []
+    outcomes = [row(x) for x in db.scalars(select(FarmOutcome).where(FarmOutcome.field_id == numeric_id).order_by(FarmOutcome.year.desc(), FarmOutcome.id.desc()))] if numeric_id else []
     return {"status": "ok", "history": histories, "outcomes": outcomes}
 
 @app.post("/api/fields/{field_id}/history", status_code=201)

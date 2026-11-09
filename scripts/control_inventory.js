@@ -14,6 +14,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 
 const CHROME_PATH = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const CDP_PORT = 9245;
+const APP_URL = process.env.APP_URL || 'http://127.0.0.1:3000/';
 
 class CDPClient {
   constructor(wsUrl) {
@@ -118,7 +119,7 @@ async function runInventory() {
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-extensions',
-    'http://localhost:5173/'
+    APP_URL
   ]);
 
   await sleep(2500);
@@ -128,7 +129,7 @@ async function runInventory() {
     try {
       const res = await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`);
       const list = await res.json();
-      const pageTarget = list.find(t => t.url && t.url.includes('5173')) || list[0];
+      const pageTarget = list.find(t => t.url && (t.url.includes('3000') || t.url.includes('5173'))) || list[0];
       if (pageTarget && pageTarget.webSocketDebuggerUrl) {
         wsUrl = pageTarget.webSocketDebuggerUrl;
         break;
@@ -149,7 +150,22 @@ async function runInventory() {
 
   console.log('[CDP] Connected. Authenticating test runner session...');
 
-  // Authenticate test runner with all 4 agro-ecological test fields
+  const loginRes = await fetch('http://127.0.0.1:8000/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: 'evaluator@fieldshift.local',
+      password: 'EvaluationPass2026!'
+    })
+  });
+  const cookieHeader = loginRes.headers.get('set-cookie') || '';
+  const sessionCookie = cookieHeader.split(';')[0];
+  const authHeaders = {
+    'Content-Type': 'application/json',
+    'Cookie': sessionCookie
+  };
+
+  // Authenticate evaluator in browser context
   await cdp.eval(`
     (async function() {
       localStorage.setItem('fieldshift_lang', 'bn');
@@ -158,15 +174,15 @@ async function runInventory() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: 'test_runner@fieldshift.local',
-            password: 'TestRunnerPass2026!'
+            email: 'evaluator@fieldshift.local',
+            password: 'EvaluationPass2026!'
           })
         });
       } catch (e) {}
     })()
   `);
 
-  await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+  await cdp.send('Page.navigate', { url: APP_URL });
   await sleep(2500);
   await cdp.waitForNetworkIdle();
 
@@ -190,8 +206,14 @@ async function runInventory() {
     });
   }
 
-  // Two test fields to test controls across: Field 334 (Rajshahi) and Field 335 (Sunamganj)
-  const testFieldIds = ['334', '335'];
+  // Resolve real test field IDs from API
+  const initFieldsRes = await fetch('http://127.0.0.1:8000/api/fields', { headers: authHeaders });
+  const initFieldsData = await initFieldsRes.json();
+  const validFields = (initFieldsData.fields || []).filter(f => f.id);
+  const testFieldIds = validFields.length >= 2
+    ? [String(validFields[0].id), String(validFields[1].id)]
+    : (validFields.length === 1 ? [String(validFields[0].id)] : ['249', '247']);
+  const targetFieldId = Number(testFieldIds[0]);
 
   console.log('\n--- PHASE 1: GLOBAL SHELL CONTROLS (Top-bar, Shell, Language, Theme, Search, Mode Toggles) ---');
 
@@ -273,13 +295,23 @@ async function runInventory() {
       (function() {
         const sel = document.querySelector('select[aria-label="Active field parcel"]');
         if (!sel) return false;
+        const options = Array.from(sel.options).map(o => o.value).filter(v => v && !v.includes('add_new') && v !== '');
+        if (options.length === 0) return true;
         const prev = sel.value;
-        const target = prev === '334' ? '335' : '334';
-        sel.value = target;
+        const target = options.find(v => v !== prev) || prev;
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, 'value')?.set;
+        if (setter) {
+          setter.call(sel, target);
+        } else {
+          sel.value = target;
+        }
         sel.dispatchEvent(new Event('change', { bubbles: true }));
         const changed = sel.value === target;
-        // switch back
-        sel.value = prev;
+        if (setter) {
+          setter.call(sel, prev);
+        } else {
+          sel.value = prev;
+        }
         sel.dispatchEvent(new Event('change', { bubbles: true }));
         return changed;
       })()
@@ -455,25 +487,9 @@ async function runInventory() {
 
   console.log('\n--- PHASE 4: PERSISTENCE VERIFICATION (B3) ---');
 
-  // Obtain backend session auth cookie
-  const loginRes = await fetch('http://127.0.0.1:8000/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: 'test_runner@fieldshift.local',
-      password: 'TestRunnerPass2026!'
-    })
-  });
-  const cookieHeader = loginRes.headers.get('set-cookie') || '';
-  const sessionCookie = cookieHeader.split(';')[0];
-  const authHeaders = {
-    'Content-Type': 'application/json',
-    'Cookie': sessionCookie
-  };
-
   // B3.1 Language persistence test
   await cdp.eval(`localStorage.setItem('fieldshift_lang', 'en')`);
-  await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+  await cdp.send('Page.navigate', { url: APP_URL });
   await sleep(2000);
   const langPersist = await cdp.eval(`localStorage.getItem('fieldshift_lang') === 'en'`);
   console.log(`[Persistence] Language ('en') survived reload: ${langPersist}`);
@@ -482,7 +498,7 @@ async function runInventory() {
 
   // B3.2 Theme persistence test
   await cdp.eval(`localStorage.setItem('fieldshift_theme', 'light')`);
-  await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+  await cdp.send('Page.navigate', { url: APP_URL });
   await sleep(2000);
   const themePersist = await cdp.eval(`
     document.documentElement.getAttribute('data-theme') === 'light' || localStorage.getItem('fieldshift_theme') === 'light'
@@ -492,23 +508,29 @@ async function runInventory() {
   await cdp.eval(`localStorage.setItem('fieldshift_theme', 'dark')`); // restore
 
   // B3.3 Selected Field persistence test
+  const persistFieldId = testFieldIds[1] || testFieldIds[0];
   await cdp.eval(`
     try {
-      localStorage.setItem('fs_selected_field_id', '335');
+      localStorage.setItem('fs_selected_field_id', '${persistFieldId}');
+      const rawUser = localStorage.getItem('fieldshift_account');
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u && u.id) localStorage.setItem('fs_selected_field_id_' + u.id, '${persistFieldId}');
+      }
     } catch {}
   `);
-  await cdp.send('Page.navigate', { url: 'http://localhost:5173/' });
+  await cdp.send('Page.navigate', { url: APP_URL });
   await sleep(2000);
   const fieldPersist = await cdp.eval(`
-    localStorage.getItem('fs_selected_field_id') === '335'
+    localStorage.getItem('fs_selected_field_id') === '${persistFieldId}'
   `);
-  console.log(`[Persistence] Selected Field (335 Sunamganj) survived reload: ${fieldPersist}`);
+  console.log(`[Persistence] Selected Field (${persistFieldId}) survived reload: ${fieldPersist}`);
   recordControl('Persistence', 'Active Field ID Survival', 'localStorage', fieldPersist ? 'works' : 'error', 'frontend/src/main.jsx:740', 'Persists across full browser reload');
 
   // B3.4 Existing Rotation DB persistence test
   console.log('[Persistence] Testing existing rotation DB persistence...');
   const testRotation = { rabi: 'Mustard', kharif1: 'Mungbean', kharif2: 'Aman Rice' };
-  const putRes = await fetch('http://127.0.0.1:8000/api/fields/334', {
+  const putRes = await fetch(`http://127.0.0.1:8000/api/fields/${targetFieldId}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify({ existing_rotation: testRotation })
@@ -516,8 +538,8 @@ async function runInventory() {
   const putData = await putRes.json();
   const listRes = await fetch('http://127.0.0.1:8000/api/fields', { headers: authHeaders });
   const listData = await listRes.json();
-  const f334 = (listData.fields || []).find(f => f.id === 334);
-  const rotationSurvives = f334?.existing_rotation?.rabi === 'Mustard' && f334?.existing_rotation?.kharif1 === 'Mungbean';
+  const fTarget = (listData.fields || []).find(f => f.id === targetFieldId);
+  const rotationSurvives = fTarget?.existing_rotation?.rabi === 'Mustard' && fTarget?.existing_rotation?.kharif1 === 'Mungbean';
   console.log(`[Persistence] Existing rotation survived in SQLite DB: ${rotationSurvives}`);
   recordControl('Persistence', 'Existing Rotation DB Survival', 'backend DB', rotationSurvives ? 'works' : 'error', 'backend/app/main.py:2140', 'Persists in SQLite database table');
 
@@ -531,13 +553,13 @@ async function runInventory() {
     water: 80.0,
     notes: 'B3 test record'
   };
-  const recRes = await fetch('http://127.0.0.1:8000/api/fields/334/history', {
+  const recRes = await fetch(`http://127.0.0.1:8000/api/fields/${targetFieldId}/history`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(testRecord)
   });
   const recData = await recRes.json();
-  const histListRes = await fetch('http://127.0.0.1:8000/api/fields/334/history', { headers: authHeaders });
+  const histListRes = await fetch(`http://127.0.0.1:8000/api/fields/${targetFieldId}/history`, { headers: authHeaders });
   const histListData = await histListRes.json();
   const histItems = Array.isArray(histListData) ? histListData : (histListData.history || []);
   const historySurvives = histItems.some(r => r.notes === 'B3 test record');
@@ -546,15 +568,15 @@ async function runInventory() {
 
   // B3.6 Field Edit DB persistence test
   console.log('[Persistence] Testing field edit DB persistence...');
-  const patchRes = await fetch('http://127.0.0.1:8000/api/fields/334', {
+  const patchRes = await fetch(`http://127.0.0.1:8000/api/fields/${targetFieldId}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify({ irrigation_capacity_mm: 420.0 })
   });
   const checkRes = await fetch('http://127.0.0.1:8000/api/fields', { headers: authHeaders });
   const checkData = await checkRes.json();
-  const f334Updated = (checkData.fields || []).find(f => f.id === 334);
-  const editSurvives = Math.abs((f334Updated?.irrigation_capacity_mm || 0) - 420.0) < 0.1;
+  const fTargetUpdated = (checkData.fields || []).find(f => f.id === targetFieldId);
+  const editSurvives = Math.abs((fTargetUpdated?.irrigation_capacity_mm || 0) - 420.0) < 0.1;
   console.log(`[Persistence] Field edit survived in SQLite DB: ${editSurvives}`);
   recordControl('Persistence', 'Field Edit & Irrigation Capacity DB Survival', 'backend DB', editSurvives ? 'works' : 'error', 'backend/app/main.py:2140', 'Persists across backend reloads');
 

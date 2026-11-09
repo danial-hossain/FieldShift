@@ -3,7 +3,7 @@ import { DataSourceTag } from './ui/index.js';
 import { request } from './apiClient.js';
 import sampleSeries from './nasa_30day_series.json';
 
-export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, onBack }) {
+export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, onBack, lang = 'bn' }) {
   const [viewMode, setViewMode] = useState('globe'); // 'globe' | 'column' | 'satellite'
   const [rotationAngle, setRotationAngle] = useState(24);
   const [activeChartMetric, setActiveChartMetric] = useState('temp'); // 'temp' | 'rain' | 'humidity' | 'solar'

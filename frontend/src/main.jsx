@@ -2241,7 +2241,7 @@ export function App() {
                                   setSelectedFieldId(f.id);
                                   setGlobalSearchQuery('');
                                   setActiveNav('field');
-                                  showToast(lang === 'bn' ? `${f.name} নির্বাচিত হয়েছে` : `Selected ${f.name}`, 'info');
+                                  setToastMessage({ message: lang === 'bn' ? `${f.name} নির্বাচিত হয়েছে` : `Selected ${f.name}`, type: 'info' });
                                 }}
                                 style={{
                                   display: 'flex',
@@ -2276,7 +2276,7 @@ export function App() {
                                 onClick={() => {
                                   setGlobalSearchQuery('');
                                   setActiveNav('crops');
-                                  showToast(lang === 'bn' ? `${c.bn} ক্রপ মডেল দেখানো হচ্ছে` : `Showing ${c.en} model`, 'info');
+                                  setToastMessage({ message: lang === 'bn' ? `${c.bn} ক্রপ মডেল দেখানো হচ্ছে` : `Showing ${c.en} model`, type: 'info' });
                                 }}
                                 style={{
                                   display: 'flex',

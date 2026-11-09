@@ -215,7 +215,7 @@ export function Outcomes3D({
 
     return () => {
       scene.remove(rootGroup);
-      [predBedGeo, predBorderGeo, predPillarGeo, actBorderGeo, actPillarGeo, bridgeGeo, deltaNodeGeo].forEach(g => g?.dispose?.());
+      [bedGeo, predBorderGeo, predPillarGeo, actBorderGeo, actPillarGeo, bridgeGeo, deltaNodeGeo].forEach(g => g?.dispose?.());
       [predBedMat, predBorderMat, predCropMat, predPillarMat, actBedMat, actBorderMat, actCropMat, actPillarMat, bridgeMat, deltaNodeMat].forEach(m => m?.dispose?.());
     };
   };

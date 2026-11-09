@@ -14,7 +14,7 @@ export function normalizeSeasonCode(seasonStr, lang = 'bn') {
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { formatNumber } from './marketUtils.js';
-import { useTranslation } from './i18n.js';
+import { useTranslation, toBengaliNumber } from './i18n.js';
 import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceChip, Skeleton } from './ui/index.js';
 import { tonPerHaToMaundPerBigha, maundPerBighaToTonPerHa } from './utils/conversions.js';
 import { computeSaxtonRawls } from './utils/saxtonRawls.js';
