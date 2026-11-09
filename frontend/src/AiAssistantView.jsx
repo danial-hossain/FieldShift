@@ -66,10 +66,10 @@ export default function AiAssistantView({
 
   const initialGreeting = language === 'bn'
     ? (activeField
-        ? `নমস্কার / আসসালামু আলাইকুম! আমি **FieldShift কৃষি সিদ্ধান্ত সহকারী** (টিম AZOIC | NASA Space Apps Challenge 2026)।\n\nবর্তমানে **${activeField.name}** (${activeField.soil_texture || 'দোঁআশ'} মাটি, pH ${activeField.soil_ph ?? '৬.৫'}, জৈব উপাদান ${activeField.organic_matter ?? '২.৫'}%, আয়তন ${activeField.area_ha || 10} হেক্টর) এর উপাত্ত সংযুক্ত রয়েছে। ফসল নির্বাচন, সেচ বা সম্ভাব্য লাভ সম্পর্কে যে কোনো প্রশ্ন করুন!`
+        ? `নমস্কার / আসসালামু আলাইকুম! আমি **FieldShift কৃষি সিদ্ধান্ত সহকারী** (টিম AZOIC | NASA Space Apps Challenge 2026)।\n\nবর্তমানে **${activeField.name}** (${activeField.soil_texture || 'অজ্ঞাত'} মাটি, pH ${activeField.soil_ph != null ? activeField.soil_ph : 'অজ্ঞাত'}, জৈব উপাদান ${activeField.organic_matter != null ? activeField.organic_matter + '%' : 'অজ্ঞাত'}, আয়তন ${activeField.area_ha != null ? activeField.area_ha + ' হেক্টর' : 'অজ্ঞাত'}) এর উপাত্ত সংযুক্ত রয়েছে। ফসল নির্বাচন, সেচ বা সম্ভাব্য লাভ সম্পর্কে যে কোনো প্রশ্ন করুন!`
         : `নমস্কার / আসসালামু আলাইকুম! আমি **FieldShift কৃষি সিদ্ধান্ত সহকারী**।\n\nবর্তমানে কোনো জমি নির্বাচিত নেই। আপনি উপরের মেনু থেকে **বগুড়া ডেমো খামার (১০ হেক্টর)** নির্বাচন করতে পারেন অথবা 'আমার খামার' পাতায় গিয়ে নতুন জমি নিবন্ধন করতে পারেন। আপনার যে কোনো কৃষি প্রশ্ন করুন!`)
     : (activeField
-        ? `Hello! I am the **FieldShift Agronomic AI Assistant** (NASA Space Apps Challenge 2026 | Team AZOIC).\n\nSynchronized context for **${activeField.name}** (${activeField.soil_texture || 'loam'}, pH ${activeField.soil_ph ?? '6.5'}, ${activeField.organic_matter ?? '2.5'}% OM, ${activeField.area_ha || 10} ha) and NASA POWER agroclimatology telemetry.\n\nAsk me about crop planning, irrigation quotas, or market profit trade-offs!`
+        ? `Hello! I am the **FieldShift Agronomic AI Assistant** (NASA Space Apps Challenge 2026 | Team AZOIC).\n\nSynchronized context for **${activeField.name}** (${activeField.soil_texture || 'Unknown'}, pH ${activeField.soil_ph != null ? activeField.soil_ph : 'Unknown'}, ${activeField.organic_matter != null ? activeField.organic_matter + '% OM' : 'Unknown OM'}, ${activeField.area_ha != null ? activeField.area_ha + ' ha' : 'Unknown area'}) and NASA POWER agroclimatology telemetry.\n\nAsk me about crop planning, irrigation quotas, or market profit trade-offs!`
         : `Hello! I am the **FieldShift Agronomic AI Assistant**.\n\nNo field parcel is currently selected. You can select the **Bogura Demo Field (10 ha)** or register your field in My Farm. Ask any crop or soil question!`);
 
   const [messages, setMessages] = useState([
@@ -101,7 +101,7 @@ export default function AiAssistantView({
       ? Object.entries(plan.selected_crop_by_period).map(([p, c]) => `${p}: ${c}`).join(' -> ')
       : '';
 
-    return {
+    const payload = {
       language,
       field: {
         name: activeField ? (activeField.is_demo ? `${activeField.name}` : activeField.name) : 'No registered parcel selected',
@@ -116,31 +116,66 @@ export default function AiAssistantView({
         previous_crop: activeField?.previous_crop || null
       },
       weather: {
-        temperature_c: nasa?.telemetry?.observed_temperature_c || 26.5,
-        humidity_pct: nasa?.telemetry?.average_humidity_pct || 72,
-        precipitation_mm: nasa?.telemetry?.precipitation_daily_mm || 3.8,
-        wind_speed_ms: nasa?.telemetry?.wind_speed_ms || 2.1,
+        temperature_c: nasa?.telemetry?.observed_temperature_c ?? null,
+        humidity_pct: nasa?.telemetry?.average_humidity_pct ?? null,
+        precipitation_mm: nasa?.telemetry?.precipitation_daily_mm ?? null,
+        wind_speed_ms: nasa?.telemetry?.wind_speed_ms ?? null,
         source: nasa?.data_status === 'observed'
           ? 'NASA POWER Daily API (Reanalysis / Climatology)'
-          : (activeField?.is_demo ? 'NASA POWER Historical Bogura Benchmark' : 'NASA POWER Historical Reanalysis Benchmark')
+          : (activeField?.is_demo ? 'NASA POWER Historical Bogura Benchmark' : (nasa?.telemetry ? 'NASA POWER Historical Reanalysis Benchmark' : null))
       },
       plan: {
         rotation_str: rotationStr,
-        yield_tons: plan?.objective_value,
-        gross_margin_bdt: plan?.gross_margin_bdt,
-        water_mm: plan?.total_water_mm,
-        solver_status: plan?.solver_status || 'Optimal'
+        yield_tons: plan?.objective_value ?? null,
+        gross_margin_bdt: plan?.gross_margin_bdt ?? null,
+        water_mm: plan?.total_water_mm ?? null,
+        solver_status: plan?.solver_status ?? null
       },
       comparison: {
-        summary: comparisonLab?.trade_off_analysis?.headline || 'MILP maximized profit within linear bounds; RL explored adaptive drought resilience'
+        summary: comparisonLab?.trade_off_analysis?.headline ?? null
       },
       scenarios: {
-        robustness_score: robustness?.overall_robustness_score_pct || 80
+        robustness_score: robustness?.overall_robustness_score_pct ?? null
       },
       outcomes: {
         recorded_seasons: Array.isArray(outcomes) ? outcomes.length : 0
       }
     };
+
+    if (pageContext) {
+      payload.planner = {
+        field: pageContext.field?.name || activeField?.name || 'Selected Field',
+        field_area_ha: pageContext.field?.area_ha ?? activeField?.area_ha ?? null,
+        district: pageContext.field?.district_label || pageContext.field?.district || activeField?.district || null,
+        rotation: (pageContext.seasons || []).map(s => s.crop_en || s.crop).join(' -> '),
+        current_rotation: pageContext.field?.current_rotation_en || pageContext.field?.current_rotation_bn || 'Boro Rice -> Fallow -> T. Aman Rice',
+        seasons: (pageContext.seasons || []).map(s => ({
+          season: s.season || s.season_bn || s.season_code,
+          crop: s.crop,
+          crop_bn: s.crop_bn,
+          irrigation_mm: s.irrigation_mm,
+          profit_bdt: s.margin_bdt_ha,
+          risk: s.risk || (pageContext.risk?.drought?.level === 'high' ? 'Drought stress risk' : 'Normal')
+        })),
+        baseline_totals: {
+          irrigation_mm: pageContext.totals?.irrigation_baseline_mm ?? null,
+          profit_bdt: pageContext.totals?.profit_baseline_bdt_ha ?? null
+        },
+        plan_totals: {
+          irrigation_mm: pageContext.totals?.irrigation_plan_mm ?? null,
+          profit_bdt: pageContext.totals?.profit_plan_bdt_ha ?? null
+        },
+        strategy: pageContext.selected_strategy || 'balanced',
+        priorities: pageContext.farmer_priorities ? (typeof pageContext.farmer_priorities === 'string' ? pageContext.farmer_priorities : JSON.stringify(pageContext.farmer_priorities)) : 'balanced',
+        risk: {
+          deficit_stress: pageContext.risk?.drought?.note || pageContext.risk?.drought?.level || 'moderate',
+          heat_stress: pageContext.risk?.heat?.note || pageContext.risk?.heat?.level || 'moderate'
+        },
+        data_sources: ["NASA POWER", "BARC AEZ", "BBS Ag Census"]
+      };
+    }
+
+    return payload;
   };
 
   const handleSend = async (textToSend) => {
@@ -398,26 +433,28 @@ export default function AiAssistantView({
           ACTIVE CONTEXT
         </div>
         <div className="ai-context-field-name">
-          <strong>{activeField?.name || 'বগুড়া ডেমো খামার [DEMO]'}</strong>
+          <strong>{activeField?.name || (language === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No parcel selected')}</strong>
           <span className="ai-context-coords">
-            ({activeField?.latitude != null ? Number(activeField.latitude).toFixed(2) : '24.85'}°N, {activeField?.longitude != null ? Number(activeField.longitude).toFixed(2) : '89.37'}°E · {activeField?.area_ha != null ? Number(activeField.area_ha).toFixed(1) : '10.0'} ha)
+            {activeField?.latitude != null && activeField?.longitude != null
+              ? `(${Number(activeField.latitude).toFixed(2)}°N, ${Number(activeField.longitude).toFixed(2)}°E · ${activeField.area_ha != null ? Number(activeField.area_ha).toFixed(2) : '—'} ha)`
+              : (activeField?.area_ha != null ? `(${Number(activeField.area_ha).toFixed(2)} ha)` : '')}
           </span>
         </div>
         <div className="ai-context-metrics">
           <span className="ai-context-tag">
-            Soil: <strong>{activeField?.soil_texture || 'loam'}</strong>
+            Soil: <strong>{activeField?.soil_texture || (language === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
           </span>
           <span className="ai-context-tag">
-            pH: <strong>{activeField?.soil_ph != null ? activeField.soil_ph : '6.5'}</strong>
+            pH: <strong>{activeField?.soil_ph != null ? activeField.soil_ph : (language === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
           </span>
           <span className="ai-context-tag">
-            OM: <strong>{activeField?.organic_matter ?? activeField?.organic_matter_pct ?? '2.2'}%</strong>
+            OM: <strong>{(activeField?.organic_matter ?? activeField?.organic_matter_pct) != null ? `${activeField.organic_matter ?? activeField.organic_matter_pct}%` : (language === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
           </span>
           <span className="ai-context-tag">
-            Irrigation: <strong>{activeField?.irrigation_capacity_mm || 420} mm</strong>
+            Irrigation: <strong>{activeField?.irrigation_capacity_mm != null ? `${activeField.irrigation_capacity_mm} mm` : (language === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
           </span>
           <span className="ai-context-tag highlight">
-            NASA Temp: <strong>{nasa?.telemetry?.observed_temperature_c || '26.5'}°C</strong>
+            NASA Temp: <strong>{nasa?.telemetry?.observed_temperature_c != null ? `${nasa.telemetry.observed_temperature_c}°C` : (language === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
           </span>
         </div>
       </div>

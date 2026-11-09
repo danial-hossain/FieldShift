@@ -2097,6 +2097,7 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
     field_info = context.get("field") or {}
     weather_info = context.get("weather") or {}
     plan_info = context.get("plan") or {}
+    planner_info = context.get("planner") or {}
     comparison_info = context.get("comparison") or {}
     scenarios_info = context.get("scenarios") or {}
     outcomes_info = context.get("outcomes") or {}
@@ -2129,6 +2130,30 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
     if plan_info.get("water_mm"): plan_lines.append(f"Estimated Water Demand: {plan_info['water_mm']} mm")
     if plan_info.get("solver_status"): plan_lines.append(f"Mathematical Solver Status: {plan_info['solver_status']}")
 
+    planner_lines = []
+    if planner_info:
+        if planner_info.get("field"): planner_lines.append(f"Planner Field: {planner_info['field']} (Area: {planner_info.get('field_area_ha', 'N/A')} ha, District: {planner_info.get('district', 'N/A')})")
+        if planner_info.get("current_rotation"): planner_lines.append(f"Current Baseline Rotation: {planner_info['current_rotation']}")
+        if planner_info.get("rotation"): planner_lines.append(f"Recommended Multi-Season Plan: {planner_info['rotation']}")
+        if planner_info.get("strategy"): planner_lines.append(f"Selected Strategy: {planner_info['strategy']} (Priorities: {planner_info.get('priorities', 'balanced')})")
+
+        base_tot = planner_info.get("baseline_totals") or {}
+        plan_tot = planner_info.get("plan_totals") or {}
+        if base_tot or plan_tot:
+            planner_lines.append(f"Baseline vs Plan Totals -> Irrigation: {base_tot.get('irrigation_mm', 'N/A')} mm (baseline) vs {plan_tot.get('irrigation_mm', 'N/A')} mm (plan) | Gross Profit: {base_tot.get('profit_bdt', 'N/A')} BDT/ha (baseline) vs {plan_tot.get('profit_bdt', 'N/A')} BDT/ha (plan)")
+
+        seasons = planner_info.get("seasons") or []
+        for s in seasons:
+            planner_lines.append(f"Season {s.get('season')}: Crop={s.get('crop')} (Bengali: {s.get('crop_bn', 'N/A')}), Irrigation={s.get('irrigation_mm', 'N/A')} mm, Gross Margin={s.get('profit_bdt', 'N/A')} BDT/ha, Risk={s.get('risk', 'N/A')}")
+
+        risk = planner_info.get("risk") or {}
+        if risk:
+            planner_lines.append(f"Planner Risks: Deficit Stress={risk.get('deficit_stress', 'N/A')}, Heat Stress={risk.get('heat_stress', 'N/A')}")
+
+        sources = planner_info.get("data_sources") or []
+        if sources:
+            planner_lines.append(f"Data Sources: {', '.join(sources)}")
+
     extra_lines = []
     if comparison_info.get("summary"): extra_lines.append(f"Method Benchmark: {comparison_info['summary']}")
     if scenarios_info.get("robustness_score"): extra_lines.append(f"Climate Robustness Score: {scenarios_info['robustness_score']}%")
@@ -2137,24 +2162,33 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
     if market_info.get("demand_note"): extra_lines.append(f"Demand Status: {market_info['demand_note']}")
     if provenance_info.get("reliability_score"): extra_lines.append(f"System Reliability Score: {provenance_info['reliability_score']}% ({provenance_info.get('source_backed_pct', 'N/A')}% source-backed)")
 
+    saao_closing = (
+        "এই পরামর্শ সিদ্ধান্তের সহায়ক; স্থানীয় উপসহকারী কৃষি কর্মকর্তা (SAAO)-র সাথে আলোচনা করে চূড়ান্ত সিদ্ধান্ত নিন।"
+        if (lang == "bn" or any(w in message.lower() for w in ["bangla", "banglae", "বাংলা"]))
+        else "This advice provides decision support; please consult your local Sub-Assistant Agriculture Officer (SAAO) before making final farming decisions."
+    )
+
     sys_text = (
         "You are the FieldShift Agronomic AI Assistant (NASA Space Apps Challenge 2026 | Team AZOIC), an expert scientific decision-support advisor for adaptive crop rotation, precision irrigation, and soil sustainability in Bangladesh.\n\n"
         "TELEMETRY & CONTEXT FOR ACTIVE FIELD:\n"
         + ("\n".join(f"- {l}" for l in field_lines) + "\n" if field_lines else "- No specific field selected; providing general agronomic guidance.\n")
         + ("\n".join(f"- {l}" for l in weather_lines) + "\n" if weather_lines else "")
         + ("\n".join(f"- {l}" for l in plan_lines) + "\n" if plan_lines else "")
+        + ("\nPLANNER CONTEXT & MULTI-SEASON ROTATION:\n" + "\n".join(f"- {l}" for l in planner_lines) + "\n" if planner_lines else "")
         + ("\n".join(f"- {l}" for l in extra_lines) + "\n" if extra_lines else "")
-        + "\nRESPONSE GUIDELINES:\n"
+        + "\nRESPONSE GUIDELINES & STRICT AGRONOMIC RULES:\n"
         "1. STRUCTURE: Whenever advising on crop choices, trade-offs, or field decisions, use this clear 6-part structure:\n"
         "   - **1. Short Answer**: Concise summary directly answering the user.\n"
-        "   - **2. Evidence from this Field**: Reference actual field numbers (soil pH, OM %, irrigation mm, NASA weather, market prices).\n"
+        "   - **2. Evidence from this Field**: Reference actual field numbers (soil pH, OM %, irrigation mm, NASA weather, market prices, planner baseline vs plan totals).\n"
         "   - **3. Recommended Next Step**: Actionable agronomic plan.\n"
         "   - **4. Trade-offs & Risks**: Diseases, moisture deficits, market price drops or temperature risks.\n"
         "   - **5. Data Limitations**: Disclose whether values are measured lab tests, NASA reanalysis, DAM benchmarks, or simulation estimates. Clarify that open demand data is unavailable.\n"
         "   - **6. Suggested Follow-up Action**: Next tool or verification to execute.\n"
-        "2. LANGUAGE: Support both English and Bengali (বাংলা). If the user writes in Bengali or Banglish or requested language is 'bn', respond in natural, polite Bengali (বাংলা), keeping scientific crop names (e.g. Boro, Aman, Aus, Lentil/Masur, Mustard/Tori) and units (pH, mm, kg/ha, BDT) intact.\n"
-        "3. INTEGRITY: Never invent sensor readings or claim to have field-level satellite cameras. Remind that simulations provide decision support, not certified crop insurance assessments. Never fabricate buyer demand curves.\n"
-        "4. CLARITY: Keep simple questions concise. Explain technical terms (MILP, RL, BNF, AEZ, Farmgate vs Retail) clearly."
+        "2. LANGUAGE: Support both English and Bengali (বাংলা). If the user writes in Bengali or Banglish or requested language is 'bn', respond in natural, warm Bengali script (বাংলা), keeping scientific crop names (e.g. Boro, Aman, Aus, Lentil/Masur, Mustard/Tori) and units (pH, mm, kg/ha, BDT) intact.\n"
+        "3. GROUNDING & ZERO INVENTED NUMBERS: Only quote numbers from the provided context (never invent a price, yield, profit, or water depth). If a metric is null or missing, state 'তথ্য পাওয়া যায়নি' (or 'Information unavailable'), do NOT guess or fabricate.\n"
+        "4. CITATIONS: Attribute weather to NASA POWER, soil/AEZ to BARC, and baseline crop economics to BBS/BARI/BRRI.\n"
+        f"5. MANDATORY SAAO CLOSING: Always end your response with: '{saao_closing}'\n"
+        "6. INTEGRITY & CLARITY: Remind that simulations provide decision support, not certified crop insurance assessments. Keep simple questions concise and explain technical terms clearly."
     )
 
     # Detect action intent from user message
@@ -2196,47 +2230,39 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
 
     contents.append({"role": "user", "parts": [{"text": message}]})
 
-    candidate_models = [
-        "models/gemini-flash-lite-latest",
-        "models/gemini-3.1-flash-lite",
-        "models/gemma-4-26b-a4b-it",
-        "models/gemini-3.5-flash",
-    ]
+    is_offline = os.environ.get("OFFLINE", "").strip().lower() in ["1", "true", "yes"]
 
-    if api_key:
-        for model in candidate_models:
-            for ver in ["v1beta", "v1"]:
-                url = f"https://generativelanguage.googleapis.com/{ver}/{model}:generateContent?key={api_key}"
-                payload = {"contents": contents}
-                req = urllib.request.Request(
-                    url,
-                    data=json.dumps(payload).encode("utf-8"),
-                    headers={"Content-Type": "application/json"}
-                )
-                try:
-                    with urllib.request.urlopen(req, timeout=18) as resp:
-                        resp_json = json.loads(resp.read().decode("utf-8"))
-                        candidates = resp_json.get("candidates", [])
-                        if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
-                            reply = candidates[0]["content"]["parts"][0].get("text", "")
-                            if reply:
-                                clean_model_name = model.replace("models/", "")
-                                res_dict = {
-                                    "status": "ok",
-                                    "reply": reply,
-                                    "response": reply,
-                                    "model": clean_model_name,
-                                    "model_used": clean_model_name,
-                                    "is_fallback": False,
-                                    "gemini_enabled": True,
-                                }
-                                if action_intent:
-                                    res_dict["action_intent"] = action_intent
-                                return res_dict
-                except urllib.error.HTTPError:
-                    continue
-                except Exception:
-                    continue
+    if api_key and not is_offline:
+        model = "models/gemini-flash-lite-latest"
+        url = f"https://generativelanguage.googleapis.com/v1beta/{model}:generateContent?key={api_key}"
+        payload = {"contents": contents}
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=18) as resp:
+                resp_json = json.loads(resp.read().decode("utf-8"))
+                candidates = resp_json.get("candidates", [])
+                if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
+                    reply = candidates[0]["content"]["parts"][0].get("text", "")
+                    if reply:
+                        clean_model_name = model.replace("models/", "")
+                        res_dict = {
+                            "status": "ok",
+                            "reply": reply,
+                            "response": reply,
+                            "model": clean_model_name,
+                            "model_used": clean_model_name,
+                            "is_fallback": False,
+                            "gemini_enabled": True,
+                        }
+                        if action_intent:
+                            res_dict["action_intent"] = action_intent
+                        return res_dict
+        except Exception:
+            pass
 
     # Deterministic rule-based offline fallback tailored to the 6-part structure
     fname = field_info.get("name") or "Selected Field"
