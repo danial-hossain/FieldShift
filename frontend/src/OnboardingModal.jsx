@@ -163,10 +163,10 @@ export function OnboardingModal({
       ),
     },
     {
-      titleBn: '৩. পরামর্শ বুঝুন ও প্রিন্ট করুন',
-      titleEn: '3. Understand & Print Your Advice',
+      titleBn: '৩. পরামর্শ বুঝুন ও বাস্তবায়ন করুন',
+      titleEn: '3. Understand & Implement Your Advice',
       subtitleBn: 'কৃষক ও বিচারকদের জন্য সহজে বোধগম্য ফলাফল',
-      subtitleEn: 'Plain-language answer, key KPI tiles, and printable summary',
+      subtitleEn: 'Plain-language answer, key KPI tiles, and AI decision support',
       icon: <HomeIcon size={36} className="text-amber-400" />,
       contentBn: (
         <div>
@@ -180,7 +180,7 @@ export function OnboardingModal({
             </div>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-            আপনি সহজেই <strong>রিপোর্ট প্রিন্ট / ডাউনলোড</strong> করতে পারেন অথবা কৃষকদের জন্য <strong>SMS ফরম্যাট কপি</strong> করে সাধারণ ফোনে পাঠাতে পারেন।
+            আপনি সরাসরি <strong>AI কৃষি পরামর্শক</strong> এর সাথে কথা বলে যেকোনো বিশ্লেষণ যাচাই করতে পারেন এবং স্থানীয় SAAO-র পরামর্শ নিয়ে প্রয়োগ করতে পারেন।
           </p>
         </div>
       ),
@@ -196,7 +196,7 @@ export function OnboardingModal({
             </div>
           </div>
           <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
-            You can print a compact <strong>Farmer Card (A4 Print)</strong> or click <strong>Copy SMS</strong> to deliver advice via simple text messaging.
+            You can interact with the <strong>AI Agronomist Assistant</strong> to evaluate recommendations and verify implementation details with your local SAAO.
           </p>
         </div>
       ),

@@ -51,10 +51,10 @@ export function JudgeChecklistView({ onNavigate, lang = 'bn' }) {
       titleBn: 'ব্যবহারকারীর অভিজ্ঞতা ও কৃষক-বান্ধব ডিজাইন',
       score: 'Inclusive',
       status: 'VERIFIED',
-      descBn: 'মোবাইল-ফার্স্ট ৩৯০x৮৪৪ রেসপনসিভ লেআউট, সাধারণ বাংলা শব্দকোষ, জটিল শব্দের পপওভার ("এর মানে কী?"), ১-পাতার প্রিন্টযোগ্য কার্ড এবং <১৬০ অক্ষরের সাধারণ বাংলা এসএমএস।',
+      descBn: 'মোবাইল-ফার্স্ট ৩৯০x৮৪৪ রেসপনসিভ লেআউট, সাধারণ বাংলা শব্দকোষ, এআই সিদ্ধান্ত সহায়তা এবং সহজ বোধ্য ইন্টারফেস।',
       linkNav: 'dashboard',
       subTab: null,
-      linkText: 'হোম ড্যাশবোর্ড ও ১-ক্লিক এসএমএস দেখুন →'
+      linkText: 'হোম ড্যাশবোর্ড ও পরিকল্পনা দেখুন →'
     }
   ];
 
@@ -65,7 +65,7 @@ export function JudgeChecklistView({ onNavigate, lang = 'bn' }) {
     { item: 'কৃষকের নিজস্ব অগ্রাধিকার ও সম্পদ সীমাবদ্ধতা (পানি, টিলার, শ্রম)', verified: true, loc: 'Priorities & Sliders' },
     { item: 'আবহাওয়ার অনিশ্চয়তা পরিসীমা সহজ বাংলায় ব্যাখ্যা (১০ বছরে ৭ বছর)', verified: true, loc: 'Weather Uncertainty' },
     { item: 'সত্যিকারের নাসা উপাত্তের ভিত্তিতে সিদ্ধান্ত (কোনো কাল্পনিক ডেটা নয়)', verified: true, loc: 'Data Evidence Manifest' },
-    { item: 'কৃষকের হাতে পৌঁছানোর বাস্তব রূপরেখা (প্রিন্ট কার্ড ও ফিচার ফোন এসএমএস)', verified: true, loc: 'Farmer Card & SMS' }
+    { item: 'কৃষকের হাতে পৌঁছানোর বাস্তব রূপরেখা (মোবাইল ইন্টারফেস ও এআই পরামর্শক)', verified: true, loc: 'Mobile UI & AI Assistant' }
   ];
 
   return (

@@ -15160,18 +15160,6 @@ select,
 }
 
 
-/* === D1: Demo Recording Mode (?demo=1) === */
-[data-demo-mode="true"] * {
-  animation-duration: 0.001ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.001ms !important;
-  scroll-behavior: auto !important;
-}
-
-[data-demo-mode="true"] .research-provenance-panel,
-[data-demo-mode="true"] .dev-debug-panel {
-  display: none !important;
-}
 
 
 /* ==========================================================================
@@ -15248,26 +15236,6 @@ select,
 }
 
 
-/* ==========================================================================
-   P3.3 PRESENTATION MODE (?present=1)
-   Clean, distraction-free view for projectors and judge evaluations
-   ========================================================================== */
-.app-shell.presentation-mode .sidebar {
-  display: none !important;
-}
-
-.app-shell.presentation-mode .content-area,
-.app-shell.presentation-mode .main-content,
-.app-shell.presentation-mode .app-content {
-  margin-left: 0 !important;
-  width: 100% !important;
-  max-width: 1560px !important;
-  font-size: 1.05rem !important;
-}
-
-.app-shell.presentation-mode .top-bar-pill-badge {
-  font-size: 13px !important;
-}
 
 
 /* ==========================================================================

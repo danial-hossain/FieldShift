@@ -1,5 +1,5 @@
 import { request } from './apiClient.js';
-import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton, MarketIcon, WaterIcon, RotationIcon, ChecklistIcon, InfoIcon, PrintIcon, SmsIcon } from './ui/index.js';
+import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton, MarketIcon, WaterIcon, RotationIcon, ChecklistIcon, InfoIcon } from './ui/index.js';
 // frontend/src/SixSeasonRecommendationView.jsx
 // 6-Season Crop Recommendation & Rotation Planner (PuLP MILP Model)
 // Restored first-class feature for FieldShift Research Lab
@@ -249,7 +249,6 @@ export function SixSeasonRecommendationView({
   const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;
   const fieldAreaHa = hasArea ? Number(activeField.area_ha) : null;
 
-  const [copiedSms, setCopiedSms] = useState(false);
   const [advisoryOnset, setAdvisoryOnset] = useState(null);
   const [compareWithBaseline, setCompareWithBaseline] = useState(false);
   const [showDetailsDrawer, setShowDetailsDrawer] = useState(false);
@@ -623,125 +622,6 @@ export function SixSeasonRecommendationView({
     } finally {
       setIsSimulating(false);
     }
-  };
-
-  // Export 6-Season Plan as JSON
-  const handleExportJson = () => {
-    const exportData = {
-      planId: `FS-6SEASON-${Date.now()}`,
-      generatedAt: new Date().toISOString(),
-      activeField: {
-        id: activeField?.id || 'demo',
-        name: activeField?.name || 'Bogura Demo Field',
-        areaHa: fieldAreaHa,
-        soilTexture: activeField?.soil_texture || 'loam',
-        soilPh: activeField?.soil_ph || 6.5
-      },
-      strategy: {
-        id: selectedStrategy,
-        title: STRATEGY_DEFINITIONS[selectedStrategy]?.titleEn,
-        weights: STRATEGY_DEFINITIONS[selectedStrategy]?.weights,
-        solverStatus: activePlanData.solverStatus,
-        compositeScore: activePlanData.compositeScore,
-        grossMarginBdtHa: activePlanData.grossMargin,
-        waterScore: activePlanData.waterScore,
-        soilScore: activePlanData.soilScore
-      },
-      sixSeasonRecommendations: sixSeasonRecommendations.map(s => ({
-        period: s.key,
-        year: s.year,
-        seasonNumber: s.seasonNum,
-        seasonType: s.seasonType,
-        crop: s.cropName,
-        botanicalFamily: s.cropMeta?.family || s.family || null,
-        isLegumeBnf: Boolean(s.cropMeta?.is_legume || s.isLegume),
-        durationDays: s.durationDays,
-        waterDemandMm: s.waterReqMm,
-        predictedYieldTonHa: s.yieldTonHa,
-        uncertaintyTonHa: s.uncertaintyTonHa,
-        estimatedTotalHarvestTons: s.totalHarvestTons,
-        estimatedCostBdtHa: s.costPerHaBdt,
-        estimatedRevenueBdtHa: s.grossRevenueBdtHa,
-        estimatedNetProfitBdtHa: s.netProfitBdtHa,
-        totalParcelNetProfitBdt: s.totalParcelProfitBdt,
-        rationale: s.rationale,
-        environmentalRisk: s.riskRating
-      })),
-      aggregateSummary: aggregateMetrics,
-      scientificProvenance: {
-        solver: 'PuLP CBC Mixed Integer Linear Programming (Branch-and-Bound)',
-        waterYieldModel: 'FAO-33 Stewart Model / FAO-56 Penman-Monteith',
-        agroClimaticData: 'NASA POWER Observed Agro-Climatic Observations (MERRA-2)',
-        constraintsEnforced: [
-          'Binary crop exclusivity (1 crop per season)',
-          'Legume interval (>=1 pulse every 3 consecutive seasons)',
-          'Botanical family alternation to break pathogen cycles',
-          'Agro-climatic seasonal feasibility window'
-        ],
-        disclaimer: 'Simulated research recommendations. Field soil testing and local agronomic consultation advised.'
-      }
-    };
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `FieldShift_6Season_Plan_${selectedStrategy}_${Date.now()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
-  // Export 6-Season Recommendations as CSV
-  const handleExportCsv = () => {
-    const headers = [
-      'period_key',
-      'year',
-      'season_number',
-      'season_type',
-      'crop_name',
-      'botanical_family',
-      'is_legume_bnf',
-      'duration_days',
-      'water_requirement_mm',
-      'predicted_yield_t_ha',
-      'uncertainty_t_ha',
-      'total_harvest_tons',
-      'cost_bdt_ha',
-      'gross_revenue_bdt_ha',
-      'net_profit_bdt_ha',
-      'total_parcel_profit_bdt',
-      'rationale'
-    ];
-
-    const rows = sixSeasonRecommendations.map(s => [
-      s.key,
-      s.year,
-      s.seasonNum,
-      s.seasonType,
-      `"${s.cropName}"`,
-      `"${s.cropMeta?.family || s.family || ''}"`,
-      (s.cropMeta?.is_legume || s.isLegume) ? 'TRUE' : 'FALSE',
-      s.durationDays,
-      s.waterReqMm,
-      s.yieldTonHa,
-      s.uncertaintyTonHa,
-      s.totalHarvestTons,
-      s.costPerHaBdt,
-      s.grossRevenueBdtHa,
-      s.netProfitBdtHa,
-      s.totalParcelProfitBdt,
-      `"${s.rationale.replace(/"/g, '""')}"`
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `FieldShift_6Season_Plan_${selectedStrategy}_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // Baseline resolution before conditional returns (ensures unconditional hook calls)
@@ -1285,27 +1165,10 @@ export function SixSeasonRecommendationView({
     ? `আপনার ${activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'নির্বাচিত জেলার'} ${hasArea ? `${formatNumber(fieldAreaHa, 1)} হেক্টর` : 'জমিতে'} ${baselineRotationBn} এবং ${rotationTextBn} মডেল তুলনা: ${waterPhraseBn}, ${nPhraseBn}, ${profitPhraseBn}।`
     : `Model comparison for your ${hasArea ? `${formatNumber(fieldAreaHa, 1)} ha parcel` : 'field'} in ${activeField?.district || 'the selected district'}: ${baselineRotationEn} vs ${rotationTextEn}; ${waterSavingsMm == null ? 'irrigation comparison unavailable' : (waterSavingsMm > 0 ? `estimated irrigation saving ~${waterSavingsMm} mm` : (waterSavingsMm === 0 ? `modeled irrigation matches baseline (~${planIrrigationMm} mm/yr)` : `estimated irrigation use increases ~${Math.abs(waterSavingsMm)} mm`))}; ${extraNkg == null ? 'nitrogen proxy unavailable' : `modeled nitrogen proxy delta ${extraNkg} kg/ha`}; ${profitPhraseEn}.`;
 
-  const profitSmsBn = deltaProfit == null ? 'লাভের তুলনা অনুপলভ্য' : (deltaProfit >= 0 ? `লাভ +${deltaProfit}টাকা` : `লাভ ${deltaProfit}টাকা`);
-  const waterSmsBn = waterSavingsMm == null ? 'সেচ তুলনা অনুপলভ্য' : (waterSavingsMm > 0 ? `সেচ সাশ্রয় ~${waterSavingsMm}মিমি` : (waterSavingsMm === 0 ? `সেচ সমান (${planIrrigationMm ?? '—'}মিমি)` : `সেচ +${Math.abs(waterSavingsMm)}মিমি`));
-  const smsText = `FieldShift: ${activeField?.name || 'খামার'} (${activeField?.district || 'বগুড়ার'}) পরামর্শ: ${rotationTextBn}। ${waterSmsBn}, ${profitSmsBn}। স্থানীয় SAAO-র সাথে যাচাই করুন।`;
-
   const isCoastalSaline = Boolean(
     activeField?.coastal_saline ||
     ['satkhira', 'khulna', 'bagerhat', 'patuakhali', 'barguna', "cox's bazar", 'bhola', 'noakhali', 'chittagong', 'feni', 'lakshmipur', 'pirojpur', 'jhalokati'].includes((district || '').toLowerCase())
   );
-
-  const handleCopySms = () => {
-    try {
-      navigator.clipboard.writeText(smsText);
-      setCopiedSms(true);
-      setTimeout(() => setCopiedSms(false), 2500);
-    } catch {}
-  };
-
-
-
-
-
 
   // Scientific Evidence Onset Stats
   const pVal = advisoryOnset?.comparison?.p_value != null ? advisoryOnset.comparison.p_value : 0.2991;
@@ -1413,72 +1276,6 @@ export function SixSeasonRecommendationView({
           >
             <span>🔄</span>
             <span>{lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Replan'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleCopySms}
-            style={{
-              background: 'var(--surface-2, rgba(255,255,255,0.05))',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              padding: '6px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              color: 'var(--text)',
-              cursor: 'pointer'
-            }}
-          >
-            📱 {copiedSms ? (lang === 'bn' ? 'SMS কপি হয়েছে ✓' : 'SMS Copied ✓') : (lang === 'bn' ? 'SMS কপি করুন' : 'Copy SMS')}
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            style={{
-              background: 'var(--surface-2, rgba(255,255,255,0.05))',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              padding: '6px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              color: 'var(--text)',
-              cursor: 'pointer'
-            }}
-          >
-            📄 {lang === 'bn' ? 'প্রিন্ট' : 'Print'}
-          </button>
-          <button
-            type="button"
-            onClick={handleExportJson}
-            title="JSON Export"
-            style={{
-              background: 'var(--surface-2, rgba(255,255,255,0.05))',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              padding: '6px 10px',
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              cursor: 'pointer'
-            }}
-          >
-            JSON
-          </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            title="CSV Export"
-            style={{
-              background: 'var(--surface-2, rgba(255,255,255,0.05))',
-              border: '1px solid var(--line)',
-              borderRadius: 8,
-              padding: '6px 10px',
-              fontSize: 11.5,
-              fontWeight: 600,
-              color: 'var(--text-muted)',
-              cursor: 'pointer'
-            }}
-          >
-            CSV
           </button>
         </div>
       </div>

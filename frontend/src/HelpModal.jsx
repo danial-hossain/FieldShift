@@ -51,13 +51,13 @@ const HELP_SECTIONS = {
       'সিদ্ধান্ত শিরোনাম: বর্তমান বনাম নতুন আবর্তনের লাভ ও পানি সাশ্রয়ের তুলনামূলক পার্থক্য।',
       '৩টি অনুকূল কৌশল: ১. লাভ অগ্রাধিকার, ২. পানি সাশ্রয়, ৩. সুষম আবর্তন।',
       '১২ মাসের ক্যালেন্ডার: বীজ বপন, বৃদ্ধি ও ফসল তোলার সঠিক মৌসুমী সময়সূচি।',
-      'প্রিন্ট ও এসএমএস: কৃষকদের জন্য এক ক্লিকে A4 রিপোর্ট প্রিন্ট বা SMS টেক্সট কপি।'
+      'এআই সহকারী: যেকোনো প্রশ্নের তাৎক্ষণিক বৈজ্ঞানিক ব্যাখ্যা ও পরামর্শ।'
     ],
     bulletsEn: [
       'Answer-First Layer: Concrete profit, water, and soil nutrient deltas.',
       '3 Optimization Profiles: Profit-Focused, Water Conservation, and Balanced.',
       '12-Month Calendar: Clear sowing, vegetative, and harvest windows.',
-      'Print & SMS: Printable farmer card or plain text SMS for rural delivery.'
+      'AI Assistant: Instant scientific rationale and agronomic advisory for any plan.'
     ],
     sources: 'BBS Agricultural Statistics, FAOSTAT Bangladesh, NASA POWER ET0'
   },

@@ -59,28 +59,6 @@ test('Hectare to Bigha conversion ratio is mathematically stable', () => {
   assert.strictEqual(bighaCount, 74.7);
 });
 
-test('Voice Assistant error classification maps to informative Bengali messages', () => {
-  const getErrorMessage = (error, lang = 'bn') => {
-    if (error === 'no-speech') {
-      return lang === 'bn' ? 'কোনো কথা শোনা যায়নি। মাইক্রোফোনের কাছে স্পষ্ট করে আবার বলুন।' : 'No speech detected.';
-    }
-    if (error === 'not-allowed' || error === 'service-not-allowed') {
-      return lang === 'bn' ? 'মাইক্রোফোন ব্যবহারের অনুমতি দেওয়া হয়নি। অনুগ্রহ করে ব্রাউজার সেটিংসে গিয়ে মাইক্রোফোন পারমিশন দিন।' : 'Microphone permission denied.';
-    }
-    if (error === 'network') {
-      return lang === 'bn' ? 'ইন্টারনেট বা স্পিচ সার্ভার সংযোগে সমস্যা হয়েছে। অনুগ্রহ করে নিচে লিখে প্রশ্ন করুন।' : 'Network error.';
-    }
-    if (error === 'audio-capture') {
-      return lang === 'bn' ? 'মাইক্রোফোন শনাক্ত করা যায়নি। মাইক্রোফোন সংযোগ পরীক্ষা করুন।' : 'No microphone found.';
-    }
-    return 'General error';
-  };
-
-  assert.ok(getErrorMessage('not-allowed', 'bn').includes('অনুমতি দেওয়া হয়নি'));
-  assert.ok(getErrorMessage('no-speech', 'bn').includes('কথা শোনা যায়নি'));
-  assert.ok(getErrorMessage('network', 'bn').includes('সংযোগে সমস্যা'));
-  assert.ok(getErrorMessage('audio-capture', 'bn').includes('মাইক্রোফোন শনাক্ত করা যায়নি'));
-});
 
 test('Active field resolution: empty registry returns null without throwing or fabricating values', () => {
   const userFields = [];

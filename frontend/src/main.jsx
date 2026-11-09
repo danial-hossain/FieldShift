@@ -20,7 +20,6 @@ import { SensitivityAnalysisView } from './SensitivityAnalysisView.jsx';
 import { FarmerHomeView } from './FarmerHomeView.jsx';
 import { FarmerCropAdviceView } from './FarmerCropAdviceView.jsx';
 import { FarmerHarvestProfitView } from './FarmerHarvestProfitView.jsx';
-import { FarmerVoiceAssistant } from './FarmerVoiceAssistant.jsx';
 import { ResearchWorkspaceView } from './ResearchWorkspaceView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';
@@ -523,7 +522,6 @@ export function App() {
   const [cropSubTab, setCropSubTab] = useState('advisory'); // 'advisory' | 'advice' | 'catalog'
   const [weatherSubTab, setWeatherSubTab] = useState('station_3d'); // 'station_3d' | 'uncertainty' | 'satellites'
   const [harvestSubTab, setHarvestSubTab] = useState('calculator'); // 'calculator' | 'market' | 'outcomes' | 'sustainability'
-  const [assistantSubTab, setAssistantSubTab] = useState('chat'); // 'chat' | 'voice'
   const [assistantParams, setAssistantParams] = useState(null); // { question, context, fromPage }
   const [farmPlanningSubTab, setFarmPlanningSubTab] = useState('milp'); // 'milp' | 'replan' | 'comparison'
   const [waterSubTab, setWaterSubTab] = useState('balance'); // 'balance' | 'optimization' | 'profile' | 'stress'
@@ -543,10 +541,6 @@ export function App() {
     if (nav === 'assistant') {
       if (tab && typeof tab === 'object') {
         setAssistantParams(tab);
-        if (tab.subTab) setAssistantSubTab(tab.subTab);
-      } else if (typeof tab === 'string') {
-        setAssistantSubTab(tab);
-        setAssistantParams(null);
       } else {
         setAssistantParams(null);
       }
@@ -665,7 +659,6 @@ export function App() {
       if (nav === 'crop_advice') setCropSubTab(tab);
       else if (nav === 'weather') setWeatherSubTab(tab);
       else if (nav === 'harvest_profit') setHarvestSubTab(tab);
-      else if (nav === 'assistant') setAssistantSubTab(tab);
       else if (nav === 'farm_planning') setFarmPlanningSubTab(tab);
       else if (nav === 'water_irrigation') setWaterSubTab(tab);
       else if (nav === 'digital_twin') setTwinSubTab(tab);
@@ -680,12 +673,6 @@ export function App() {
   const [user, setUser] = useState(null);
   const [userFarms, setUserFarms] = useState([]);
   const [userFields, setUserFields] = useState([]);
-  const [presentMode, setPresentMode] = useState(() => {
-    try {
-      return typeof window !== 'undefined' && window.location.search.includes('present=1');
-    } catch {}
-    return false;
-  });
   const [selectedFieldId, setSelectedFieldId] = useState(() => {
     try {
       const saved = localStorage.getItem('fs_selected_field_id');
@@ -794,63 +781,13 @@ export function App() {
     source_label: 'Offline Research Benchmark'
   }), [lang]);
 
-  // D1: Demo Recording Mode (?demo=1)
-  const [demoRecordingMode, setDemoRecordingMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const sp = new URLSearchParams(window.location.search);
-      return sp.get('demo') === '1' || sp.get('demo') === 'true';
-    }
-    return false;
-  });
-
-  const toggleDemoRecordingMode = useCallback(() => {
-    setDemoRecordingMode(prev => {
-      const next = !prev;
-      if (typeof window !== 'undefined') {
-        const url = new URL(window.location.href);
-        if (next) {
-          url.searchParams.set('demo', '1');
-        } else {
-          url.searchParams.delete('demo');
-        }
-        window.history.replaceState({}, '', url.toString());
-      }
-      return next;
-    });
-  }, []);
-
-  const rajshahiDemoField = useMemo(() => ({
-    id: 'rajshahi_test',
-    is_demo: false,
-    name: lang === 'bn' ? 'রাজশাহী খামার (বরেন্দ্র)' : 'Rajshahi Field (Barind)',
-    full_name: lang === 'bn' ? 'রাজশাহী বরেন্দ্র বহুমুখী কৃষি প্লট (১ হেক্টর)' : 'Rajshahi Barind Agricultural Plot (1.0 ha)',
-    latitude: 24.47,
-    longitude: 88.33,
-    district: 'rajshahi',
-    division: 'Rajshahi',
-    area_ha: 1.0,
-    soil_texture: 'sandy_loam',
-    soil_ph: 7.2,
-    organic_matter: 1.4,
-    irrigation_capacity_mm: 180,
-    crop: 'rice',
-    previous_crop: 'Boro Rice',
-    previous_crop_year: 2024,
-    existing_rotation: { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: 'Aman Rice' },
-    source_label: 'NASA Space Apps 2026 Test Field'
-  }), [lang]);
-
   // Registered fields always resolve by the shared selectedFieldId.
   // Explicit demo option maps consistently to demoField across all views.
   const activeField = useMemo(() => {
-    if (demoRecordingMode) {
-      const match = userFields.find(f => f.district?.toLowerCase() === 'rajshahi' || f.name?.toLowerCase().includes('rajshahi'));
-      return match || rajshahiDemoField;
-    }
     if (selectedFieldId === 'demo') return demoField;
     if (selectedFieldId == null) return null;
     return userFields.find(field => String(field.id) === String(selectedFieldId)) || null;
-  }, [userFields, selectedFieldId, demoField, demoRecordingMode, rajshahiDemoField]);
+  }, [userFields, selectedFieldId, demoField]);
 
   const workflowPayload = (controls = form, field = activeField) => {
     const payload = {
@@ -2011,7 +1948,7 @@ export function App() {
   const currentMode = isResearchMode ? 'research' : 'farmer';
 
   return (
-    <div className={`app-shell ${presentMode ? "presentation-mode" : ""}`} data-mode={currentMode} data-demo-mode={demoRecordingMode ? "true" : "false"} data-present={presentMode ? "true" : "false"}>
+    <div className="app-shell" data-mode={currentMode}>
       {/* Fixed NASA VIIRS Background Layer */}
       <div className="nasa-bg-layer" aria-hidden="true">
         <div className="nasa-bg-image" />
@@ -2386,74 +2323,6 @@ export function App() {
                 NASA 🛰️
               </span>
             </div>
-
-            {/* P3.3: Presentation Mode Toggle (?present=1) */}
-            <button
-              type="button"
-              className="top-bar-icon-btn present-toggle-btn"
-              title={presentMode ? 'Exit Presentation Mode (?present=1)' : 'Enable Presentation Mode (?present=1)'}
-              onClick={() => {
-                setPresentMode(p => {
-                  const next = !p;
-                  if (typeof window !== 'undefined') {
-                    const url = new URL(window.location.href);
-                    if (next) {
-                      url.searchParams.set('present', '1');
-                    } else {
-                      url.searchParams.delete('present');
-                    }
-                    window.history.replaceState(null, '', url.toString());
-                  }
-                  return next;
-                });
-              }}
-              aria-label="Toggle presentation mode"
-              style={{
-                width: 'auto',
-                padding: '0 12px',
-                height: 36,
-                fontWeight: 700,
-                fontSize: 12.5,
-                background: presentMode ? 'linear-gradient(135deg, #10b981 0%, #38bdf8 100%)' : 'var(--bg-card-subtle)',
-                color: presentMode ? '#051208' : 'var(--text-main)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: '9999px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                cursor: 'pointer'
-              }}
-            >
-              <span>🖥️</span>
-              <span className="nasa-badge-full-text">{presentMode ? 'Exit Present' : 'Present (?present=1)'}</span>
-            </button>
-
-            {/* D1: Demo Recording Mode Toggle */}
-            <button
-              type="button"
-              className="top-bar-icon-btn demo-toggle-btn"
-              title={demoRecordingMode ? 'Disable Demo Recording Mode' : 'Enable Demo Recording Mode (?demo=1)'}
-              onClick={toggleDemoRecordingMode}
-              aria-label="Toggle demo recording mode"
-              style={{
-                width: 'auto',
-                padding: '0 12px',
-                height: 36,
-                fontWeight: 700,
-                fontSize: 12.5,
-                background: demoRecordingMode ? 'rgba(239, 68, 68, 0.2)' : 'var(--bg-card-subtle)',
-                color: demoRecordingMode ? '#ef4444' : 'var(--text-muted)',
-                border: demoRecordingMode ? '1px solid #ef4444' : '1px solid var(--border-medium)',
-                borderRadius: '9999px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                cursor: 'pointer'
-              }}
-            >
-              <span style={{ fontSize: 14 }}>🎬</span>
-              <span>{lang === 'bn' ? (demoRecordingMode ? 'রেকর্ডিং মোড চালু' : 'ডেমো রেকর্ডিং') : (demoRecordingMode ? 'Recording: On' : 'Demo Mode')}</span>
-            </button>
 
             {/* Header Language Switcher (Bangla / English) */}
             <button
@@ -3948,57 +3817,25 @@ export function App() {
 
         {/* -------------------- VIEW 6: AI ASSISTANT & DECISION SUPPORT -------------------- */}
         {activeNav === 'assistant' && (
-          <div>
-            <div className="subnav-pills-bar" style={{ display: 'flex', gap: 8, padding: '10px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-medium)', marginBottom: 16, overflowX: 'auto' }}>
-              <button
-                type="button"
-                className={`btn ${assistantSubTab === 'chat' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setAssistantSubTab('chat')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                🤖 {lang === 'bn' ? 'AI কৃষি পরামর্শক চ্যাট' : 'AI Agronomist Chat'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${assistantSubTab === 'voice' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setAssistantSubTab('voice')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                🎙️ {lang === 'bn' ? 'বাংলা ভয়েস সহকারী' : 'Farmer Voice Assistant'}
-              </button>
-            </div>
-            {assistantSubTab === 'chat' && (
-              <AiAssistantView
-                activeField={activeField}
-                nasa={nasa}
-                summary={summary}
-                plan={plan}
-                ml={ml}
-                rl={rl}
-                comparisonLab={comparisonLab}
-                robustness={robustness}
-                outcomes={outcomes}
-                user={user}
-                lang={lang}
-                onBack={() => handleNavigate(assistantParams?.fromPage || 'dashboard')}
-                onNavigateTab={(tab) => handleNavigate(tab === 'farm_planning' ? 'farm_planning' : 'analytics', tab)}
-                initialQuestion={assistantParams?.question}
-                pageContext={assistantParams?.context}
-                fromPage={assistantParams?.fromPage}
-                onReturn={() => handleNavigate(assistantParams?.fromPage || 'farm_planning')}
-              />
-            )}
-            {assistantSubTab === 'voice' && (
-              <div style={{ padding: '24px 16px', maxWidth: 860, margin: '0 auto' }}>
-                <FarmerVoiceAssistant
-                  activeField={activeField}
-                  user={user}
-                  lang={lang}
-                  onNavigate={handleNavigate}
-                />
-              </div>
-            )}
-          </div>
+          <AiAssistantView
+            activeField={activeField}
+            nasa={nasa}
+            summary={summary}
+            plan={plan}
+            ml={ml}
+            rl={rl}
+            comparisonLab={comparisonLab}
+            robustness={robustness}
+            outcomes={outcomes}
+            user={user}
+            lang={lang}
+            onBack={() => handleNavigate(assistantParams?.fromPage || 'dashboard')}
+            onNavigateTab={(tab) => handleNavigate(tab === 'farm_planning' ? 'farm_planning' : 'analytics', tab)}
+            initialQuestion={assistantParams?.question}
+            pageContext={assistantParams?.context}
+            fromPage={assistantParams?.fromPage}
+            onReturn={() => handleNavigate(assistantParams?.fromPage || 'farm_planning')}
+          />
         )}
 
         {/* -------------------- VIEW 8: MARKET INTELLIGENCE & PROFITABILITY -------------------- */}
@@ -5127,14 +4964,6 @@ export function App() {
               </div>
             )}
 
-        {/* Floating Farmer Voice Assistant Component */}
-        <FarmerVoiceAssistant
-          activeField={activeField}
-          nasa={nasa}
-          lang={lang}
-          onNavigate={handleNavigate}
-          onOpenAssistant={() => handleNavigate('assistant')}
-        />
 
                 {/* Field Delete Confirmation Modal */}
         {deleteConfirmTarget && (

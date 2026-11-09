@@ -14,7 +14,7 @@ export function GuidedDemoModal({
   const [step, setStep] = useState(1);
   const totalSteps = 7;
 
-  // Keyboard navigation support for presentation mode
+  // Keyboard navigation support
   useEffect(() => {
     if (!isOpen) return;
     function handleKeyDown(e) {
@@ -126,14 +126,14 @@ export function GuidedDemoModal({
     {
       num: 7,
       tag: 'Step 7/7: Farmer Takeaway',
-      titleBn: 'খামারির চূড়ান্ত প্রাপ্তি: ১-পাতার কার্ড ও বাংলা এসএমএস',
-      titleEn: "Farmer's Takeaway: 1-Page Printable Card & Bangla SMS",
-      narrationBn: 'জটিল ডেটা কৃষকের উপযোগী করতে FieldShift তৈরি করেছে ১-পাতার প্রিন্টযোগ্য খামার কার্ড এবং একটি সংক্ষিপ্ত বাংলা এসএমএস। কৃষক সহজেই এটি ডাউনলোড করে স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে পরামর্শ করে সিদ্ধান্ত নিতে পারেন।',
-      narrationEn: 'All findings condense into a one-page printable A4 field report and an instant <160 character Bangla SMS for any feature phone.',
-      icon: '📱',
+      titleBn: 'খামারির চূড়ান্ত প্রাপ্তি: কার্যকর আবর্তন পরিকল্পনা ও এআই সহায়তা',
+      titleEn: "Farmer's Takeaway: Actionable Rotation Plan & AI Decision Support",
+      narrationBn: 'জটিল ডেটা কৃষকের উপযোগী করতে FieldShift তৈরি করেছে ৬-মৌসুমের শস্য আবর্তন পরিকল্পনা এবং এআই সিদ্ধান্ত সহায়তা। কৃষক সহজেই স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে পরামর্শ করে সিদ্ধান্ত নিতে পারেন।',
+      narrationEn: 'All findings condense into a clear 6-season rotation plan and AI-assisted decision support for the farmer and local SAAO.',
+      icon: '🤖',
       keyMetrics: [
-        { label: 'বাংলা এসএমএস', val: '<১৬০ অক্ষর', sub: 'সাধারণ ফোনে সরাসরি পড়ার উপযোগী' },
-        { label: 'এ৪ খামার কার্ড', val: '১-পাতা প্রিন্ট', sub: 'ক্যালেন্ডার স্ট্রিপ ও সিদ্ধান্ত নির্দেশিকা' },
+        { label: '৬-মৌসুম পরিকল্পনা', val: 'কার্যকর সমাধান', sub: 'লাভ ও পানির সর্বোত্তম অনুপাত' },
+        { label: 'এআই সহকারী', val: 'সহজ পরামর্শ', sub: 'যেকোনো প্রশ্নের তাৎক্ষণিক উত্তর' },
         { label: 'এসএএও সংযোগ', val: 'যাচাই সহজতর', sub: 'সম্প্রসারণ কর্মীদের জন্য কার্যকর' }
       ]
     }
