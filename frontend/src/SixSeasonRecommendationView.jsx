@@ -1930,12 +1930,12 @@ export function SixSeasonRecommendationView({
             {/* Alternatives & PL5 Explanation */}
             {candidateAlternatives.length > 0 && (
               <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 8 }}>
-                🔁 {lang === 'bn' ? 'বিকল্প:' : 'Alternatives:'} {candidateAlternatives.map(a => `${translateCropName(a.crop, lang)} (${a.score} pts)`).join(', ')}.
+                🔁 {lang === 'bn' ? 'বিকল্প:' : 'Alternatives:'} {candidateAlternatives.map(a => `${translateCropName(a.crop, lang)} (${lang === 'bn' ? `স্কোর: ${toBanglaDigits(a.score)}` : `${a.score} pts`})`).join(', ')}.
                 {candidateAlternatives[0]?.score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
                   <div style={{ marginTop: 4, color: 'var(--sun)' }}>
                     {lang === 'bn'
                       ? `পুরো ৬ মৌসুমে সেরা: এই মৌসুমে একা ${translateCropName(candidateAlternatives[0].crop, 'bn')}-র স্কোর বেশি, কিন্তু পানি / রোগচক্র / ডাল নিয়মে ${translateCropName(selectedCropName, 'bn')} ভালো`
-                      : `Best across all 6 seasons: ${candidateAlternatives[0].crop} scores higher in this isolated season, but ${selectedCropName} is superior for water conservation, disease break, and legume rules`}
+                      : `Best across all 6 seasons: ${translateCropName(candidateAlternatives[0].crop, 'en')} scores higher in this isolated season, but ${translateCropName(selectedCropName, 'en')} is superior for water conservation, disease break, and legume rules`}
                   </div>
                 )}
               </div>
@@ -1948,7 +1948,7 @@ export function SixSeasonRecommendationView({
               {lang === 'bn' ? 'গবেষকদের জন্য: সলভার বিবরণ' : 'For researchers: solver details'}
             </summary>
             <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-              <div>Score: {Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000)} pts</div>
+              <div>{lang === 'bn' ? 'স্কোর:' : 'Score:'} {lang === 'bn' ? `${toBanglaDigits(Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000))} স্কোর` : `${Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000)} pts`}</div>
               <div>Thermal: {Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}% | Soil: {Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%</div>
               <div>Dynamic Yield: {selectedCropYieldTonHa} t/ha (±{selectedCropUncertainty || 0.04} t/ha)</div>
             </div>
