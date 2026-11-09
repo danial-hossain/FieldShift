@@ -459,6 +459,7 @@ export function FarmScene3D({
   theme = 'dark',
   lang = 'bn',
   height = 440,
+  annualIrrigationMm = null,
   onRendererInfo = null,
 }) {
   const containerRef = useRef(null);
@@ -1219,8 +1220,30 @@ export function FarmScene3D({
             cp = lang === 'bn' ? 'আমন ধান' : 'Aman Rice';
           }
           const irrigVal = bedData.irrigation_mm != null ? bedData.irrigation_mm : (bedData.waterDepthMm != null ? Math.round(bedData.waterDepthMm) : null);
-          const waterStr = irrigVal != null && irrigVal > 0 ? ` · 💧${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm');
-          el.textContent = `${cp}${waterStr}`;
+
+          let symbolsHtml = '';
+          if (irrigVal != null && irrigVal > 0) {
+            const dropSize = Math.max(10, Math.min(15, 10 + Math.round(irrigVal / 70)));
+            symbolsHtml += `<span title="${lang === 'bn' ? `সেচ ${irrigVal} মিমি` : `Irrigation ${irrigVal} mm`}" style="font-size:${dropSize}px;line-height:1">💧</span>`;
+          }
+          if (bedData.isLegume || CROPS_META[b.cropKey]?.isLegume) {
+            symbolsHtml += `<span title="${lang === 'bn' ? 'মাটিতে নাইট্রোজেন দেয়' : 'Biological Nitrogen Fixer'}" style="color:#4ade80;font-size:11px;font-weight:800">🌱N</span>`;
+          }
+          if (bedData.stress?.heat || bedData.heatRisk === 'high') {
+            symbolsHtml += `<span title="${lang === 'bn' ? 'ফুল আসার সময় ৩৫°C+ গরম ঝুঁকি' : 'Heat stress risk'}" style="font-size:12px">☀️</span>`;
+          }
+          if (bedData.stress?.drought || bedData.droughtRisk === 'high') {
+            symbolsHtml += `<span title="${lang === 'bn' ? 'খরা ঝুঁকি' : 'Drought risk'}" style="font-size:12px">🏜️</span>`;
+          }
+          if (bedData.stress?.rain || bedData.rainRisk === 'high') {
+            symbolsHtml += `<span title="${lang === 'bn' ? 'অতিবৃষ্টি ঝুঁকি' : 'Heavy rain risk'}" style="font-size:12px">🌧️</span>`;
+          }
+          if (bedData.stress?.cold || bedData.coldRisk === 'high') {
+            symbolsHtml += `<span title="${lang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
+          }
+
+          const waterStr = irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm');
+          el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px"><span>${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${waterStr}</span></span>`;
         }
       });
     };
@@ -1589,7 +1612,7 @@ export function FarmScene3D({
         </div>
       </div>
 
-      {/* Bottom Hint & Render Stats */}
+      {/* Legend & Tank Capacity Matching Approved Reference */}
       <div
         style={{
           position: 'absolute',
@@ -1601,18 +1624,40 @@ export function FarmScene3D({
           alignItems: 'center',
           pointerEvents: 'none',
           zIndex: 5,
-          fontSize: 11,
-          color: 'rgba(255, 255, 255, 0.75)',
+          gap: 8,
+          flexWrap: 'wrap',
         }}
       >
-        <div style={{ background: 'rgba(15, 21, 17, 0.88)', padding: '3px 8px', borderRadius: 6 }}>
-          {lang === 'bn' ? 'টেনে ঘোরান · স্ক্রল করে জুম · জমিতে ক্লিক করুন' : 'Drag to rotate · Scroll to zoom · Click bed to inspect'}
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.90)',
+            color: '#1b261d',
+            borderRadius: 10,
+            padding: '4px 10px',
+            fontSize: 12,
+            fontWeight: 600,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
+          💧 {lang === 'bn' ? 'সেচ (বড় = বেশি) · 🌱N নাইট্রোজেন দেয় · ☀️ তাপ/খরা ঝুঁকি' : 'Irrig (large=more) · 🌱N Legume · ☀️ Heat/Drought Risk'}
         </div>
-        {typeof window !== 'undefined' && Boolean(new URLSearchParams(window.location.search).get('debug') === '1') && (
-          <div style={{ background: 'rgba(15, 21, 17, 0.88)', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
-            Calls: {infoStats.calls} | {infoStats.fps} FPS
-          </div>
-        )}
+
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.90)',
+            color: '#1b261d',
+            borderRadius: 10,
+            padding: '4px 10px',
+            fontSize: 12,
+            fontWeight: 700,
+            fontVariantNumeric: 'tabular-nums',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}
+        >
+          💧 {lang === 'bn'
+            ? `ট্যাংক = বছরে সেচ: ${annualIrrigationMm != null ? Math.round(annualIrrigationMm) : '—'} মিমি`
+            : `Tank = Annual Irrigation: ${annualIrrigationMm != null ? Math.round(annualIrrigationMm) : '—'} mm`}
+        </div>
       </div>
     </div>
   );
