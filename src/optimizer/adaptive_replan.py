@@ -560,6 +560,40 @@ def run_adaptive_replan(
             for c in initial_crops
         ) * field_area_ha
 
+    season_fallow_days = {"S1": 120, "S2": 75, "S3": 100}
+    bare_days_old = sum(
+        season_fallow_days["S1" if "S1" in p else ("S2" if "S2" in p else "S3")]
+        if str(c).strip().lower() == "fallow" else 20
+        for p, c in zip(periods, initial_crops)
+    )
+    bare_days_new = sum(
+        season_fallow_days["S1" if "S1" in p else ("S2" if "S2" in p else "S3")]
+        if str(c).strip().lower() == "fallow" else 20
+        for p, c in zip(periods, new_crops)
+    )
+    bare_days_delta = bare_days_new - bare_days_old
+
+    finished_seasons = [
+        {
+            "period": s["period"],
+            "period_label": s["period_label_en"],
+            "period_label_en": s["period_label_en"],
+            "period_label_bn": s["period_label_bn"],
+            "months_bn": s["months_bn"],
+            "months_en": s["months_en"],
+            "crop": s["actual_or_replanned_crop"],
+            "crop_bn": s["actual_or_replanned_crop_bn"],
+            "yield_maund_bigha": s["yield_maund_bigha"],
+            "yield_t_ha": s["yield_t_ha"],
+            "price_bdt_maund": s["parts"][0]["price_bdt_maund"] if s["parts"] else 0.0,
+            "actual_profit_bdt": s["total_gross_margin_bdt"],
+            "actual_water_mm": s["water_mm"],
+            "outcome": s["outcome"],
+            "parts": s["parts"],
+        }
+        for s in seasonal_comparison if s["stage"] == "completed"
+    ]
+
     totals = {
         "profit_so_far_actual_bdt": round(actual_profit_so_far_bdt, 2),
         "profit_remaining_projected_bdt": round(projected_remaining_profit_bdt, 2),
@@ -573,6 +607,9 @@ def run_adaptive_replan(
             (actual_water_so_far_mm + projected_remaining_water_mm) / (len(periods) / 3.0), 1
         ),
         "nitrogen_delta_kg": round((sum(35.0 for c in new_crops if crop_lookup.get(c.strip().lower(), {}).get("is_legume")) - sum(35.0 for c in initial_crops if crop_lookup.get(c.strip().lower(), {}).get("is_legume"))) / (len(periods) / 3.0), 1),
+        "bare_days_old": bare_days_old,
+        "bare_days_new": bare_days_new,
+        "bare_days_delta": bare_days_delta,
     }
 
     elapsed_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
@@ -594,15 +631,18 @@ def run_adaptive_replan(
         "completed_seasons_count": num_completed,
         "remaining_seasons_count": len(periods) - num_completed,
         "strategy": priority,
+        "finished_seasons": finished_seasons,
         "irrigation_class_used": eff_water_avail or ("full" if safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0) >= 1000 else "limited" if safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0) >= 300 else "none"),
         "irrigation_capacity_mm": safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0),
         "original_plan": {
             "sequence": initial_crops,
+            "remaining_sequence": initial_crops[num_completed:],
             "sequence_str": " -> ".join(initial_crops),
             "total_profit_bdt": totals["original_2year_profit_bdt"],
         },
         "new_plan": {
             "sequence": new_crops,
+            "remaining_sequence": new_crops[num_completed:],
             "sequence_str": " -> ".join(new_crops),
             "total_profit_bdt": totals["total_2year_profit_bdt"],
         },

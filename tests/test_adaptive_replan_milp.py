@@ -236,3 +236,68 @@ def test_r2e_irrigation_class_impacts_remaining_plan():
     irrig_full = res_full["totals"]["remaining_irrigation_new_mm"]
     irrig_none = res_none["totals"]["remaining_irrigation_new_mm"]
     assert irrig_none <= irrig_full, f"No-irrigation water ({irrig_none}) should be <= full irrigation ({irrig_full})"
+
+
+def test_r3_replan_output_payload_structure():
+    """Verify R3 requirements: finished_seasons, original_plan vs new_plan, why_changed, totals, calibration_table."""
+    crops_df = load_crop_knowledge()
+    power, _ = load_district_climate_data("chapainawabganj", offline=True)
+    if "date" in power.columns:
+        power["date"] = pd.to_datetime(power["date"])
+
+    state = build_field_state(
+        "rahim_field",
+        24.62,
+        88.55,
+        power["date"].max(),
+        power.tail(60),
+        crop_knowledge=crops_df,
+    )
+    state.field_size_ha = 0.67
+    state.district = "chapainawabganj"
+
+    completed = [
+        {"period": "Y1_S1", "crop": "Mustard", "yield_maund_bigha": 3.0, "sale_price_bdt_maund": 2400.0, "outcome": "poor"},
+    ]
+
+    res = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=completed,
+        crops=crops_df,
+        priority="balanced",
+    )
+
+    assert "finished_seasons" in res
+    assert len(res["finished_seasons"]) == 1
+    fs = res["finished_seasons"][0]
+    assert fs["crop"] == "Mustard"
+    assert fs["yield_maund_bigha"] == 3.0
+    assert fs["price_bdt_maund"] == 2400.0
+    assert "actual_profit_bdt" in fs
+
+    assert "original_plan" in res
+    assert "new_plan" in res
+    assert "remaining_sequence" in res["original_plan"]
+    assert "remaining_sequence" in res["new_plan"]
+
+    assert "why_changed" in res
+    assert len(res["why_changed"]) == 5  # 5 remaining seasons
+
+    assert "totals" in res
+    totals = res["totals"]
+    assert "profit_so_far_actual_bdt" in totals
+    assert "profit_remaining_projected_bdt" in totals
+    assert "total_2year_profit_bdt" in totals
+    assert "original_2year_profit_bdt" in totals
+    assert "remaining_irrigation_old_mm" in totals
+    assert "remaining_irrigation_new_mm" in totals
+    assert "nitrogen_delta_kg" in totals
+    assert "bare_days_old" in totals
+    assert "bare_days_new" in totals
+
+    assert "calibration_table" in res
+    cal = res["calibration_table"][0]
+    assert cal["crop"] == "Mustard"
+    assert "ratio" in cal
+    assert "price_source" in cal
