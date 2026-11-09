@@ -1631,7 +1631,7 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
 
     lat = float(data["latitude"] if data.get("latitude") is not None else (DISTRICT_REGISTRY[dist_key].get("latitude") or DISTRICT_REGISTRY[dist_key].get("lat")))
     lon = float(data["longitude"] if data.get("longitude") is not None else (DISTRICT_REGISTRY[dist_key].get("longitude") or DISTRICT_REGISTRY[dist_key].get("lon")))
-    priority = str(data.get("priority") or "balanced")
+    priority = str(data.get("strategy") or data.get("priority") or "balanced")
 
     crops_df = load_crop_knowledge()
     field_coordinates_supplied = data.get("latitude") is not None and data.get("longitude") is not None
@@ -1774,7 +1774,7 @@ def crop_failure_recovery(payload: Payload):
     failure_event = str(data.get("failure_event") or data.get("failure_type") or "crop_failure")
     impacted_season_index = int(data.get("impacted_season_index") if data.get("impacted_season_index") is not None else data.get("failure_season", 0))
     severity = str(data.get("severity") or "severe")
-    priority = str(data.get("priority") or "balanced")
+    priority = str(data.get("strategy") or data.get("priority") or "balanced")
 
     power = pd.read_csv(DEFAULT_NASA_PATH)
     power["date"] = pd.to_datetime(power["date"])
@@ -1876,7 +1876,7 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     if not math.isfinite(field_area_ha) or field_area_ha <= 0:
         raise HTTPException(422, "Field area must be a positive number.")
 
-    raw_completed = data.get("completed_seasons") or data.get("completed_seasons_history") or []
+    raw_completed = data.get("finished_seasons") or data.get("completed_seasons") or data.get("completed_seasons_history") or []
     if isinstance(raw_completed, int):
         last_crop = data.get("last_season_crop")
         if not isinstance(raw_completed, bool) and isinstance(last_crop, str) and last_crop.strip() and raw_completed == 1:
@@ -1917,7 +1917,7 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
         completed_seasons = []
 
     updated_field_conditions = data.get("updated_field_conditions") or data.get("updated_conditions") or {}
-    priority = str(data.get("priority") or "balanced")
+    priority = str(data.get("strategy") or data.get("priority") or "balanced")
 
     crops_df = load_crop_knowledge()
     state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power.tail(60), crop_knowledge=crops_df)
@@ -2023,7 +2023,7 @@ def weather_uncertainty(payload: Payload):
         or not math.isfinite(field_area_ha) or field_area_ha <= 0
     ):
         raise HTTPException(422, "Field coordinates or area are outside the supported range.")
-    priority = str(data.get("priority") or "balanced")
+    priority = str(data.get("strategy") or data.get("priority") or "balanced")
 
     power = pd.read_csv(DEFAULT_NASA_PATH)
     power["date"] = pd.to_datetime(power["date"])
