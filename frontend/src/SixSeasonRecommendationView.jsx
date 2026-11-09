@@ -422,17 +422,25 @@ export function SixSeasonRecommendationView({
         }
         if (feasibilityReasons.water) {
           const wL = feasibilityReasons.water.toLowerCase();
-          if (wL.includes('deficit') || wL.includes('ঘাটতি')) {
+          if (irrigationReqMm === 0) {
+            parts.push(lang === 'bn' ? 'সেচ লাগবে না (বৃষ্টিই যথেষ্ট)' : 'No irrigation needed (rainfed)');
+          } else if (wL.includes('deficit') || wL.includes('ঘাটতি')) {
             parts.push(lang === 'bn' ? 'নিয়ন্ত্রিত সেচ প্রয়োজন' : 'Irrigation required');
           } else {
-            parts.push(lang === 'bn' ? 'পানির ঘাটতি নেই' : 'No water deficit');
+            parts.push(lang === 'bn' ? 'সেচ লাগবে না (বৃষ্টিই যথেষ্ট)' : 'No irrigation needed (rainfed)');
           }
         }
         if (feasibilityReasons.soil) {
           const m = feasibilityReasons.soil.match(/factor\s*=\s*([0-9.]+)/i);
           if (m) {
-            const p = Math.round(parseFloat(m[1]) * 100);
-            parts.push(lang === 'bn' ? `মাটি উপযোগী (${toBengaliNumber(p)}%)` : `Soil suitability (${p}%)`);
+            const rawFactor = parseFloat(m[1]);
+            if (rawFactor > 1.0) {
+              const formattedFactor = rawFactor.toFixed(2);
+              parts.push(lang === 'bn' ? `মাটি খুব উপযোগী (${toBengaliNumber(formattedFactor)}x)` : `Highly suitable soil (${formattedFactor}x)`);
+            } else {
+              const p = Math.round(rawFactor * 100);
+              parts.push(lang === 'bn' ? `মাটি উপযোগী (${toBengaliNumber(p)}%)` : `Soil suitability (${p}%)`);
+            }
           } else {
             parts.push(lang === 'bn' ? 'মাটি উপযোগী' : 'Soil suitable');
           }
@@ -1356,8 +1364,8 @@ export function SixSeasonRecommendationView({
                 {selectedCropName === 'Fallow' || selectedCropName.toLowerCase().includes('পতিত')
                   ? (lang === 'bn' ? 'জলাবদ্ধতা বা মাটির বিশ্রাম ও শুষ্ক মৌসুমে পানি সাশ্রয়ের জন্য পতিত রাখা হয়েছে।' : 'Fallow period for soil moisture recovery and flood basin resting.')
                   : (lang === 'bn'
-                      ? `তাপমাত্রার অনুকূলতা ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, পানির চাহিদা সাশ্রয়ী (${selectedCropIrrig} মিমি), এবং মাটির পুষ্টি উপযোগিতা ${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}% (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে' : `pH=${activeField?.soil_ph ?? 'তথ্য নেই'}, OM=${activeField?.organic_matter ?? 'তথ্য নেই'}%`})। ${selectedCropEntry.is_legume ? 'ডালশস্য হিসেবে শিকড়ে বায়বীয় নাইট্রোজেন সংযোজন করে পরবর্তী আমন ধানের সার খরচ সাশ্রয় করে।' : 'পরবর্তী ফসলের সাথে বোটানিক্যাল রোগচক্র ভেঙে দেয় এবং সর্বোত্তম প্রান্তিক মুনাফা নিশ্চিত করে।'} MILP অপ্টিমাইজেশন মডেল দ্বারা সেরা মনোনীত।`
-                      : `Temperature suitability ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, irrigation demand efficient (${selectedCropIrrig} mm), and soil suitability ${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}% (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM unavailable — neutral assumed' : `pH=${activeField?.soil_ph ?? 'N/A'}, OM=${activeField?.organic_matter ?? 'N/A'}%`}). ${selectedCropEntry.is_legume ? 'Biological nitrogen fixation enriches soil N for subsequent monsoon crops.' : 'Breaks botanical disease cycles and maximizes marginal returns.'} Ranked #1 by PuLP MILP solver.`)}
+                      ? `তাপমাত্রার অনুকূলতা ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, পানির চাহিদা ${selectedCropIrrig === 0 ? 'সেচ লাগবে না (বৃষ্টিই যথেষ্ট)' : `সাশ্রয়ী (${selectedCropIrrig} মিমি)`}, এবং মাটির পুষ্টি উপযোগিতা ${(selectedCropEntry.soil_factor ?? 1.0) > 1.0 ? `খুব উপযোগী (${(selectedCropEntry.soil_factor).toFixed(2)}x)` : `${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%`} (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে' : `pH=${activeField?.soil_ph ?? 'তথ্য নেই'}, OM=${activeField?.organic_matter ?? 'তথ্য নেই'}%`})। ${selectedCropEntry.is_legume ? 'ডালশস্য হিসেবে শিকড়ে বায়বীয় নাইট্রোজেন সংযোজন করে পরবর্তী আমন ধানের সার খরচ সাশ্রয় করে।' : 'পরবর্তী ফসলের সাথে বোটানিক্যাল রোগচক্র ভেঙে দেয় এবং সর্বোত্তম প্রান্তিক মুনাফা নিশ্চিত করে।'} MILP অপ্টিমাইজেশন মডেল দ্বারা সেরা মনোনীত।`
+                      : `Temperature suitability ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, water demand ${selectedCropIrrig === 0 ? 'no irrigation needed (rainfed)' : `efficient (${selectedCropIrrig} mm)`}, and soil suitability ${(selectedCropEntry.soil_factor ?? 1.0) > 1.0 ? `highly suitable (${(selectedCropEntry.soil_factor).toFixed(2)}x)` : `${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%`} (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM unavailable — neutral assumed' : `pH=${activeField?.soil_ph ?? 'N/A'}, OM=${activeField?.organic_matter ?? 'N/A'}%`}). ${selectedCropEntry.is_legume ? 'Biological nitrogen fixation enriches soil N for subsequent monsoon crops.' : 'Breaks botanical disease cycles and maximizes marginal returns.'} Ranked #1 by PuLP MILP solver.`)}
               </div>
             </div>
 
