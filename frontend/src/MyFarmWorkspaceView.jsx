@@ -1542,12 +1542,14 @@ export function MyFarmWorkspaceView({
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, marginBottom: 14 }}>
                       <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
-                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Irrigation Delta:'}</span>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Water Saved:'}</span>
                         <strong style={{ color: 'var(--water, #38bdf8)' }}>
                           {baselinePlanning.water_savings_mm != null
                             ? (lang === 'bn' ? `${toBn ? toBn(Math.round(baselinePlanning.water_savings_mm)) : Math.round(baselinePlanning.water_savings_mm)} মিমি সাশ্রয়` : `${Math.round(baselinePlanning.water_savings_mm)} mm saved`)
-                            : (baselinePlanning.plan_irrigation_mm != null
-                                ? (lang === 'bn' ? `${toBn ? toBn(Math.round(baselinePlanning.plan_irrigation_mm)) : Math.round(baselinePlanning.plan_irrigation_mm)} মিমি` : `${Math.round(baselinePlanning.plan_irrigation_mm)} mm`)
+                            : (baselinePlanning.baseline_irrigation_mm != null && baselinePlanning.plan_irrigation_mm != null
+                                ? (lang === 'bn'
+                                    ? `${toBn ? toBn(Math.round(baselinePlanning.baseline_irrigation_mm - baselinePlanning.plan_irrigation_mm)) : Math.round(baselinePlanning.baseline_irrigation_mm - baselinePlanning.plan_irrigation_mm)} মিমি সাশ্রয়`
+                                    : `${Math.round(baselinePlanning.baseline_irrigation_mm - baselinePlanning.plan_irrigation_mm)} mm saved`)
                                 : '--')}
                         </strong>
                       </div>

@@ -1392,30 +1392,51 @@ export function SixSeasonRecommendationView({
             </h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* সেচ */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'সম্ভাব্য লাভ বৃদ্ধি:' : 'Profit Gain:'}</span>
-              <strong style={{ fontSize: 13, color: deltaProfit >= 0 ? 'var(--leaf)' : 'var(--alert)' }}>
-                {deltaProfit != null ? `${deltaProfit >= 0 ? '+' : ''}${formatCurrency(deltaProfit, lang)}/ha` : '—'}
-              </strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Water Saved:'}</span>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'সেচ:' : 'Irrigation:'}</span>
               <strong style={{ fontSize: 13, color: 'var(--water)' }}>
-                {waterSavingsMm != null ? `${Math.round(waterSavingsMm)} mm` : '—'}
+                {activePlanData.baselineIrrigationMm != null && activePlanData.planIrrigationMm != null
+                  ? (lang === 'bn'
+                      ? `${toBanglaDigits(Math.round(activePlanData.baselineIrrigationMm))} → ${toBanglaDigits(Math.round(activePlanData.planIrrigationMm))} মিমি/বছর (${toBanglaDigits(Math.round(waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)))} মিমি সাশ্রয়, −${toBanglaDigits(Math.round(((waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)) / activePlanData.baselineIrrigationMm) * 100))}%)`
+                      : `${Math.round(activePlanData.baselineIrrigationMm)} → ${Math.round(activePlanData.planIrrigationMm)} mm/yr (${Math.round(waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm))} mm saved, -${Math.round(((waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)) / activePlanData.baselineIrrigationMm) * 100)}%)`)
+                  : (waterSavingsMm != null ? `${Math.round(waterSavingsMm)} mm` : '—')}
               </strong>
             </div>
+
+            {/* ফাঁকা দিন */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'মাটির নাইট্রোজেন প্রক্সি:' : 'Nitrogen Proxy:'}</span>
-              <strong style={{ fontSize: 13, color: 'var(--leaf)' }}>
-                {extraNkg != null ? `+${extraNkg} kg N/ha` : '—'}
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'ফাঁকা দিন:' : 'Bare Days:'}</span>
+              <strong style={{ fontSize: 13, color: 'var(--sun)' }}>
+                {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null
+                  ? (lang === 'bn'
+                      ? `${toBanglaDigits(Math.round(activePlanData.baselineBareDays))} → ${toBanglaDigits(Math.round(activePlanData.planBareDays))}`
+                      : `${Math.round(activePlanData.baselineBareDays)} → ${Math.round(activePlanData.planBareDays)}`)
+                  : '—'}
               </strong>
             </div>
+
+            {/* নাইট্রোজেন */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'নাইট্রোজেন:' : 'Nitrogen:'}</span>
+              <strong style={{ fontSize: 13, color: 'var(--leaf)' }}>
+                {activePlanData.planNitrogenKg != null
+                  ? (lang === 'bn'
+                      ? `${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → ${toBanglaDigits(Math.round(activePlanData.planNitrogenKg))} কেজি/হে`
+                      : `${Math.round(activePlanData.baselineNitrogenKg ?? 0)} → ${Math.round(activePlanData.planNitrogenKg)} kg/ha`)
+                  : (extraNkg != null ? `+${extraNkg} kg N/ha` : '—')}
+              </strong>
+            </div>
+
+            {/* লাভ */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'মাটি অনাবৃত দিন হ্রাস:' : 'Bare Days Reduced:'}</span>
-              <strong style={{ fontSize: 13, color: 'var(--sun)' }}>
-                {activePlanData.planBareDays != null && activePlanData.baselineBareDays != null
-                  ? `${activePlanData.baselineBareDays - activePlanData.planBareDays} ${lang === 'bn' ? 'দিন/বছর' : 'days/yr'}`
-                  : '—'}
+              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'লাভ (খরচ বাদে):' : 'Profit (net):'}</span>
+              <strong style={{ fontSize: 13, color: deltaProfit >= 0 ? 'var(--leaf)' : 'var(--alert)' }}>
+                {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null
+                  ? (lang === 'bn'
+                      ? `${toBanglaDigits(Math.round(activePlanData.baselineProfitBdt).toLocaleString())} → ${toBanglaDigits(Math.round(activePlanData.planProfitBdt).toLocaleString())} ৳/হে (উদাহরণমূলক দাম)`
+                      : `${Math.round(activePlanData.baselineProfitBdt).toLocaleString()} → ${Math.round(activePlanData.planProfitBdt).toLocaleString()} BDT/ha (illustrative prices)`)
+                  : (deltaProfit != null ? `${deltaProfit >= 0 ? '+' : ''}${formatCurrency(deltaProfit, lang)}/ha (উদাহরণমূলক দাম)` : '—')}
               </strong>
             </div>
           </div>
