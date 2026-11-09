@@ -85,6 +85,13 @@ export function AdaptiveReplanningView({
     return extractPlanCrops(currentPlan);
   }, [currentPlan]);
 
+  const cropSeasonMatrix = useMemo(() => {
+    const pData = currentPlan?.summary?.planning || currentPlan;
+    const ssr = pData?.selected_strategy_result || pData?.milp_status;
+    const dam = ssr?.dynamic_agronomic_matrix;
+    return dam?.crop_season_matrix || pData?.crop_season_matrix || {};
+  }, [currentPlan]);
+
   // 2. Finished seasons count (1 to 5)
   const [finishedCount, setFinishedCount] = useState(1);
 
@@ -193,6 +200,7 @@ export function AdaptiveReplanningView({
 
         // Fetch RL second opinion if season index > 0
         try {
+          const realSoil = activeField?.soil_health_score != null ? Number(activeField.soil_health_score) : undefined;
           const rlPayload = {
             field_id: activeField?.id || 'demo',
             season_index: finishedCount,
@@ -201,12 +209,12 @@ export function AdaptiveReplanningView({
             state: {
               temperature_c: 26.5,
               available_water_mm: irrigationClass === 'none' ? 0 : irrigationClass === 'limited' ? 400 : 1200,
-              soil_health_score: 55.0,
+              ...(realSoil != null ? { soil_health_score: realSoil } : {}),
             },
             initial_state: {
               temperature_c: 26.5,
               available_water_mm: 1200,
-              soil_health_score: 55.0,
+              ...(realSoil != null ? { soil_health_score: realSoil } : {}),
             },
             completed_seasons: completedPayload.map((c, idx) => ({
               season_id: idx,
@@ -317,21 +325,31 @@ export function AdaptiveReplanningView({
   // 3D Scene Beds mapping
   const sceneBeds = useMemo(() => {
     if (!replanData?.seasonal_comparison) {
-      return SEASONS_CONFIG.map((s, i) => ({
-        id: s.id,
-        label: lang === 'bn' ? s.sBn : s.sEn,
-        crop: plannerCrops?.[i] || '',
-        isCompleted: i < finishedCount,
-        isChanged: false,
-        yieldLabel: null,
-        waterDepthMm: 120,
-      }));
+      return SEASONS_CONFIG.map((s, i) => {
+        const crop = plannerCrops?.[i] || '';
+        const csmEntry = cropSeasonMatrix?.[s.id]?.[crop];
+        const planIrrigMm = csmEntry?.water_balance?.irrigation_required_mm != null
+          ? Math.round(Number(csmEntry.water_balance.irrigation_required_mm))
+          : 0;
+        const isDone = i < finishedCount;
+        return {
+          id: s.id,
+          label: lang === 'bn' ? s.sBn : s.sEn,
+          crop: isDone ? (seasonRows[i]?.crop || crop) : crop,
+          isCompleted: isDone,
+          isChanged: false,
+          yieldLabel: null,
+          waterDepthMm: isDone ? 0 : planIrrigMm,
+          irrigation_mm: isDone ? 0 : planIrrigMm,
+        };
+      });
     }
 
     return replanData.seasonal_comparison.map((s, i) => {
       const isDone = s.stage === 'completed';
       const isChg = Boolean(s.is_modified && !isDone);
       const yieldTxt = s.yield_maund_bigha != null && s.yield_maund_bigha > 0 ? (lang === 'bn' ? `${toBnDigits(s.yield_maund_bigha)} মণ/বিঘা` : `${s.yield_maund_bigha} maund/bigha`) : null;
+      const irrigVal = isDone ? 0 : (s.water_mm || 0);
 
       return {
         id: s.period,
@@ -341,11 +359,11 @@ export function AdaptiveReplanningView({
         isCompleted: isDone,
         isChanged: isChg,
         yieldLabel: yieldTxt,
-        waterDepthMm: s.water_mm || 0,
-        irrigation_mm: s.water_mm || 0,
+        waterDepthMm: irrigVal,
+        irrigation_mm: irrigVal,
       };
     });
-  }, [replanData, finishedCount, plannerCrops, lang]);
+  }, [replanData, finishedCount, plannerCrops, cropSeasonMatrix, seasonRows, lang]);
 
   const totals = replanData?.totals || {};
   const whyChangedList = lang === 'bn' ? (replanData?.why_changed || []) : (replanData?.why_changed_en || replanData?.why_changed || []);
@@ -560,6 +578,22 @@ export function AdaptiveReplanningView({
           {SEASONS_CONFIG.slice(0, finishedCount).map((season, idx) => {
             const row = seasonRows[idx] || {};
             const allowedCrops = SEASON_ALLOWED_CROPS[season.kind] || [];
+            const currentSeasonCrop = row.crop || plannerCrops?.[idx];
+            const matrixEntry = currentSeasonCrop ? cropSeasonMatrix?.[season.id]?.[currentSeasonCrop] : null;
+
+            let yieldPlaceholder = lang === 'bn' ? 'ফলন দিন' : 'Enter yield';
+            if (matrixEntry?.dynamic_yield_t_ha != null) {
+              const yMb = (matrixEntry.dynamic_yield_t_ha * 3.5846731).toFixed(1);
+              yieldPlaceholder = lang === 'bn' ? `মডেল: ${toBnDigits(yMb)}` : `Model: ${yMb}`;
+            }
+
+            let pricePlaceholder = lang === 'bn' ? 'দাম দিন' : 'Enter price';
+            if (matrixEntry?.market_price_bdt_t != null) {
+              const pMb = Math.round(matrixEntry.market_price_bdt_t * 0.03732);
+              pricePlaceholder = lang === 'bn'
+                ? `ক্যাটালগ: ${toBnDigits(pMb.toLocaleString('en-US'))}`
+                : `Catalog: ${pMb.toLocaleString('en-US')}`;
+            }
 
             return (
               <div
@@ -617,7 +651,7 @@ export function AdaptiveReplanningView({
                     <input
                       type="number"
                       step="0.1"
-                      placeholder={lang === 'bn' ? 'মডেল: ৫.০' : 'Model: 5.0'}
+                      placeholder={yieldPlaceholder}
                       value={row.yieldMb}
                       onChange={(e) => updateSeasonRow(idx, 'yieldMb', e.target.value)}
                       style={{
@@ -641,7 +675,7 @@ export function AdaptiveReplanningView({
                     <input
                       type="number"
                       step="50"
-                      placeholder={lang === 'bn' ? 'ক্যাটালগ: ৩,০০০' : 'Catalog: 3,000'}
+                      placeholder={pricePlaceholder}
                       value={row.priceMb}
                       onChange={(e) => updateSeasonRow(idx, 'priceMb', e.target.value)}
                       style={{

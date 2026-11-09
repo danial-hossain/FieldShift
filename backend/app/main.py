@@ -345,8 +345,14 @@ def validate_rl_decision_context(data: dict[str, Any]) -> dict[str, Any]:
     try:
         initial_temperature = float(initial_state["temperature_c"])
         initial_water = float(initial_state["available_water_mm"])
-        initial_soil_health = float(initial_state["soil_health_score"])
+        initial_soil_health = float(initial_state["soil_health_score"]) if initial_state.get("soil_health_score") is not None else 50.0
         initial_ph = float(initial_state["soil_ph"]) if initial_state.get("soil_ph") is not None else None
+        if "soil_health_score" not in initial_state:
+            initial_state["soil_health_score"] = initial_soil_health
+            initial_state["soil_health_score_source"] = "regional_default (50.0)"
+        if "soil_health_score" not in state:
+            state["soil_health_score"] = initial_soil_health
+            state["soil_health_score_source"] = "regional_default (50.0)"
     except (KeyError, TypeError, ValueError) as error:
         raise HTTPException(422, "Initial temperature, available water, and soil-health proxy must be valid numbers.") from error
     if (

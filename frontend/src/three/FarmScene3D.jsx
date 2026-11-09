@@ -1261,8 +1261,10 @@ export function FarmScene3D({
           else if (isChg) prefix = '<span style="color:#f0a14a;font-weight:800;margin-right:2px">⟳</span> ';
 
           const yieldStr = bedData.yieldLabel ? ` · ${bedData.yieldLabel}` : '';
-          const waterStr = irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm');
-          const detailStr = isDone && bedData.yieldLabel ? yieldStr : waterStr;
+          const waterStr = isDone
+            ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${lang === 'bn' ? 'মিমি' : 'mm'}` : '')
+            : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm'));
+          const detailStr = isDone ? (yieldStr || waterStr) : waterStr;
 
           el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span>${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
         }
