@@ -1236,8 +1236,8 @@ export function SixSeasonRecommendationView({
                 style={{
                   font: '600 13px var(--body)',
                   border: 'none',
-                  background: isActive ? 'var(--accent, #2c8a4b)' : 'transparent',
-                  color: isActive ? '#ffffff' : 'var(--text)',
+                  background: isActive ? 'var(--accent)' : 'transparent',
+                  color: isActive ? 'var(--accent-ink)' : 'var(--text)',
                   padding: '7px 12px',
                   borderRadius: 9,
                   cursor: 'pointer',
@@ -1330,9 +1330,9 @@ export function SixSeasonRecommendationView({
               onClick={() => setWaterAvailability(wOpt.id)}
               style={{
                 font: '500 12.5px var(--body)',
-                border: waterAvailability === wOpt.id ? '1px solid var(--accent, #2c8a4b)' : '1px solid var(--line)',
-                background: waterAvailability === wOpt.id ? 'var(--accent, #2c8a4b)' : 'var(--surface-2, rgba(255,255,255,0.04))',
-                color: waterAvailability === wOpt.id ? '#ffffff' : 'var(--text)',
+                border: waterAvailability === wOpt.id ? '1px solid var(--accent)' : '1px solid var(--line)',
+                background: waterAvailability === wOpt.id ? 'var(--accent)' : 'var(--surface-2, rgba(255,255,255,0.04))',
+                color: waterAvailability === wOpt.id ? 'var(--accent-ink)' : 'var(--text)',
                 padding: '4px 10px',
                 borderRadius: 99,
                 cursor: 'pointer'

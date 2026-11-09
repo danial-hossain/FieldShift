@@ -456,8 +456,8 @@ export function AdaptiveReplanningView({
                     setIsDirty(true);
                   }}
                   style={{
-                    background: strategy === st.id ? 'var(--accent, #2c8a4b)' : 'transparent',
-                    color: strategy === st.id ? '#ffffff' : 'var(--text)',
+                    background: strategy === st.id ? 'var(--accent)' : 'transparent',
+                    color: strategy === st.id ? 'var(--accent-ink)' : 'var(--text)',
                     border: 0,
                     borderRadius: 7,
                     padding: '6px 12px',
@@ -573,8 +573,8 @@ export function AdaptiveReplanningView({
                 setIsDirty(true);
               }}
               style={{
-                background: finishedCount === btn.count ? 'var(--accent, #2c8a4b)' : 'var(--surface-2, rgba(0,0,0,0.04))',
-                color: finishedCount === btn.count ? '#ffffff' : 'var(--text)',
+                background: finishedCount === btn.count ? 'var(--accent)' : 'var(--surface-2, rgba(0,0,0,0.04))',
+                color: finishedCount === btn.count ? 'var(--accent-ink)' : 'var(--text)',
                 border: '1px solid var(--line, #dfe6dc)',
                 borderRadius: 9,
                 padding: '7px 14px',
@@ -892,8 +892,8 @@ export function AdaptiveReplanningView({
                   setIsDirty(true);
                 }}
                 style={{
-                  background: irrigationClass === ir.id ? 'var(--water, #2f7fb8)' : 'var(--surface-2, rgba(0,0,0,0.04))',
-                  color: irrigationClass === ir.id ? '#ffffff' : 'var(--text)',
+                  background: irrigationClass === ir.id ? 'var(--accent)' : 'var(--surface-2, rgba(0,0,0,0.04))',
+                  color: irrigationClass === ir.id ? 'var(--accent-ink)' : 'var(--text)',
                   border: '1px solid var(--line, #dfe6dc)',
                   borderRadius: 8,
                   padding: '5px 12px',
@@ -917,8 +917,8 @@ export function AdaptiveReplanningView({
             onClick={handleRunReplan}
             disabled={loading}
             style={{
-              background: 'var(--accent, #2c8a4b)',
-              color: '#ffffff',
+              background: 'var(--accent)',
+              color: 'var(--accent-ink)',
               border: 0,
               borderRadius: 10,
               padding: '10px 18px',
@@ -1287,8 +1287,8 @@ export function AdaptiveReplanningView({
                     );
                   }}
                   style={{
-                    background: 'var(--accent, #2c8a4b)',
-                    color: '#ffffff',
+                    background: 'var(--accent)',
+                    color: 'var(--accent-ink)',
                     border: 0,
                     borderRadius: 8,
                     padding: '8px 16px',

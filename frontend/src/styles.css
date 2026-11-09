@@ -14048,7 +14048,8 @@ h2, h3, .card-title, .panel-title {
   --text: #eef3ee;
   --text-2: rgba(238, 243, 238, 0.68);
   --text-3: rgba(238, 243, 238, 0.45);
-  --accent: #c5e86c; /* Lime primary */
+  --accent: #22c55e;
+  --accent-ink: #052e16;
   --leaf: #5fbf77;
   --water: #6cc4e0;
   --sun: #f2c14e;
@@ -15355,16 +15356,30 @@ button {
 }
 
 .strategy-pill, .strategy-card, button.strategy-card {
-  color: var(--text-main, #f8fafc) !important;
+  color: var(--text-main, #f8fafc);
 }
 
-.farmer-voice-fab {
-  background: #00df81 !important;
-  color: #051208 !important;
+/* Accessible High-Contrast Button & Chip Tokens (WCAG >= 4.5:1) */
+.strategy-pill[aria-pressed="true"],
+.strategy-pill.active,
+.strategy-card.active,
+button.strategy-card.active,
+.replan-count-btn[aria-pressed="true"],
+.replan-count-btn.active,
+.pb[aria-pressed="true"],
+.pb.active,
+.irrigation-chip[aria-pressed="true"],
+.irrigation-chip.active,
+.add-field-btn,
+.ui-btn-primary {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-color: var(--accent) !important;
 }
-.farmer-voice-fab-label {
-  color: #051208 !important;
-  font-weight: 700 !important;
+
+[data-theme="dark"] {
+  --accent: #22c55e;
+  --accent-ink: #052e16;
 }
 
 [data-theme="light"],
@@ -15403,7 +15418,8 @@ button {
   --water: #0369a1;
   --sun: #78350f;
   --alert: #991b1b;
-  --accent: #047857;
+  --accent: #15803d;
+  --accent-ink: #ffffff;
   --hud-cyan: #0284c7;
   --hud-teal: #047857;
   --hud-lime: #15803d;
@@ -15898,7 +15914,8 @@ button.ui-btn-danger {
   --sun: #92400e !important;
   --soil: #92400e !important;
   --alert: #b91c1c !important;
-  --accent: #047857 !important;
+  --accent: #15803d !important;
+  --accent-ink: #ffffff !important;
 }
 
 [data-theme="light"] .field-status-pill,
@@ -15941,7 +15958,8 @@ button.ui-btn-danger {
   --alert: #991b1b !important;
   --water: #0369a1 !important;
   --leaf: #065f46 !important;
-  --accent: #065f46 !important;
+  --accent: #15803d !important;
+  --accent-ink: #ffffff !important;
   --primary: #065f46 !important;
 }
 

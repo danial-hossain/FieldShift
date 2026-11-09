@@ -945,6 +945,7 @@ export function MyFarmWorkspaceView({
               variant="primary"
               size="sm"
               onClick={onAddField}
+              className="add-field-btn"
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
               <span>+</span>
