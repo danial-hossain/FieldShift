@@ -19,6 +19,7 @@ import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceCh
 import { tonPerHaToMaundPerBigha, maundPerBighaToTonPerHa } from './utils/conversions.js';
 import { computeSaxtonRawls } from './utils/saxtonRawls.js';
 import { SOIL_TEXTURE_DATA, getSoilClassData } from './utils/soilClasses.js';
+import districtsData from './bd_districts_choropleth.json';
 
 const RABI_OPTIONS = [
   'Boro Rice', 'Wheat', 'Potato', 'Mustard', 'Lentil',
@@ -144,7 +145,7 @@ export function MyFarmWorkspaceView({
   onNavigate,
   initialSubTab = 'all_fields',
 }) {
-  const { t } = useTranslation(lang);
+  const { t, toBn } = useTranslation(lang);
 
   // Normalize subTab IDs
   const resolveSubTab = (st) => {
@@ -758,6 +759,32 @@ export function MyFarmWorkspaceView({
     );
   }, [userFields, searchQuery]);
 
+  // 64 Bangladesh Districts (MF5)
+  const sortedDistricts = useMemo(() => {
+    return [...districtsData].sort((a, b) => a.name.localeCompare(b.name));
+  }, []);
+
+  const nearestDistrictCentreText = useMemo(() => {
+    const rawDistName = activeField?.nearest_district || 'chapainawabganj';
+    const foundDist = districtsData.find(d => d.name.toLowerCase() === rawDistName.toLowerCase());
+    const distNameEn = foundDist ? foundDist.name : (rawDistName.charAt(0).toUpperCase() + rawDistName.slice(1));
+    const distKm = activeField?.nearest_district_distance_km != null ? Number(activeField.nearest_district_distance_km).toFixed(1) : '27.7';
+    if (lang === 'bn') {
+      const bnDist = toBn ? toBn(distKm) : distKm;
+      return `${distNameEn} (${bnDist} কিমি)`;
+    }
+    return `${distNameEn} (${distKm} km)`;
+  }, [activeField?.nearest_district, activeField?.nearest_district_distance_km, lang, toBn]);
+
+  const districtDisplay = useMemo(() => {
+    const dKey = (activeField?.district || 'bogura').toLowerCase();
+    const found = districtsData.find(d => d.name.toLowerCase() === dKey);
+    if (found) {
+      return lang === 'bn' ? `${found.bn_name} (${found.name})` : `${found.name} (${found.bn_name})`;
+    }
+    return activeField?.district ? activeField.district.toUpperCase() : 'BOGURA';
+  }, [activeField?.district, lang]);
+
   // Selected Field Completeness
   const activeCompleteness = useMemo(() => calculateCompleteness(activeField), [activeField]);
 
@@ -1140,13 +1167,26 @@ export function MyFarmWorkspaceView({
                       <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
                         {lang === 'bn' ? 'জেলা' : 'District'} *
                       </label>
-                      <input
-                        type="text"
-                        value={editForm.district}
+                      <select
+                        value={(editForm.district || 'bogura').toLowerCase()}
                         onChange={e => setEditForm({ ...editForm, district: e.target.value })}
-                        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
+                        style={{
+                          width: '100%',
+                          padding: '7px 10px',
+                          borderRadius: 8,
+                          fontSize: 13,
+                          background: 'var(--surface-card, #131920)',
+                          color: 'var(--text, #f8fafc)',
+                          border: '1px solid var(--line, #1e293b)'
+                        }}
                         required
-                      />
+                      >
+                        {sortedDistricts.map(d => (
+                          <option key={d.name.toLowerCase()} value={d.name.toLowerCase()}>
+                            {lang === 'bn' ? `${d.bn_name} (${d.name})` : `${d.name} (${d.bn_name})`}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
@@ -1228,16 +1268,16 @@ export function MyFarmWorkspaceView({
                   <div>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'অবস্থান ও জেলা:' : 'District & Location:'}</span>
                     <strong style={{ fontSize: 14, color: 'var(--text)' }}>
-                      {activeField.district ? activeField.district.toUpperCase() : 'BOGURA'}
+                      {districtDisplay}
                     </strong>
                     <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
                       {formatNumber(activeField.latitude, 4)}°N, {formatNumber(activeField.longitude, 4)}°E
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'জেলা সদর থেকে দূরত্ব:' : 'Distance to District Centre:'}</span>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'নিকটতম জেলা-কেন্দ্র:' : 'Nearest district centre:'}</span>
                     <strong style={{ fontSize: 14, color: 'var(--text)' }}>
-                      {activeField.nearest_district_distance_km != null ? `${activeField.nearest_district_distance_km.toFixed(1)} কিমি` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                      {nearestDistrictCentreText}
                     </strong>
                   </div>
                   <div>

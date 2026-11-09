@@ -83,3 +83,34 @@ export function getSoilClassData(textureKey) {
   const k = String(textureKey).toLowerCase().replace(/[\s-]+/g, '_');
   return SOIL_TEXTURE_DATA[k] || SOIL_TEXTURE_DATA.loam;
 }
+
+export function formatSoilTextureLabel(textureKey) {
+  if (!textureKey) return 'Loam (দোআঁশ)';
+  const d = getSoilClassData(textureKey);
+  return d.label || `${d.nameEn} (${d.nameBn})`;
+}
+
+export function formatIrrigationClassLabel(capacityMm, lang = 'en', toBnFn = null) {
+  if (capacityMm == null || capacityMm === '' || isNaN(Number(capacityMm))) {
+    return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  }
+  const cap = Math.round(Number(capacityMm));
+  let tierEn = 'Ample';
+  let tierBn = 'পর্যাপ্ত';
+  if (cap >= 1000) {
+    tierEn = 'Ample';
+    tierBn = 'পর্যাপ্ত';
+  } else if (cap >= 600) {
+    tierEn = 'Moderate';
+    tierBn = 'মাঝারি';
+  } else if (cap > 0) {
+    tierEn = 'Limited';
+    tierBn = 'সীমিত';
+  } else {
+    tierEn = 'Rainfed';
+    tierBn = 'বৃষ্টিনির্ভর';
+  }
+  const numStr = (lang === 'bn' && typeof toBnFn === 'function') ? `${toBnFn(cap)} মিমি` : `${cap} mm`;
+  return `${tierEn} (${tierBn}) · ${numStr}`;
+}
+
