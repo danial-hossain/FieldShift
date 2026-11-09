@@ -12,7 +12,7 @@ import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skelet
 // Y3_S1 (Year 3, Rabi (Nov-Apr, dry))
 // Y2_S3 (Year 3, Kharif (May-Oct, wet))
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 
 function toBanglaDigits(val) {
   if (val == null) return '';
@@ -65,6 +65,7 @@ import { SaaoNotice } from './PlainLanguagePopover.jsx';
 import { AskAiBar } from './AskAiBar.jsx';
 import { formatSoilTextureLabel } from './utils/soilClasses.js';
 import { formatDistrictLabel } from './utils/districtLabels.js';
+import { useRotationPlans, setFieldSelectedStrategy } from './store/rotationPlansStore.js';
 
 
 const PRIORITIES = ['balanced', 'profit', 'water', 'soil'];
@@ -176,7 +177,7 @@ export function SixSeasonRecommendationView({
     return `${perHaText} (${note})`;
   };
 
-  const [selectedStrategy, setSelectedStrategy] = useState('balanced');
+  const [selectedStrategyLocal, setSelectedStrategyLocal] = useState(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState('Y1_S1');
   const [viewMode, setViewMode] = useState('comparison'); // 'comparison' | 'timeline' | '3d_trajectory'
   const [isSimulating, setIsSimulating] = useState(false);
@@ -244,11 +245,10 @@ export function SixSeasonRecommendationView({
     return list;
   }, [waterAvailability, noPowerTiller, labourShortage, district, activeField, lang]);
 
-  // Backend planning fetch state (cache 4 priorities per district)
-  const [plansByPriority, setPlansByPriority] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
-  const [reloadKey, setReloadKey] = useState(0);
+  // Extract field area (no hardcoded fallback)
+  const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;
+  const fieldAreaHa = hasArea ? Number(activeField.area_ha) : null;
+
   const [copiedSms, setCopiedSms] = useState(false);
   const [advisoryOnset, setAdvisoryOnset] = useState(null);
   const [compareWithBaseline, setCompareWithBaseline] = useState(false);
@@ -268,95 +268,40 @@ export function SixSeasonRecommendationView({
     };
     fetchOnset();
     return () => { active = false; };
-  }, [district]);
+  }, [district, request]);
 
   const [expandedRisk, setExpandedRisk] = useState(null);
 
-  useEffect(() => {
-    let isCancelled = false;
-    setLoading(true);
-    setFetchError(null);
-
-    if (!district && (activeField?.latitude == null || activeField?.longitude == null)) {
-      setLoading(false);
-      setFetchError(lang === 'bn' ? 'জমির অবস্থান বা জেলা নির্বাচন করুন।' : 'Please select a field location or district.');
-      return;
-    }
-
-    const histCrops = Array.isArray(activeField?.crop_history)
-      ? activeField.crop_history.map(h => typeof h === 'string' ? h : (h?.crop || h?.crop_name)).filter(Boolean)
-      : (Array.isArray(activeField?.history) ? activeField.history.map(h => typeof h === 'string' ? h : (h?.crop || h?.crop_name)).filter(Boolean) : undefined);
-
-    const bodyBase = {
-      district: district || 'bogura',
-      field_id: activeField?.id !== 'demo' && activeField?.id ? activeField.id : undefined,
-      latitude: activeField?.latitude != null ? Number(activeField.latitude) : undefined,
-      longitude: activeField?.longitude != null ? Number(activeField.longitude) : undefined,
-      field_size_ha: fieldAreaHa || undefined,
-      area_ha: fieldAreaHa || undefined,
-      seasonally_flooded: Boolean(activeField?.seasonally_flooded),
-      soil_texture: activeField?.soil_texture || undefined,
-      soil_ph: activeField?.soil_ph != null ? Number(activeField.soil_ph) : undefined,
-      organic_matter: activeField?.organic_matter != null ? Number(activeField.organic_matter) : undefined,
-      irrigation_capacity_mm: waterAvailability === 'none' ? 0 : (waterAvailability === 'limited' ? 400 : (activeField?.irrigation_capacity_mm != null ? Number(activeField.irrigation_capacity_mm) : 1200)),
-      existing_rotation: activeField?.existing_rotation || undefined,
-      history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
-      no_power_tiller: noPowerTiller,
-      labour_shortage: labourShortage,
-      excluded_crops: excludedCrops.length > 0 ? excludedCrops : undefined,
-    };
-
-    Promise.all(
-      PRIORITIES.map(priority =>
-        request('/api/planning', {
-          method: 'POST',
-          body: JSON.stringify({ ...bodyBase, priority })
-        }).then(data => ({ priority, data }))
-      )
-    )
-      .then(results => {
-        if (!isCancelled) {
-          const map = {};
-          results.forEach(({ priority, data }) => {
-            map[priority] = data;
-          });
-          setPlansByPriority(map);
-        }
-      })
-      .catch(err => {
-        if (!isCancelled) {
-          setFetchError(err.message || 'Failed to load six-season plan');
-        }
-      })
-      .finally(() => {
-        if (!isCancelled) setLoading(false);
-      });
-
-    return () => { isCancelled = true; };
-  }, [
-    district,
-    reloadKey,
-    activeField?.id,
-    activeField?.area_ha,
-    activeField?.latitude,
-    activeField?.longitude,
-    activeField?.soil_texture,
-    activeField?.soil_ph,
-    activeField?.organic_matter,
-    activeField?.irrigation_capacity_mm,
-    activeField?.existing_rotation,
-    activeField?.seasonally_flooded,
-    activeField?.crop_history,
-    activeField?.history,
+  const plannerOptions = useMemo(() => ({
     waterAvailability,
     noPowerTiller,
     labourShortage,
     excludedCrops,
-  ]);
+  }), [waterAvailability, noPowerTiller, labourShortage, excludedCrops]);
 
-  // Extract field area (no hardcoded fallback)
-  const hasArea = activeField?.area_ha != null && Number.isFinite(Number(activeField.area_ha)) && Number(activeField.area_ha) > 0;
-  const fieldAreaHa = hasArea ? Number(activeField.area_ha) : null;
+  const {
+    plansByPriority,
+    loading,
+    error: plansError,
+    selectedStrategy: storeSelectedStrategy,
+    setSelectedStrategy: setStoreSelectedStrategy,
+    refetch,
+  } = useRotationPlans({ field: activeField, options: plannerOptions, request });
+
+  const selectedStrategy = selectedStrategyLocal || storeSelectedStrategy || 'balanced';
+
+  const setSelectedStrategy = useCallback((strat) => {
+    if (strat === 'baseline') {
+      setSelectedStrategyLocal('baseline');
+    } else {
+      setSelectedStrategyLocal(null);
+      setStoreSelectedStrategy(strat);
+    }
+  }, [setStoreSelectedStrategy]);
+
+  const fetchError = plansError || (!district && (activeField?.latitude == null || activeField?.longitude == null)
+    ? (lang === 'bn' ? 'জমির অবস্থান বা জেলা নির্বাচন করুন।' : 'Please select a field location or district.')
+    : null);
 
   // Resolve active priority response
   const currentPriority = STRATEGY_TO_PRIORITY[selectedStrategy] || 'balanced';
@@ -1315,7 +1260,7 @@ export function SixSeasonRecommendationView({
           <p style={{ margin: '0 0 16px', color: 'var(--text-2)', fontSize: 13 }}>
             {fetchError || (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
           </p>
-          <GlassButton variant="primary" size="sm" onClick={() => setReloadKey(k => k + 1)}>
+          <GlassButton variant="primary" size="sm" onClick={() => refetch()}>
             ⟳ {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
           </GlassButton>
         </div>
@@ -1495,6 +1440,31 @@ export function SixSeasonRecommendationView({
 
         {/* Toolbar Actions: Copy SMS, Print, Export */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            className="action-replan-nav"
+            onClick={() => {
+              if (onNavigateTab) {
+                onNavigateTab('replan', { fieldId: activeField?.id, strategy: selectedStrategy });
+              }
+            }}
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--text)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <span>🔄</span>
+            <span>{lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Replan'}</span>
+          </button>
           <button
             type="button"
             onClick={handleCopySms}

@@ -11,6 +11,7 @@ import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
 import { Card, Pill, Tabs } from './ui/index.js';
+import { setFieldSelectedStrategy } from './store/rotationPlansStore.js';
 
 export function FarmPlanningView({
   activeField,
@@ -89,6 +90,9 @@ export function FarmPlanningView({
             if (t === 'assistant' || t === 'dashboard' || t === 'field' || t === 'water_irrigation') {
               if (onNavigate) onNavigate(t, extra);
             } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+              if (extra?.strategy && activeField?.id) {
+                setFieldSelectedStrategy(activeField.id, extra.strategy);
+              }
               setSubTab(t);
             } else if (onNavigate) {
               onNavigate(t, extra);
@@ -100,6 +104,7 @@ export function FarmPlanningView({
           lang={lang}
           theme={theme}
           onRunWorkflow={onRunWorkflow}
+          request={request}
         />
       )}
 
@@ -120,6 +125,16 @@ export function FarmPlanningView({
           ml={ml}
           user={user}
           lang={lang}
+          request={request}
+          onNavigateTab={(t, extra) => {
+            if (t === 'milp') {
+              setSubTab('milp');
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+              setSubTab(t);
+            } else if (onNavigate) {
+              onNavigate(t, extra);
+            }
+          }}
           onBack={() => setSubTab('milp')}
           onRunWorkflow={onRunWorkflow}
         />

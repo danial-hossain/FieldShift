@@ -6,6 +6,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
 import { formatCurrency } from './i18n.js';
+import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 export function toBnDigits(val) {
@@ -65,21 +66,47 @@ export function AdaptiveReplanningView({
 }) {
   const request = typeof propRequest === 'function' ? propRequest : defaultRequest;
 
-  // 1. Strategy Selection
-  const initialStrat = analysisResult?.summary?.planning?.selected_strategy || 'balanced';
-  const [strategy, setStrategy] = useState(initialStrat);
+  // Single source of truth for rotation plans across strategies
+  const {
+    plansByPriority,
+    loading: plansLoading,
+    error: plansError,
+    selectedPriority,
+    setSelectedStrategy,
+    refetch: refetchPlans,
+  } = useRotationPlans({ field: activeField, request });
+
+  // 1. Strategy Selection (bound to shared store)
+  const strategy = selectedPriority;
+
+  // Current plan for chosen strategy
+  const currentPlan = plansByPriority?.[strategy] || analysisResult;
+  const plannerCrops = useMemo(() => {
+    return extractPlanCrops(currentPlan);
+  }, [currentPlan]);
 
   // 2. Finished seasons count (1 to 5)
   const [finishedCount, setFinishedCount] = useState(1);
 
-  // 3. Finished seasons records state: array of 5 entries
+  // 3. Finished seasons records state: array of 5 entries with no hardcoded fallback crops
   const [seasonRows, setSeasonRows] = useState([
-    { crop: 'Mustard', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false },
-    { crop: 'Mungbean', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false },
-    { crop: 'T. Aman Rice', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false },
-    { crop: 'Wheat', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false },
-    { crop: 'Jute', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false },
+    { crop: '', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false, userEditedCrop: false },
+    { crop: '', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false, userEditedCrop: false },
+    { crop: '', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false, userEditedCrop: false },
+    { crop: '', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false, userEditedCrop: false },
+    { crop: '', yieldMb: '', priceMb: '', outcome: 'normal', parts: [], showParts: false, userEditedCrop: false },
   ]);
+
+  useEffect(() => {
+    if (plannerCrops && Array.isArray(plannerCrops)) {
+      setSeasonRows((prev) =>
+        prev.map((r, i) => ({
+          ...r,
+          crop: r.userEditedCrop ? r.crop : (plannerCrops[i] || ''),
+        }))
+      );
+    }
+  }, [plannerCrops]);
 
   // 4. Irrigation selector for remaining seasons
   const defaultIrrigClass = useMemo(() => {
@@ -103,21 +130,6 @@ export function AdaptiveReplanningView({
   const [appliedNotice, setAppliedNotice] = useState(null);
 
   const stageBoxRef = useRef(null);
-
-  // Pre-fill default crops from planner baseline
-  const plannerCrops = useMemo(() => {
-    const sel = analysisResult?.summary?.planning?.milp_status?.selected_crop_by_period || {};
-    return SEASONS_CONFIG.map((s) => sel[s.id] || (s.kind === 'rabi' ? 'Mustard' : s.kind === 'kharif1' ? 'Mungbean' : 'T. Aman Rice'));
-  }, [analysisResult]);
-
-  useEffect(() => {
-    setSeasonRows((prev) =>
-      prev.map((r, i) => ({
-        ...r,
-        crop: r.crop || plannerCrops[i] || (SEASONS_CONFIG[i].kind === 'rabi' ? 'Mustard' : SEASONS_CONFIG[i].kind === 'kharif1' ? 'Mungbean' : 'T. Aman Rice'),
-      }))
-    );
-  }, [plannerCrops]);
 
   // Execute Replan Call
   const handleRunReplan = useCallback(async () => {
@@ -242,7 +254,11 @@ export function AdaptiveReplanningView({
     setIsDirty(true);
     setSeasonRows((prev) => {
       const next = [...prev];
-      next[idx] = { ...next[idx], [field]: val };
+      next[idx] = {
+        ...next[idx],
+        [field]: val,
+        ...(field === 'crop' ? { userEditedCrop: true } : {}),
+      };
       return next;
     });
   };
@@ -304,7 +320,7 @@ export function AdaptiveReplanningView({
       return SEASONS_CONFIG.map((s, i) => ({
         id: s.id,
         label: lang === 'bn' ? s.sBn : s.sEn,
-        crop: plannerCrops[i] || 'Mustard',
+        crop: plannerCrops?.[i] || '',
         isCompleted: i < finishedCount,
         isChanged: false,
         yieldLabel: null,
@@ -320,7 +336,7 @@ export function AdaptiveReplanningView({
       return {
         id: s.period,
         label: lang === 'bn' ? SEASONS_CONFIG[i].sBn : SEASONS_CONFIG[i].sEn,
-        crop: s.actual_or_replanned_crop || 'Mustard',
+        crop: s.actual_or_replanned_crop || plannerCrops?.[i] || '',
         crop_bn: s.actual_or_replanned_crop_bn || s.actual_or_replanned_crop,
         isCompleted: isDone,
         isChanged: isChg,
@@ -412,7 +428,7 @@ export function AdaptiveReplanningView({
               <button
                 key={st.id}
                 onClick={() => {
-                  setStrategy(st.id);
+                  setSelectedStrategy(st.id);
                   setIsDirty(true);
                 }}
                 style={{
@@ -448,14 +464,42 @@ export function AdaptiveReplanningView({
             border: '1px solid var(--line, #dfe6dc)',
           }}
         >
-          {SEASONS_CONFIG.map((sc, i) => (
-            <div key={sc.id} style={{ fontSize: 12, padding: '4px 6px', textAlign: 'center', background: 'var(--surface, #ffffff)', borderRadius: 6, border: '1px solid var(--line, #dfe6dc)' }}>
-              <div style={{ color: 'var(--muted, #5e6b60)', fontSize: 10.5 }}>{lang === 'bn' ? `${sc.sBn} (${sc.mBn})` : `${sc.sEn} (${sc.mEn})`}</div>
-              <strong style={{ display: 'block', marginTop: 2, fontSize: 12.5 }}>
-                {lang === 'bn' ? (CROP_TRANSLATIONS[plannerCrops[i]] || plannerCrops[i]) : plannerCrops[i]}
-              </strong>
+          {plansLoading ? (
+            <div style={{ gridColumn: 'span 6', padding: '12px 0', textAlign: 'center', color: 'var(--muted, #5e6b60)' }}>
+              {lang === 'bn' ? 'লোড হচ্ছে…' : 'Loading rotation plan…'}
             </div>
-          ))}
+          ) : plansError ? (
+            <div style={{ gridColumn: 'span 6', padding: '8px 0', textAlign: 'center', color: 'var(--danger, #e11d48)' }}>
+              <span>{plansError}</span>
+              <button
+                type="button"
+                onClick={refetchPlans}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--line, #dfe6dc)',
+                  borderRadius: 6,
+                  padding: '2px 8px',
+                  cursor: 'pointer',
+                  color: 'var(--text)',
+                  marginLeft: 8,
+                }}
+              >
+                {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+              </button>
+            </div>
+          ) : (
+            SEASONS_CONFIG.map((sc, i) => {
+              const crop = plannerCrops?.[i];
+              return (
+                <div key={sc.id} style={{ fontSize: 12, padding: '4px 6px', textAlign: 'center', background: 'var(--surface, #ffffff)', borderRadius: 6, border: '1px solid var(--line, #dfe6dc)' }}>
+                  <div style={{ color: 'var(--muted, #5e6b60)', fontSize: 10.5 }}>{lang === 'bn' ? `${sc.sBn} (${sc.mBn})` : `${sc.sEn} (${sc.mEn})`}</div>
+                  <strong style={{ display: 'block', marginTop: 2, fontSize: 12.5 }}>
+                    {crop ? (lang === 'bn' ? (CROP_TRANSLATIONS[crop] || crop) : crop) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                  </strong>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 

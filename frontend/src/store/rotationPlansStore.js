@@ -1,0 +1,251 @@
+// frontend/src/store/rotationPlansStore.js
+// Single source of truth for 6-Season MILP rotation plans across all 4 strategies:
+// Balanced, Profit, Water Saving, Soil Health.
+// Keyed by field ID and priorities, shared between Rotation Planner and Adaptive Replan.
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { request as defaultRequest } from '../apiClient.js';
+
+export const CANONICAL_PERIOD_KEYS = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
+
+export const PRIORITIES = ['balanced', 'profit', 'water', 'soil'];
+
+export const STRATEGY_TO_PRIORITY = {
+  balanced: 'balanced',
+  profit: 'profit',
+  profit_focused: 'profit',
+  water: 'water',
+  water_efficiency: 'water',
+  soil: 'soil',
+  soil_health: 'soil',
+};
+
+export const PRIORITY_TO_STRATEGY = {
+  balanced: 'balanced',
+  profit: 'profit_focused',
+  water: 'water_efficiency',
+  soil: 'soil_health',
+};
+
+// Global in-memory cache
+const _plansCache = new Map();
+const _selectedStrategyByField = new Map();
+const _optionsByField = new Map();
+const _listeners = new Set();
+
+function notifyListeners() {
+  _listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // ignore
+    }
+  });
+}
+
+export function buildPlansCacheKey(field, options = {}) {
+  const fId = field?.id || 'demo';
+  const dist = field?.district || 'bogura';
+  const area = field?.area_ha != null ? Number(field.area_ha).toFixed(3) : '1.000';
+  const soil = field?.soil_texture || 'unknown';
+  const water = options.waterAvailability || 'full';
+  const pt = Boolean(options.noPowerTiller);
+  const ls = Boolean(options.labourShortage);
+  const exc = Array.isArray(options.excludedCrops) ? [...options.excludedCrops].sort().join(',') : '';
+  return `${fId}::${dist}::${area}::${soil}::${water}::${pt}::${ls}::${exc}`;
+}
+
+export function getCachedPlansEntry(cacheKey) {
+  return _plansCache.get(cacheKey) || null;
+}
+
+export function getFieldSelectedStrategy(fieldId) {
+  const id = fieldId || 'demo';
+  return _selectedStrategyByField.get(id) || 'balanced';
+}
+
+export function setFieldSelectedStrategy(fieldId, strategy) {
+  const id = fieldId || 'demo';
+  const canonical = STRATEGY_TO_PRIORITY[strategy] || strategy || 'balanced';
+  if (_selectedStrategyByField.get(id) !== canonical) {
+    _selectedStrategyByField.set(id, canonical);
+    notifyListeners();
+  }
+}
+
+export function getFieldOptions(fieldId) {
+  const id = fieldId || 'demo';
+  return _optionsByField.get(id) || {};
+}
+
+export function setFieldOptions(fieldId, options) {
+  const id = fieldId || 'demo';
+  _optionsByField.set(id, { ...options });
+}
+
+/**
+ * Extracts the 6-season crop sequence from a plan object.
+ * Returns Array of 6 crop strings, or null if plan is unavailable.
+ * Never invents or hardcodes fallback crops.
+ */
+export function extractPlanCrops(plan) {
+  if (!plan) return null;
+  const pData = plan?.summary?.planning || plan;
+  const milp = pData?.selected_strategy_result || pData?.milp_status || plan?.milp_status;
+  const rotation = milp?.selected_crop_by_period || {};
+
+  const crops = CANONICAL_PERIOD_KEYS.map((pk) => rotation[pk] || null);
+  if (crops.some((c) => !c)) {
+    // If dictionary by period key missed, check recommended_crops list
+    const rec = milp?.recommended_crops;
+    if (Array.isArray(rec) && rec.length >= 6) {
+      return rec.slice(0, 6);
+    }
+    return null;
+  }
+  return crops;
+}
+
+/**
+ * Fetch all 4 strategy plans for a field from /api/planning.
+ */
+export async function fetchAllStrategyPlans({ field, options = {}, request = defaultRequest }) {
+  if (!field) return {};
+  const cacheKey = buildPlansCacheKey(field, options);
+  let entry = _plansCache.get(cacheKey);
+
+  if (entry && entry.plans && Object.keys(entry.plans).length === 4 && !entry.loading) {
+    return entry.plans;
+  }
+
+  const histCrops = Array.isArray(field?.crop_history)
+    ? field.crop_history.map((h) => (typeof h === 'string' ? h : h?.crop || h?.crop_name)).filter(Boolean)
+    : Array.isArray(field?.history)
+    ? field.history.map((h) => (typeof h === 'string' ? h : h?.crop || h?.crop_name)).filter(Boolean)
+    : undefined;
+
+  const waterAvail = options.waterAvailability || 'full';
+  const waterCapacityMm = waterAvail === 'none' ? 0 : waterAvail === 'limited' ? 400 : (field?.irrigation_capacity_mm != null ? Number(field.irrigation_capacity_mm) : 1200);
+
+  const bodyBase = {
+    district: field?.district || 'bogura',
+    field_id: field?.id !== 'demo' && field?.id ? field.id : undefined,
+    latitude: field?.latitude != null ? Number(field.latitude) : undefined,
+    longitude: field?.longitude != null ? Number(field.longitude) : undefined,
+    field_size_ha: field?.area_ha != null ? Number(field.area_ha) : undefined,
+    area_ha: field?.area_ha != null ? Number(field.area_ha) : undefined,
+    seasonally_flooded: Boolean(field?.seasonally_flooded),
+    soil_texture: field?.soil_texture || undefined,
+    soil_ph: field?.soil_ph != null ? Number(field.soil_ph) : undefined,
+    organic_matter: field?.organic_matter != null ? Number(field.organic_matter) : undefined,
+    irrigation_capacity_mm: waterCapacityMm,
+    existing_rotation: field?.existing_rotation || undefined,
+    history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
+    no_power_tiller: Boolean(options.noPowerTiller),
+    labour_shortage: Boolean(options.labourShortage),
+    excluded_crops: Array.isArray(options.excludedCrops) && options.excludedCrops.length > 0 ? options.excludedCrops : undefined,
+  };
+
+  _plansCache.set(cacheKey, {
+    plans: entry?.plans || {},
+    loading: true,
+    error: null,
+  });
+  notifyListeners();
+
+  try {
+    const results = await Promise.all(
+      PRIORITIES.map((priority) =>
+        request('/api/planning', {
+          method: 'POST',
+          body: JSON.stringify({ ...bodyBase, priority }),
+        }).then((data) => ({ priority, data }))
+      )
+    );
+
+    const plansMap = {};
+    results.forEach(({ priority, data }) => {
+      plansMap[priority] = data;
+    });
+
+    _plansCache.set(cacheKey, {
+      plans: plansMap,
+      loading: false,
+      error: null,
+    });
+    notifyListeners();
+    return plansMap;
+  } catch (err) {
+    _plansCache.set(cacheKey, {
+      plans: entry?.plans || {},
+      loading: false,
+      error: err.message || 'Failed to fetch strategy plans',
+    });
+    notifyListeners();
+    throw err;
+  }
+}
+
+/**
+ * React hook for components to subscribe to strategy plans and shared selected strategy.
+ */
+export function useRotationPlans({ field, options = {}, request = defaultRequest }) {
+  const [, setTick] = useState(0);
+
+  useEffect(() => {
+    const listener = () => setTick((t) => t + 1);
+    _listeners.add(listener);
+    return () => {
+      _listeners.delete(listener);
+    };
+  }, []);
+
+  const fieldId = field?.id || 'demo';
+
+  // Merge provided options with stored options if any
+  const effectiveOptions = useMemo(() => {
+    if (options && Object.keys(options).length > 0) {
+      setFieldOptions(fieldId, options);
+      return options;
+    }
+    return getFieldOptions(fieldId);
+  }, [fieldId, options]);
+
+  const cacheKey = useMemo(() => buildPlansCacheKey(field, effectiveOptions), [field, effectiveOptions]);
+  const entry = _plansCache.get(cacheKey) || null;
+
+  const plansByPriority = entry?.plans || {};
+  const loading = field ? (entry ? Boolean(entry.loading) : true) : false;
+  const error = entry?.error || null;
+
+  const selectedPriority = _selectedStrategyByField.get(fieldId) || 'balanced';
+  const selectedStrategy = PRIORITY_TO_STRATEGY[selectedPriority] || selectedPriority;
+
+  const setSelectedStrategy = useCallback(
+    (strat) => {
+      setFieldSelectedStrategy(fieldId, strat);
+    },
+    [fieldId]
+  );
+
+  const refetch = useCallback(() => {
+    return fetchAllStrategyPlans({ field, options: effectiveOptions, request });
+  }, [field, effectiveOptions, request]);
+
+  useEffect(() => {
+    if (!entry && field) {
+      fetchAllStrategyPlans({ field, options: effectiveOptions, request }).catch(() => {});
+    }
+  }, [cacheKey, field, entry, effectiveOptions, request]);
+
+  return {
+    plansByPriority,
+    loading,
+    error,
+    selectedPriority,
+    selectedStrategy,
+    setSelectedStrategy,
+    refetch,
+    cacheKey,
+  };
+}
