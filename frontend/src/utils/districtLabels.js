@@ -1,5 +1,5 @@
 // frontend/src/utils/districtLabels.js
-import districtsData from '../bd_districts_choropleth.json';
+import districtsData from '../bd_districts_choropleth.json' with { type: 'json' };
 
 // Authoritative Barind Tract districts in Northwest Bangladesh
 // Hydrologically identified by NASA GRACE-FO with -1.07 cm/yr terrestrial water storage depletion

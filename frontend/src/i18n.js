@@ -344,5 +344,188 @@ export function useTranslation(lang = 'bn') {
     return dict[key] !== undefined ? dict[key] : (TRANSLATIONS.en[key] || fallback || key);
   };
 
-  return { t, lang: currentLang, toBn: toBengaliNumber, formatArea, formatCurrency };
+  return { t, lang: currentLang, toBn: toBengaliNumber, formatArea, formatCurrency, formatNumber, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel };
+}
+
+// ---------------------------------------------------------------------------
+// UNIFIED LOCALIZED FORMATTERS (L1)
+// ---------------------------------------------------------------------------
+
+import { formatDistrictLabel } from './utils/districtLabels.js';
+
+export function districtLabel(district, lang = 'bn') {
+  return formatDistrictLabel(district, lang);
+}
+
+export function formatNumber(val, lang = 'bn', options = {}) {
+  if (val === null || val === undefined || val === '') return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  const num = Number(val);
+  if (Number.isNaN(num)) return String(val);
+  const decimals = typeof options === 'number' ? options : (options?.decimals ?? null);
+  const str = decimals !== null ? num.toFixed(decimals) : num.toLocaleString('en-US');
+  if (lang === 'bn') {
+    return str.replace(/[0-9]/g, d => BENGALI_DIGITS[Number(d)]);
+  }
+  return str;
+}
+
+export const CROP_LABELS = {
+  'boro rice': { bn: 'বোরো ধান', en: 'Boro Rice' },
+  'boro': { bn: 'বোরো ধান', en: 'Boro Rice' },
+  't. aman rice': { bn: 'আমন ধান', en: 'T. Aman Rice' },
+  't. aman': { bn: 'আমন ধান', en: 'T. Aman' },
+  'aman rice': { bn: 'আমন ধান', en: 'Aman Rice' },
+  'aman': { bn: 'আমন ধান', en: 'Aman' },
+  'aus rice': { bn: 'আউশ ধান', en: 'Aus Rice' },
+  'aus': { bn: 'আউশ ধান', en: 'Aus' },
+  'rice': { bn: 'ধান', en: 'Rice' },
+  'dhan': { bn: 'ধান', en: 'Rice' },
+  'mustard': { bn: 'সরিষা', en: 'Mustard' },
+  'mungbean': { bn: 'মুগডাল', en: 'Mungbean' },
+  'lentil': { bn: 'মসুর ডাল', en: 'Lentil' },
+  'chickpea': { bn: 'ছোলা', en: 'Chickpea' },
+  'wheat': { bn: 'গম', en: 'Wheat' },
+  'maize': { bn: 'ভুট্টা', en: 'Maize' },
+  'potato': { bn: 'আলু', en: 'Potato' },
+  'sesame': { bn: 'তিল', en: 'Sesame' },
+  'soybean': { bn: 'সয়াবিন', en: 'Soybean' },
+  'sunflower': { bn: 'সূর্যমুখী', en: 'Sunflower' },
+  'jute': { bn: 'পাট', en: 'Jute' },
+  'groundnut': { bn: 'চীনাবাদাম', en: 'Groundnut' },
+  'tomato': { bn: 'টমেটো', en: 'Tomato' },
+  'blackgram': { bn: 'মাষকলাই', en: 'Blackgram' },
+  'grasspea': { bn: 'খেসারি', en: 'Grasspea' },
+  'cowpea': { bn: 'বরবটি', en: 'Cowpea' },
+  'onion': { bn: 'পেঁয়াজ', en: 'Onion' },
+  'garlic': { bn: 'রসুন', en: 'Garlic' },
+  'chilli': { bn: 'মরিচ', en: 'Chilli' },
+  'fallow': { bn: 'পতিত', en: 'Fallow' },
+  'unknown': { bn: 'তথ্য নেই', en: 'Unknown' }
+};
+
+export function cropLabel(crop, lang = 'bn', seasonCode = null) {
+  if (!crop) return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  const raw = String(crop).trim();
+  const k = raw.toLowerCase();
+
+  if (k === 'rice' || k === 'dhan' || k === 'ধান') {
+    if (seasonCode) {
+      const sLower = String(seasonCode).toLowerCase();
+      if (sLower.includes('s1') || sLower.includes('rabi')) {
+        return lang === 'bn' ? 'বোরো ধান' : 'Boro Rice';
+      }
+      if (sLower.includes('s2') || sLower.includes('kharif1') || sLower.includes('kharif-1')) {
+        return lang === 'bn' ? 'আউশ ধান' : 'Aus Rice';
+      }
+      if (sLower.includes('s3') || sLower.includes('kharif2') || sLower.includes('kharif-2')) {
+        return lang === 'bn' ? 'আমন ধান' : 'T. Aman Rice';
+      }
+    }
+    return lang === 'bn' ? 'আমন ধান' : 'Rice';
+  }
+
+  const match = CROP_LABELS[k];
+  if (match) return lang === 'bn' ? match.bn : match.en;
+  return raw;
+}
+
+export const SEASON_LABELS = {
+  rabi: { bn: 'রবি', en: 'Rabi' },
+  kharif1: { bn: 'খরিফ-১', en: 'Kharif-1' },
+  kharif2: { bn: 'খরিফ-২', en: 'Kharif-2' },
+  kharif_1: { bn: 'খরিফ-১', en: 'Kharif-1' },
+  kharif_2: { bn: 'খরিফ-২', en: 'Kharif-2' },
+  'kharif-1': { bn: 'খরিফ-১', en: 'Kharif-1' },
+  'kharif-2': { bn: 'খরিফ-২', en: 'Kharif-2' },
+  y1_s1: { bn: '১ম বছর রবি', en: 'Year 1 Rabi' },
+  y1_s2: { bn: '১ম বছর খরিফ-১', en: 'Year 1 Kharif-1' },
+  y1_s3: { bn: '১ম বছর খরিফ-২', en: 'Year 1 Kharif-2' },
+  y2_s1: { bn: '২য় বছর রবি', en: 'Year 2 Rabi' },
+  y2_s2: { bn: '২য় বছর খরিফ-১', en: 'Year 2 Kharif-1' },
+  y2_s3: { bn: '২য় বছর খরিফ-২', en: 'Year 2 Kharif-2' },
+};
+
+export function seasonLabel(seasonId, lang = 'bn') {
+  if (!seasonId) return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  const k = String(seasonId).toLowerCase().trim().replace(/[\s-]+/g, '_');
+  const direct = SEASON_LABELS[k] || SEASON_LABELS[String(seasonId).toLowerCase().trim()];
+  if (direct) return lang === 'bn' ? direct.bn : direct.en;
+  return String(seasonId);
+}
+
+export const MONTH_LABELS = {
+  jan: { bn: 'জানুয়ারি', en: 'January' },
+  feb: { bn: 'ফেব্রুয়ারি', en: 'February' },
+  mar: { bn: 'মার্চ', en: 'March' },
+  apr: { bn: 'এপ্রিল', en: 'April' },
+  may: { bn: 'মে', en: 'May' },
+  jun: { bn: 'জুন', en: 'June' },
+  jul: { bn: 'জুলাই', en: 'July' },
+  aug: { bn: 'আগস্ট', en: 'August' },
+  sep: { bn: 'সেপ্টেম্বর', en: 'September' },
+  oct: { bn: 'অক্টোবর', en: 'October' },
+  nov: { bn: 'নভেম্বর', en: 'November' },
+  dec: { bn: 'ডিসেম্বর', en: 'December' },
+  'nov–apr': { bn: 'নভে–এপ্রি', en: 'Nov–Apr' },
+  'nov-apr': { bn: 'নভে–এপ্রি', en: 'Nov–Apr' },
+  'apr–jun': { bn: 'এপ্রি–জুন', en: 'Apr–Jun' },
+  'apr-jun': { bn: 'এপ্রি–জুন', en: 'Apr–Jun' },
+  'jul–oct': { bn: 'জুলাই–অক্টো', en: 'Jul–Oct' },
+  'jul-oct': { bn: 'জুলাই–অক্টো', en: 'Jul–Oct' }
+};
+
+export function monthLabel(month, lang = 'bn') {
+  if (!month) return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  const k = String(month).toLowerCase().trim();
+  const match = MONTH_LABELS[k];
+  if (match) return lang === 'bn' ? match.bn : match.en;
+  return String(month);
+}
+
+export const SOIL_TRANSLATIONS = {
+  clay_loam: { bn: 'এঁটেল দোআঁশ', en: 'Clay Loam' },
+  loam: { bn: 'দোআঁশ', en: 'Loam' },
+  silty_loam: { bn: 'পলি দোআঁশ', en: 'Silty Loam' },
+  sandy_loam: { bn: 'বেলে দোআঁশ', en: 'Sandy Loam' },
+  clay: { bn: 'এঁটেল', en: 'Clay' },
+  silty_clay: { bn: 'পলি এঁটেল', en: 'Silty Clay' },
+  sand: { bn: 'বেলে', en: 'Sand' },
+  sandy_clay: { bn: 'বেলে এঁটেল', en: 'Sandy Clay' },
+  unknown: { bn: 'অজানা মাটি', en: 'Unknown Soil' }
+};
+
+export function soilLabel(texture, lang = 'bn') {
+  if (!texture) return lang === 'bn' ? 'তথ্য নেই' : 'Unknown';
+  const k = String(texture).toLowerCase().trim().replace(/[\s-]+/g, '_');
+  const match = SOIL_TRANSLATIONS[k];
+  if (match) return lang === 'bn' ? match.bn : match.en;
+  return String(texture);
+}
+
+export const UNIT_LABELS = {
+  mm: { bn: 'মিমি', en: 'mm' },
+  bigha: { bn: 'বিঘা', en: 'bigha' },
+  ha: { bn: 'হেক্টর', en: 'ha' },
+  hectare: { bn: 'হেক্টর', en: 'ha' },
+  'maund/bigha': { bn: 'মণ/বিঘা', en: 'maund/bigha' },
+  'mound/bigha': { bn: 'মণ/বিঘা', en: 'maund/bigha' },
+  maund: { bn: 'মণ', en: 'maund' },
+  mound: { bn: 'মণ', en: 'maund' },
+  bdt: { bn: 'টাকা', en: 'BDT' },
+  taka: { bn: 'টাকা', en: 'BDT' },
+  kg: { bn: 'কেজি', en: 'kg' },
+  'kg/ha': { bn: 'কেজি/হেক্টর', en: 'kg/ha' },
+  't/ha': { bn: 'টন/হেক্টর', en: 'ton/ha' },
+  ton: { bn: 'টন', en: 'ton' },
+  'ton/ha': { bn: 'টন/হেক্টর', en: 'ton/ha' },
+  percent: { bn: '%', en: '%' },
+  '%': { bn: '%', en: '%' }
+};
+
+export function unitLabel(unit, lang = 'bn') {
+  if (!unit) return '';
+  const k = String(unit).toLowerCase().trim();
+  const match = UNIT_LABELS[k];
+  if (match) return lang === 'bn' ? match.bn : match.en;
+  return String(unit);
 }

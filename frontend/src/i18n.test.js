@@ -6,7 +6,14 @@ import {
   toBengaliNumber,
   formatArea,
   formatCurrency,
-  useTranslation
+  useTranslation,
+  cropLabel,
+  seasonLabel,
+  monthLabel,
+  districtLabel,
+  soilLabel,
+  unitLabel,
+  formatNumber
 } from './i18n.js';
 
 test('i18n dictionary contains essential navigation and farmer keys', () => {
@@ -64,4 +71,52 @@ test('useTranslation hook logic returns correct language string', () => {
   assert.strictEqual(tEn('nav_home'), 'Home');
 
   assert.strictEqual(tBn('non_existent_key_xyz', 'fallback text'), 'fallback text');
+});
+
+test('L1: unified localized formatting helpers format correctly in both bn and en', () => {
+  // cropLabel
+  assert.strictEqual(cropLabel('Mustard', 'bn'), 'সরিষা');
+  assert.strictEqual(cropLabel('Mustard', 'en'), 'Mustard');
+  assert.strictEqual(cropLabel('T. Aman Rice', 'bn'), 'আমন ধান');
+  assert.strictEqual(cropLabel('T. Aman Rice', 'en'), 'T. Aman Rice');
+  assert.strictEqual(cropLabel('Rice', 'bn', 'Y1_S1'), 'বোরো ধান');
+  assert.strictEqual(cropLabel('Rice', 'en', 'Y1_S1'), 'Boro Rice');
+  assert.strictEqual(cropLabel('Rice', 'bn', 'Y1_S3'), 'আমন ধান');
+
+  // seasonLabel
+  assert.strictEqual(seasonLabel('rabi', 'bn'), 'রবি');
+  assert.strictEqual(seasonLabel('rabi', 'en'), 'Rabi');
+  assert.strictEqual(seasonLabel('kharif-1', 'bn'), 'খরিফ-১');
+  assert.strictEqual(seasonLabel('kharif-1', 'en'), 'Kharif-1');
+  assert.strictEqual(seasonLabel('y1_s1', 'bn'), '১ম বছর রবি');
+  assert.strictEqual(seasonLabel('y1_s1', 'en'), 'Year 1 Rabi');
+
+  // monthLabel
+  assert.strictEqual(monthLabel('nov–apr', 'bn'), 'নভে–এপ্রি');
+  assert.strictEqual(monthLabel('nov–apr', 'en'), 'Nov–Apr');
+
+  // districtLabel with Barind indicator
+  assert.strictEqual(districtLabel('chapainawabganj', 'bn'), 'চাঁপাইনবাবগঞ্জ (বরেন্দ্র)');
+  assert.strictEqual(districtLabel('chapainawabganj', 'en'), 'Chapainawabganj (Barind)');
+  assert.strictEqual(districtLabel('dhaka', 'bn'), 'ঢাকা');
+  assert.strictEqual(districtLabel('dhaka', 'en'), 'Dhaka');
+
+  // soilLabel
+  assert.strictEqual(soilLabel('clay_loam', 'bn'), 'এঁটেল দোআঁশ');
+  assert.strictEqual(soilLabel('clay_loam', 'en'), 'Clay Loam');
+  assert.strictEqual(soilLabel('sandy_loam', 'bn'), 'বেলে দোআঁশ');
+  assert.strictEqual(soilLabel('sandy_loam', 'en'), 'Sandy Loam');
+
+  // unitLabel
+  assert.strictEqual(unitLabel('mm', 'bn'), 'মিমি');
+  assert.strictEqual(unitLabel('mm', 'en'), 'mm');
+  assert.strictEqual(unitLabel('bigha', 'bn'), 'বিঘা');
+  assert.strictEqual(unitLabel('maund/bigha', 'bn'), 'মণ/বিঘা');
+  assert.strictEqual(unitLabel('maund/bigha', 'en'), 'maund/bigha');
+
+  // formatNumber
+  assert.strictEqual(formatNumber(1200, 'bn'), '১,২০০');
+  assert.strictEqual(formatNumber(1200, 'en'), '1,200');
+  assert.strictEqual(formatNumber(0.669, 'bn', 2), '০.৬৭');
+  assert.strictEqual(formatNumber(0.669, 'en', 2), '0.67');
 });
