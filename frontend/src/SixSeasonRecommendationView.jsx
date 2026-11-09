@@ -879,17 +879,17 @@ export function SixSeasonRecommendationView({
   const baselineQualifierBn = activePlanData.baselineSource === 'saved_field_history'
     ? ` (সংরক্ষিত ইতিহাস${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
     : activePlanData.baselineSource === 'saved_field_rotation'
-      ? ' (সংরক্ষিত জমির প্রোফাইল; সময়কাল অনির্দিষ্ট)'
+      ? ' (আপনার সংরক্ষিত)'
       : activePlanData.baselineSource === 'request_supplied_rotation'
         ? ' (অনুরোধে দেওয়া; যাচাইকৃত নয়)'
-        : isAssumed ? ' (ধরে নেওয়া)' : '';
+        : isAssumed ? ' (ধরে নেওয়া)' : ' (আপনার সংরক্ষিত)';
   const baselineQualifierEn = activePlanData.baselineSource === 'saved_field_history'
     ? ` (saved history${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
     : activePlanData.baselineSource === 'saved_field_rotation'
-      ? ' (saved field profile; period unknown)'
+      ? ' (your saved rotation)'
       : activePlanData.baselineSource === 'request_supplied_rotation'
         ? ' (request-supplied; unverified)'
-        : isAssumed ? ' (assumed)' : '';
+        : isAssumed ? ' (assumed)' : ' (your saved rotation)';
   const baselineRotationBn = baselineCrops
     ? baselineCrops.map(c => translateCropName(c, 'bn')).join(' → ') + baselineQualifierBn
     : 'তথ্য অনুপলভ্য';
@@ -1206,6 +1206,7 @@ export function SixSeasonRecommendationView({
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
                 }}
+                title={s.id === 'baseline' ? (lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`) : undefined}
               >
                 {lang === 'bn' ? s.labelBn : s.labelEn}
               </button>
@@ -1418,7 +1419,10 @@ export function SixSeasonRecommendationView({
               </strong>
             </div>
           </div>
-          <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 10 }}>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
+            {lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`}
+          </div>
+          <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 4 }}>
             * {lang === 'bn' ? 'উদাহরণমূলক দাম ও মডেল গণনাভিত্তিক প্রক্সি' : 'Illustrative price and modeled agronomic proxy'}
           </div>
         </div>
@@ -1455,6 +1459,9 @@ export function SixSeasonRecommendationView({
             >
               {lang === 'bn' ? 'বিস্তারিত দেখুন →' : 'See Details →'}
             </button>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
+            {lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`}
           </div>
         </div>
 
