@@ -284,9 +284,11 @@ export function SixSeasonRecommendationView({
     loading,
     error: plansError,
     selectedStrategy: storeSelectedStrategy,
+    bestStrategyId: bestScoringStrategyId,
+    bestReason: bestStrategyReason,
     setSelectedStrategy: setStoreSelectedStrategy,
     refetch,
-  } = useRotationPlans({ field: activeField, options: plannerOptions, request });
+  } = useRotationPlans({ field: activeField, options: plannerOptions, lang, request });
 
   const selectedStrategy = selectedStrategyLocal || storeSelectedStrategy || 'balanced';
 
@@ -402,38 +404,7 @@ export function SixSeasonRecommendationView({
     return null;
   }, [plansByPriority, selectedStrategy, lang]);
 
-  // Determine best scoring strategy from API multi-criteria ranking (or fallback to balanced)
-  const bestScoringStrategyId = useMemo(() => {
-    const PRIORITY_TO_STRATEGY = {
-      balanced: 'balanced',
-      profit: 'profit_focused',
-      profit_focused: 'profit_focused',
-      water: 'water_efficiency',
-      water_efficiency: 'water_efficiency',
-      soil: 'soil_health',
-      soil_health: 'soil_health',
-    };
-    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
-      const pData = plansByPriority[pKey]?.summary?.planning;
-      const bStrat = pData?.best_strategy || pData?.milp_status?.best_strategy || plansByPriority[pKey]?.best_strategy;
-      if (bStrat && PRIORITY_TO_STRATEGY[bStrat]) {
-        return PRIORITY_TO_STRATEGY[bStrat];
-      }
-    }
-    return 'balanced';
-  }, [plansByPriority]);
 
-  const bestStrategyReason = useMemo(() => {
-    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
-      const pData = plansByPriority[pKey]?.summary?.planning;
-      const rBn = pData?.best_reason_bn || pData?.best_reason || plansByPriority[pKey]?.best_reason;
-      const rEn = pData?.best_reason_en || plansByPriority[pKey]?.best_reason_en;
-      if (rBn || rEn) {
-        return lang === 'bn' ? (rBn || rEn) : (rEn || rBn);
-      }
-    }
-    return null;
-  }, [plansByPriority, lang]);
 
   const identicalStrategyNote = useMemo(() => {
     for (const pKey of ['balanced', 'profit', 'water', 'soil']) {

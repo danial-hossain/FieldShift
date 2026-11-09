@@ -187,9 +187,33 @@ export async function fetchAllStrategyPlans({ field, options = {}, request = def
 }
 
 /**
+ * Extract best_strategy and best_reason from plansByPriority
+ */
+export function getBestStrategyInfo(plansByPriority, lang = 'bn') {
+  if (!plansByPriority) return { bestPriority: 'balanced', bestStrategyId: 'balanced', reason: null };
+  for (const pKey of PRIORITIES) {
+    const plan = plansByPriority[pKey];
+    const pData = plan?.summary?.planning || plan;
+    const bStrat = pData?.best_strategy || pData?.milp_status?.best_strategy || plan?.best_strategy;
+    if (bStrat) {
+      const canonicalPriority = STRATEGY_TO_PRIORITY[bStrat] || bStrat;
+      const rBn = pData?.best_reason_bn || pData?.best_reason || plan?.best_reason;
+      const rEn = pData?.best_reason_en || plan?.best_reason_en;
+      const reason = lang === 'bn' ? (rBn || rEn) : (rEn || rBn);
+      return {
+        bestPriority: canonicalPriority,
+        bestStrategyId: PRIORITY_TO_STRATEGY[canonicalPriority] || canonicalPriority,
+        reason: reason || null,
+      };
+    }
+  }
+  return { bestPriority: 'balanced', bestStrategyId: 'balanced', reason: null };
+}
+
+/**
  * React hook for components to subscribe to strategy plans and shared selected strategy.
  */
-export function useRotationPlans({ field, options = {}, request = defaultRequest }) {
+export function useRotationPlans({ field, options = {}, lang = 'bn', request = defaultRequest }) {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -214,12 +238,17 @@ export function useRotationPlans({ field, options = {}, request = defaultRequest
   const cacheKey = useMemo(() => buildPlansCacheKey(field, effectiveOptions), [field, effectiveOptions]);
   const entry = _plansCache.get(cacheKey) || null;
 
-  const plansByPriority = entry?.plans || {};
+  const plansByPriority = useMemo(() => entry?.plans || {}, [entry]);
   const loading = field ? (entry ? Boolean(entry.loading) : true) : false;
   const error = entry?.error || null;
 
   const selectedPriority = _selectedStrategyByField.get(fieldId) || 'balanced';
   const selectedStrategy = PRIORITY_TO_STRATEGY[selectedPriority] || selectedPriority;
+
+  const { bestPriority, bestStrategyId, reason: bestReason } = useMemo(
+    () => getBestStrategyInfo(plansByPriority, lang),
+    [plansByPriority, lang]
+  );
 
   const setSelectedStrategy = useCallback(
     (strat) => {
@@ -244,6 +273,9 @@ export function useRotationPlans({ field, options = {}, request = defaultRequest
     error,
     selectedPriority,
     selectedStrategy,
+    bestPriority,
+    bestStrategyId,
+    bestReason,
     setSelectedStrategy,
     refetch,
     cacheKey,

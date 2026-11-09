@@ -72,9 +72,11 @@ export function AdaptiveReplanningView({
     loading: plansLoading,
     error: plansError,
     selectedPriority,
+    bestPriority,
+    bestReason,
     setSelectedStrategy,
     refetch: refetchPlans,
-  } = useRotationPlans({ field: activeField, request });
+  } = useRotationPlans({ field: activeField, lang, request });
 
   // 1. Strategy Selection (bound to shared store)
   const strategy = selectedPriority;
@@ -438,37 +440,48 @@ export function AdaptiveReplanningView({
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
           <div role="group" aria-label="Strategy" style={{ display: 'inline-flex', background: 'var(--surface-2, rgba(0,0,0,0.05))', padding: 4, borderRadius: 10, border: '1px solid var(--line, #dfe6dc)' }}>
             {[
-              { id: 'balanced', labelBn: 'সুষম ⭐', labelEn: 'Balanced ⭐' },
+              { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced' },
               { id: 'profit', labelBn: 'লাভ', labelEn: 'Profit' },
               { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water Saving' },
               { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health' },
-            ].map((st) => (
-              <button
-                key={st.id}
-                onClick={() => {
-                  setSelectedStrategy(st.id);
-                  setIsDirty(true);
-                }}
-                style={{
-                  background: strategy === st.id ? 'var(--accent, #2c8a4b)' : 'transparent',
-                  color: strategy === st.id ? '#ffffff' : 'var(--text)',
-                  border: 0,
-                  borderRadius: 7,
-                  padding: '6px 12px',
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s ease',
-                }}
-              >
-                {lang === 'bn' ? st.labelBn : st.labelEn}
-              </button>
-            ))}
+            ].map((st) => {
+              const isBest = st.id === bestPriority;
+              const label = (lang === 'bn' ? st.labelBn : st.labelEn) + (isBest ? ' ⭐' : '');
+              return (
+                <button
+                  key={st.id}
+                  onClick={() => {
+                    setSelectedStrategy(st.id);
+                    setIsDirty(true);
+                  }}
+                  style={{
+                    background: strategy === st.id ? 'var(--accent, #2c8a4b)' : 'transparent',
+                    color: strategy === st.id ? '#ffffff' : 'var(--text)',
+                    border: 0,
+                    borderRadius: 7,
+                    padding: '6px 12px',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    transition: 'background 0.15s ease',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
           <span style={{ fontSize: 12.5, color: 'var(--muted, #5e6b60)' }}>
             {lang === 'bn' ? 'আবর্তন পরিকল্পনার নির্বাচিত কৌশল।' : 'Selected rotation strategy from planner.'}
           </span>
         </div>
+
+        {/* Best Strategy Explanation Line */}
+        {bestReason && (
+          <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--leaf-dark, #237841)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+            <span>{bestReason}</span>
+          </div>
+        )}
 
         {/* 6 crops baseline sequence strip */}
         <div
