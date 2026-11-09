@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
-import { formatCurrency } from './i18n.js';
+import { formatCurrency, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel, formatNumber } from './i18n.js';
 import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
@@ -16,9 +16,7 @@ export function toBnDigits(val) {
 
 export function fmtNum(val, lang = 'bn', decimals = 0) {
   if (val == null || isNaN(val)) return '—';
-  const n = Number(val);
-  const formatted = decimals > 0 ? n.toFixed(decimals) : Math.round(n).toLocaleString('en-US');
-  return lang === 'bn' ? toBnDigits(formatted) : formatted;
+  return formatNumber(val, lang, decimals);
 }
 
 const CROP_TRANSLATIONS = {
@@ -400,8 +398,8 @@ export function AdaptiveReplanningView({
             {lang === 'bn' ? `অভিযোজিত পুনঃপরিকল্পনা · ${activeField?.name || 'রহিম মিয়ার জমি'}` : `Adaptive Replan · ${activeField?.name || 'Rahim Farm'}`}
           </h1>
           <div style={{ fontSize: 13, color: 'var(--muted, #5e6b60)', marginTop: 4 }}>
-            {activeField?.district || 'চাঁপাইনবাবগঞ্জ'} · {fmtNum(activeField?.area_ha ? activeField.area_ha / 0.13378 : 5, lang)} {lang === 'bn' ? 'বিঘা' : 'bigha'} ·{' '}
-            {activeField?.soil_texture || (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
+            {activeField?.district ? districtLabel(activeField.district, lang) : (lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ' : 'Chapainawabganj')} · {fmtNum(activeField?.area_ha ? activeField.area_ha / 0.13378 : 5, lang, 1)} {unitLabel('bigha', lang)} ·{' '}
+            {activeField?.soil_texture ? soilLabel(activeField.soil_texture, lang) : (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
           </div>
         </div>
         <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.06))', border: '1px solid var(--line, #dfe6dc)', padding: '6px 12px', borderRadius: 10, fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
@@ -423,15 +421,15 @@ export function AdaptiveReplanningView({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>১</b>
+          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{lang === 'bn' ? '১' : '1'}</b>
           <span style={{ fontSize: 13 }}>{lang === 'bn' ? 'পরিকল্পনা বাছুন (আবর্তন পরিকল্পনা থেকে আসে)' : '1 Choose Strategy (from Rotation Planner)'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>২</b>
+          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{lang === 'bn' ? '২' : '2'}</b>
           <span style={{ fontSize: 13 }}>{lang === 'bn' ? 'যে মৌসুম শেষ হয়েছে, তার আসল ফলন আর দাম দিন (১–৫টা)' : '2 Log actual yield & price for finished seasons (1–5)'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>৩</b>
+          <b style={{ background: 'var(--accent, #2c8a4b)', color: '#fff', borderRadius: '50%', width: 22, height: 22, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{lang === 'bn' ? '৩' : '3'}</b>
           <span style={{ fontSize: 13 }}>{lang === 'bn' ? 'বাকি মৌসুমের নতুন পরিকল্পনা ও কারণ দেখুন' : '3 View adapted plan for remaining seasons'}</span>
         </div>
       </div>
@@ -533,7 +531,7 @@ export function AdaptiveReplanningView({
                 <div key={sc.id} style={{ fontSize: 12, padding: '4px 6px', textAlign: 'center', background: 'var(--surface, #ffffff)', borderRadius: 6, border: '1px solid var(--line, #dfe6dc)' }}>
                   <div style={{ color: 'var(--muted, #5e6b60)', fontSize: 10.5 }}>{lang === 'bn' ? `${sc.sBn} (${sc.mBn})` : `${sc.sEn} (${sc.mEn})`}</div>
                   <strong style={{ display: 'block', marginTop: 2, fontSize: 12.5 }}>
-                    {crop ? (lang === 'bn' ? (CROP_TRANSLATIONS[crop] || crop) : crop) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                    {crop ? cropLabel(crop, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                   </strong>
                 </div>
               );
@@ -658,7 +656,7 @@ export function AdaptiveReplanningView({
                     >
                       {allowedCrops.map((c) => (
                         <option key={c} value={c}>
-                          {lang === 'bn' ? (CROP_TRANSLATIONS[c] || c) : c}
+                          {cropLabel(c, lang)}
                         </option>
                       ))}
                     </select>
@@ -667,7 +665,7 @@ export function AdaptiveReplanningView({
                   {/* Yield Input */}
                   <div>
                     <label style={{ fontSize: 11, color: 'var(--muted, #5e6b60)', display: 'block', marginBottom: 2 }}>
-                      {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bigha)'}
+                      {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (maund/bigha)'}
                     </label>
                     <input
                       type="number"
@@ -691,7 +689,7 @@ export function AdaptiveReplanningView({
                   {/* Price Input */}
                   <div>
                     <label style={{ fontSize: 11, color: 'var(--muted, #5e6b60)', display: 'block', marginBottom: 2 }}>
-                      {lang === 'bn' ? 'দাম (টাকা/মণ)' : 'Price (BDT/md)'}
+                      {lang === 'bn' ? 'দাম (টাকা/মণ)' : 'Price (BDT/maund)'}
                     </label>
                     <input
                       type="number"
@@ -798,7 +796,7 @@ export function AdaptiveReplanningView({
                               style={{ padding: '4px 6px', borderRadius: 6, border: '1px solid var(--line)', fontSize: 12 }}
                             >
                               {allowedCrops.map((c) => (
-                                <option key={c} value={c}>{lang === 'bn' ? (CROP_TRANSLATIONS[c] || c) : c}</option>
+                                <option key={c} value={c}>{cropLabel(c, lang)}</option>
                               ))}
                             </select>
                             <input
@@ -907,7 +905,7 @@ export function AdaptiveReplanningView({
             ))}
           </div>
           <span style={{ fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
-            {lang === 'bn' ? `জমির ডিফল্ট: ${defaultIrrigClass === 'full' ? 'পর্যাপ্ত' : defaultIrrigClass === 'limited' ? 'সীমিত' : 'নেই'}` : `Field default: ${defaultIrrigClass}`}
+            {lang === 'bn' ? `জমির ডিফল্ট: ${defaultIrrigClass === 'full' ? 'পর্যাপ্ত' : defaultIrrigClass === 'limited' ? 'সীমিত' : 'নেই'}` : `Field default: ${defaultIrrigClass === 'full' ? 'Ample' : defaultIrrigClass === 'limited' ? 'Limited' : 'None'}`}
           </span>
         </div>
 
@@ -1057,21 +1055,21 @@ export function AdaptiveReplanningView({
                   </div>
                   {isFinished ? (
                     <strong style={{ display: 'block', marginTop: 3, fontSize: 13, color: 'var(--text)' }}>
-                      {lang === 'bn' ? (CROP_TRANSLATIONS[newCrop] || newCrop) : newCrop}
+                      {cropLabel(newCrop, lang)}
                     </strong>
                   ) : isChanged ? (
                     <div style={{ marginTop: 3 }}>
                       <s style={{ color: 'var(--muted, #5e6b60)', fontSize: 11.5 }}>
-                        {lang === 'bn' ? (CROP_TRANSLATIONS[origCrop] || origCrop) : origCrop}
+                        {cropLabel(origCrop, lang)}
                       </s>{' '}
                       →{' '}
                       <strong style={{ color: 'var(--chg, #d9822b)', fontSize: 13 }}>
-                        {lang === 'bn' ? (CROP_TRANSLATIONS[newCrop] || newCrop) : newCrop}
+                        {cropLabel(newCrop, lang)}
                       </strong>
                     </div>
                   ) : (
                     <strong style={{ display: 'block', marginTop: 3, fontSize: 13, color: 'var(--text)' }}>
-                      {lang === 'bn' ? (CROP_TRANSLATIONS[newCrop] || newCrop) : newCrop}
+                      {cropLabel(newCrop, lang)}
                     </strong>
                   )}
                 </div>
@@ -1192,7 +1190,7 @@ export function AdaptiveReplanningView({
                       {calibrationTable.map((cal, cIdx) => (
                         <tr key={cIdx} style={{ borderBottom: '1px solid var(--line, #dfe6dc)' }}>
                           <td style={{ padding: '6px' }}>
-                            <strong>{lang === 'bn' ? (CROP_TRANSLATIONS[cal.crop] || cal.crop) : cal.crop}</strong>
+                            <strong>{cropLabel(cal.crop, lang)}</strong>
                             {cal.is_uncertain && (
                               <span style={{ display: 'block', fontSize: 10, color: 'var(--chg, #d9822b)', fontWeight: 600 }}>
                                 {lang === 'bn' ? cal.uncertainty_badge_bn : cal.uncertainty_badge_en}
@@ -1205,7 +1203,7 @@ export function AdaptiveReplanningView({
                             {Math.round(cal.ratio * 100)}%
                           </td>
                           <td style={{ padding: '6px', textAlign: 'right' }}>
-                            ৳{fmtNum(cal.price_bdt_maund, lang)}
+                            {lang === 'bn' ? '৳' : 'BDT '}{fmtNum(cal.price_bdt_maund, lang)}
                             <span style={{ display: 'block', fontSize: 9.5, color: 'var(--muted, #5e6b60)' }}>
                               {lang === 'bn' ? cal.price_source : cal.price_source_en}
                             </span>
@@ -1263,7 +1261,7 @@ export function AdaptiveReplanningView({
                   </strong>
                   <span>
                     {lang === 'bn' ? 'প্রস্তাবিত ফসল:' : 'Proposed Action:'}{' '}
-                    <b>{lang === 'bn' ? (CROP_TRANSLATIONS[rlDecision.rl_proposed_action] || rlDecision.rl_proposed_action) : rlDecision.rl_proposed_action}</b>
+                    <b>{cropLabel(rlDecision.rl_proposed_action, lang)}</b>
                   </span>
                   <div style={{ fontSize: 10.5, color: 'var(--muted, #5e6b60)', marginTop: 4 }}>
                     {lang === 'bn' ? 'উৎস: সিন্থেটিক সিমুলেশন পরিবেশে প্রশিক্ষিত Q-লার্নিং পলিসি' : 'Source: Synthetic Simulation Environment Q-Learning Policy'} (<code>src/rl/crop_rotation_rl.py:19</code>)

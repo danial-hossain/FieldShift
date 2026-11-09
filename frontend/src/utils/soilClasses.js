@@ -84,9 +84,15 @@ export function getSoilClassData(textureKey) {
   return SOIL_TEXTURE_DATA[k] || SOIL_TEXTURE_DATA.loam;
 }
 
-export function formatSoilTextureLabel(textureKey) {
-  if (!textureKey) return 'Loam (দোআঁশ)';
+export function formatSoilTextureLabel(textureKey, lang = null) {
+  if (!textureKey) {
+    if (lang === 'bn') return 'দোআঁশ';
+    if (lang === 'en') return 'Loam';
+    return 'Loam (দোআঁশ)';
+  }
   const d = getSoilClassData(textureKey);
+  if (lang === 'bn') return d.nameBn;
+  if (lang === 'en') return d.nameEn;
   return d.label || `${d.nameEn} (${d.nameBn})`;
 }
 
@@ -110,7 +116,10 @@ export function formatIrrigationClassLabel(capacityMm, lang = 'en', toBnFn = nul
     tierEn = 'Rainfed';
     tierBn = 'বৃষ্টিনির্ভর';
   }
-  const numStr = (lang === 'bn' && typeof toBnFn === 'function') ? `${toBnFn(cap)} মিমি` : `${cap} mm`;
-  return `${tierEn} (${tierBn}) · ${numStr}`;
+  if (lang === 'bn') {
+    const numStr = typeof toBnFn === 'function' ? `${toBnFn(cap)} মিমি` : `${cap} মিমি`;
+    return `${tierBn} · ${numStr}`;
+  }
+  return `${tierEn} · ${cap} mm`;
 }
 

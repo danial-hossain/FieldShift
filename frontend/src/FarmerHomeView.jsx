@@ -3,7 +3,7 @@
 // Strictly honest metrics from NASA POWER climatology and live advisory telemetry.
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useTranslation, toBengaliNumber, formatArea } from './i18n.js';
+import { useTranslation, toBengaliNumber, formatArea, soilLabel, unitLabel, formatNumber } from './i18n.js';
 import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton } from './ui/index.js';
 import { evidenceBadge } from './advisoryBadges.js';
 import nasa30DaySeries from './nasa_30day_series.json';
@@ -373,14 +373,14 @@ export function FarmerHomeView({
               {/* Box 2: SoilGrids ISRIC Physical Soil Monolith */}
               <div style={{ background: 'var(--glass)', border: '1px solid var(--line)', borderRadius: 12, padding: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--hud-teal)' }}>🌱 {lang === 'bn' ? 'মাটির প্রোফাইল (ISRIC)' : 'SoilGrids Profile'}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--hud-teal)' }}>🌱 {lang === 'bn' ? 'মাটির প্রোফাইল' : 'SoilGrids Profile'}</span>
                   <DataSourceTag source="SoilGrids 250m" mode="observed" period="ISRIC" />
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  <div><strong>{lang === 'bn' ? 'বুনট (Texture):' : 'Texture:'}</strong> {activeField?.soil_texture || 'Loam (দোআঁশ)'}</div>
-                  <div><strong>{lang === 'bn' ? 'মাটির পিএইচ (pH):' : 'Soil pH:'}</strong> {activeField?.soil_ph ? Number(activeField.soil_ph).toFixed(1) : '6.5'} ({lang === 'bn' ? 'নিরপেক্ষ' : 'Slightly Acidic'})</div>
-                  <div><strong>{lang === 'bn' ? 'জৈব কার্বন (SOC):' : 'Organic Carbon:'}</strong> 1.4% (ISRIC depth 0-30cm)</div>
-                  <div><strong>{lang === 'bn' ? 'পানির ধারণক্ষমতা (TAW):' : 'Available Water (TAW):'}</strong> 140 mm/m</div>
+                  <div><strong>{lang === 'bn' ? 'বুনট:' : 'Texture:'}</strong> {activeField?.soil_texture ? soilLabel(activeField.soil_texture, lang) : (lang === 'bn' ? 'দোআঁশ' : 'Loam')}</div>
+                  <div><strong>{lang === 'bn' ? 'মাটির পিএইচ:' : 'Soil pH:'}</strong> {formatNumber(Number(activeField?.soil_ph || 6.5), lang, 1)} ({lang === 'bn' ? 'নিরপেক্ষ' : 'Neutral'})</div>
+                  <div><strong>{lang === 'bn' ? 'জৈব কার্বন:' : 'Organic Carbon:'}</strong> {formatNumber(1.4, lang, 1)}% {lang === 'bn' ? '(ISRIC গভীরতা ০-৩০ সেমি)' : '(ISRIC depth 0-30cm)'}</div>
+                  <div><strong>{lang === 'bn' ? 'পানির ধারণক্ষমতা:' : 'Available Water:'}</strong> {formatNumber(140, lang)} {unitLabel('mm', lang)}/m</div>
                 </div>
               </div>
 
@@ -391,9 +391,9 @@ export function FarmerHomeView({
                   <DataSourceTag source="NASA GPM IMERG" mode="observed" period="2001-2024" />
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6 }}>
-                  <div><strong>{lang === 'bn' ? 'গড় বার্ষিক বৃষ্টি:' : 'Annual Normal:'}</strong> 1,745 mm/year</div>
-                  <div><strong>{lang === 'bn' ? 'খরিফ মৌসুমি বৃষ্টি:' : 'Monsoon Kharif:'}</strong> 1,309 mm (মে-অক্টোবর)</div>
-                  <div><strong>{lang === 'bn' ? 'রবি শুষ্ক মৌসুম:' : 'Dry Season Rabi:'}</strong> 82 mm (নভেম্বর-এপ্রিল)</div>
+                  <div><strong>{lang === 'bn' ? 'গড় বার্ষিক বৃষ্টি:' : 'Annual Normal:'}</strong> {formatNumber(1745, lang)} {unitLabel('mm', lang)}/{lang === 'bn' ? 'বছর' : 'yr'}</div>
+                  <div><strong>{lang === 'bn' ? 'খরিফ মৌসুমি বৃষ্টি:' : 'Monsoon Kharif:'}</strong> {formatNumber(1309, lang)} {unitLabel('mm', lang)} {lang === 'bn' ? '(মে–অক্টোবর)' : '(May–Oct)'}</div>
+                  <div><strong>{lang === 'bn' ? 'রবি শুষ্ক মৌসুম:' : 'Dry Season Rabi:'}</strong> {formatNumber(82, lang)} {unitLabel('mm', lang)} {lang === 'bn' ? '(নভেম্বর–এপ্রিল)' : '(Nov–Apr)'}</div>
                   <div><strong>{lang === 'bn' ? 'সাম্প্রতিক ৭ দিন:' : 'Recent 7-Day Sum:'}</strong> {nasa?.rainfall_mm != null ? Number(nasa.rainfall_mm).toFixed(1) : '0.0'} mm</div>
                 </div>
               </div>

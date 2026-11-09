@@ -27,7 +27,7 @@ import { FarmPlanningView } from './FarmPlanningView.jsx';
 import { WaterIrrigationView } from './WaterIrrigationView.jsx';
 import { DigitalTwin3DView } from './DigitalTwin3DView.jsx';
 import { DataEvidenceView } from './DataEvidenceView.jsx';
-import { useTranslation, formatArea } from './i18n.js';
+import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber } from './i18n.js';
 import {
   buildCounterfactualPayload,
   runCounterfactualRequest,
@@ -2097,7 +2097,7 @@ export function App() {
             </div>
             <div className="sidebar-user-info">
               <span className="sidebar-user-name">{user?.name || user?.email?.split('@')[0] || 'Demo User'}</span>
-              <span className="sidebar-user-role">Agronomist</span>
+              <span className="sidebar-user-role">{lang === 'bn' ? 'কৃষিবিদ' : 'Agronomist'}</span>
             </div>
           </div>
         </div>
@@ -2466,20 +2466,20 @@ export function App() {
               {activeField?.name || (lang === 'bn' ? 'বগুড়া পরীক্ষামূলক খামার' : 'Bogura Demo Field')}
             </strong>
             <span style={{ color: 'var(--border-medium)' }}>•</span>
-            <span>{activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1)) : 'Bogura'}, Bangladesh</span>
+            <span>{activeField?.district ? districtLabel(activeField.district, lang) : (lang === 'bn' ? 'বগুড়া' : 'Bogura')}{lang === 'bn' ? ', বাংলাদেশ' : ', Bangladesh'}</span>
             <span style={{ color: 'var(--border-medium)' }}>•</span>
             <span style={{ fontFamily: 'monospace' }}>
-              {Number(activeField?.latitude || 24.85).toFixed(4)}°N, {Number(activeField?.longitude || 89.37).toFixed(4)}°E
+              {formatI18nNumber(Number(activeField?.latitude || 24.85), lang, 4)}°{lang === 'bn' ? 'উ' : 'N'}, {formatI18nNumber(Number(activeField?.longitude || 89.37), lang, 4)}°{lang === 'bn' ? 'পূ' : 'E'}
             </span>
             <span style={{ color: 'var(--border-medium)' }}>•</span>
-            <span>{Number(activeField?.area_ha || 10).toFixed(1)} ha ({((Number(activeField?.area_ha || 10)) * 7.47).toFixed(1)} bigha)</span>
+            <span>{formatI18nNumber(Number(activeField?.area_ha || 10), lang, 1)} {unitLabel('ha', lang)} ({formatI18nNumber((Number(activeField?.area_ha || 10)) * 7.47, lang, 1)} {unitLabel('bigha', lang)})</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <span>{lang === 'bn' ? 'মাটি:' : 'Soil:'} <strong style={{ color: 'var(--text, #f8fafc)', textTransform: 'capitalize' }}>{activeField?.soil_texture || 'Loam'}</strong></span>
-            <span>{lang === 'bn' ? 'সেচ ধারণক্ষমতা:' : 'Irrigation:'} <strong style={{ color: 'var(--text, #f8fafc)' }}>{activeField?.irrigation_capacity_mm || 90} mm</strong></span>
+            <span>{lang === 'bn' ? 'মাটি:' : 'Soil:'} <strong style={{ color: 'var(--text, #f8fafc)' }}>{soilLabel(activeField?.soil_texture, lang)}</strong></span>
+            <span>{lang === 'bn' ? 'সেচ ধারণক্ষমতা:' : 'Irrigation:'} <strong style={{ color: 'var(--text, #f8fafc)' }}>{formatI18nNumber(activeField?.irrigation_capacity_mm || 90, lang)} {unitLabel('mm', lang)}</strong></span>
             <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
               <span className="live-pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-              NASA POWER + IMERG Connected
+              NASA POWER + IMERG {lang === 'bn' ? 'সংযুক্ত' : 'Connected'}
             </span>
           </div>
         </div>
@@ -3040,9 +3040,9 @@ export function App() {
 
                       <div className="theme-satellite-footer">
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                          <span>Area: <strong>{formatNumber(activeField?.area_ha, 1) || '50.0'} ha</strong></span>
-                          <span>Soil: <strong style={{ textTransform: 'capitalize' }}>{activeField?.soil_texture ? activeField.soil_texture.replaceAll('_', ' ') : 'Clay Loam'}</strong></span>
-                          <span>OM: <strong>{formatNumber(activeField?.organic_matter, 1) || '2.4'}%</strong></span>
+                          <span>{lang === 'bn' ? 'আয়তন:' : 'Area:'} <strong>{formatI18nNumber(activeField?.area_ha ?? 1.0, lang, 1)} {unitLabel('ha', lang)}</strong></span>
+                          <span>{lang === 'bn' ? 'মাটি:' : 'Soil:'} <strong>{soilLabel(activeField?.soil_texture, lang)}</strong></span>
+                          <span>{lang === 'bn' ? 'জৈব পদার্থ:' : 'OM:'} <strong>{formatI18nNumber(activeField?.organic_matter ?? 2.4, lang, 1)}%</strong></span>
                         </div>
                         <button
                           type="button"
@@ -3050,7 +3050,7 @@ export function App() {
                           onClick={() => setActiveNav('field')}
                           style={{ fontSize: 11.5, fontWeight: 700 }}
                         >
-                          Full GIS View  →
+                          {lang === 'bn' ? 'সম্পূর্ণ জিআইএস দেখুন →' : 'Full GIS View →'}
                         </button>
                       </div>
                     </div>
@@ -4270,24 +4270,24 @@ export function App() {
                           </div>
                           {fieldForm.area_ha && Number(fieldForm.area_ha) > 0 && (
                             <small style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                              ≈ {Number(fieldForm.area_ha).toFixed(2)} {lang === 'bn' ? 'হেক্টর' : 'ha'} (১ বিঘা = ০.১৩৩৭৮ হেক্টর; ১ শতাংশ = ৪০.৪৭ বর্গমিটার)
+                              ≈ {Number(fieldForm.area_ha).toFixed(2)} {lang === 'bn' ? 'হেক্টর' : 'ha'} {lang === 'bn' ? '(১ বিঘা = ০.১৩৩৭৮ হেক্টর; ১ শতাংশ = ৪০.৪৭ বর্গমিটার)' : '(1 bigha = 0.13378 ha; 1 shatansh = 40.47 sq m)'}
                             </small>
                           )}
                         </div>
                         <div className="form-group">
-                          <label>{lang === 'bn' ? 'মাটির ধরন (Soil Texture) *' : 'Soil Texture *'}</label>
+                          <label>{lang === 'bn' ? 'মাটির ধরন *' : 'Soil Texture *'}</label>
                           <select
                             className="input-box"
                             value={fieldForm.soil_texture || 'unknown'}
                             onChange={e => setFieldForm(prev => ({ ...prev, soil_texture: e.target.value }))}
                             required
                           >
-                            <option value="unknown">{lang === 'bn' ? 'জানি না (Unknown)' : 'Unknown (জানি না)'}</option>
-                            <option value="loam">{lang === 'bn' ? 'দোআঁশ (Loam)' : 'Loam (দোআঁশ)'}</option>
-                            <option value="silty_loam">{lang === 'bn' ? 'পলি দোআঁশ (Silty Loam)' : 'Silty Loam (পলি দোআঁশ)'}</option>
-                            <option value="clay_loam">{lang === 'bn' ? 'এঁটেল দোআঁশ (Clay Loam)' : 'Clay Loam (এঁটেল দোআঁশ)'}</option>
-                            <option value="clay">{lang === 'bn' ? 'এঁটেল (Clay)' : 'Clay (এঁটেল)'}</option>
-                            <option value="sandy_loam">{lang === 'bn' ? 'বেলে দোআঁশ (Sandy Loam)' : 'Sandy Loam (বেলে দোআঁশ)'}</option>
+                            <option value="unknown">{lang === 'bn' ? 'জানি না' : 'Unknown'}</option>
+                            <option value="loam">{lang === 'bn' ? 'দোআঁশ' : 'Loam'}</option>
+                            <option value="silty_loam">{lang === 'bn' ? 'পলি দোআঁশ' : 'Silty Loam'}</option>
+                            <option value="clay_loam">{lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam'}</option>
+                            <option value="clay">{lang === 'bn' ? 'এঁটেল' : 'Clay'}</option>
+                            <option value="sandy_loam">{lang === 'bn' ? 'বেলে দোআঁশ' : 'Sandy Loam'}</option>
                           </select>
                         </div>
                       </div>
@@ -4295,7 +4295,7 @@ export function App() {
                       {/* Irrigation Capacity (3 Choices + Collapsible Advanced) */}
                       <div className="form-group">
                         <label style={{ fontWeight: 600, marginBottom: 6, display: 'block' }}>
-                          {lang === 'bn' ? 'সেচ সুবিধা (Irrigation Capacity)' : 'Irrigation Capacity'}
+                          {lang === 'bn' ? 'সেচ সুবিধা' : 'Irrigation Capacity'}
                         </label>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
                           <button
@@ -4311,8 +4311,8 @@ export function App() {
                               textAlign: 'center'
                             }}
                           >
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'পর্যাপ্ত (Ample)' : 'Ample (পর্যাপ্ত)'}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>1,200 mm/yr</div>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'পর্যাপ্ত' : 'Ample'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatI18nNumber(1200, lang)} {unitLabel('mm', lang)}/{lang === 'bn' ? 'বছর' : 'yr'}</div>
                           </button>
                           <button
                             type="button"
@@ -4327,8 +4327,8 @@ export function App() {
                               textAlign: 'center'
                             }}
                           >
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সীমিত (Limited)' : 'Limited (সীমিত)'}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>400 mm/yr</div>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সীমিত' : 'Limited'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatI18nNumber(400, lang)} {unitLabel('mm', lang)}/{lang === 'bn' ? 'বছর' : 'yr'}</div>
                           </button>
                           <button
                             type="button"
@@ -4343,8 +4343,8 @@ export function App() {
                               textAlign: 'center'
                             }}
                           >
-                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সেচ নেই (Rainfed)' : 'Rainfed (সেচ নেই)'}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>0 mm/yr</div>
+                            <div style={{ fontWeight: 700, fontSize: 13 }}>{lang === 'bn' ? 'সেচ নেই' : 'Rainfed'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatI18nNumber(0, lang)} {unitLabel('mm', lang)}/{lang === 'bn' ? 'বছর' : 'yr'}</div>
                           </button>
                         </div>
 
@@ -4418,13 +4418,13 @@ export function App() {
                               <option value="Groundnut">{lang === 'bn' ? 'চীনাবাদাম' : 'Groundnut'}</option>
                               <option value="Sunflower">{lang === 'bn' ? 'সূর্যমুখী' : 'Sunflower'}</option>
                               <option value="Tomato">{lang === 'bn' ? 'টমেটো' : 'Tomato'}</option>
-                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত' : 'Fallow'}</option>
                             </select>
                             {fieldForm.rotation_rabi !== 'Fallow' ? (
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (maund/bigha)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4438,7 +4438,7 @@ export function App() {
                                 </div>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (BDT/maund)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4467,7 +4467,7 @@ export function App() {
                               value={fieldForm.rotation_kharif1 || 'Fallow'}
                               onChange={e => setFieldForm(prev => ({ ...prev, rotation_kharif1: e.target.value }))}
                             >
-                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত' : 'Fallow'}</option>
                               <option value="Aus">{lang === 'bn' ? 'আউশ ধান' : 'Aus Rice'}</option>
                               <option value="Mungbean">{lang === 'bn' ? 'মুগডাল' : 'Mungbean'}</option>
                               <option value="Jute">{lang === 'bn' ? 'পাট' : 'Jute'}</option>
@@ -4480,7 +4480,7 @@ export function App() {
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (maund/bigha)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4494,7 +4494,7 @@ export function App() {
                                 </div>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (BDT/maund)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4524,13 +4524,13 @@ export function App() {
                               onChange={e => setFieldForm(prev => ({ ...prev, rotation_kharif2: e.target.value }))}
                             >
                               <option value="Aman">{lang === 'bn' ? 'আমন ধান' : 'Aman Rice'}</option>
-                              <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
+                              <option value="Fallow">{lang === 'bn' ? 'পতিত' : 'Fallow'}</option>
                             </select>
                             {fieldForm.rotation_kharif2 !== 'Fallow' ? (
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (maund/bigha)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4544,7 +4544,7 @@ export function App() {
                                 </div>
                                 <div>
                                   <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
-                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (BDT/maund)'}
                                   </label>
                                   <input
                                     className="input-box"
@@ -4569,7 +4569,7 @@ export function App() {
                       <div className="form-grid-inner">
                         <div className="form-group">
                           <label>
-                            {lang === 'bn' ? 'মাটির পিএইচ (Soil pH, ঐচ্ছিক)' : 'Soil pH (0 - 14, Optional)'}
+                            {lang === 'bn' ? 'মাটির পিএইচ (ঐচ্ছিক)' : 'Soil pH (0 - 14, Optional)'}
                           </label>
                           <input
                             className="input-box"
@@ -4584,7 +4584,7 @@ export function App() {
                         </div>
                         <div className="form-group">
                           <label>
-                            {lang === 'bn' ? 'জৈব পদার্থ (Organic Matter %, ঐচ্ছিক)' : 'Organic Matter (%, Optional)'}
+                            {lang === 'bn' ? 'জৈব পদার্থ (%, ঐচ্ছিক)' : 'Organic Matter (%, Optional)'}
                           </label>
                           <input
                             className="input-box"
