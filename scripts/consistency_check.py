@@ -164,6 +164,22 @@ def run_consistency_audit():
         if loc_ph is not None and abs(loc_ph - f["ph"]) > 0.5:
             discrepancies.append(f"[{f['name']}] Soil pH mismatch: location reports {loc_ph}, expected ~{f['ph']}")
 
+        # e) MF7: Parcel Optimizer Advisory Delta vs Planner Key Benefits consistency
+        p_water_saved = p_plan.get("water_savings_mm")
+        p_nitrogen_delta = p_plan.get("nitrogen_delta_kg")
+        p_plan_n = p_plan.get("plan_nitrogen_kg")
+        p_base_n = p_plan.get("baseline_nitrogen_kg", 0.0)
+
+        if p_water_saved is not None and p_base_irrig is not None and p_plan_irrig is not None:
+            expected_water_delta = round(p_base_irrig - p_plan_irrig, 1)
+            if abs(round(p_water_saved, 1) - expected_water_delta) > 0.5:
+                discrepancies.append(f"[{f['name']}] MF7 Irrigation delta discrepancy: water_savings_mm={p_water_saved} vs baseline-plan delta={expected_water_delta}")
+
+        if p_nitrogen_delta is not None and p_plan_n is not None:
+            expected_n_delta = round(p_plan_n - p_base_n, 1)
+            if abs(round(p_nitrogen_delta, 1) - expected_n_delta) > 0.5:
+                discrepancies.append(f"[{f['name']}] MF7 Nitrogen delta discrepancy: nitrogen_delta_kg={p_nitrogen_delta} vs plan-base delta={expected_n_delta}")
+
         audit_table.append({
             "name": f["name"],
             "district": dist.capitalize(),

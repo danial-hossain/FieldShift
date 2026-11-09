@@ -11,8 +11,8 @@ const proxy = { '/api': { target: backend, changeOrigin: true } };
 
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173, proxy },
-  preview: { port: 4173, proxy },
+  server: { host: true, port: 5173, proxy },
+  preview: { host: true, port: 4173, proxy },
   build: {
     rollupOptions: {
       output: {

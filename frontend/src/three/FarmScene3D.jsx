@@ -481,7 +481,14 @@ export function FarmScene3D({
 
   // Check WebGL support on mount
   useEffect(() => {
-    setHasWebGL(isWebGLAvailable());
+    try {
+      const avail = typeof isWebGLAvailable === 'function' ? isWebGLAvailable() : (
+        typeof window !== 'undefined' && Boolean(window.WebGLRenderingContext && document.createElement('canvas').getContext('webgl'))
+      );
+      setHasWebGL(avail);
+    } catch {
+      setHasWebGL(true);
+    }
   }, []);
 
   const bighaStr = useMemo(() => {

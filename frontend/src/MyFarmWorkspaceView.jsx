@@ -74,9 +74,38 @@ function normalizeRotation(rot, prevCrop) {
   return { rabi, kharif1, kharif2 };
 }
 
-// Calculate data completeness checklist for a field (P2)
+// Calculate data completeness checklist for a field (MF7)
+// Counts each input as: measured (full, 1.0), SoilGrids (partial, "মাপা নয়", 0.5), missing (0, 0.0)
 function calculateCompleteness(f) {
-  if (!f) return { score: 0, filledCount: 0, totalCount: 5, missing: [] };
+  if (!f) return { score: 0, filledCount: 0, totalCount: 5, missing: [], items: [] };
+
+  const getStatus = (measuredCond, partialCond) => {
+    if (measuredCond) return 'measured';
+    if (partialCond) return 'partial';
+    return 'missing';
+  };
+
+  const rotStatus = getStatus(
+    Boolean(f.existing_rotation && f.existing_rotation.rabi && f.existing_rotation.rabi !== 'Fallow'),
+    false
+  );
+  const phStatus = getStatus(
+    f.soil_ph != null,
+    f.soilgrids_ph != null
+  );
+  const omStatus = getStatus(
+    f.organic_matter != null,
+    f.soilgrids_soc != null
+  );
+  const irrigStatus = getStatus(
+    f.irrigation_capacity_mm != null,
+    f.irrigation_class != null
+  );
+  const textStatus = getStatus(
+    Boolean(f.soil_texture && f.soil_texture !== 'unknown' && f.soil_texture !== 'loam'),
+    Boolean(f.soilgrids_soil != null || (f.soil_texture && f.soil_texture === 'loam'))
+  );
+
   const checks = [
     {
       id: 'rotation',
@@ -84,8 +113,9 @@ function calculateCompleteness(f) {
       labelEn: 'Current Rotation',
       desc: 'বর্তমান আবর্তন দিলে তুলনা সঠিক হবে',
       descEn: 'Provides baseline benchmark against optimizer',
-      tab: 'history',
-      filled: !!(f.existing_rotation && f.existing_rotation.rabi && f.existing_rotation.rabi !== 'Fallow')
+      tab: 'details',
+      status: rotStatus,
+      weight: rotStatus === 'measured' ? 1.0 : 0.0
     },
     {
       id: 'ph',
@@ -93,8 +123,9 @@ function calculateCompleteness(f) {
       labelEn: 'Soil pH',
       desc: 'মাটির পিএইচ (pH) সঠিক সার সুপারিশে সহায়ক',
       descEn: 'Ensures nutrient uptake accuracy',
-      tab: 'soil',
-      filled: f.soil_ph != null || f.soilgrids_ph != null
+      tab: 'details',
+      status: phStatus,
+      weight: phStatus === 'measured' ? 1.0 : (phStatus === 'partial' ? 0.5 : 0.0)
     },
     {
       id: 'om',
@@ -102,8 +133,9 @@ function calculateCompleteness(f) {
       labelEn: 'Organic Matter (OM)',
       desc: 'জৈব পদার্থ নাইট্রোজেন ও মাটির পুষ্টি নির্ধারণ করে',
       descEn: 'Calibrates soil carbon & nitrogen availability',
-      tab: 'soil',
-      filled: f.organic_matter != null || f.organic_matter_pct != null || f.soilgrids_soc != null
+      tab: 'details',
+      status: omStatus,
+      weight: omStatus === 'measured' ? 1.0 : (omStatus === 'partial' ? 0.5 : 0.0)
     },
     {
       id: 'irrigation',
@@ -112,7 +144,8 @@ function calculateCompleteness(f) {
       desc: 'সেচ সক্ষমতা পানির ঘাটতি ও ভূগর্ভস্থ চাপ পরিমাপে জরুরি',
       descEn: 'Crucial for groundwater extraction limit',
       tab: 'details',
-      filled: f.irrigation_capacity_mm != null || f.irrigation_class != null
+      status: irrigStatus,
+      weight: irrigStatus === 'measured' ? 1.0 : (irrigStatus === 'partial' ? 0.5 : 0.0)
     },
     {
       id: 'texture',
@@ -120,15 +153,20 @@ function calculateCompleteness(f) {
       labelEn: 'Soil Texture Class',
       desc: 'মাটির গঠন সঠিক সেচ ও ফসল উপযোগিতা নিশ্চিত করে',
       descEn: 'Determines hydraulic conductivity and drainage',
-      tab: 'soil',
-      filled: !!(f.soil_texture && f.soil_texture !== 'unknown')
+      tab: 'details',
+      status: textStatus,
+      weight: textStatus === 'measured' ? 1.0 : (textStatus === 'partial' ? 0.5 : 0.0)
     }
   ];
-  const filledCount = checks.filter(c => c.filled).length;
+
+  const totalPoints = checks.reduce((sum, c) => sum + c.weight, 0);
   const totalCount = checks.length;
-  const score = Math.round((filledCount / totalCount) * 100);
-  const missing = checks.filter(c => !c.filled);
-  return { score, filledCount, totalCount, missing };
+  const score = Math.round((totalPoints / totalCount) * 100);
+  const measuredCount = checks.filter(c => c.status === 'measured').length;
+  const partialCount = checks.filter(c => c.status === 'partial').length;
+  const missingCount = checks.filter(c => c.status === 'missing').length;
+  const missing = checks.filter(c => c.status !== 'measured');
+  return { score, filledCount: measuredCount + partialCount, totalCount, measuredCount, partialCount, missingCount, missing, items: checks };
 }
 
 export function MyFarmWorkspaceView({
@@ -1345,11 +1383,11 @@ export function MyFarmWorkspaceView({
 
           {/* Right Column: 3 Dynamic Cards (Completeness, Enrich, Planner Mini) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* 1. Data Completeness Card (P2) */}
+            {/* 1. Data Completeness Card (MF7) */}
             <Card variant="glass">
               <CardHeader
                 title={lang === 'bn' ? 'উপাত্ত পূর্ণতা সূচক' : 'Data Completeness Index'}
-                subtitle={lang === 'bn' ? 'সঠিক পরিকল্পনা ও সার সুপারিশের জন্য প্রয়োজনীয় উপাত্ত' : 'Required parameters for optimized decision engine'}
+                subtitle={lang === 'bn' ? 'পরিমাপকৃত, SoilGrids এবং অনুপস্থিত উপাত্তের বিশ্লেষণ' : 'Breakdown of measured, SoilGrids (unmeasured) and missing inputs'}
               />
               <div style={{ marginTop: 10 }}>
                 {/* Progress bar */}
@@ -1358,7 +1396,7 @@ export function MyFarmWorkspaceView({
                     {lang === 'bn' ? 'সামগ্রিক পূর্ণতা:' : 'Overall completeness:'}
                   </span>
                   <span style={{ fontSize: 14, fontWeight: 800, color: activeCompleteness.score >= 80 ? 'var(--primary, #10b981)' : '#f59e0b' }}>
-                    {activeCompleteness.score}%
+                    {lang === 'bn' && toBn ? toBn(activeCompleteness.score) : activeCompleteness.score}%
                   </span>
                 </div>
                 <div style={{ height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
@@ -1372,17 +1410,24 @@ export function MyFarmWorkspaceView({
                   />
                 </div>
 
-                {/* Missing Items List */}
-                {activeCompleteness.missing.length === 0 ? (
-                  <div style={{ padding: 12, borderRadius: 8, background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', color: '#4ade80', fontSize: 12.5 }}>
-                    ✓ {lang === 'bn' ? 'সকল প্রয়োজনীয় কৃষি উপাত্ত অন্তর্ভুক্ত রয়েছে।' : 'All essential parameters are registered.'}
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase' }}>
-                      {lang === 'bn' ? 'অপূর্ণ উপাত্ত ও তার সুফল:' : 'Missing inputs & impact:'}
-                    </span>
-                    {activeCompleteness.missing.map(m => (
+                {/* Items List with Measured / Partial / Missing indicators */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase' }}>
+                    {lang === 'bn' ? 'উপাত্তের নির্ভরযোগ্যতা ও ঘাটতি পূরণ:' : 'Input Provenance & Precision:'}
+                  </span>
+                  {(activeCompleteness.items || []).map(m => {
+                    const isMeasured = m.status === 'measured';
+                    const isPartial = m.status === 'partial';
+                    const badgeBg = isMeasured ? 'rgba(34, 197, 94, 0.15)' : isPartial ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+                    const badgeColor = isMeasured ? '#4ade80' : isPartial ? '#fbbf24' : '#f87171';
+                    const badgeBorder = isMeasured ? '1px solid rgba(34, 197, 94, 0.35)' : isPartial ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(239, 68, 68, 0.35)';
+                    const badgeText = isMeasured
+                      ? (lang === 'bn' ? '✓ পরিমাপকৃত' : '✓ Measured')
+                      : isPartial
+                        ? (lang === 'bn' ? '~ SoilGrids (মাপা নয়)' : '~ SoilGrids (unmeasured)')
+                        : (lang === 'bn' ? '✗ তথ্য নেই' : '✗ Missing');
+
+                    return (
                       <div
                         key={m.id}
                         style={{
@@ -1396,10 +1441,23 @@ export function MyFarmWorkspaceView({
                           gap: 10
                         }}
                       >
-                        <div>
-                          <strong style={{ fontSize: 12.5, color: 'var(--text)', display: 'block' }}>
-                            {lang === 'bn' ? m.label : m.labelEn}
-                          </strong>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 2 }}>
+                            <strong style={{ fontSize: 12.5, color: 'var(--text)' }}>
+                              {lang === 'bn' ? m.label : m.labelEn}
+                            </strong>
+                            <span style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 4,
+                              background: badgeBg,
+                              color: badgeColor,
+                              border: badgeBorder
+                            }}>
+                              {badgeText}
+                            </span>
+                          </div>
                           <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
                             {lang === 'bn' ? m.desc : m.descEn}
                           </span>
@@ -1407,18 +1465,15 @@ export function MyFarmWorkspaceView({
                         <Button
                           variant="secondary"
                           size="xs"
-                          onClick={() => {
-                            if (m.tab === 'details') setIsEditingDetails(true);
-                            else setSubTab(m.tab);
-                          }}
+                          onClick={() => setIsEditingDetails(true)}
                           style={{ whiteSpace: 'nowrap' }}
                         >
                           {lang === 'bn' ? 'পূরণ করুন →' : 'Fill →'}
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    );
+                  })}
+                </div>
               </div>
             </Card>
 
@@ -1438,7 +1493,7 @@ export function MyFarmWorkspaceView({
               </div>
             </Card>
 
-            {/* 3. এই জমির পরামর্শ Mini Card (P2) */}
+            {/* 3. এই জমির পরামর্শ Mini Card (MF7) */}
             <Card variant="glass">
               <CardHeader
                 title={lang === 'bn' ? 'এই জমির অনুকূল পরামর্শ' : 'Optimizer Advisory for this Parcel'}
@@ -1452,6 +1507,30 @@ export function MyFarmWorkspaceView({
                   </div>
                 ) : baselinePlanning ? (
                   <div>
+                    {/* Strategy and Baseline headers (MF7) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>
+                          {lang === 'bn' ? 'কৌশল:' : 'Strategy:'}
+                        </span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, padding: '2px 8px', borderRadius: 4, background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8' }}>
+                          {lang === 'bn' ? 'সুষম (Balanced)' : 'Balanced'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 11.5, color: 'var(--text-2)', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: 6, border: '1px solid var(--line)' }}>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10, fontWeight: 600, marginBottom: 2 }}>
+                          {lang === 'bn' ? 'তুলনামূলক ভিত্তি:' : 'Compared Baseline:'}
+                        </span>
+                        <strong style={{ color: 'var(--text)' }}>
+                          {baselinePlanning.is_assumed_baseline
+                            ? (lang === 'bn' ? 'বর্তমান: বোরো → পতিত → আমন (ধরে নেওয়া)' : 'Current: Boro -> Fallow -> Aman (assumed)')
+                            : (lang === 'bn'
+                                ? `বর্তমান: ${[activeField?.existing_rotation?.rabi || 'বোরো', activeField?.existing_rotation?.kharif1 || 'পতিত', activeField?.existing_rotation?.kharif2 || 'আমন'].join(' → ')} (আপনার সংরক্ষিত)`
+                                : `Current: ${[activeField?.existing_rotation?.rabi || 'Boro', activeField?.existing_rotation?.kharif1 || 'Fallow', activeField?.existing_rotation?.kharif2 || 'Aman'].join(' -> ')} (your saved)`)}
+                        </strong>
+                      </div>
+                    </div>
+
                     <div style={{ padding: 12, borderRadius: 8, background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', marginBottom: 12 }}>
                       <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block', marginBottom: 2 }}>
                         {lang === 'bn' ? 'সুপারিশকৃত ফসল আবর্তন:' : 'Recommended Rotation:'}
@@ -1463,15 +1542,23 @@ export function MyFarmWorkspaceView({
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, fontSize: 12, marginBottom: 14 }}>
                       <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
-                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'সেচ পানির প্রভাব:' : 'Irrigation Delta:'}</span>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Irrigation Delta:'}</span>
                         <strong style={{ color: 'var(--water, #38bdf8)' }}>
-                          {baselinePlanning.plan_irrigation_mm != null ? `${baselinePlanning.plan_irrigation_mm.toFixed(0)} মিমি/বছর` : '--'}
+                          {baselinePlanning.water_savings_mm != null
+                            ? (lang === 'bn' ? `${toBn ? toBn(Math.round(baselinePlanning.water_savings_mm)) : Math.round(baselinePlanning.water_savings_mm)} মিমি সাশ্রয়` : `${Math.round(baselinePlanning.water_savings_mm)} mm saved`)
+                            : (baselinePlanning.plan_irrigation_mm != null
+                                ? (lang === 'bn' ? `${toBn ? toBn(Math.round(baselinePlanning.plan_irrigation_mm)) : Math.round(baselinePlanning.plan_irrigation_mm)} মিমি` : `${Math.round(baselinePlanning.plan_irrigation_mm)} mm`)
+                                : '--')}
                         </strong>
                       </div>
                       <div style={{ padding: 8, borderRadius: 6, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)' }}>
-                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'ডাল নাইট্রোজেন যোগ:' : 'Legume BNF:'}</span>
+                        <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5 }}>{lang === 'bn' ? 'মাটির নাইট্রোজেন যোগ:' : 'Legume BNF:'}</span>
                         <strong style={{ color: 'var(--leaf, #10b981)' }}>
-                          {baselinePlanning.plan_nitrogen_kg != null ? `+${baselinePlanning.plan_nitrogen_kg.toFixed(0)} কেজি N` : '--'}
+                          {baselinePlanning.nitrogen_delta_kg != null
+                            ? (lang === 'bn' ? `+${toBn ? toBn(Math.round(baselinePlanning.nitrogen_delta_kg)) : Math.round(baselinePlanning.nitrogen_delta_kg)} কেজি N` : `+${Math.round(baselinePlanning.nitrogen_delta_kg)} kg N`)
+                            : (baselinePlanning.plan_nitrogen_kg != null
+                                ? (lang === 'bn' ? `+${toBn ? toBn(Math.round(baselinePlanning.plan_nitrogen_kg)) : Math.round(baselinePlanning.plan_nitrogen_kg)} কেজি N` : `+${Math.round(baselinePlanning.plan_nitrogen_kg)} kg N`)
+                                : '--')}
                         </strong>
                       </div>
                     </div>
@@ -1479,10 +1566,10 @@ export function MyFarmWorkspaceView({
                     <Button
                       variant="primary"
                       size="sm"
-                      onClick={() => onNavigate && onNavigate('farm_planning')}
+                      onClick={() => onNavigate && onNavigate('farm_planning', { fieldId: activeField?.id, strategy: 'balanced' })}
                       style={{ width: '100%', justifyContent: 'center' }}
                     >
-                      {lang === 'bn' ? 'পরিকল্পনায় বিস্তারিত দেখুন →' : 'View Full Farm Plan →'}
+                      {lang === 'bn' ? 'সম্পূর্ণ খামার পরিকল্পনা দেখুন →' : 'View Full Farm Plan →'}
                     </Button>
                   </div>
                 ) : (
