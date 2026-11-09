@@ -574,12 +574,33 @@ def compute_rotation_comparison(
     existing_rotation: Optional[Mapping[str, Any]] = None,
     existing_rotation_source: Optional[str] = None,
     existing_rotation_year: Optional[int] = None,
+    field_history_records: Optional[Sequence[Mapping[str, Any]]] = None,
+    crop_catalog: Optional[pd.DataFrame] = None,
 ) -> dict[str, Any]:
     """Compute real water, profit, and nitrogen comparison between existing rotation and recommended plan."""
     selection = milp_res.get("selected_crop_by_period") or {}
     matrix = milp_res.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
     periods = list(milp_res.get("planning_periods") or ["Y1_S1", "Y1_S2", "Y1_S3", "Y2_S1", "Y2_S2", "Y2_S3"])
     available_crops = set(matrix.get(periods[0], {}).keys()) if periods and periods[0] in matrix else set()
+
+    # Load crop knowledge catalog for official baseline yields, prices, and costs
+    cat_lookup = {}
+    if crop_catalog is None:
+        try:
+            from src.data.crops import load_crop_knowledge
+            crop_catalog = load_crop_knowledge()
+        except Exception:
+            crop_catalog = None
+
+    if crop_catalog is not None and hasattr(crop_catalog, "iterrows"):
+        for _, row in crop_catalog.iterrows():
+            c_name = str(row["crop"])
+            cat_lookup[c_name.lower()] = {
+                "crop": c_name,
+                "expected_yield": float(row.get("expected_yield", 1.0)),
+                "production_cost": float(row.get("production_cost", 30000.0)),
+                "market_price": float(row.get("market_price", 30000.0)),
+            }
 
     def match_crop(name: Any) -> Optional[str]:
         if not name:
@@ -643,6 +664,46 @@ def compute_rotation_comparison(
         else {}
     )
 
+    farmer_numbers_used = False
+    hist_rec_list = list(field_history_records) if field_history_records else []
+
+    # Map each crop in the baseline rotation to farmer entered yield and price if present
+    farmer_crop_data = {}
+    for rec in hist_rec_list:
+        if not isinstance(rec, (dict, Mapping)):
+            continue
+        c_name = rec.get("crop")
+        m_c = match_crop(c_name)
+        if not m_c:
+            continue
+        y_val = None
+        if rec.get("yield_maund_per_bigha") not in (None, ""):
+            try:
+                y_val = float(rec["yield_maund_per_bigha"])
+            except (ValueError, TypeError):
+                pass
+        elif rec.get("yield_ton_per_ha") not in (None, ""):
+            try:
+                y_val = float(rec["yield_ton_per_ha"]) * (1000.0 * 0.13378 / 37.32)
+            except (ValueError, TypeError):
+                pass
+
+        p_val = None
+        for pk in ("price_bdt_per_maund", "price_per_maund", "sale_price", "price"):
+            if rec.get(pk) not in (None, ""):
+                try:
+                    p_val = float(rec[pk])
+                    break
+                except (ValueError, TypeError):
+                    pass
+
+        if m_c not in farmer_crop_data:
+            farmer_crop_data[m_c] = {}
+        if y_val is not None:
+            farmer_crop_data[m_c]["yield_maund_bigha"] = y_val
+        if p_val is not None:
+            farmer_crop_data[m_c]["price_bdt_maund"] = p_val
+
     b_irrig_list, b_profit_list, b_n_list = [], [], []
     p_irrig_list, p_profit_list, p_n_list = [], [], []
 
@@ -660,7 +721,40 @@ def compute_rotation_comparison(
         b_irrig_list.append(float(b_wb.get("irrigation_required_mm", 0.0)) if b_entry else 0.0)
         p_irrig_list.append(float(p_wb.get("irrigation_required_mm", 0.0)))
 
-        b_profit_list.append(float(b_entry.get("dynamic_gross_margin_bdt_ha", 0.0)) if b_entry else 0.0)
+        # Baseline crop economics (MF9: real formula, no invented numbers)
+        # For each crop in the field's current rotation:
+        # * If farmer entered yield and price in Crop & History:
+        #   Revenue = (farmer_yield_maund_per_bigha x farmer_price_bdt_maund) / 0.13378 [BDT/ha]
+        # * Else:
+        #   Revenue = catalogue_yield_t_ha x catalogue_price_bdt_t
+        # * Cost = catalogue_cost_bdt_ha + pumping_cost_bdt_ha
+        #   where pumping_cost = season_irrigation_mm x 10 m3/ha/mm x 3.5 BDT/m3
+        # * Profit = Revenue - Cost
+        if b_c and b_c.lower() != "fallow" and cat_lookup:
+            cat_entry = cat_lookup.get(b_c.lower(), {})
+            f_entry = farmer_crop_data.get(b_c, {})
+            f_y_mb = f_entry.get("yield_maund_bigha")
+            f_p_bm = f_entry.get("price_bdt_maund")
+
+            if f_y_mb is not None and f_y_mb > 0 and f_p_bm is not None and f_p_bm > 0:
+                revenue_bdt_ha = (f_y_mb * f_p_bm) / 0.13378
+                farmer_numbers_used = True
+            else:
+                cat_y = float(cat_entry.get("expected_yield", 1.0))
+                cat_p = float(cat_entry.get("market_price", 30000.0))
+                revenue_bdt_ha = cat_y * cat_p
+
+            cat_c = float(cat_entry.get("production_cost", 30000.0))
+            season_irrig_mm = float(b_wb.get("irrigation_required_mm", 0.0)) if b_entry else 0.0
+            pumping_cost_bdt_ha = season_irrig_mm * 10.0 * 3.5
+            cost_bdt_ha = cat_c + pumping_cost_bdt_ha
+            b_profit = revenue_bdt_ha - cost_bdt_ha
+            b_profit_list.append(b_profit)
+        elif b_c and b_c.lower() == "fallow":
+            b_profit_list.append(0.0)
+        else:
+            b_profit_list.append(float(b_entry.get("dynamic_gross_margin_bdt_ha", 0.0)) if b_entry else 0.0)
+
         p_profit_list.append(float(p_entry.get("dynamic_gross_margin_bdt_ha", 0.0)))
 
         b_n_list.append(35.0 if b_entry.get("is_legume") else 0.0)
@@ -733,6 +827,64 @@ def compute_rotation_comparison(
     base_bare_days = int(round(sum(b_bare_list) / num_years))
     plan_bare_days = int(round(sum(p_bare_list) / num_years))
 
+    # Yield calibration ratio based on farmer entered historical yields vs catalogue
+    ratios = []
+    for rec in hist_rec_list:
+        if not isinstance(rec, (dict, Mapping)):
+            continue
+        c_name = rec.get("crop")
+        m_c = match_crop(c_name)
+        if not m_c or m_c.lower() == "fallow":
+            continue
+        cat_e = cat_lookup.get(m_c.lower(), {})
+        cat_y_tha = float(cat_e.get("expected_yield", 1.0))
+        if cat_y_tha <= 0:
+            continue
+        f_y_tha = None
+        if rec.get("yield_ton_per_ha") not in (None, ""):
+            try:
+                f_y_tha = float(rec["yield_ton_per_ha"])
+            except (ValueError, TypeError):
+                pass
+        elif rec.get("yield_maund_per_bigha") not in (None, ""):
+            try:
+                f_y_tha = float(rec["yield_maund_per_bigha"]) * 37.32 / (1000.0 * 0.13378)
+            except (ValueError, TypeError):
+                pass
+        if f_y_tha is not None and f_y_tha > 0:
+            ratios.append(f_y_tha / cat_y_tha)
+
+    if ratios:
+        avg_ratio = sum(ratios) / len(ratios)
+        calibration_factor = round(max(0.5, min(1.8, avg_ratio)), 3)
+        calibration_pct = int(round((calibration_factor - 1.0) * 100))
+        if calibration_pct > 0:
+            cal_text_bn = f"আপনার ফলন অনুমানের চেয়ে +{calibration_pct}%"
+            cal_text_en = f"Your historical yield is +{calibration_pct}% vs baseline estimate"
+        elif calibration_pct < 0:
+            cal_text_bn = f"আপনার ফলন অনুমানের চেয়ে {calibration_pct}%"
+            cal_text_en = f"Your historical yield is {calibration_pct}% vs baseline estimate"
+        else:
+            cal_text_bn = "আপনার ফলন অনুমানের সমান (০%)"
+            cal_text_en = "Your historical yield matches baseline estimate (0%)"
+    else:
+        calibration_factor = None
+        calibration_pct = None
+        cal_text_bn = "তথ্য নেই (মাঠের ফলন রেকর্ড যুক্ত করুন)"
+        cal_text_en = "No records (log seasonal yield in Crop & History)"
+
+    baseline_profit_source = "farmer_records" if farmer_numbers_used else "catalogue_estimate"
+    baseline_profit_source_bn = (
+        "আয়: আপনার দেওয়া · খরচ: অ্যাপের অনুমান (BARI/BRRI + সেচ খরচ)"
+        if farmer_numbers_used
+        else "অ্যাপের অনুমান · উদাহরণমূলক দাম (বাস্তব লাভ যাচাই করুন)"
+    )
+    baseline_profit_source_en = (
+        "Revenue: Farmer-supplied · Cost: App estimate (BARI/BRRI + pumping)"
+        if farmer_numbers_used
+        else "App estimate · Illustrative prices (verify with local market)"
+    )
+
     return {
         "baseline_rotation": [b_s1, b_s2, b_s3] if b_map else None,
         "baseline_rotation_text_bn": baseline_rotation_text_bn,
@@ -754,6 +906,13 @@ def compute_rotation_comparison(
         "baseline_nitrogen_kg": base_n if b_map else None,
         "plan_nitrogen_kg": plan_n,
         "nitrogen_delta_kg": n_delta if b_map else None,
+        "baseline_profit_source": baseline_profit_source,
+        "baseline_profit_source_bn": baseline_profit_source_bn,
+        "baseline_profit_source_en": baseline_profit_source_en,
+        "calibration_factor": calibration_factor,
+        "calibration_pct": calibration_pct,
+        "calibration_text_bn": cal_text_bn,
+        "calibration_text_en": cal_text_en,
         "nitrogen_estimate_method": "illustrative 35 kg N/ha per legume season; not measured fixation",
         "bare_soil_estimate_method": "fixed seasonal fallow and crop-cover day assumptions; not measured ground cover",
         "metric_period_basis": "annualized mean across the modeled planning horizon",

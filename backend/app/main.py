@@ -745,7 +745,10 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             raise HTTPException(400, "field_id must identify a registered PostgreSQL field.") from error
         planning_overrides = {
             key: data[key]
-            for key in ("soil_texture", "soil_ph", "organic_matter", "irrigation_capacity_mm", "no_power_tiller", "labour_shortage")
+            for key in (
+                "soil_texture", "soil_ph", "organic_matter", "irrigation_capacity_mm",
+                "no_power_tiller", "labour_shortage", "existing_rotation", "field_history_records", "crop_history"
+            )
             if key in data
         }
         field_record = owned_field(db, fid, user)
@@ -830,7 +833,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
 
         decision_date = climate_df["date"].max() if "date" in climate_df.columns and not climate_df.empty else pd.to_datetime("2025-12-31")
         if saved_field_record:
-            history_records = data.get("_saved_field_history") or []
+            history_records = data.get("field_history_records") or data.get("crop_history") or data.get("_saved_field_history") or []
             eligible_history = []
             for record in history_records:
                 try:
@@ -969,6 +972,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             min_cereals_per_year=int(data.get("min_cereals_per_year", 1)),
             seasonally_flooded=bool(is_haor),
             field_history_crops=hist_crops_param,
+            field_history_records=history_records if saved_field_record else (data.get("field_history_records") or data.get("crop_history") or []),
             existing_rotation=existing_rotation,
             existing_rotation_source=existing_rotation_source,
             existing_rotation_year=existing_rotation_year,
@@ -1127,6 +1131,10 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "baseline_profit_bdt": milp_res.get("baseline_profit_bdt"),
                     "plan_profit_bdt": milp_res.get("plan_profit_bdt"),
                     "profit_delta_bdt": milp_res.get("profit_delta_bdt"),
+                    "baseline_profit_source": milp_res.get("baseline_profit_source"),
+                    "baseline_profit_source_bn": milp_res.get("baseline_profit_source_bn"),
+                    "baseline_profit_source_en": milp_res.get("baseline_profit_source_en"),
+                    "yield_calibration": milp_res.get("yield_calibration"),
                     "baseline_nitrogen_kg": milp_res.get("baseline_nitrogen_kg"),
                     "plan_nitrogen_kg": milp_res.get("plan_nitrogen_kg"),
                     "nitrogen_delta_kg": milp_res.get("nitrogen_delta_kg"),

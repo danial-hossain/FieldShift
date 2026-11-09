@@ -905,6 +905,7 @@ def optimize_rotation(
     min_cereals_per_year: int = 1,
     seasonally_flooded: Optional[bool] = None,
     field_history_crops: Optional[Sequence[str]] = None,
+    field_history_records: Optional[Sequence[Mapping[str, Any]]] = None,
     existing_rotation: Optional[Mapping[str, Any]] = None,
     existing_rotation_source: Optional[str] = None,
     existing_rotation_year: Optional[int] = None,
@@ -912,6 +913,28 @@ def optimize_rotation(
     solver: Optional[pulp.LpSolver] = None,
 ) -> dict[str, Any]:
     """Optimize a long-term rotation for the supplied periods and priorities."""
+    crops_copy = crops.copy() if isinstance(crops, pd.DataFrame) else load_crop_knowledge().copy()
+    if field_history_records:
+        for rec in field_history_records:
+            if not isinstance(rec, (dict, Mapping)):
+                continue
+            c_name = rec.get("crop")
+            p_val = None
+            for pk in ("price_bdt_per_maund", "price_per_maund", "sale_price", "price"):
+                if rec.get(pk) not in (None, ""):
+                    try:
+                        p_val = float(rec[pk])
+                        break
+                    except (ValueError, TypeError):
+                        pass
+            if c_name and p_val is not None and p_val > 0:
+                # 1 maund = 37.32 kg = 0.03732 ton -> BDT/t = price_bdt_maund / 0.03732
+                bdt_per_ton = round(p_val / 0.03732, 2)
+                matches = crops_copy["crop"].str.casefold() == str(c_name).strip().casefold()
+                if matches.any():
+                    crops_copy.loc[matches, "market_price"] = bdt_per_ton
+    crops = crops_copy
+
     problem, metadata = build_milp_model(
         field_state=field_state,
         crops=crops,
@@ -1058,15 +1081,38 @@ def optimize_rotation(
     if not hist_crops and metadata.get("history") is not None and hasattr(metadata["history"], "empty") and not metadata["history"].empty:
         if "crop" in metadata["history"].columns:
             hist_crops = [str(x) for x in metadata["history"]["crop"].dropna()]
+
+    hist_records = field_history_records
+    if not hist_records and metadata.get("history") is not None and hasattr(metadata["history"], "to_dict") and not metadata["history"].empty:
+        hist_records = metadata["history"].to_dict(orient="records")
+
     comparison = compute_rotation_comparison(
         res_dict,
         field_history_crops=hist_crops,
         existing_rotation=existing_rotation,
         existing_rotation_source=existing_rotation_source,
         existing_rotation_year=existing_rotation_year,
+        field_history_records=hist_records,
+        crop_catalog=metadata.get("crops"),
     )
     res_dict["baseline_comparison"] = comparison
     res_dict.update(comparison)
+    if comparison.get("calibration_factor") is not None:
+        res_dict["yield_calibration"] = {
+            "factor": comparison["calibration_factor"],
+            "pct": comparison["calibration_pct"],
+            "text_bn": comparison["calibration_text_bn"],
+            "text_en": comparison["calibration_text_en"],
+            "flag": True,
+        }
+    else:
+        res_dict["yield_calibration"] = {
+            "factor": None,
+            "pct": None,
+            "text_bn": comparison.get("calibration_text_bn"),
+            "text_en": comparison.get("calibration_text_en"),
+            "flag": False,
+        }
     return res_dict
 
 

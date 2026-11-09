@@ -98,3 +98,44 @@ def test_saved_history_source_and_period_are_preserved_in_baseline():
 
     assert result["baseline_source"] == "saved_field_history"
     assert result["baseline_historical_period"] == 2023
+
+
+def test_mf9_baseline_farmer_economics():
+    # Rahim field rotation: Boro Rice, Fallow, Rice
+    res = build_result()
+    # Add water balance for Boro Rice and Rice
+    for p in PERIODS:
+        res["dynamic_agronomic_matrix"]["crop_season_matrix"][p]["Boro Rice"] = {
+            "water_balance": {"irrigation_required_mm": 1200.0},
+            "dynamic_gross_margin_bdt_ha": 30000.0,
+            "is_legume": False,
+        }
+        res["dynamic_agronomic_matrix"]["crop_season_matrix"][p]["Rice"] = {
+            "water_balance": {"irrigation_required_mm": 350.0},
+            "dynamic_gross_margin_bdt_ha": 30000.0,
+            "is_legume": False,
+        }
+
+    # (a) Without history records
+    comp_a = compute_rotation_comparison(
+        res,
+        existing_rotation={"rabi": "Boro Rice", "kharif1": "Fallow", "kharif2": "Rice"},
+    )
+    assert comp_a["baseline_profit_source"] == "catalogue_estimate"
+    assert "অ্যাপের অনুমান" in comp_a["baseline_profit_source_bn"]
+    assert comp_a["baseline_profit_bdt"] is not None
+
+    # (b) With Boro 20 maund/bigha @ 1200, Aman 14 maund/bigha @ 1100
+    comp_b = compute_rotation_comparison(
+        res,
+        existing_rotation={"rabi": "Boro Rice", "kharif1": "Fallow", "kharif2": "Rice"},
+        field_history_records=[
+            {"crop": "Boro Rice", "yield_maund_per_bigha": 20.0, "price_bdt_per_maund": 1200.0},
+            {"crop": "Rice", "yield_maund_per_bigha": 14.0, "price_bdt_per_maund": 1100.0},
+        ],
+    )
+    assert comp_b["baseline_profit_source"] == "farmer_records"
+    assert "আয়: আপনার দেওয়া" in comp_b["baseline_profit_source_bn"]
+    assert comp_b["baseline_profit_bdt"] > 60000.0
+    assert comp_b["calibration_factor"] is not None
+    assert comp_b["calibration_text_bn"] is not None

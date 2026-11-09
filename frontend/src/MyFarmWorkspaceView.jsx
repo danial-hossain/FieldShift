@@ -76,6 +76,22 @@ function normalizeRotation(rot, prevCrop) {
 
 // Calculate data completeness checklist for a field (MF7)
 // Counts each input as: measured (full, 1.0), SoilGrids (partial, "মাপা নয়", 0.5), missing (0, 0.0)
+const CROP_DEFAULT_PRICES = {
+  'Boro Rice': 1120, 'Boro': 1120, 'Rice': 1120, 'Aman Rice': 1120, 'Aman': 1120,
+  'Aus Rice': 1120, 'Aus': 1120, 'Wheat': 1194, 'Maize': 933,
+  'Lentil': 3359, 'Mungbean': 3172, 'Chickpea': 3060, 'Soybean': 2239,
+  'Mustard': 2426, 'Potato': 672, 'Tomato': 933,
+  'Sesame': 4105, 'Groundnut': 2986, 'Sunflower': 2165, 'Jute': 1941
+};
+
+const CROP_DEFAULT_COSTS_HA = {
+  'Boro Rice': 95000, 'Boro': 95000, 'Rice': 80000, 'Aman Rice': 80000, 'Aman': 80000,
+  'Aus Rice': 60000, 'Aus': 60000, 'Wheat': 55000, 'Maize': 70000,
+  'Lentil': 35000, 'Mungbean': 30000, 'Chickpea': 34000, 'Soybean': 45000,
+  'Mustard': 38000, 'Potato': 120000, 'Tomato': 120000,
+  'Sesame': 26000, 'Groundnut': 45000, 'Sunflower': 40000, 'Jute': 45000
+};
+
 function calculateCompleteness(f) {
   if (!f) return { score: 0, filledCount: 0, totalCount: 5, missing: [], items: [] };
 
@@ -564,6 +580,8 @@ export function MyFarmWorkspaceView({
   const [newHistoryYield, setNewHistoryYield] = useState('');
   const [newHistoryYieldUnit, setNewHistoryYieldUnit] = useState('maund_bigha');
   const [newHistoryWater, setNewHistoryWater] = useState('');
+  const [newHistoryPrice, setNewHistoryPrice] = useState('');
+  const [newHistoryCost, setNewHistoryCost] = useState('');
   const [newHistoryNotes, setNewHistoryNotes] = useState('');
   const [isSubmittingHistory, setIsSubmittingHistory] = useState(false);
 
@@ -651,6 +669,9 @@ export function MyFarmWorkspaceView({
         setIsSubmittingHistory(false);
         return;
       }
+      const pNum = newHistoryPrice.trim() ? parseFloat(newHistoryPrice) : null;
+      const cNum = newHistoryCost.trim() ? parseFloat(newHistoryCost) : null;
+
       await reqFn(`/api/fields/${activeField.id}/history`, {
         method: 'POST',
         body: JSON.stringify({
@@ -659,6 +680,8 @@ export function MyFarmWorkspaceView({
           crop: finalCrop,
           yield_ton_per_ha: yieldTonHa,
           water_applied_mm: waterVal,
+          price_bdt_per_maund: Number.isFinite(pNum) ? pNum : null,
+          cost_bdt_per_bigha: Number.isFinite(cNum) ? cNum : null,
           notes: newHistoryNotes.trim() || null
         })
       });
@@ -667,6 +690,8 @@ export function MyFarmWorkspaceView({
       setCustomCropName('');
       setNewHistoryYield('');
       setNewHistoryWater('');
+      setNewHistoryPrice('');
+      setNewHistoryCost('');
       setNewHistoryNotes('');
 
       await fetchHistory();
@@ -1347,6 +1372,14 @@ export function MyFarmWorkspaceView({
                       {activeField.imerg_cell || 'imerg_0.10deg_precip'}
                     </code>
                   </div>
+                  <div>
+                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'ফলন ক্যালিব্রেশন:' : 'Yield Calibration:'}</span>
+                    <strong style={{ fontSize: 13, color: baselinePlanning?.calibration_factor ? '#10b981' : 'var(--text-2)' }}>
+                      {baselinePlanning?.calibration_text_bn
+                        ? (lang === 'bn' ? baselinePlanning.calibration_text_bn : baselinePlanning.calibration_text_en)
+                        : (lang === 'bn' ? 'তথ্য নেই (মাঠের ফলন রেকর্ড যুক্ত করুন)' : 'No records (log seasonal yield in Crop & History)')}
+                    </strong>
+                  </div>
                   <div style={{ gridColumn: 'span 2' }}>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'হাওর অঞ্চল স্ট্যাটাস:' : 'Haor Basin Status:'}</span>
                     <span style={{
@@ -1842,14 +1875,24 @@ export function MyFarmWorkspaceView({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, fontSize: 12.5 }}>
                 <div>
-                  <span style={{ color: 'var(--text-3)' }}>{lang === 'bn' ? 'বার্ষিক আনুমানিক লাভ:' : 'Est. Annual Net Margin:'}</span>
+                  <span style={{ color: 'var(--text-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {lang === 'bn' ? 'লাভ (খরচ বাদে):' : 'Net Return:'}
+                    <span
+                      title={lang === 'bn' ? '💡 আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : '💡 Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
+                      style={{ cursor: 'help', fontSize: 12 }}
+                    >
+                      💡
+                    </span>
+                  </span>
                   <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--leaf)', marginTop: 2 }}>
                     {baselinePlanning?.baseline_profit_bdt != null
                       ? `৳ ${Math.round(baselinePlanning.baseline_profit_bdt).toLocaleString('en-IN')} / হেক্টর`
                       : (isLoadingBaseline ? '...' : '--')}
                   </div>
                   <div style={{ fontSize: 10, color: 'var(--text-3)', marginTop: 2 }}>
-                    {lang === 'bn' ? 'মডেল আনুমানিক • উদাহরণমূলক দাম' : 'Model estimate • Illustrative price'}
+                    {baselinePlanning?.baseline_profit_source_bn
+                      ? (lang === 'bn' ? baselinePlanning.baseline_profit_source_bn : baselinePlanning.baseline_profit_source_en)
+                      : (lang === 'bn' ? 'অ্যাপের অনুমান · উদাহরণমূলক দাম (বাস্তব লাভ যাচাই করুন)' : 'App estimate · Illustrative prices (verify with local market)')}
                   </div>
                 </div>
                 <div>
@@ -1896,6 +1939,32 @@ export function MyFarmWorkspaceView({
               subtitle={lang === 'bn' ? 'বিগত মৌসুমসমূহের নথিভুক্ত ফলন ও উপাত্ত' : 'Archived seasonal yield logs and data'}
             />
 
+            {/* Multi-record crop yield averages (MF9) */}
+            {(() => {
+              const cropYieldCounts = {};
+              (fieldHistory || []).forEach(h => {
+                if (h.crop && h.yield_ton_per_ha != null) {
+                  const c = h.crop;
+                  if (!cropYieldCounts[c]) cropYieldCounts[c] = [];
+                  cropYieldCounts[c].push(Number(h.yield_ton_per_ha) * 3.585);
+                }
+              });
+              const multiRecords = Object.entries(cropYieldCounts).filter(([_, vals]) => vals.length >= 2);
+              if (multiRecords.length === 0) return null;
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, marginBottom: 6 }}>
+                  {multiRecords.map(([cropName, vals]) => {
+                    const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+                    return (
+                      <span key={cropName} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#4ade80', fontWeight: 600 }}>
+                        🌾 {cropName}: {lang === 'bn' ? `আপনার গড় ফলন: ${avg.toFixed(1)} মণ/বিঘা` : `Your average yield: ${avg.toFixed(1)} md/bigha`}
+                      </span>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {isLoadingHistory ? (
               <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-3)' }}>
                 {lang === 'bn' ? 'উপাত্ত লোড হচ্ছে...' : 'Loading records...'}
@@ -1917,6 +1986,17 @@ export function MyFarmWorkspaceView({
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'উৎপাদিত ফসল' : 'Crop'}</th>
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'ফলন (দ্বৈত একক)' : 'Yield (Dual Unit)'}</th>
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'সেচ' : 'Water Applied'}</th>
+                      <th style={{ padding: '10px 12px' }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {lang === 'bn' ? 'লাভ (খরচ বাদে)' : 'Net Return'}
+                          <span
+                            title={lang === 'bn' ? '💡 আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : '💡 Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
+                            style={{ cursor: 'help', fontSize: 12 }}
+                          >
+                            💡
+                          </span>
+                        </span>
+                      </th>
                       <th style={{ padding: '10px 12px' }}>{lang === 'bn' ? 'মন্তব্য / মাটির প্রভাব' : 'Notes / Soil Impact'}</th>
                       <th style={{ padding: '10px 12px', textAlign: 'right' }}>{lang === 'bn' ? 'পদক্ষেপ' : 'Action'}</th>
                     </tr>
@@ -1924,10 +2004,27 @@ export function MyFarmWorkspaceView({
                   <tbody>
                     {fieldHistory.map((row, idx) => {
                       let yieldStr = '--';
+                      let profitCell = '--';
                       if (row.yield_ton_per_ha != null) {
                         const tHa = Number(row.yield_ton_per_ha);
                         const mBigha = tonPerHaToMaundPerBigha(tHa);
                         yieldStr = `${tHa.toFixed(2)} t/ha (${mBigha.toFixed(1)} মণ/বিঘা)`;
+                        const priceMaund = row.price_bdt_per_maund ? Number(row.price_bdt_per_maund) : (CROP_DEFAULT_PRICES[row.crop] || 1120);
+                        const costBigha = row.cost_bdt_per_bigha ? Number(row.cost_bdt_per_bigha) : (
+                          ((CROP_DEFAULT_COSTS_HA[row.crop] || 40000) + ((Number(row.water_applied_mm) || 0) * 35.0)) * 0.13378
+                        );
+                        const netReturnBigha = Math.round((mBigha * priceMaund) - costBigha);
+                        const isFarmerPrice = Boolean(row.price_bdt_per_maund);
+                        profitCell = (
+                          <div>
+                            <div style={{ fontWeight: 700, color: netReturnBigha >= 0 ? 'var(--leaf)' : '#f87171' }}>
+                              ৳ {netReturnBigha.toLocaleString('en-IN')} / বিঘা
+                            </div>
+                            <div style={{ fontSize: 10, color: 'var(--text-3)' }}>
+                              {isFarmerPrice ? (lang === 'bn' ? 'আয়: আপনার দেওয়া' : 'Revenue: Farmer-given') : (lang === 'bn' ? 'উদাহরণমূলক দাম' : 'Default price')}
+                            </div>
+                          </div>
+                        );
                       }
                       const waterStr = row.water_applied_mm != null ? `${row.water_applied_mm} মিমি` : '--';
                       return (
@@ -1943,6 +2040,9 @@ export function MyFarmWorkspaceView({
                           </td>
                           <td style={{ padding: '12px', color: 'var(--sun)' }}>
                             {waterStr}
+                          </td>
+                          <td style={{ padding: '12px' }}>
+                            {profitCell}
                           </td>
                           <td style={{ padding: '12px', color: 'var(--text-2)' }}>
                             {row.notes || '--'}
@@ -2065,6 +2165,32 @@ export function MyFarmWorkspaceView({
                       placeholder="e.g. 400"
                       value={newHistoryWater}
                       onChange={e => setNewHistoryWater(e.target.value)}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'বিক্রয় মূল্য (টাকা/মণ, ঐচ্ছিক)' : 'Price (৳/maund, opt)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="10"
+                      placeholder="e.g. 1200"
+                      value={newHistoryPrice}
+                      onChange={e => setNewHistoryPrice(e.target.value)}
+                      style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>
+                      {lang === 'bn' ? 'উৎপাদন খরচ (টাকা/বিঘা, ঐচ্ছিক)' : 'Cost (৳/bigha, opt)'}
+                    </label>
+                    <input
+                      type="number"
+                      step="50"
+                      placeholder="e.g. 15000"
+                      value={newHistoryCost}
+                      onChange={e => setNewHistoryCost(e.target.value)}
                       style={{ width: '100%', background: 'var(--surface-2, #1a2228)', color: 'var(--text, #f8fafc)', border: '1px solid var(--line, #334155)', borderRadius: 8, padding: '8px 10px', fontSize: 12.5 }}
                     />
                   </div>

@@ -747,7 +747,7 @@ export function SixSeasonRecommendationView({
       return {
         id: k,
         label: seasonMeta[k]?.[lang] || k,
-        crop: (k.endsWith('S3') && (c === 'Rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c,
+        crop: (k.endsWith('S3') && (c?.toLowerCase() === 'rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c,
         season: seasonMeta[k]?.months,
         waterDepthMm: waterReq,
         irrigation_mm: waterReq,
@@ -1249,7 +1249,7 @@ export function SixSeasonRecommendationView({
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
         {periodKeys.map((k) => {
           const rawC = activeCrops[k] || 'Fallow';
-          const c = (k.endsWith('S3') && (rawC === 'Rice' || rawC === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : rawC;
+          const c = (k.endsWith('S3') && (rawC?.toLowerCase() === 'rice' || rawC === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : rawC;
           const isSelected = activeSelectedPeriod === k;
           const meta = seasonMeta[k];
           const irrigVal = seasonIrrigMap[k] || 0;
