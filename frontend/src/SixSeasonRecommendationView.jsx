@@ -720,17 +720,37 @@ export function SixSeasonRecommendationView({
 
   const activeCrops = compareWithBaseline ? baselineCropMap : planCropMap;
 
+  const seasonIrrigMap = useMemo(() => {
+    const map = {};
+    periodKeys.forEach(k => {
+      const rec = sixSeasonRecommendations.find(r => r.id === k);
+      const c = activeCrops[k];
+      const mEntry = activePlanData?.cropSeasonMatrix?.[k]?.[c] || {};
+      const irrig = rec?.irrigationReqMm != null
+        ? Math.round(rec.irrigationReqMm)
+        : (mEntry?.water_balance?.irrigation_required_mm != null ? Math.round(mEntry.water_balance.irrigation_required_mm) : 0);
+      map[k] = irrig;
+    });
+    return map;
+  }, [sixSeasonRecommendations, periodKeys, activeCrops, activePlanData]);
+
+  const y1Irrig = (seasonIrrigMap['Y1_S1'] || 0) + (seasonIrrigMap['Y1_S2'] || 0) + (seasonIrrigMap['Y1_S3'] || 0);
+  const y2Irrig = (seasonIrrigMap['Y2_S1'] || 0) + (seasonIrrigMap['Y2_S2'] || 0) + (seasonIrrigMap['Y2_S3'] || 0);
+  const avgIrrig = Math.round((y1Irrig + y2Irrig) / 2);
+  const baseIrrigVal = activePlanData.baselineIrrigationMm != null ? Math.round(activePlanData.baselineIrrigationMm) : 1548;
+  const savingsVal = Math.round(baseIrrigVal - avgIrrig);
+
   const farm3dBeds = useMemo(() => {
     return periodKeys.map(k => {
       const c = activeCrops[k] || 'Fallow';
-      const mEntry = activePlanData?.cropSeasonMatrix?.[k]?.[c] || {};
-      const waterReq = mEntry?.water_balance?.irrigation_required_mm || (c === 'Boro Rice' ? 850 : (c.includes(['R', 'i', 'c', 'e'].join('')) ? 350 : 80));
+      const waterReq = seasonIrrigMap[k] || 0;
       return {
         id: k,
         label: seasonMeta[k]?.[lang] || k,
-        crop: c,
+        crop: (k.endsWith('S3') && (c === 'Rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c,
         season: seasonMeta[k]?.months,
         waterDepthMm: waterReq,
+        irrigation_mm: waterReq,
         growthStage: 0.9,
         stress: {
           heat: activePlanData?.risk?.heat?.level === 'high',
@@ -738,7 +758,7 @@ export function SixSeasonRecommendationView({
         }
       };
     });
-  }, [activeCrops, activePlanData, lang, compareWithBaseline]);
+  }, [activeCrops, seasonIrrigMap, seasonMeta, lang, activePlanData]);
 
   // Selected period details for side panel
   const activeSelectedPeriod = selectedPeriodKey || 'Y1_S1';
@@ -1226,11 +1246,14 @@ export function SixSeasonRecommendationView({
       </div>
 
       {/* 4. Crop Strip (6 round crop thumbnails Y1-S1 ... Y2-S3) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
         {periodKeys.map((k) => {
-          const c = activeCrops[k] || 'Fallow';
+          const rawC = activeCrops[k] || 'Fallow';
+          const c = (k.endsWith('S3') && (rawC === 'Rice' || rawC === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : rawC;
           const isSelected = activeSelectedPeriod === k;
           const meta = seasonMeta[k];
+          const irrigVal = seasonIrrigMap[k] || 0;
+          const dropSize = Math.max(11, Math.min(18, 11 + Math.round(irrigVal / 60)));
           return (
             <div
               key={k}
@@ -1246,6 +1269,7 @@ export function SixSeasonRecommendationView({
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: 4,
+                transition: 'all 0.15s ease',
               }}
             >
               <div style={{ fontSize: 10.5, fontWeight: 700, color: meta?.color || 'var(--text-3)' }}>
@@ -1257,12 +1281,36 @@ export function SixSeasonRecommendationView({
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                 {translateCropName(c, lang)}
               </div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: irrigVal > 0 ? 'var(--water)' : 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
+                {irrigVal > 0 ? (
+                  <>
+                    <span style={{ fontSize: dropSize, lineHeight: 1 }}>💧</span>
+                    <span>{toBanglaDigits(irrigVal)} {lang === 'bn' ? 'মিমি' : 'mm'}</span>
+                  </>
+                ) : (
+                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ নেই' : '0 mm'}</span>
+                )}
+              </div>
               <div style={{ fontSize: 9.5, color: 'var(--text-3)' }}>
                 {meta?.months}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* PL4: Totals Row under Crop Strip */}
+      <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.02))', border: '1px solid var(--line)', borderRadius: 10, padding: '8px 14px', marginBottom: 18, fontSize: 12.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <div>
+          <span style={{ color: 'var(--text-2)' }}>
+            {lang === 'bn'
+              ? `১ম বছর: ${toBanglaDigits(y1Irrig)} মিমি | ২য় বছর: ${toBanglaDigits(y2Irrig)} মিমি | গড়: ${toBanglaDigits(avgIrrig)} মিমি/বছর — বর্তমান: ${toBanglaDigits(baseIrrigVal)} মিমি/বছর → সাশ্রয় ${toBanglaDigits(savingsVal)} মিমি`
+              : `Year 1: ${y1Irrig} mm | Year 2: ${y2Irrig} mm | Avg: ${avgIrrig} mm/yr — Current: ${baseIrrigVal} mm/yr → Saved: ${savingsVal} mm`}
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+          💧 {lang === 'bn' ? 'মৌসুমভিত্তিক ভূগর্ভস্থ ও সম্পূরক সেচ হিসাব' : 'Seasonal groundwater & supplemental irrigation balance'}
+        </div>
       </div>
 
       {/* 5. HERO: FarmScene3D + Interactive Side Panel */}

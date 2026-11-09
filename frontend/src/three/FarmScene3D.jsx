@@ -1211,10 +1211,13 @@ export function FarmScene3D({
           el.style.top = `${((1 - labelPos.y) / 2) * h}px`;
 
           const bedData = beds[i] || {};
-          const yr = bedData.year || (i < 3 ? (lang === 'bn' ? '১ম বছর' : 'Year 1') : (lang === 'bn' ? '২য় বছর' : 'Year 2'));
-          const sn = bedData.season || (i % 3 === 0 ? (lang === 'bn' ? 'রবি' : 'Rabi') : i % 3 === 1 ? (lang === 'bn' ? 'খরিফ-১' : 'Kharif-1') : (lang === 'bn' ? 'খরিফ-২' : 'Kharif-2'));
-          const cp = bedData.crop || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][lang === 'bn' ? 'bn' : 'en'] : b.cropKey);
-          el.textContent = `${yr} ${sn} · ${cp}`;
+          let cp = bedData.crop || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][lang === 'bn' ? 'bn' : 'en'] : b.cropKey);
+          if (i % 3 === 2 && (String(cp).toLowerCase().includes('rice') || String(cp).includes('ধান'))) {
+            cp = lang === 'bn' ? 'আমন ধান' : 'Aman Rice';
+          }
+          const irrigVal = bedData.irrigation_mm != null ? bedData.irrigation_mm : (bedData.waterDepthMm != null ? Math.round(bedData.waterDepthMm) : null);
+          const waterStr = irrigVal != null && irrigVal > 0 ? ` · 💧${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm');
+          el.textContent = `${cp}${waterStr}`;
         }
       });
     };

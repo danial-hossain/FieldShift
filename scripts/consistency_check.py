@@ -170,6 +170,23 @@ def run_consistency_audit():
         p_plan_n = p_plan.get("plan_nitrogen_kg")
         p_base_n = p_plan.get("baseline_nitrogen_kg", 0.0)
 
+        # PL4: Season irrigation values sum/2 must strictly equal plan_irrigation_mm
+        ssr = p_plan.get("selected_strategy_result", {})
+        csm = ssr.get("dynamic_agronomic_matrix", {}).get("crop_season_matrix", {})
+        sel_crops = ssr.get("selected_crop_by_period", {})
+        if sel_crops and csm:
+            season_irrigs = []
+            for period, crop_name in sel_crops.items():
+                m_entry = csm.get(period, {}).get(crop_name, {})
+                irrig = m_entry.get("water_balance", {}).get("irrigation_required_mm", 0.0)
+                season_irrigs.append(float(irrig))
+            if len(season_irrigs) == 6:
+                avg_season_irrig = sum(season_irrigs) / 2.0
+                if p_plan_irrig is not None and abs(round(avg_season_irrig, 1) - round(float(p_plan_irrig), 1)) > 0.5:
+                    discrepancies.append(
+                        f"[{f['name']}] PL4 Season irrigation average {avg_season_irrig:.1f} != plan_irrigation_mm {p_plan_irrig}"
+                    )
+
         if p_water_saved is not None and p_base_irrig is not None and p_plan_irrig is not None:
             expected_water_delta = round(p_base_irrig - p_plan_irrig, 1)
             if abs(round(p_water_saved, 1) - expected_water_delta) > 0.5:
