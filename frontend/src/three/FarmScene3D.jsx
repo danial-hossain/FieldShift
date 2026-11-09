@@ -1243,8 +1243,28 @@ export function FarmScene3D({
             symbolsHtml += `<span title="${lang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
           }
 
+          const isDone = Boolean(bedData.isCompleted);
+          const isChg = Boolean(bedData.isChanged);
+          if (isDone) {
+            el.style.background = 'rgba(31, 110, 60, 0.92)';
+            el.style.border = '1px solid #6fd28f';
+          } else if (isChg) {
+            el.style.background = 'rgba(196, 104, 24, 0.92)';
+            el.style.border = '1px solid #f0a14a';
+          } else {
+            el.style.background = 'rgba(20, 30, 22, 0.88)';
+            el.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+          }
+
+          let prefix = '';
+          if (isDone) prefix = '<span style="color:#6fd28f;font-weight:800;margin-right:2px">✓</span> ';
+          else if (isChg) prefix = '<span style="color:#f0a14a;font-weight:800;margin-right:2px">⟳</span> ';
+
+          const yieldStr = bedData.yieldLabel ? ` · ${bedData.yieldLabel}` : '';
           const waterStr = irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm');
-          el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px"><span>${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${waterStr}</span></span>`;
+          const detailStr = isDone && bedData.yieldLabel ? yieldStr : waterStr;
+
+          el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span>${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
         }
       });
     };
@@ -1408,10 +1428,19 @@ export function FarmScene3D({
       });
     }
 
-    // Update selection outlines
+    // Update selection outlines and changed replan beds
     bedObjects.forEach((b, j) => {
       if (b.edges && b.edges.material) {
-        b.edges.material.opacity = j === activeIndex ? 0.95 : 0;
+        const bedData = Array.isArray(beds) ? beds[j] : null;
+        if (j === activeIndex) {
+          b.edges.material.color.set('#ffe680');
+          b.edges.material.opacity = 0.95;
+        } else if (bedData && bedData.isChanged) {
+          b.edges.material.color.set('#f0a14a');
+          b.edges.material.opacity = 0.85;
+        } else {
+          b.edges.material.opacity = 0;
+        }
       }
     });
     if (containerRef.current.__farm3d.requestRender) {
@@ -1643,22 +1672,24 @@ export function FarmScene3D({
           💧 {lang === 'bn' ? 'সেচ (বড় = বেশি) · 🌱N নাইট্রোজেন দেয় · ☀️ তাপ/খরা ঝুঁকি' : 'Irrig (large=more) · 🌱N Legume · ☀️ Heat/Drought Risk'}
         </div>
 
-        <div
-          style={{
-            background: 'rgba(255, 255, 255, 0.90)',
-            color: '#1b261d',
-            borderRadius: 10,
-            padding: '4px 10px',
-            fontSize: 12,
-            fontWeight: 700,
-            fontVariantNumeric: 'tabular-nums',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-          }}
-        >
-          💧 {lang === 'bn'
-            ? `ট্যাংক = বছরে সেচ: ${annualIrrigationMm != null ? Math.round(annualIrrigationMm) : '—'} মিমি`
-            : `Tank = Annual Irrigation: ${annualIrrigationMm != null ? Math.round(annualIrrigationMm) : '—'} mm`}
-        </div>
+        {annualIrrigationMm != null && !isNaN(annualIrrigationMm) ? (
+          <div
+            style={{
+              background: 'rgba(255, 255, 255, 0.90)',
+              color: '#1b261d',
+              borderRadius: 10,
+              padding: '4px 10px',
+              fontSize: 12,
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            }}
+          >
+            💧 {lang === 'bn'
+              ? `ট্যাংক = বছরে সেচ: ${Math.round(annualIrrigationMm)} মিমি`
+              : `Tank = Annual Irrigation: ${Math.round(annualIrrigationMm)} mm`}
+          </div>
+        ) : null}
       </div>
     </div>
   );
