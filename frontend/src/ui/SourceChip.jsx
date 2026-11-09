@@ -19,13 +19,13 @@ export function SourceChip({
 
   const s = String(source).toLowerCase();
 
-  if (s.includes('user') || s.includes('আপনার') || s.includes('কৃষক')) {
-    label = lang === 'bn' ? 'আপনার দেওয়া' : 'User Input';
+  if (s.includes('user') || s.includes('আপনার') || s.includes('কৃষক') || s.includes('test')) {
+    label = lang === 'bn' ? 'মাটি পরীক্ষা (আপনার দেওয়া)' : 'Farmer Soil Test';
     bg = 'rgba(34, 197, 94, 0.12)';
     color = '#4ade80';
     border = '1px solid rgba(34, 197, 94, 0.28)';
   } else if (s.includes('soilgrids') || s.includes('isric')) {
-    label = 'SoilGrids';
+    label = lang === 'bn' ? 'SoilGrids ২৫০মি.' : 'SoilGrids 250 m';
     bg = 'rgba(245, 158, 11, 0.12)';
     color = '#fbbf24';
     border = '1px solid rgba(245, 158, 11, 0.28)';
@@ -44,8 +44,13 @@ export function SourceChip({
     bg = 'rgba(14, 165, 233, 0.12)';
     color = '#0284c7';
     border = '1px solid rgba(14, 165, 233, 0.28)';
+  } else if (s.includes('no_data') || s.includes('missing') || s.includes('তথ্য নেই')) {
+    label = lang === 'bn' ? 'তথ্য নেই' : 'No data';
+    bg = 'rgba(148, 163, 184, 0.12)';
+    color = '#94a3b8';
+    border = '1px solid rgba(148, 163, 184, 0.25)';
   } else if (s.includes('class') || s.includes('average') || s.includes('গড়') || s.includes('মাপা নয়')) {
-    label = size === 'xs' ? (lang === 'bn' ? 'গড় মান' : 'Class Avg') : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Class Average (Not Measured)');
+    label = lang === 'bn' ? 'Class Avg (মাপা নয়)' : 'Class Avg (unmeasured)';
     bg = 'rgba(148, 163, 184, 0.18)';
     color = 'var(--text-main, #e2e8f0)';
     border = '1px solid rgba(148, 163, 184, 0.38)';

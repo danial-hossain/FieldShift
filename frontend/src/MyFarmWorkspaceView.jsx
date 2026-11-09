@@ -705,19 +705,32 @@ export function MyFarmWorkspaceView({
   // Selected Field Completeness
   const activeCompleteness = useMemo(() => calculateCompleteness(activeField), [activeField]);
 
-  // Soil diagnostics calculation (M7)
+  // Soil diagnostics calculation (M7 / MF1)
   const soilClass = useMemo(() => getSoilClassData(activeField?.soil_texture), [activeField?.soil_texture]);
   const hasRealSoilGrids = activeField?.soilgrids_sand != null && activeField?.soilgrids_clay != null;
   const sandVal = hasRealSoilGrids ? activeField.soilgrids_sand : soilClass.sand;
   const siltVal = hasRealSoilGrids ? activeField.soilgrids_silt : soilClass.silt;
   const clayVal = hasRealSoilGrids ? activeField.soilgrids_clay : soilClass.clay;
-  const phVal = activeField?.soil_ph != null ? activeField.soil_ph : (activeField?.soilgrids_ph != null ? activeField.soilgrids_ph : 6.5);
-  const omVal = activeField?.organic_matter != null ? activeField.organic_matter : (activeField?.soilgrids_soc != null ? (activeField.soilgrids_soc * 1.724).toFixed(1) : 1.8);
+
+  // Source order for every soil value: farmer's soil test -> SoilGrids 250 m -> class average (texture-only properties) -> "তথ্য নেই"
+  const phVal = activeField?.soil_ph != null
+    ? Number(activeField.soil_ph)
+    : (activeField?.soilgrids_ph != null ? Number(activeField.soilgrids_ph) : null);
+  const phSource = activeField?.soil_ph != null
+    ? 'user'
+    : (activeField?.soilgrids_ph != null ? 'SoilGrids' : 'no_data');
+
+  const omVal = activeField?.organic_matter != null
+    ? Number(activeField.organic_matter)
+    : (activeField?.soilgrids_soc != null ? Number((activeField.soilgrids_soc * 1.724).toFixed(1)) : null);
+  const omSource = activeField?.organic_matter != null
+    ? 'user'
+    : (activeField?.soilgrids_soc != null ? 'SoilGrids' : 'no_data');
 
   // Saxton-Rawls calculation (M7)
   const saxtonRes = useMemo(() => {
     if (sandVal != null && clayVal != null) {
-      return computeSaxtonRawls(sandVal, clayVal, omVal);
+      return computeSaxtonRawls(sandVal, clayVal, omVal != null ? omVal : 1.5);
     }
     return null;
   }, [sandVal, clayVal, omVal]);
@@ -1485,36 +1498,44 @@ export function MyFarmWorkspaceView({
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'মাটির অম্লতা (pH):' : 'Soil pH:'}</span>
-                <SourceChip
-                  source={activeField?.soil_ph != null ? 'user' : (activeField?.soilgrids_ph != null ? 'SoilGrids' : 'class_average')}
-                  lang={lang}
-                  size="xs"
-                />
+                <SourceChip source={phSource} lang={lang} size="xs" />
               </div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: phVal < 6 ? '#f87171' : phVal > 7.5 ? '#38bdf8' : 'var(--leaf)' }}>
-                {phVal}
-              </div>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {phVal < 6 ? 'অম্লীয় (Acidic)' : phVal > 7.5 ? 'ক্ষারীয় (Alkaline)' : 'নিরপেক্ষ (Neutral)'}
-              </span>
+              {phVal != null ? (
+                <>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: phVal < 6 ? '#f87171' : phVal > 7.5 ? '#38bdf8' : 'var(--leaf)' }}>
+                    {lang === 'bn' ? toBengaliNumber(phVal.toFixed(1)) : phVal.toFixed(1)}
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                    {phVal < 6 ? (lang === 'bn' ? 'অম্লীয় (Acidic)' : 'Acidic') : phVal > 7.5 ? (lang === 'bn' ? 'ক্ষারীয় (Alkaline)' : 'Alkaline') : (lang === 'bn' ? 'নিরপেক্ষ (Neutral)' : 'Neutral')}
+                  </span>
+                </>
+              ) : (
+                <div style={{ fontSize: 11.5, color: '#f59e0b', marginTop: 4, lineHeight: 1.4, fontWeight: 500 }}>
+                  {lang === 'bn' ? 'তথ্য নেই — মাটি পরীক্ষা করুন (SRDI / উপজেলা কৃষি অফিস)' : 'No data — Soil test recommended (SRDI / Upazila Agriculture Office)'}
+                </div>
+              )}
             </div>
 
             {/* 6. Organic Matter */}
             <div style={{ padding: 14, borderRadius: 10, background: 'var(--surface-2, rgba(255,255,255,0.03))', border: '1px solid var(--line)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px', marginBottom: 6 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'জৈব পদার্থ (OM):' : 'Organic Matter:'}</span>
-                <SourceChip
-                  source={activeField?.organic_matter != null ? 'user' : (activeField?.soilgrids_soc != null ? 'SoilGrids' : 'class_average')}
-                  lang={lang}
-                  size="xs"
-                />
+                <SourceChip source={omSource} lang={lang} size="xs" />
               </div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--leaf, #10b981)' }}>
-                {omVal}%
-              </div>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {omVal < 1.5 ? 'স্বল্প (Low)' : 'পর্যাপ্ত (Optimal)'}
-              </span>
+              {omVal != null ? (
+                <>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--leaf, #10b981)' }}>
+                    {lang === 'bn' ? `${toBengaliNumber(omVal.toFixed(1))}%` : `${omVal.toFixed(1)}%`}
+                  </div>
+                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                    {omVal < 1.5 ? (lang === 'bn' ? 'স্বল্প (Low)' : 'Low') : (lang === 'bn' ? 'পর্যাপ্ত (Optimal)' : 'Optimal')}
+                  </span>
+                </>
+              ) : (
+                <div style={{ fontSize: 11.5, color: '#f59e0b', marginTop: 4, lineHeight: 1.4, fontWeight: 500 }}>
+                  {lang === 'bn' ? 'তথ্য নেই — মাটি পরীক্ষা করুন (SRDI / উপজেলা কৃষি অফিস)' : 'No data — Soil test recommended (SRDI / Upazila Agriculture Office)'}
+                </div>
+              )}
             </div>
 
             {/* 7. Field Capacity (FC) */}
