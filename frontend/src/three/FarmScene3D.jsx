@@ -466,6 +466,8 @@ export function FarmScene3D({
   const [hasWebGL, setHasWebGL] = useState(true);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
   const [infoStats, setInfoStats] = useState({ calls: 0, triangles: 0, fps: 60 });
+  const [isLowLod, setIsLowLod] = useState(false);
+  const isLowLodRef = useRef(false);
 
   // Resolve active selected index from prop
   const activeIndex = useMemo(() => {
@@ -1061,12 +1063,12 @@ export function FarmScene3D({
 
     const seasonKinds = ['rabi', 'k1', 'k2', 'rabi', 'k1', 'k2'];
 
-    function plantBed(bedIdx, cropName) {
+    function plantBed(bedIdx, cropName, forceRebuild = false) {
       const b = bedObjects[bedIdx];
       const seasonKind = seasonKinds[bedIdx];
       const geoKey = mapCropToGeoKey(cropName, seasonKind);
 
-      if (b.cropKey === geoKey && b.inst.length > 0) return;
+      if (!forceRebuild && b.cropKey === geoKey && b.inst.length > 0) return;
 
       // Remove existing crop mesh
       b.inst.forEach((m) => {
@@ -1083,7 +1085,8 @@ export function FarmScene3D({
       b.soil.material = isRice ? wetSoilMat : soilMat;
 
       const geo = geoFor(geoKey, seasonKind);
-      const spacing = (SPACING[geoKey] || 0.7) * (isLowLod ? 1.25 : 1.0);
+      const activeLowLod = isLowLod || isLowLodRef.current;
+      const spacing = (SPACING[geoKey] || 0.7) * (activeLowLod ? 1.25 : 1.0);
       const cols = Math.floor((BED.w - 1.6) / spacing);
       const rows = Math.floor((BED.d - 1.6) / spacing);
 
@@ -1267,8 +1270,9 @@ export function FarmScene3D({
         if (onRendererInfo) {
           onRendererInfo({ calls, triangles, fps: measuredFps });
         }
-        if (measuredFps < 30 && !isLowLod) {
-          isLowLod = true;
+        if (measuredFps < 30 && !isLowLodRef.current) {
+          isLowLodRef.current = true;
+          setIsLowLod(true);
         }
         frameCount = 0;
         lastRenderStatsTime = now;
@@ -1370,12 +1374,12 @@ export function FarmScene3D({
     if (!containerRef.current || !containerRef.current.__farm3d) return;
     const { bedObjects, plantBed } = containerRef.current.__farm3d;
 
-    // Update beds if crops changed
+    // Update beds if crops changed or LOD adjusted
     if (Array.isArray(beds)) {
       beds.slice(0, 6).forEach((bedData, i) => {
         const cropName = bedData.crop || bedData.crop_name || bedData.name;
         if (cropName && bedObjects[i]) {
-          plantBed(i, cropName);
+          plantBed(i, cropName, isLowLod);
         }
       });
     }
@@ -1389,7 +1393,7 @@ export function FarmScene3D({
     if (containerRef.current.__farm3d.requestRender) {
       containerRef.current.__farm3d.requestRender();
     }
-  }, [beds, activeIndex]);
+  }, [beds, activeIndex, isLowLod]);
 
   // Apply Camera Presets when currentPreset changes
   useEffect(() => {
