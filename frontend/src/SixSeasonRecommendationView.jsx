@@ -1399,6 +1399,23 @@ export function SixSeasonRecommendationView({
                 {lang === 'bn' ? 'এই মৌসুমে বিকল্প (Alternatives):' : 'Alternatives for this Season:'}
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    fontSize: 11,
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid #10b981',
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    color: '#4ade80',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  <span>✓ {translateCropName(selectedCropName, lang)} ({lang === 'bn' ? 'নির্বাচিত' : 'Chosen'})</span>
+                  <span style={{ fontSize: 10 }}>({Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000)} pts)</span>
+                </span>
                 {candidateAlternatives.map((alt, idx) => (
                   <span
                     key={idx}
@@ -1419,6 +1436,13 @@ export function SixSeasonRecommendationView({
                   </span>
                 ))}
               </div>
+              {candidateAlternatives.length > 0 && candidateAlternatives[0].score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
+                <div style={{ marginTop: 8, fontSize: 11.5, color: '#f59e0b', background: 'rgba(245, 158, 11, 0.08)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(245, 158, 11, 0.25)', lineHeight: 1.4 }}>
+                  {lang === 'bn'
+                    ? `পুরো ৬ মৌসুমে সেরা: এই মৌসুমে একা ${translateCropName(candidateAlternatives[0].crop, 'bn')}-র স্কোর বেশি, কিন্তু পানি / রোগচক্র / ডাল নিয়মে ${translateCropName(selectedCropName, 'bn')} ভালো`
+                    : `Best across all 6 seasons: ${candidateAlternatives[0].crop} scores higher in this isolated season, but ${selectedCropName} is superior for water conservation, disease break, and legume rules`}
+                </div>
+              )}
             </div>
           </div>
 
