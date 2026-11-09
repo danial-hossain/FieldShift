@@ -286,6 +286,7 @@ export function SixSeasonRecommendationView({
     selectedStrategy: storeSelectedStrategy,
     bestStrategyId: bestScoringStrategyId,
     bestReason: bestStrategyReason,
+    identicalStrategyNote,
     setSelectedStrategy: setStoreSelectedStrategy,
     refetch,
   } = useRotationPlans({ field: activeField, options: plannerOptions, lang, request });
@@ -406,30 +407,7 @@ export function SixSeasonRecommendationView({
 
 
 
-  const identicalStrategyNote = useMemo(() => {
-    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
-      const pData = plansByPriority[pKey]?.summary?.planning;
-      const nBn = pData?.identical_strategy_note_bn || pData?.milp_status?.identical_strategy_note_bn;
-      const nEn = pData?.identical_strategy_note_en || pData?.milp_status?.identical_strategy_note_en;
-      if (nBn || nEn) {
-        return lang === 'bn' ? (nBn || nEn) : (nEn || nBn);
-      }
-    }
-    if (plansByPriority && plansByPriority.balanced) {
-      const bCrops = plansByPriority.balanced?.summary?.planning?.milp_status?.selected_crop_by_period || {};
-      const bSeq = Object.values(bCrops).join(' → ');
-      if (bSeq) {
-        const wCrops = plansByPriority.water?.summary?.planning?.milp_status?.selected_crop_by_period || {};
-        const wSeq = Object.values(wCrops).join(' → ');
-        if (wSeq && wSeq === bSeq) {
-          return lang === 'bn'
-            ? 'এই জমিতে সুষম আর পানি সাশ্রয় একই পরিকল্পনা দেয়'
-            : 'For this field, Balanced and Water-Saving strategies produce the identical rotation';
-        }
-      }
-    }
-    return null;
-  }, [plansByPriority, lang]);
+
 
   // Active solver weights for currently selected strategy
   const activeWeights = useMemo(() => {

@@ -74,6 +74,7 @@ export function AdaptiveReplanningView({
     selectedPriority,
     bestPriority,
     bestReason,
+    identicalStrategyNote,
     setSelectedStrategy,
     refetch: refetchPlans,
   } = useRotationPlans({ field: activeField, lang, request });
@@ -480,6 +481,13 @@ export function AdaptiveReplanningView({
         {bestReason && (
           <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--leaf-dark, #237841)', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
             <span>{bestReason}</span>
+          </div>
+        )}
+
+        {/* Identical Strategy Parity Note */}
+        {identicalStrategyNote && (
+          <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--text-2, #5e6b60)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>ℹ️ {identicalStrategyNote}</span>
           </div>
         )}
 

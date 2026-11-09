@@ -210,6 +210,27 @@ export function getBestStrategyInfo(plansByPriority, lang = 'bn') {
   return { bestPriority: 'balanced', bestStrategyId: 'balanced', reason: null };
 }
 
+export function getIdenticalStrategyNote(plansByPriority, lang = 'bn') {
+  if (!plansByPriority || !plansByPriority.balanced) return null;
+  for (const pKey of PRIORITIES) {
+    const plan = plansByPriority[pKey];
+    const pData = plan?.summary?.planning || plan;
+    const nBn = pData?.identical_strategy_note_bn;
+    const nEn = pData?.identical_strategy_note_en;
+    if (nBn || nEn) {
+      return lang === 'bn' ? (nBn || nEn) : (nEn || nBn);
+    }
+  }
+  const bCrops = extractPlanCrops(plansByPriority.balanced);
+  const wCrops = extractPlanCrops(plansByPriority.water);
+  if (bCrops && wCrops && bCrops.join('::') === wCrops.join('::')) {
+    return lang === 'bn'
+      ? 'এই জমিতে সুষম আর পানি সাশ্রয় একই পরিকল্পনা দেয়'
+      : 'For this field, Balanced and Water-Saving strategies produce the identical rotation';
+  }
+  return null;
+}
+
 /**
  * React hook for components to subscribe to strategy plans and shared selected strategy.
  */
@@ -250,6 +271,11 @@ export function useRotationPlans({ field, options = {}, lang = 'bn', request = d
     [plansByPriority, lang]
   );
 
+  const identicalStrategyNote = useMemo(
+    () => getIdenticalStrategyNote(plansByPriority, lang),
+    [plansByPriority, lang]
+  );
+
   const setSelectedStrategy = useCallback(
     (strat) => {
       setFieldSelectedStrategy(fieldId, strat);
@@ -276,6 +302,7 @@ export function useRotationPlans({ field, options = {}, lang = 'bn', request = d
     bestPriority,
     bestStrategyId,
     bestReason,
+    identicalStrategyNote,
     setSelectedStrategy,
     refetch,
     cacheKey,
