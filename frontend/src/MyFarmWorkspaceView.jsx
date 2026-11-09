@@ -18,7 +18,7 @@ import { useTranslation } from './i18n.js';
 import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceChip, Skeleton } from './ui/index.js';
 import { tonPerHaToMaundPerBigha, maundPerBighaToTonPerHa } from './utils/conversions.js';
 import { computeSaxtonRawls } from './utils/saxtonRawls.js';
-import { SOIL_TEXTURE_DATA, getSoilClassData } from './utils/soilClasses.js';
+import { SOIL_TEXTURE_DATA, getSoilClassData, formatSoilTextureLabel, formatIrrigationClassLabel } from './utils/soilClasses.js';
 import districtsData from './bd_districts_choropleth.json';
 
 const RABI_OPTIONS = [
@@ -825,7 +825,9 @@ export function MyFarmWorkspaceView({
   const areaHa = activeField?.area_ha != null ? Number(activeField.area_ha) : null;
   const areaBigha = areaHa != null ? (areaHa * (10000 / 1337.8)).toFixed(1) : null;
   const areaDisplay = areaHa != null
-    ? `${formatNumber(areaHa, 2)} ${lang === 'bn' ? 'হেক্টর' : 'ha'} (${areaBigha} ${lang === 'bn' ? 'বিঘা' : 'bigha'})`
+    ? (lang === 'bn'
+        ? `${toBn ? toBn(areaBigha) : areaBigha} বিঘা (${toBn ? toBn(areaHa.toFixed(2)) : areaHa.toFixed(2)} হেক্টর)`
+        : `${areaBigha} bigha (${areaHa.toFixed(2)} ha)`)
     : fallbackText;
 
   // Canonical 4 Tabs (Bangla first, no English shouting, no emoji in headings) (P2)
@@ -1047,12 +1049,16 @@ export function MyFarmWorkspaceView({
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, fontSize: 12.5, margin: '14px 0 10px', borderTop: '1px solid var(--line)', paddingTop: 12 }}>
                         <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
                           <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'আয়তন (Area):' : 'Area:'}</span>
-                          <strong style={{ color: 'var(--sun, #f59e0b)', fontSize: 13 }}>{bigha} {lang === 'bn' ? 'বিঘা' : 'bigha'}</strong>
-                          <span style={{ fontSize: 11, color: 'var(--text-3)' }}> ({f.area_ha || 1.0} ha)</span>
+                          <strong style={{ color: 'var(--sun, #f59e0b)', fontSize: 13 }}>
+                            {lang === 'bn' ? `${toBn ? toBn(bigha) : bigha} বিঘা` : `${bigha} bigha`}
+                          </strong>
+                          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                            {' '}({lang === 'bn' ? `${toBn ? toBn((Number(f.area_ha) || 1.0).toFixed(2)) : (Number(f.area_ha) || 1.0).toFixed(2)} হেক্টর` : `${(Number(f.area_ha) || 1.0).toFixed(2)} ha`})
+                          </span>
                         </div>
                         <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
                           <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'মাটির শ্রেণি (Soil):' : 'Soil Class:'}</span>
-                          <strong style={{ color: 'var(--text)', fontSize: 13 }}>{soilInfo.nameBn}</strong>
+                          <strong style={{ color: 'var(--text)', fontSize: 13 }}>{formatSoilTextureLabel(f.soil_texture)}</strong>
                         </div>
                         <div style={{ gridColumn: 'span 2', background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
                           <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'বর্তমান আবর্তন (Current Rotation):' : 'Current Rotation:'}</span>
@@ -1211,11 +1217,12 @@ export function MyFarmWorkspaceView({
                         onChange={e => setEditForm({ ...editForm, soil_texture: e.target.value })}
                         style={{ width: '100%', padding: '7px 10px', borderRadius: 8, fontSize: 13 }}
                       >
-                        <option value="loam">দোআঁশ (Loam)</option>
-                        <option value="silty_loam">পলি দোআঁশ (Silty Loam)</option>
-                        <option value="clay_loam">এঁটেল দোআঁশ (Clay Loam)</option>
-                        <option value="clay">এঁটেল (Clay)</option>
-                        <option value="sandy_loam">বেলে দোআঁশ (Sandy Loam)</option>
+                        <option value="clay_loam">Clay Loam (এঁটেল দোআঁশ)</option>
+                        <option value="loam">Loam (দোআঁশ)</option>
+                        <option value="silty_loam">Silty Loam (পলি দোআঁশ)</option>
+                        <option value="sandy_loam">Sandy Loam (বেলে দোআঁশ)</option>
+                        <option value="clay">Clay (এঁটেল)</option>
+                        <option value="silty_clay">Silty Clay (পলি এঁটেল)</option>
                       </select>
                     </div>
                     <div>
@@ -1287,7 +1294,7 @@ export function MyFarmWorkspaceView({
                   <div>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'সেচ সক্ষমতা:' : 'Irrigation Capacity:'}</span>
                     <strong style={{ fontSize: 14, color: 'var(--water, #38bdf8)' }}>
-                      {activeField.irrigation_capacity_mm != null ? `${activeField.irrigation_capacity_mm} মিমি` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                      {formatIrrigationClassLabel(activeField.irrigation_capacity_mm, lang, toBn)}
                     </strong>
                   </div>
                   <div>
@@ -1510,7 +1517,7 @@ export function MyFarmWorkspaceView({
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
               <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
-                {soilClass.nameBn} ({soilClass.nameEn})
+                {formatSoilTextureLabel(activeField.soil_texture)}
               </div>
             </div>
 
@@ -1521,7 +1528,7 @@ export function MyFarmWorkspaceView({
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--sun, #f59e0b)' }}>
-                {sandVal}%
+                {lang === 'bn' && toBn ? toBn(sandVal) : sandVal}%
               </div>
             </div>
 
@@ -1532,7 +1539,7 @@ export function MyFarmWorkspaceView({
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--water, #38bdf8)' }}>
-                {siltVal}%
+                {lang === 'bn' && toBn ? toBn(siltVal) : siltVal}%
               </div>
             </div>
 
@@ -1543,7 +1550,7 @@ export function MyFarmWorkspaceView({
                 <SourceChip source={hasRealSoilGrids ? 'SoilGrids' : 'class_average'} lang={lang} size="xs" />
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--leaf, #10b981)' }}>
-                {clayVal}%
+                {lang === 'bn' && toBn ? toBn(clayVal) : clayVal}%
               </div>
             </div>
 
