@@ -2756,6 +2756,23 @@ def create_field(payload: Payload, user: User = Depends(require_user), db: DbSes
     f_dict["last_analysis_date"] = None
     return {"status": "created", "field": f_dict}
 
+@app.get("/api/fields/{field_id}")
+def get_field(field_id: int, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
+    fld = owned_field(db, field_id, user)
+    f_dict = row(fld)
+    hist = [row(h) for h in db.scalars(select(FieldHistory).where(FieldHistory.field_id == fld.id).order_by(FieldHistory.year.desc(), FieldHistory.id.desc()))]
+    f_dict["history"] = hist
+    if hist:
+        f_dict["previous_crop"] = hist[0].get("crop")
+        f_dict["previous_crop_year"] = hist[0].get("year")
+        f_dict["current_crop"] = hist[0].get("crop")
+    if fld.latitude is not None and fld.longitude is not None:
+        from src.compute.advisory_service import nearest_district
+        f_dict["nearest_district"] = nearest_district(float(fld.latitude), float(fld.longitude))
+    last_anal = db.scalar(select(Analysis.created_at).where(Analysis.field_id == fld.id).order_by(Analysis.id.desc()))
+    f_dict["last_analysis_date"] = last_anal.isoformat() if last_anal else None
+    return {"status": "ok", "field": f_dict}
+
 @app.put("/api/fields/{field_id}")
 def update_field(field_id: int, payload: Payload, user: User = Depends(require_user), db: DbSession = Depends(get_db)):
     field = owned_field(db, field_id, user)
