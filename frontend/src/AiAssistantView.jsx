@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { request } from './apiClient.js';
 
 const SUGGESTED_PROMPTS = [
@@ -63,6 +63,61 @@ export default function AiAssistantView({
       setLanguage(lang);
     }
   }, [lang]);
+
+  const plannerSuggestedPrompts = useMemo(() => {
+    if (!pageContext && fromPage !== 'farm_planning') return null;
+
+    const waterMm = pageContext?.totals?.irrigation_plan_mm ?? plan?.total_water_mm ?? 420;
+    const y1Rabi = pageContext?.seasons?.[0]?.crop_bn || 'সরিষা';
+    const y1RabiEn = pageContext?.seasons?.[0]?.crop || 'Mustard';
+
+    // 4 dynamic chips from A1:
+    const chip1 = language === 'bn' ? 'বোরো বাদ দিলে কেন লাভ বেশি?' : 'Why is profit higher without Boro Rice?';
+    const chip2 = language === 'bn' ? `${y1Rabi}-এ কতবার সেচ দেব?` : `How many irrigations for ${y1RabiEn}?`;
+    const chip3 = language === 'bn' ? 'খরিপ-১ মৌসুমে তিল কেন বিকল্প?' : 'Why is Sesame an alternative for Kharif-1?';
+    const chip4 = language === 'bn' ? 'খরা হলে এই পরিকল্পনা কী হবে?' : 'What happens to this plan during drought?';
+
+    const chipDiff = language === 'bn' ? 'সুষম আর লাভ কৌশলের পার্থক্য কী?' : 'What is the difference between Balanced and Profit strategies?';
+    const chipTank = language === 'bn' ? `পানির ট্যাংক ${waterMm} মিমি মানে কী?` : `What does water tank ${waterMm} mm mean?`;
+    const chipBare = language === 'bn' ? 'ফাঁকা দিন কমলে কী লাভ?' : 'What is the benefit of reducing bare fallow days?';
+
+    const group1 = {
+      category: language === 'bn' ? 'এই পরিকল্পনা নিয়ে প্রশ্ন' : 'Plan Questions',
+      items: [
+        { label: chip1, text: chip1 },
+        { label: chip2, text: chip2 },
+        { label: chip3, text: chip3 },
+        { label: chip4, text: chip4 },
+        { label: chipDiff, text: chipDiff },
+        { label: chipTank, text: chipTank },
+        { label: chipBare, text: chipBare },
+      ]
+    };
+
+    const glossaryTerms = [
+      { labelBn: 'বাষ্পীভবন (ET0) কী?', textBn: 'বাষ্পীভবন ও প্রস্বেদন (ET0) কী এবং এটি ফসল পরিকল্পনায় কেন গুরুত্বপূর্ণ?', labelEn: 'Evapotranspiration (ET0)?', textEn: 'What is Evapotranspiration (ET0) and why does it matter in crop planning?' },
+      { labelBn: 'মাটির আর্দ্রতা (SMAP) কী?', textBn: 'মাটির আর্দ্রতা অ্যানোমালি (SMAP) কী?', labelEn: 'Soil Moisture (SMAP)?', textEn: 'What is Soil-Moisture Anomaly (SMAP)?' },
+      { labelBn: 'সবুজায়ন সূচক (NDVI) কী?', textBn: 'উদ্ভিদের সবুজায়ন সূচক (NDVI) কী?', labelEn: 'Vegetation Index (NDVI)?', textEn: 'What is Vegetation Index (NDVI)?' },
+      { labelBn: 'তাপপ্রবাহ ঝুঁকি কী?', textBn: 'তাপপ্রবাহ ও তাপীয় ঝুঁকি (Heat Stress) কী?', labelEn: 'Heat Stress?', textEn: 'What is Heat Stress & Thermal Thresholds?' },
+      { labelBn: 'পানির ভারসাম্য কী?', textBn: 'পানির ভারসাম্য (Water Balance - FAO-56) কী?', labelEn: 'Water Balance?', textEn: 'What is Water Balance (FAO-56)?' },
+      { labelBn: 'স্যাটেলাইট বনাম ভূমি পাঠ কী?', textBn: 'উপগ্রহ বনাম ভূমি পরিমাপ (Satellite vs Ground) এর পার্থক্য কী?', labelEn: 'Satellite vs Ground?', textEn: 'What is Satellite vs Ground measurement?' },
+      { labelBn: 'পুনর্বিশ্লেষণ বনাম পর্যবেক্ষণ কী?', textBn: 'পুনর্বিশ্লেষণ বনাম প্রত্যক্ষ পর্যবেক্ষণ (Reanalysis vs Observation) এর পার্থক্য কী?', labelEn: 'Reanalysis vs Observation?', textEn: 'What is Reanalysis vs Observation?' },
+      { labelBn: 'অনিশ্চয়তার সীমা (P10–P90) কী?', textBn: 'অনিশ্চয়তার সীমা (Uncertainty P10–P90) কী?', labelEn: 'Uncertainty (P10–P90)?', textEn: 'What are Uncertainty Bounds (P10–P90)?' },
+    ];
+
+    const group2 = {
+      category: language === 'bn' ? 'শব্দের মানে' : 'Glossary & Terms',
+      items: glossaryTerms.map(t => ({
+        label: language === 'bn' ? t.labelBn : t.labelEn,
+        text: language === 'bn' ? t.textBn : t.textEn
+      }))
+    };
+
+    return [group1, group2];
+  }, [pageContext, fromPage, language, plan]);
+
+  const activePrompts = plannerSuggestedPrompts || SUGGESTED_PROMPTS;
+  const currentCat = activeCategory < activePrompts.length ? activeCategory : 0;
 
   const initialGreeting = language === 'bn'
     ? (activeField
@@ -513,6 +568,39 @@ export default function AiAssistantView({
                     </div>
                   )}
 
+                  {/* Dynamic Follow-up Chips for Assistant Replies */}
+                  {msg.role === 'assistant' && (
+                    <div className="ai-followup-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '10px 0 6px' }}>
+                      <span style={{ fontSize: 11.5, opacity: 0.7, alignSelf: 'center' }}>
+                        {language === 'bn' ? '💡 পরবর্তী প্রশ্ন:' : '💡 Next question:'}
+                      </span>
+                      {[
+                        language === 'bn' ? 'খরা হলে কী করব?' : 'What to do in case of drought?',
+                        language === 'bn' ? 'সার কত লাগবে?' : 'How much fertilizer is needed?',
+                        language === 'bn' ? 'SAAO-র সাথে কী কথা বলব?' : 'What to discuss with SAAO?'
+                      ].map((fText, fIdx) => (
+                        <button
+                          key={fIdx}
+                          type="button"
+                          className="ai-followup-chip"
+                          onClick={() => handleSend(fText)}
+                          disabled={loading}
+                          style={{
+                            background: 'var(--surface-2, rgba(255,255,255,0.06))',
+                            border: '1px solid var(--line, rgba(255,255,255,0.15))',
+                            borderRadius: 999,
+                            padding: '3px 10px',
+                            fontSize: 12,
+                            color: 'var(--text)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {fText}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
                   {/* Bottom Message Actions */}
                   {msg.role === 'assistant' && (
                     <div className="ai-bubble-footer">
@@ -566,11 +654,11 @@ export default function AiAssistantView({
         {/* Suggestion Chips with Category Tabs */}
         <div className="ai-suggestions-row">
           <div className="ai-suggestion-tabs">
-            {SUGGESTED_PROMPTS.map((cat, cIdx) => (
+            {activePrompts.map((cat, cIdx) => (
               <button
                 key={cIdx}
                 type="button"
-                className={`ai-suggestion-tab-btn ${activeCategory === cIdx ? 'active' : ''}`}
+                className={`ai-suggestion-tab-btn ${currentCat === cIdx ? 'active' : ''}`}
                 onClick={() => setActiveCategory(cIdx)}
               >
                 {cat.category}
@@ -579,7 +667,7 @@ export default function AiAssistantView({
           </div>
 
           <div className="ai-suggestions-scroll">
-            {SUGGESTED_PROMPTS[activeCategory].items.map((prompt, idx) => (
+            {(activePrompts[currentCat]?.items || []).map((prompt, idx) => (
               <button
                 key={idx}
                 type="button"
