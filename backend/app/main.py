@@ -2264,59 +2264,268 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
         except Exception:
             pass
 
-    # Deterministic rule-based offline fallback tailored to the 6-part structure
-    fname = field_info.get("name") or "Selected Field"
+    # Deterministic honest offline fallback tailored to real field/planner context
+    fname = planner_info.get("field") or field_info.get("name") or "Selected Field"
     texture = field_info.get("soil_texture") or "loam"
     ph = field_info.get("soil_ph")
     om = field_info.get("organic_matter") or field_info.get("organic_matter_pct")
-    irrig = field_info.get("irrigation_capacity_mm", 400)
-    temp = weather_info.get("temperature") or weather_info.get("temperature_c", 26.0)
+    irrig = field_info.get("irrigation_capacity_mm") or 400
+    temp = weather_info.get("temperature") or weather_info.get("temperature_c")
 
-    if lang == "bn" or any(w in msg_low for w in ["bangla", "banglae", "বাংলা"]):
-        soil_stat_line = f"pH {ph}, জৈব পদার্থ {om}%" if (ph is not None and om is not None) else "pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে"
-        ph_evidence = f"পরিমাপকৃত pH: **{ph}** (অনুকূল পরিসীমা: ৬.০-৭.৫)" if ph is not None else "pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে"
-        fallback_reply = (
-            f"**[অফলাইন কৃষি পরামর্শ — নিয়ম-ভিত্তিক সিদ্ধান্ত সমর্থন]**\n\n"
-            f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
-            f"আপনার **{fname}** জমির জন্য ({texture} মাটি, {soil_stat_line}), রবি মৌসুমে ডাল বা তৈলবীজ (যেমন মসুর/সরিষা) এবং খরিফ মৌসুমে ধানের পর্যায়ক্রমিক ফসল আবর্তন সবচেয়ে কার্যকর।\n\n"
-            f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
-            f"- মাটির গঠন: **{texture}**, {ph_evidence}।\n"
-            f"- সেচ সক্ষমতা: **{irrig} মিমি**, নাসা পাওয়ার পর্যবেক্ষিত তাপমাত্রা: **{temp}°C**।\n\n"
-            f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
-            f"পরপর দুই মৌসুম একই গোত্রের ফসল চাষ পরিহার করুন। লিগিউম জাতীয় ফসল (যেমন মুগ বা মসুর) অন্তর্ভুক্ত করে প্রাকৃতিক নাইট্রোজেন সংবন্ধন বাড়ান।\n\n"
-            f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
-            f"রবি মৌসুমে আগাম তাপপ্রবাহে দানাদার ফসলের পরাগায়ন ব্যাহত হতে পারে। সেচ ঘাটতি থাকলে খরা-সহনশীল ডাল নির্বাচন করুন।\n\n"
-            f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
-            f"এটি একটি স্থানীয় সিমুলেশন মডেল; কোনো পরীক্ষাগার রাসায়নিক সার পরীক্ষার সরাসরি বিকল্প নয়।\n\n"
-            f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
-            f"পরবর্তী মৌসুমের জন্য 'Adaptive Replanning' মডিউলে মাটির সাম্প্রতিক পরীক্ষার মান আপডেট করুন।"
-        )
+    base_tot = planner_info.get("baseline_totals") or {}
+    plan_tot = planner_info.get("plan_totals") or {}
+    base_bdt = base_tot.get("profit_bdt")
+    plan_bdt = plan_tot.get("profit_bdt")
+    base_irrig = base_tot.get("irrigation_mm")
+    plan_irrig = plan_tot.get("irrigation_mm")
+    diff_bdt = (plan_bdt - base_bdt) if (plan_bdt is not None and base_bdt is not None) else None
+    saved_irrig = (base_irrig - plan_irrig) if (base_irrig is not None and plan_irrig is not None) else None
+    seasons = planner_info.get("seasons") or []
+
+    is_bn = (lang == "bn" or any(w in msg_low for w in ["bangla", "banglae", "বাংলা"]))
+
+    # 1. Boro Rice profit & water trade-off query
+    if any(w in msg_low for w in ["বোরো", "boro", "লাভ বেশি", "profit higher", "বোরো বাদ"]):
+        if is_bn:
+            bdt_str = f"{abs(diff_bdt):,} টাকা/হেক্টর বেশি" if diff_bdt is not None else "বেশি মুনাফা"
+            irrig_str = f"প্রায় {saved_irrig} মিমি সেচের পানি সাশ্রয় হয়" if saved_irrig is not None else "বিপুল সেচ সাশ্রয় হয়"
+            fallback_reply = (
+                f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
+                f"বোরো ধানের বদলে স্বল্প-সেচের রবি ফসল (যেমন সরিষা বা ডাল) অন্তর্ভুক্ত করায় জমিতে **{irrig_str}** এবং বছরে **{bdt_str}** নিট লাভ হয়।\n\n"
+                f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
+                f"- বেসলাইন (বোরো ভিত্তিক) সেচ: **{base_irrig if base_irrig is not None else 'তথ্য পাওয়া যায়নি'} মিমি** | বেসলাইন লাভ: **{f'{base_bdt:,}' if base_bdt is not None else 'তথ্য পাওয়া যায়নি'} টাকা/হেক্টর**\n"
+                f"- প্রস্তাবিত আবর্তন সেচ: **{plan_irrig if plan_irrig is not None else 'তথ্য পাওয়া যায়নি'} মিমি** | প্রস্তাবিত লাভ: **{f'{plan_bdt:,}' if plan_bdt is not None else 'তথ্য পাওয়া যায়নি'} টাকা/হেক্টর**\n\n"
+                f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
+                f"রবি মৌসুমে আগাম সরিষা বা মসুর বপন করুন এবং খরিপ-১ মৌসুমে স্বল্প-মেয়াদি আউশ বা তিল দিয়ে সমন্বয় করুন।\n\n"
+                f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
+                f"বোরো ধানের নিশ্চিত খাদ্যশস্য উৎপাদনের জায়গায় ডাল বা তেলবীজে বাজারদরের অস্থিরতা থাকতে পারে; তবে ভূগর্ভস্থ পানির পাম্পিং খরচ নাটকীয়ভাবে কমে।\n\n"
+                f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
+                f"উপাত্ত উৎস: নাসা পাওয়ার (NASA POWER) উপগ্রহ জলবায়ু ও বিবিএস (BBS) কৃষি শুমারি বেসলাইন।\n\n"
+                f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
+                f"{saao_closing}"
+            )
+        else:
+            bdt_str = f"{abs(diff_bdt):,} BDT/ha higher profit" if diff_bdt is not None else "higher profitability"
+            irrig_str = f"saves approximately {saved_irrig} mm of irrigation water" if saved_irrig is not None else "significant irrigation savings"
+            fallback_reply = (
+                f"### 1. SHORT ANSWER\n"
+                f"Replacing water-intensive Boro Rice with short-duration oilseeds or pulses {irrig_str} while yielding {bdt_str}.\n\n"
+                f"### 2. EVIDENCE FROM THIS FIELD\n"
+                f"- Baseline Irrigation: **{base_irrig if base_irrig is not None else 'Information unavailable'} mm** | Baseline Profit: **{f'{base_bdt:,}' if base_bdt is not None else 'Information unavailable'} BDT/ha**\n"
+                f"- Recommended Plan Irrigation: **{plan_irrig if plan_irrig is not None else 'Information unavailable'} mm** | Plan Profit: **{f'{plan_bdt:,}' if plan_bdt is not None else 'Information unavailable'} BDT/ha**\n\n"
+                f"### 3. RECOMMENDED NEXT STEP\n"
+                f"Plant early Rabi mustard or lentil to utilize residual post-monsoon moisture before summer heat onset.\n\n"
+                f"### 4. TRADE-OFFS & RISKS\n"
+                f"Reduces groundwater extraction stress drastically; requires managing price volatility for non-cereal crops.\n\n"
+                f"### 5. DATA LIMITATIONS\n"
+                f"Calibrated via NASA POWER agrometeorology and BBS agriculture census baseline economic budgets.\n\n"
+                f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
+                f"{saao_closing}"
+            )
+
+    # 2. Irrigation frequency query ("কতবার সেচ দেব?")
+    elif any(w in msg_low for w in ["কতবার সেচ", "সেচ দেব", "irrigation events", "how many irrigation"]):
+        matched_season = seasons[0] if seasons else {}
+        for s in seasons:
+            c_name = str(s.get("crop") or "").lower()
+            c_bn = str(s.get("crop_bn") or "").lower()
+            if c_name in msg_low or c_bn in msg_low:
+                matched_season = s
+                break
+        c_disp = matched_season.get("crop_bn" if is_bn else "crop") or (matched_season.get("crop") or "ফসলে")
+        s_irrig = matched_season.get("irrigation_mm")
+        events = max(1, round(s_irrig / 75)) if (s_irrig is not None and s_irrig > 0) else (0 if s_irrig == 0 else 2)
+
+        if is_bn:
+            fallback_reply = (
+                f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
+                f"আপনার জমিতে **{c_disp}** ফসলের জন্য মৌসুমে আনুমানিক **{s_irrig if s_irrig is not None else 'তথ্য পাওয়া যায়নি'} মিমি** সম্পূরক সেচ প্রয়োজন। দোআঁশ মাটিতে প্রতি সেচে প্রায় ৭৫ মিমি পানি বিবেচনা করলে মোট প্রায় **{events} বার সেচ** দেওয়া লাগবে।\n\n"
+                f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
+                f"- মাটির গঠন: **{texture}** | মৌসুমী সেচ বরাদ্দ: **{s_irrig if s_irrig is not None else 'তথ্য পাওয়া যায়নি'} মিমি**\n"
+                f"- সেচ সময়সূচী: বপনের সময় (অঙ্কুরোদগম), ফুল আসার সংবেদনশীল ধাপ এবং দানা পুষ্ট হওয়ার সময়।\n\n"
+                f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
+                f"সেচ দেওয়ার আগে মাটির আর্দ্রতা পরীক্ষা করুন; বৃষ্টির পূর্বাভাস থাকলে সেচ স্থগিত রাখুন।\n\n"
+                f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
+                f"অতিরিক্ত সেচে শিকড় পচা রোগ হতে পারে; জমিতে নিষ্কাশন নালা প্রস্তুত রাখুন।\n\n"
+                f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
+                f"FAO-56 পেনম্যান-মন্টেথ পদ্ধতির মাধ্যমে নাসা উপগ্রহ বাষ্পীভবন ও বৃষ্টিপাত বিশ্লেষণ থেকে হিসাবকৃত।\n\n"
+                f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
+                f"{saao_closing}"
+            )
+        else:
+            fallback_reply = (
+                f"### 1. SHORT ANSWER\n"
+                f"For **{c_disp}**, modeled seasonal irrigation requirement is **{s_irrig if s_irrig is not None else 'Information unavailable'} mm**. Assuming ~75 mm per irrigation event in {texture} soil, plan for approximately **{events} irrigation events**.\n\n"
+                f"### 2. EVIDENCE FROM THIS FIELD\n"
+                f"- Soil Texture: **{texture}** | Seasonal Irrigation Quota: **{s_irrig if s_irrig is not None else 'Information unavailable'} mm**\n\n"
+                f"### 3. RECOMMENDED NEXT STEP\n"
+                f"Schedule waterings at critical growth stages: seedling establishment, flowering floret initiation, and grain filling.\n\n"
+                f"### 4. TRADE-OFFS & RISKS\n"
+                f"Over-irrigation induces root asphyxiation and fungal collar rot in upland crops.\n\n"
+                f"### 5. DATA LIMITATIONS\n"
+                f"Derived from FAO-56 crop water balance modeling using NASA POWER climatological surface data.\n\n"
+                f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
+                f"{saao_closing}"
+            )
+
+    # 3. Strategy differences query
+    elif any(w in msg_low for w in ["সুষম", "পার্থক্য", "balanced", "difference between", "কৌশল"]):
+        if is_bn:
+            fallback_reply = (
+                f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
+                f"**সুষম (Balanced)** কৌশল লাভ (৩৪%), ভূগর্ভস্থ পানি সাশ্রয় (৩৩%) ও মাটির স্বাস্থ্য (৩৩%)-এর মধ্যে সমন্বয় ঘটায়। অন্যদিকে **লাভ (Profit)** কৌশল ৭০% গুরুত্ব দিয়ে নগদ আয় সর্বোচ্চ করে, যাতে সেচের চাপ বাড়তে পারে।\n\n"
+                f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
+                f"- বর্তমান জমিতে সেচ সাশ্রয়: **{saved_irrig if saved_irrig is not None else 'তথ্য পাওয়া যায়নি'} মিমি**\n"
+                f"- প্রস্তাবিত কৌশলে বাৎসরিক মোট নিট লাভ: **{f'{plan_bdt:,}' if plan_bdt is not None else 'তথ্য পাওয়া যায়নি'} টাকা/হেক্টর**\n\n"
+                f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
+                f"বরেন্দ্র বা ভূগর্ভস্থ পানির ঘাটতি এলাকায় সুষম বা পানি সাশ্রয় কৌশল নির্বাচন করাই দীর্ঘমেয়াদে টেকসই।\n\n"
+                f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
+                f"লাভ কৌশলে একা মৌসুমে বেশি আয় হলেও খরায় পানি সংকট ও মাটির উর্বরতা ক্ষয়ের ঝুঁকি থাকে।\n\n"
+                f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
+                f"৬ মৌসুমের MILP বহু-উদ্দেশ্যমূলক গাণিতিক মডেলের মাধ্যমে অপ্টিমাইজ করা।\n\n"
+                f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
+                f"{saao_closing}"
+            )
+        else:
+            fallback_reply = (
+                f"### 1. SHORT ANSWER\n"
+                f"The **Balanced strategy** equally weights net profit (34%), groundwater preservation (33%), and soil organic matter (33%). In contrast, the **Profit-focused strategy** allocates 70% weight to revenue maximization.\n\n"
+                f"### 2. EVIDENCE FROM THIS FIELD\n"
+                f"- Irrigation savings under current plan: **{saved_irrig if saved_irrig is not None else 'Information unavailable'} mm**\n"
+                f"- Projected gross margin: **{f'{plan_bdt:,}' if plan_bdt is not None else 'Information unavailable'} BDT/ha**\n\n"
+                f"### 3. RECOMMENDED NEXT STEP\n"
+                f"In water-stressed Barind tracts, prioritize the Balanced strategy to prevent aquifer depletion.\n\n"
+                f"### 4. TRADE-OFFS & RISKS\n"
+                f"Profit maximization elevates seasonal irrigation volume and increases financial exposure to market price drops.\n\n"
+                f"### 5. DATA LIMITATIONS\n"
+                f"Generated by FieldShift 6-Season MILP solver with linear constraint envelopes.\n\n"
+                f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
+                f"{saao_closing}"
+            )
+
+    # 4. Glossary & plain language queries
+    elif any(w in msg_low for w in ["বাষ্পীভবন", "et0", "evapotranspiration", "পানির ট্যাংক", "water tank", "আর্দ্রতা", "smap", "সবুজায়ন", "ndvi", "তাপপ্রবাহ", "heat stress", "পানির ভারসাম্য", "water balance", "স্যাটেলাইট", "satellite", "পুনর্বিশ্লেষণ", "reanalysis", "অনিশ্চয়তা", "uncertainty", "ফাঁকা দিন", "fallow"]):
+        if any(w in msg_low for w in ["বাষ্পীভবন", "et0", "evapotranspiration"]):
+            term_title = "বাষ্পীভবন ও প্রস্বেদন (ET0)" if is_bn else "Evapotranspiration (ET0)"
+            term_desc = (
+                "মাটি থেকে সূর্যের তাপে বাষ্পীভবন এবং গাছের পাতার মাধ্যমে প্রস্বেদনের সমন্বিত পানির ক্ষয়। এটি নির্দেশ করে নির্দিষ্ট মৌসুমে একটি ফসলের বেঁচে থাকার জন্য ঠিক কত মিলিমিটার পানি প্রয়োজন।"
+                if is_bn else
+                "The combined atmospheric moisture loss via soil evaporation and crop transpiration, defining the physiological water requirement of the crop canopy."
+            )
+        elif any(w in msg_low for w in ["পানির ট্যাংক", "water tank", "পানির ভারসাম্য", "water balance"]):
+            term_title = "পানির ট্যাংক ও ভারসাম্য (Water Balance - FAO-56)" if is_bn else "Water Storage Budget & Balance"
+            w_val = plan_irrig or irrig
+            term_desc = (
+                f"পানির ট্যাংক বলতে আপনার জমিতে বৃষ্টি ও মাটির আর্দ্রতা ধরে রাখার ধারণক্ষমতার সাপেক্ষে মোট পানির বাজেট ({w_val} মিমি) নির্দেশ করে। এটি পরিমাপ করে কতটুকু পানি শিকড়ে পৌঁছাল আর কতটুকু বাষ্প হয়ে উড়ে গেল।"
+                if is_bn else
+                f"The cumulative root-zone water ledger ({w_val} mm budget), balancing precipitation and irrigation inflows against crop evapotranspiration outflows."
+            )
+        elif any(w in msg_low for w in ["ফাঁকা দিন", "fallow"]):
+            term_title = "ফাঁকা দিন হ্রাস (Bare Soil Fallow Reduction)" if is_bn else "Bare Fallow Day Reduction"
+            term_desc = (
+                "দুই ফসলের মাঝে জমি অনাবাদি ও উন্মুক্ত থাকার সময় কমিয়ে আনা। জমি সবুজে ঢাকা থাকলে সূর্যের তাপে মাটির আর্দ্রতা উড়ে যাওয়া রোধ হয়, আগাছা দমন হয় এবং অতিরিক্ত ফসল থেকে আয় বাড়ে।"
+                if is_bn else
+                "Minimizing uncultivated gaps between harvest and planting, preserving root-zone moisture from direct solar evaporation and suppressing weed seed banks."
+            )
+        elif any(w in msg_low for w in ["সবুজায়ন", "ndvi"]):
+            term_title = "উদ্ভিদের সবুজায়ন সূচক (NDVI)" if is_bn else "Normalized Difference Vegetation Index (NDVI)"
+            term_desc = (
+                "লাল ও অবলোহিত আলোর প্রতিফলন তুলনা করে ফসলের সতেজতা ও ঘনত্ব পরিমাপ করা হয়। মান ০.৬ এর বেশি হলে তা ঘন সতেজ ফসল নির্দেশ করে।"
+                if is_bn else
+                "Measures live green canopy density by contrasting red and near-infrared reflectance (values >0.6 represent dense, healthy vegetation)."
+            )
+        elif any(w in msg_low for w in ["তাপপ্রবাহ", "heat"]):
+            term_title = "তাপপ্রবাহ ঝুঁকি (Heat Stress)" if is_bn else "Heat Stress & Thermal Thresholds"
+            term_desc = (
+                "ফসল ফোটা বা পরাগায়নের সময় অতিরিক্ত তাপমাত্রা (যেমন ধানে ৩৫°সে বা গমে ৩১°সে এর বেশি) হলে দানা চিটা হয়ে ফলন কমে যায়।"
+                if is_bn else
+                "Excess ambient temperatures exceeding crop thresholds during flowering or grain-filling stages (>35°C for rice, >31°C for wheat) triggering floret sterility."
+            )
+        else:
+            term_title = "মাটির আর্দ্রতা অ্যানোমালি (SMAP)" if is_bn else "Soil Moisture Anomaly (NASA SMAP)"
+            term_desc = (
+                "বহুবছরের স্বাভাবিক গড় আর্দ্রতার তুলনায় বর্তমানে ফসলের শিকড়মণ্ডলে (০-১০০ সেমি গভীরতায়) আর্দ্রতার তারতম্য।"
+                if is_bn else
+                "The deviation of root-zone soil moisture relative to 20-year climatological normal envelopes."
+            )
+
+        if is_bn:
+            fallback_reply = (
+                f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
+                f"**{term_title}**: {term_desc}\n\n"
+                f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
+                f"- জমি: **{fname}** ({texture} মাটি, সেচ বরাদ্দ: **{plan_irrig if plan_irrig is not None else irrig} মিমি**)\n\n"
+                f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
+                f"আবর্তন পরিকল্পনায় এই বৈজ্ঞানিক সূচকের ভিত্তিতে বপন ও সেচের সঠিক সময় নির্বাচন করুন।\n\n"
+                f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
+                f"প্রাকৃতিক জলবায়ু চরমভাবাপন্ন হলে স্যাটেলাইট সূচকের ঝুঁকি সতর্কবার্তা মেনে বিকল্প সেচ বা সুরক্ষার ব্যবস্থা নিন।\n\n"
+                f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
+                f"নাসার উপগ্রহ উপাত্ত ও ফিল্ডশিফ্ট এগ্রোনমিক ডিকশনারি থেকে সংকলিত।\n\n"
+                f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
+                f"{saao_closing}"
+            )
+        else:
+            fallback_reply = (
+                f"### 1. SHORT ANSWER\n"
+                f"**{term_title}**: {term_desc}\n\n"
+                f"### 2. EVIDENCE FROM THIS FIELD\n"
+                f"- Field: **{fname}** ({texture} soil, seasonal water quota: **{plan_irrig if plan_irrig is not None else irrig} mm**)\n\n"
+                f"### 3. RECOMMENDED NEXT STEP\n"
+                f"Use this parameter to synchronize sowing windows with available hydrological and thermal envelopes.\n\n"
+                f"### 4. TRADE-OFFS & RISKS\n"
+                f"Plan for micro-climate variations that differ slightly from satellite pixel averages.\n\n"
+                f"### 5. DATA LIMITATIONS\n"
+                f"Calibrated from NASA Earth Observation feeds and FAO-56 irrigation standards.\n\n"
+                f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
+                f"{saao_closing}"
+            )
+
+    # 5. General field-grounded fallback
     else:
-        soil_stat_line_en = f"pH {ph}, {om}% organic matter" if (ph is not None and om is not None) else "pH/OM unavailable — evaluated as neutral"
-        ph_evidence_en = f"measured pH **{ph}** is suitable for legumes and cereals" if ph is not None else "pH/OM unavailable — evaluated as neutral"
-        fallback_reply = (
-            f"**[Offline Agronomic Guidance — Rule-Based Decision Support]**\n\n"
-            f"### 1. SHORT ANSWER\n"
-            f"For **{fname}** with **{texture}** soil and {soil_stat_line_en}, an alternating Rabi pulse/oilseed (Lentil, Mustard) followed by Kharif cereal (Aus, Aman Rice) provides the strongest balance of revenue and soil preservation.\n\n"
-            f"### 2. EVIDENCE FROM THIS FIELD\n"
-            f"- Soil Profile: **{texture}**; {ph_evidence_en}.\n"
-            f"- Hydrology: Seasonal irrigation capacity is **{irrig} mm**; NASA POWER ambient temp is **{temp}°C**.\n\n"
-            f"### 3. RECOMMENDED NEXT STEP\n"
-            f"Maintain strict botanical family alternation (Poaceae -> Fabaceae -> Brassicaceae) to break root-zone pathogen cycles and fix biological nitrogen.\n\n"
-            f"### 4. TRADE-OFFS & RISKS\n"
-            f"Under irrigation curtailment below {irrig} mm, substitute high-water Boro Rice with drought-hardy Wheat or Maize, or incorporate short-duration Mungbean.\n\n"
-            f"### 5. DATA LIMITATIONS\n"
-            f"This guidance is derived from the deterministic Bangladesh crop rules database (BARI/BRRI parameters). It serves as decision support, not an on-site laboratory soil test.\n\n"
-            f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
-            f"Run the **3-Way Comparison Lab** or **Crop Failure Simulator** to stress-test your rotation under climate deficits."
-        )
+        rot_str = planner_info.get("rotation") or plan_info.get("rotation_str") or "সরিষা → মুগডাল → আমন ধান"
+        if is_bn:
+            soil_stat = f"pH {ph}, জৈব পদার্থ {om}%" if (ph is not None and om is not None) else "pH ও জৈব উপাদানের সঠিক ল্যাব টেস্ট মান অন্তর্ভুক্ত করার পরামর্শ রইল"
+            fallback_reply = (
+                f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
+                f"আপনার **{fname}** জমির জন্য ({texture} মাটি, {soil_stat}), প্রস্তাবিত আবর্তন হলো: **{rot_str}**।\n\n"
+                f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
+                f"- মাটির গঠন: **{texture}** | মৌসুমী সেচ বাজেট: **{plan_irrig if plan_irrig is not None else irrig} মিমি**\n"
+                f"- বাৎসরিক মোট নিট লাভ: **{f'{plan_bdt:,}' if plan_bdt is not None else 'তথ্য পাওয়া যায়নি'} টাকা/হেক্টর**\n\n"
+                f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
+                f"পরপর দুই মৌসুম একই গোত্রের ফসল চাষ পরিহার করুন। লিগিউম জাতীয় ফসল (যেমন মুগ বা মসুর) অন্তর্ভুক্ত করে প্রাকৃতিক নাইট্রোজেন সংবন্ধন বাড়ান।\n\n"
+                f"### ৪. আপস ও ঝুঁকি (TRADE-OFFS & RISKS)\n"
+                f"রবি মৌসুমে আগাম তাপপ্রবাহে দানাদার ফসলের পরাগায়ন ব্যাহত হতে পারে। সেচ ঘাটতি থাকলে খরা-সহনশীল ডাল নির্বাচন করুন।\n\n"
+                f"### ৫. উপাত্তের সীমাবদ্ধতা (DATA LIMITATIONS)\n"
+                f"এটি ফিল্ডশিফ্ট অপ্টিমাইজার থেকে প্রাপ্ত পূর্বাভাস; অন-গ্রাউন্ড রাসায়নিক মৃত্তিকা পরীক্ষার সরাসরি বিকল্প নয়।\n\n"
+                f"### ৬. প্রস্তাবিত করণীয় (SUGGESTED FOLLOW-UP ACTION)\n"
+                f"{saao_closing}"
+            )
+        else:
+            soil_stat_en = f"pH {ph}, {om}% organic matter" if (ph is not None and om is not None) else "soil pH and organic matter pending on-ground laboratory confirmation"
+            fallback_reply = (
+                f"### 1. SHORT ANSWER\n"
+                f"For **{fname}** ({texture} soil, {soil_stat_en}), the recommended multi-season rotation is **{rot_str}**.\n\n"
+                f"### 2. EVIDENCE FROM THIS FIELD\n"
+                f"- Soil: **{texture}** | Seasonal Water Budget: **{plan_irrig if plan_irrig is not None else irrig} mm**\n"
+                f"- Modeled Annual Profit: **{f'{plan_bdt:,}' if plan_bdt is not None else 'Information unavailable'} BDT/ha**\n\n"
+                f"### 3. RECOMMENDED NEXT STEP\n"
+                f"Maintain strict botanical family alternation to break pest vectors and replenish biological nitrogen.\n\n"
+                f"### 4. TRADE-OFFS & RISKS\n"
+                f"Ensure furrow drainage before Kharif monsoon rains to prevent legume seedling damping-off.\n\n"
+                f"### 5. DATA LIMITATIONS\n"
+                f"Derived from deterministic Bangladesh crop rule parameters and NASA agroclimatology.\n\n"
+                f"### 6. SUGGESTED FOLLOW-UP ACTION\n"
+                f"{saao_closing}"
+            )
+
+    model_label = "AI অফলাইন — পরিকল্পনার তথ্য থেকে উত্তর" if is_bn else "AI Offline — Answer derived from your plan"
 
     res_dict = {
         "status": "ok",
         "reply": fallback_reply,
         "response": fallback_reply,
-        "model": "offline-rule-based-guidance",
-        "model_used": "deterministic_offline_agronomist",
+        "model": model_label,
+        "model_used": "offline_plan_rules",
         "is_fallback": True,
         "gemini_enabled": False,
     }
