@@ -51,14 +51,14 @@ test('A7: SAAO Advisory notice contains exact mandatory Bengali & English discla
   );
 });
 
-test('A7: SixSeasonRecommendationView integrates all 8 popovers and SAAO notice', () => {
+test('A1/A7: SixSeasonRecommendationView integrates AskAiBar and SaaoNotice; 8 glossary terms defined', () => {
   const viewSrc = fs.readFileSync(path.join(__dirname, 'SixSeasonRecommendationView.jsx'), 'utf-8');
 
-  // Must import PlainLanguagePopover and SaaoNotice
-  assert.ok(viewSrc.includes('PlainLanguagePopover'), 'View must use PlainLanguagePopover');
+  // Must use AskAiBar and SaaoNotice
+  assert.ok(viewSrc.includes('AskAiBar'), 'View must use AskAiBar');
   assert.ok(viewSrc.includes('SaaoNotice'), 'View must use SaaoNotice');
 
-  // Must reference all 8 popover term keys
+  // Must reference all 8 popover term keys in plainLanguageTerms dictionary
   const expectedKeys = [
     'evapotranspiration',
     'soil_moisture',
@@ -72,8 +72,8 @@ test('A7: SixSeasonRecommendationView integrates all 8 popovers and SAAO notice'
 
   for (const key of expectedKeys) {
     assert.ok(
-      viewSrc.includes(`termKey="${key}"`),
-      `SixSeasonRecommendationView must include PlainLanguagePopover for termKey="${key}"`
+      PLAIN_LANGUAGE_TERMS[key] != null,
+      `PLAIN_LANGUAGE_TERMS must define termKey="${key}"`
     );
   }
 

@@ -344,7 +344,7 @@ test('U3: Farm Planning hero view integrity (Existing baseline + 3 strategies, 1
   assert.ok(sixSrc.includes('১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ'), 'Must render 12-month continuous calendar strip');
 
   // 4. Deterministic 5-item card
-  assert.ok(sixSrc.includes('কৌশল প্রোফাইল ও বৈজ্ঞানিক বিশ্লেষণ (৫-দফা মূল্যায়ন)'), 'Must render 5-item card');
+  assert.ok(sixSrc.includes('AskAiBar'), 'Must render AskAiBar');
 
   // 5. Mobile swipe cards rule in styles.css
   assert.ok(stylesSrc.includes('.strategy-columns-container'), 'Must define strategy-columns-container');

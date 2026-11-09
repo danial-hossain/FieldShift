@@ -61,7 +61,8 @@ import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { haToBigha } from './three/farmSceneHelpers.js';
 import { CropIllustration } from './ui/CropIllustration.jsx';
 import { BangladeshClimateMap } from './BangladeshClimateMap.jsx';
-import { PlainLanguagePopover, SaaoNotice } from './PlainLanguagePopover.jsx';
+import { SaaoNotice } from './PlainLanguagePopover.jsx';
+import { AskAiBar } from './AskAiBar.jsx';
 import { formatSoilTextureLabel } from './utils/soilClasses.js';
 import { formatDistrictLabel } from './utils/districtLabels.js';
 
@@ -816,6 +817,28 @@ export function SixSeasonRecommendationView({
       ? Object.values(rawBaselineEarly)
       : null;
 
+  const isAssumed = Boolean(baselineCropsEarly && activePlanData?.isAssumedBaseline);
+  const baselineQualifierBn = activePlanData?.baselineSource === 'historical_harvest_records'
+    ? ` (সংরক্ষিত ইতিহাস${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
+    : activePlanData?.baselineSource === 'saved_field_rotation'
+      ? ' (সংরক্ষিত আবর্তন)'
+      : activePlanData?.baselineSource === 'request_supplied_rotation'
+        ? ' (আবেদনকৃত আবর্তন; যাচাইবিহীন)'
+        : isAssumed ? ' (অনুমিত)' : ' (সংরক্ষিত আবর্তন)';
+  const baselineQualifierEn = activePlanData?.baselineSource === 'historical_harvest_records'
+    ? ` (saved history${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
+    : activePlanData?.baselineSource === 'saved_field_rotation'
+      ? ' (your saved rotation)'
+      : activePlanData?.baselineSource === 'request_supplied_rotation'
+        ? ' (request-supplied; unverified)'
+        : isAssumed ? ' (assumed)' : ' (your saved rotation)';
+  const baselineRotationBn = baselineCropsEarly
+    ? baselineCropsEarly.map(c => translateCropName(c, 'bn')).join(' → ') + baselineQualifierBn
+    : 'তথ্য অনুপলভ্য';
+  const baselineRotationEn = baselineCropsEarly
+    ? baselineCropsEarly.map(c => translateCropName(c, 'en')).join(' → ') + baselineQualifierEn
+    : 'Unavailable';
+
   // G1 Hero 3D Beds Mapping
   const seasonMeta = {
     Y1_S1: { bn: '১ম বছর রবি', en: 'Year 1 Rabi', months: 'Nov - Apr', color: '#f59e0b' },
@@ -1094,6 +1117,132 @@ export function SixSeasonRecommendationView({
     return { pros, cons };
   }, [selectedCropName, loading, activePlanData, baselineCropInSlot, activeCropMeta, selectedCropEntry, selectedCropIrrig, baselineSlotIrrig, selectedStrategy, selectedCropMargin, activePeriodIdx, periodKeys, activeCrops, lang]);
 
+  // A1: Dynamic Suggestion Chips derived from THIS plan
+  const plannerAiSuggestions = useMemo(() => {
+    const y1RabiCrop = translateCropName(activeCrops['Y1_S1'] || 'Mustard', lang);
+    const altCrop = candidateAlternatives[0]?.crop
+      ? translateCropName(candidateAlternatives[0].crop, lang)
+      : (lang === 'bn' ? 'বিকল্প ফসল' : 'Alternative crop');
+    const sName = seasonMeta[activeSelectedPeriod]?.[lang]?.split(' ')[1] || seasonMeta[activeSelectedPeriod]?.[lang] || (lang === 'bn' ? 'রবি' : 'Rabi');
+
+    if (lang === 'bn') {
+      return [
+        'বোরো বাদ দিলে কেন লাভ বেশি?',
+        `${y1RabiCrop}-এ কতবার সেচ দেব?`,
+        `${sName} মৌসুমে ${altCrop} কেন বিকল্প?`,
+        'খরা হলে এই পরিকল্পনা কী হবে?'
+      ];
+    }
+    return [
+      'Why is profit higher without Boro?',
+      `How many times should I irrigate ${y1RabiCrop}?`,
+      `Why is ${altCrop} an alternative in ${sName}?`,
+      'What happens to this plan during drought?'
+    ];
+  }, [activeCrops, candidateAlternatives, activeSelectedPeriod, lang]);
+
+  // A1/A3: Full structured planner context payload for AI Assistant
+  const plannerAiContext = useMemo(() => {
+    const seasons = periodKeys.map(k => {
+      const c = activeCrops[k] || 'Fallow';
+      const cMeta = CROP_DATABASE[c] || {};
+      const matrixEntry = activePlanData?.cropSeasonMatrix?.[k]?.[c] || {};
+      const irrig = seasonIrrigMap[k] || 0;
+      const yieldTonHa = activePlanData?.yieldMatrix?.[k]?.[c] != null
+        ? activePlanData.yieldMatrix[k][c]
+        : (cMeta.yield_tons_ha || 0);
+      const margin = matrixEntry.gross_margin_bdt_ha != null
+        ? matrixEntry.gross_margin_bdt_ha
+        : (cMeta.gross_margin_bdt_ha || 0);
+
+      const seasonMatrix = activePlanData?.cropSeasonMatrix?.[k] || {};
+      const alts = Object.entries(seasonMatrix)
+        .filter(([cropName]) => cropName !== c && cropName !== 'Fallow')
+        .map(([cropName, data]) => ({
+          crop: cropName,
+          crop_bn: translateCropName(cropName, 'bn'),
+          crop_en: translateCropName(cropName, 'en'),
+          score: Math.round((data.objective_score || data.dynamic_gross_margin_bdt_ha || 0) / 1000)
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 2);
+
+      return {
+        id: k,
+        season_code: k,
+        season: seasonMeta[k]?.en,
+        season_bn: seasonMeta[k]?.bn,
+        months: seasonMeta[k]?.months,
+        crop: c,
+        crop_bn: translateCropName(c, 'bn'),
+        crop_en: translateCropName(c, 'en'),
+        irrigation_mm: irrig,
+        yield_maund_bigha: Number((yieldTonHa * 3.585).toFixed(1)),
+        yield_ton_ha: yieldTonHa,
+        margin_bdt_ha: margin,
+        margin_bdt_bigha: Math.round(margin * 0.13378),
+        alternatives: alts
+      };
+    });
+
+    const isHaor = Boolean(activeField?.seasonally_flooded) || ['sunamganj', 'netrokona', 'kishoreganj', 'habiganj'].includes((activeField?.district || '').toLowerCase());
+
+    return {
+      field: {
+        name: activeField?.name || 'Selected Field',
+        district: activeField?.district || 'bogura',
+        district_label: activeField?.district ? formatDistrictLabel(activeField.district, lang) : null,
+        area_ha: fieldAreaHa,
+        area_bigha: fieldAreaHa != null ? Number(haToBigha(fieldAreaHa)) : null,
+        soil_texture: activeField?.soil_texture || null,
+        soil_texture_label: activeField?.soil_texture ? formatSoilTextureLabel(activeField.soil_texture) : null,
+        soil_ph: activeField?.soil_ph ?? null,
+        organic_matter_pct: activeField?.organic_matter ?? null,
+        irrigation_class: waterAvailability,
+        irrigation_capacity_mm: waterAvailability === 'none' ? 0 : (waterAvailability === 'limited' ? 400 : (activeField?.irrigation_capacity_mm ?? 1200)),
+        current_rotation: activeField?.existing_rotation || { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: 'T. Aman Rice' },
+        current_rotation_bn: baselineRotationBn,
+        current_rotation_en: baselineRotationEn,
+        seasonally_flooded: isHaor,
+      },
+      selected_strategy: selectedStrategy,
+      best_strategy: bestScoringStrategyId,
+      seasons,
+      totals: {
+        irrigation_baseline_mm: baseIrrigVal,
+        irrigation_plan_mm: avgIrrig,
+        irrigation_saved_mm: savingsVal,
+        bare_days_baseline: activePlanData.baselineBareDays != null ? Math.round(activePlanData.baselineBareDays) : null,
+        bare_days_plan: activePlanData.planBareDays != null ? Math.round(activePlanData.planBareDays) : null,
+        nitrogen_baseline_kg_ha: activePlanData.baselineNitrogenKg != null ? Math.round(activePlanData.baselineNitrogenKg) : null,
+        nitrogen_plan_kg_ha: activePlanData.planNitrogenKg != null ? Math.round(activePlanData.planNitrogenKg) : null,
+        profit_baseline_bdt_ha: activePlanData.baselineProfitBdt != null ? Math.round(activePlanData.baselineProfitBdt) : null,
+        profit_plan_bdt_ha: activePlanData.planProfitBdt != null ? Math.round(activePlanData.planProfitBdt) : null,
+        profit_baseline_field_bdt: (activePlanData.baselineProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.baselineProfitBdt * fieldAreaHa) : null,
+        profit_plan_field_bdt: (activePlanData.planProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.planProfitBdt * fieldAreaHa) : null,
+        profit_unit: fieldAreaHa != null ? (lang === 'bn' ? `টাকা/বছর (${haToBigha(fieldAreaHa)} বিঘায়)` : `BDT/yr (${haToBigha(fieldAreaHa)} bigha)`) : 'BDT/ha/yr',
+      },
+      farmer_priorities: {
+        water_availability: waterAvailability,
+        no_power_tiller: noPowerTiller,
+        labour_shortage: labourShortage,
+        excluded_crops: excludedCrops,
+      },
+      risk: {
+        drought: activePlanData?.risk?.drought || { level: 'high', note: 'Pre-monsoon drought vulnerability' },
+        heat: activePlanData?.risk?.heat || { level: 'high', note: 'April-May heat stress' },
+        flood: activePlanData?.risk?.flood || { level: 'low', note: 'Low flood risk in highland Barind' },
+        late_monsoon: activePlanData?.risk?.late_monsoon || { level: 'low' },
+      },
+      data_sources: {
+        nasa_power: { name: 'NASA POWER', resolution: '0.5° (climatology 25 yrs)', status: 'active' },
+        gpm_imerg: { name: 'GPM IMERG', resolution: '0.1° (daily precipitation)', status: 'active' },
+        grace_fo: { name: 'GRACE-FO', parameter: 'terrestrial water storage anomaly (-1.07 cm/yr in Barind)', status: 'active' },
+        soilgrids: { name: 'ISRIC SoilGrids', resolution: '250m depth-standardized', status: activeField?.soil_texture ? 'active' : 'fallback' },
+      }
+    };
+  }, [activeField, fieldAreaHa, lang, activeCrops, activePlanData, seasonIrrigMap, periodKeys, selectedStrategy, bestScoringStrategyId, baseIrrigVal, avgIrrig, savingsVal, baselineRotationBn, baselineRotationEn, waterAvailability, noPowerTiller, labourShortage, excludedCrops]);
+
 
   if (loading) {
     return (
@@ -1145,35 +1294,7 @@ export function SixSeasonRecommendationView({
   const rotationTextBn = year1RotationList.map(c => translateCropName(c, 'bn')).join(' → ');
   const rotationTextEn = year1RotationList.map(c => translateCropName(c, 'en')).join(' → ');
 
-  const rawBaseline = activePlanData.baselineRotation;
-  const baselineCrops = Array.isArray(rawBaseline)
-    ? rawBaseline
-    : rawBaseline && typeof rawBaseline === 'object'
-      ? Object.values(rawBaseline)
-      : null;
-  const isAssumed = Boolean(baselineCrops && activePlanData.isAssumedBaseline);
-  const baselineQualifierBn = activePlanData.baselineSource === 'saved_field_history'
-    ? ` (সংরক্ষিত ইতিহাস${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
-    : activePlanData.baselineSource === 'saved_field_rotation'
-      ? ' (আপনার সংরক্ষিত)'
-      : activePlanData.baselineSource === 'request_supplied_rotation'
-        ? ' (অনুরোধে দেওয়া; যাচাইকৃত নয়)'
-        : isAssumed ? ' (ধরে নেওয়া)' : ' (আপনার সংরক্ষিত)';
-  const baselineQualifierEn = activePlanData.baselineSource === 'saved_field_history'
-    ? ` (saved history${activePlanData.baselineHistoricalPeriod ? `, ${activePlanData.baselineHistoricalPeriod}` : ''})`
-    : activePlanData.baselineSource === 'saved_field_rotation'
-      ? ' (your saved rotation)'
-      : activePlanData.baselineSource === 'request_supplied_rotation'
-        ? ' (request-supplied; unverified)'
-        : isAssumed ? ' (assumed)' : ' (your saved rotation)';
-  const baselineRotationBn = baselineCrops
-    ? baselineCrops.map(c => translateCropName(c, 'bn')).join(' → ') + baselineQualifierBn
-    : 'তথ্য অনুপলভ্য';
-  const baselineRotationEn = baselineCrops
-    ? baselineCrops.map(c => translateCropName(c, 'en')).join(' → ') + baselineQualifierEn
-    : 'Unavailable';
-
-  const hasBaseline = Boolean(baselineCrops?.length);
+  const hasBaseline = Boolean(baselineCropsEarly?.length);
   const deltaProfit = hasBaseline && activePlanData.deltaProfit != null ? Math.round(activePlanData.deltaProfit) : null;
   const waterSavingsMm = hasBaseline && activePlanData.waterSavingsMm != null ? Math.round(activePlanData.waterSavingsMm) : null;
   const planIrrigationMm = hasBaseline && activePlanData.planIrrigationMm != null ? Math.round(activePlanData.planIrrigationMm) : null;
@@ -1256,8 +1377,6 @@ export function SixSeasonRecommendationView({
   const shiftVal = advisoryOnset?.comparison?.shift_days_median != null ? advisoryOnset.comparison.shift_days_median : 12;
   const rainSrc = advisoryOnset?.precipitation_source || 'NASA POWER / GPM IMERG Calibrated (2001-2024)';
   const isSignificant = pVal < 0.05;
-
-  // (activePeriodIdx, activeCropMeta, baselineCropInSlot, baselineSlotIrrig, and currentProsCons derived unconditionally above)
 
   return (
     <div className="six-season-recommendation-workspace wrap" style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px 40px', color: 'var(--text)' }}>
@@ -1664,6 +1783,20 @@ export function SixSeasonRecommendationView({
         )}
       </div>
 
+      {/* 12-month continuous cropping calendar strip */}
+      <div style={{ marginTop: 2, fontSize: 11, color: 'var(--text-muted)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <strong>{lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ' : '12-Month Continuous Cropping Calendar Strip'}:</strong>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2, textAlign: 'center', fontSize: 10 }}>
+          {['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো'].map((m, mi) => (
+            <div key={mi} style={{ background: mi < 5 ? 'rgba(245, 158, 11, 0.2)' : mi < 8 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(56, 189, 248, 0.2)', padding: '2px 0', borderRadius: 4, color: 'var(--text)' }}>
+              {m}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 6. HERO: 3D Farm (65%) + Rich Bed Card (35%) */}
       <div className="main" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 12 }}>
         {/* 3D Farm Diorama */}
@@ -1957,107 +2090,17 @@ export function SixSeasonRecommendationView({
         </div>
       </div>
 
-      {/* 8. Compact 5-Point Why Card (PL15) */}
-      <div className="card why5" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-            💡 {lang === 'bn' ? 'কেন এই পরিকল্পনা? (৫ দফা)' : 'Why this plan? (5 Points)'}
-          </h3>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? 'কৌশল প্রোফাইল ও বৈজ্ঞানিক বিশ্লেষণ (৫-দফা মূল্যায়ন)' : 'Strategy Profile & Scientific Evaluation (5 Points)'}
-          </span>
-        </div>
+      {/* 8. Ask AI Bar (A1) & Compact SAAO Notice */}
+      <AskAiBar
+        page="farm_planning"
+        context={plannerAiContext}
+        suggestions={plannerAiSuggestions}
+        onNavigate={onNavigateTab}
+        lang={lang}
+      />
 
-        <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, lineHeight: 1.45 }}>
-          <li>
-            <details open>
-              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-                <b>{lang === 'bn' ? 'কেন:' : 'Why:'}</b> {lang === 'bn' ? 'বোরো বাদ দিলে অনেক পানি বাঁচে; ডাল মাটিতে নাইট্রোজেন দেয়।' : 'Dropping Boro saves immense water; pulses fix atmospheric nitrogen.'}
-              </summary>
-              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-                <strong>{lang === 'bn' ? 'সলভার বিবরণ ও আবদ্ধ শর্তাবলী (Binding Constraints):' : 'Solver Details & Binding Constraints:'}</strong>
-                <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
-                  {bindingConstraints.map((bc, idx) => <li key={idx}>{bc}</li>)}
-                </ul>
-              </div>
-            </details>
-          </li>
-
-          <li>
-            <details>
-              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-                <b>{lang === 'bn' ? 'প্রমাণ:' : 'Evidence:'}</b> {lang === 'bn' ? 'NASA POWER তাপমাত্রা, IMERG বৃষ্টি (২৫ বছর), GRACE-FO: বরেন্দ্রে পানি সঞ্চয় কমছে −১.০৭ সেমি/বছর।' : 'NASA POWER temp, IMERG rainfall (25 yrs), GRACE-FO: Barind storage declining -1.07 cm/yr.'}
-              </summary>
-              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-                <div>• POWER 0.5° (তাপমাত্রা) · IMERG 0.1° (বৃষ্টিপাত) · GRACE-FO (ভূগর্ভস্থ পানি) · SRTM 30m (উচ্চতা) · SoilGrids 250m (মাটি)</div>
-                <div style={{ marginTop: 4 }}>
-                  • {isSignificant 
-                    ? (lang === 'bn' ? `ঐতিহাসিক ২৪ বছরে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ (p = ${pVal.toFixed(4)}, শিফট ${shiftVal} দিন)।` : `Statistically significant onset shift (p=${pVal.toFixed(4)}, shift ${shiftVal}d).`)
-                    : (lang === 'bn' ? `ঐতিহাসিক ২৪ বছরে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ নয় (p = ${pVal.toFixed(4)})। ঐতিহাসিক গড় অনুসরণে বর্ষা শুরুর ১০-১৫ দিনের মধ্যে আমন চারা রোপণ উপযোগী।` : `Onset shift not statistically significant (p=${pVal.toFixed(4)}).`)}
-                </div>
-              </div>
-            </details>
-          </li>
-
-          <li>
-            <details>
-              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-                <b>{lang === 'bn' ? 'সুবিধা:' : 'Benefits:'}</b> {lang === 'bn' ? `সেচ ${toBanglaDigits(baseIrrigVal)} থেকে ${toBanglaDigits(avgIrrig)} মিমি, ফাঁকা দিন ${toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} থেকে ${toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))}, নাইট্রোজেন ${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} থেকে ${toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} কেজি।` : `Irrigation ${baseIrrigVal} to ${avgIrrig} mm, bare days ${Math.round(activePlanData.baselineBareDays ?? 115)} to ${Math.round(activePlanData.planBareDays ?? 60)}, N ${Math.round(activePlanData.baselineNitrogenKg ?? 0)} to ${Math.round(activePlanData.planNitrogenKg ?? 35)} kg/ha.`}
-              </summary>
-              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-                <div>{lang === 'bn' ? 'বার্ষিক হিসাব নির্ধারণ পদ্ধতি: ৬টি মৌসুমের মোট যোগফল ÷ ২ বছর' : 'Annual metric derivation: 6-season total sum ÷ 2 years.'}</div>
-                <div style={{ marginTop: 4 }}>
-                  <span style={{ background: 'var(--line)', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
-                    {lang === 'bn' ? 'বিদ্যমান আবর্তন (বেসলাইন)' : 'Existing Baseline Rotation'}: {baselineRotationBn}
-                  </span>
-                </div>
-                {/* Compact 12-month calendar bar inline */}
-                <div style={{ marginTop: 8, fontSize: 11 }}>
-                  <strong>{lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ' : '12-Month Continuous Cropping Calendar Strip'}:</strong>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2, marginTop: 4, textAlign: 'center', fontSize: 10 }}>
-                    {['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো'].map((m, mi) => (
-                      <div key={mi} style={{ background: mi < 5 ? 'rgba(245, 158, 11, 0.2)' : mi < 8 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(56, 189, 248, 0.2)', padding: '2px 0', borderRadius: 4, color: 'var(--text)' }}>
-                        {m}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </details>
-          </li>
-
-          <li>
-            <details>
-              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-                <b>{lang === 'bn' ? 'তথ্যের ঘাটতি:' : 'Information Gaps:'}</b> {lang === 'bn' ? 'মাটি পরীক্ষা নেই; দাম উদাহরণমূলক; স্যাটেলাইট তথ্য বড় এলাকার গড়।' : 'No physical soil test; prices illustrative; satellite data are area-averaged.'}
-              </summary>
-              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
-                <div>• {lang === 'bn' ? 'দাম ও সেচ খরচ: উদাহরণমূলক বাজার দর, ডিজেল পাম্পিং ২০ টাকা/মিমি, বিদ্যুৎ পাম্পিং ৮ টাকা/মিমি।' : 'Prices & pumping cost: illustrative market rates, diesel pumping 20 BDT/mm, electric 8 BDT/mm.'}</div>
-                <div>• {lang === 'bn' ? 'অনুপস্থিত মৃত্তিকা মান: pH/OM না থাকলে নিরপেক্ষ (1.0) ধরে হিসেব করা হয়, কোনো কাল্পনিক মান চাপানো হয় না।' : 'Missing soil telemetry: neutral 1.0 assumed without silent imputation.'}</div>
-                <div>• {lang === 'bn' ? 'সেচ ক্যাটাগরি: পর্যাপ্ত (১২০০ মিমি), সীমিত (৪০০ মিমি), সেচহীন (০ মিমি)।' : 'Irrigation tiers: full (1200 mm), limited (400 mm), rainfed (0 mm).'}</div>
-              </div>
-            </details>
-          </li>
-
-          <li>
-            <div>
-              <b>{lang === 'bn' ? 'যাচাই করুন:' : 'Verify:'}</b> {lang === 'bn' ? 'ডালের বীজ ও বাজার, উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে।' : 'Pulse seeds & local market demand with Sub-Assistant Agriculture Officer (SAAO).'}
-              <div style={{ marginTop: 6 }}>
-                <SaaoNotice lang={lang} />
-              </div>
-              <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                <PlainLanguagePopover termKey="evapotranspiration" lang={lang} />
-                <PlainLanguagePopover termKey="soil_moisture" lang={lang} />
-                <PlainLanguagePopover termKey="ndvi" lang={lang} />
-                <PlainLanguagePopover termKey="heat_stress" lang={lang} />
-                <PlainLanguagePopover termKey="water_balance" lang={lang} />
-                <PlainLanguagePopover termKey="satellite_vs_ground" lang={lang} />
-                <PlainLanguagePopover termKey="reanalysis_vs_observation" lang={lang} />
-                <PlainLanguagePopover termKey="uncertainty" lang={lang} />
-              </div>
-            </div>
-          </li>
-        </ol>
+      <div style={{ marginTop: 4 }}>
+        <SaaoNotice lang={lang} />
       </div>
 
     </div>
