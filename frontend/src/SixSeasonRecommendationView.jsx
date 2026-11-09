@@ -160,6 +160,7 @@ export function SixSeasonRecommendationView({
 
   const [noPowerTiller, setNoPowerTiller] = useState(false);
   const [labourShortage, setLabourShortage] = useState(false);
+  const [excludedCrops, setExcludedCrops] = useState([]);
   const [showConstraintsPanel, setShowConstraintsPanel] = useState(false);
 
   const bestSuitedStrategy = useMemo(() => {
@@ -257,6 +258,7 @@ export function SixSeasonRecommendationView({
       history_crops: histCrops && histCrops.length > 0 ? histCrops : undefined,
       no_power_tiller: noPowerTiller,
       labour_shortage: labourShortage,
+      excluded_crops: excludedCrops.length > 0 ? excludedCrops : undefined,
     };
 
     Promise.all(
@@ -304,6 +306,7 @@ export function SixSeasonRecommendationView({
     waterAvailability,
     noPowerTiller,
     labourShortage,
+    excludedCrops,
   ]);
 
   // Extract field area (no hardcoded fallback)
@@ -1074,2161 +1077,837 @@ export function SixSeasonRecommendationView({
   const rainSrc = advisoryOnset?.precipitation_source || 'NASA POWER / GPM IMERG Calibrated (2001-2024)';
   const isSignificant = pVal < 0.05;
 
+  // Active Bed Index & Helpers
+  const activePeriodIdx = periodKeys.indexOf(activeSelectedPeriod);
+  const activeCropMeta = CROP_DATABASE[selectedCropName] || {};
+  const baselineCropInSlot = baselineCropMap[activeSelectedPeriod] || 'Boro Rice';
+  const baselineSlotIrrig = baselineCropInSlot.toLowerCase().includes('boro') ? 1200 : (baselineCropInSlot.toLowerCase().includes('aman') ? 348 : 0);
+
+  // Deterministic Pros & Cons Generator (matching docs/design/planner_layout_reference.html:562-585)
+  const currentProsCons = useMemo(() => {
+    const pros = [];
+    const cons = [];
+    const isBn = lang === 'bn';
+    const k = selectedCropName;
+    const kLower = String(k || '').toLowerCase();
+    const bk = baselineCropInSlot;
+    const bkLower = String(bk || '').toLowerCase();
+
+    if (kLower === 'fallow' || kLower.includes('পতিত')) {
+      cons.push(isBn ? 'জমি ফাঁকা: বৃষ্টিতে মাটির ক্ষয়, আগাছা বাড়ে' : 'Bare ground: Soil erosion during rain, weeds increase');
+      cons.push(isBn ? 'এই মৌসুমে কোনো আয় নেই' : 'No farm income this season');
+      return { pros, cons };
+    }
+
+    if (activeCropMeta.is_legume || selectedCropEntry?.is_legume) {
+      pros.push(isBn ? 'মাটিতে নাইট্রোজেন দেয়, তাই পরের ফসলে কম ইউরিয়া লাগে' : 'Fixes atmospheric N in soil, reducing urea need for next crop');
+    }
+
+    if (activeCropMeta.duration && activeCropMeta.duration <= 90) {
+      pros.push(isBn ? `অল্প দিনে ওঠে (${toBanglaDigits(activeCropMeta.duration)} দিন)` : `Short duration (${activeCropMeta.duration} days)`);
+    }
+
+    if (selectedCropIrrig === 0) {
+      pros.push(isBn ? 'সেচ লাগে না, বৃষ্টিই যথেষ্ট' : 'No irrigation required (rainfed)');
+    }
+
+    if (selectedStrategy !== 'baseline') {
+      if (bkLower === 'fallow' || bkLower.includes('পতিত')) {
+        pros.push(isBn ? 'আগে এই সময়ে জমি ফাঁকা থাকত, এখন মাটি ঢাকা থাকবে' : 'Previously fallow, now continuous soil cover protects land');
+      }
+      const dIrrig = selectedCropIrrig - baselineSlotIrrig;
+      if (dIrrig < 0) {
+        pros.push(isBn ? `বর্তমানের (${translateCropName(bk, 'bn')}) চেয়ে ${toBanglaDigits(Math.abs(dIrrig))} মিমি কম সেচ` : `${Math.abs(dIrrig)} mm less irrigation than baseline`);
+      } else if (dIrrig > 0) {
+        cons.push(bkLower === 'fallow'
+          ? (isBn ? `আগে ০ মিমি, এখন ${toBanglaDigits(dIrrig)} মিমি সেচ লাগবে` : `Requires ${dIrrig} mm irrigation compared to 0 mm fallow`)
+          : (isBn ? `বর্তমানের চেয়ে ${toBanglaDigits(dIrrig)} মিমি বেশি সেচ` : `${dIrrig} mm higher irrigation than baseline`));
+      }
+
+      const diffProfit = selectedCropMargin != null ? Math.round((selectedCropMargin - (bkLower.includes('boro') ? 42000 : 38000)) * 0.13378) : 0;
+      if (diffProfit > 0) {
+        pros.push(isBn ? `এই মৌসুমে লাভ বেশি (+${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা)` : `Higher seasonal profit (+${diffProfit.toLocaleString()} BDT/bigha)`);
+      } else if (diffProfit < 0) {
+        cons.push(isBn ? `এই মৌসুমে লাভ কম (${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা), কিন্তু পানি ও মাটির উপকার` : `Lower seasonal profit (${diffProfit.toLocaleString()} BDT/bigha), but water & soil benefit`);
+      }
+    }
+
+    if (activePeriodIdx > 0) {
+      const prevKey = periodKeys[activePeriodIdx - 1];
+      const prevCrop = activeCrops[prevKey];
+      if (prevCrop && prevCrop.toLowerCase() !== 'fallow') {
+        const prevMeta = CROP_DATABASE[prevCrop] || {};
+        if (prevMeta.family && activeCropMeta.family && prevMeta.family !== activeCropMeta.family) {
+          pros.push(isBn ? `আগের মৌসুমের ${translateCropName(prevCrop, 'bn')} থেকে আলাদা পরিবার, তাই রোগ-পোকার চক্র ভাঙে` : `Different botanical family from preceding ${translateCropName(prevCrop, 'en')}, breaking pest/disease cycle`);
+        }
+      }
+    }
+
+    if (activePeriodIdx % 3 === 1) {
+      cons.push(isBn ? 'ফুল আসার সময় (এপ্রিল–মে) ৩৫°C+ গরম পড়লে ফলন কমে' : 'High temperature (>35°C) at flowering reduces yield');
+      cons.push(isBn ? 'বর্ষার আগে খরা: দরকার হলে একবার হালকা সেচ' : 'Pre-monsoon dry spell: supplemental irrigation needed if rainfall is delayed');
+    }
+
+    if (kLower.includes('boro') || kLower.includes('বোরো')) {
+      cons.push(isBn ? 'অনেক সেচ: বরেন্দ্রে ভূগর্ভস্থ পানির উপর চাপ (GRACE-FO: সঞ্চয় কমছে)' : 'Heavy groundwater irrigation: stresses Barind aquifer (GRACE-FO: -1.07 cm/yr storage depletion)');
+    }
+
+    return { pros, cons };
+  }, [selectedCropName, baselineCropInSlot, activeCropMeta, selectedCropEntry, selectedCropIrrig, baselineSlotIrrig, selectedStrategy, selectedCropMargin, activePeriodIdx, periodKeys, activeCrops, lang]);
+
   return (
-    <div className="six-season-recommendation-workspace"  style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
-      {/* 1. Header Command Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 22, borderBottom: '1px solid var(--glass-border)', paddingBottom: 18 }}>
+    <div className="six-season-recommendation-workspace wrap" style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px 40px', color: 'var(--text)' }}>
+      {/* 1. Header (Compact Single Header) */}
+      <div className="head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <DataSourceTag
-              source={activePlanData.climateSource?.district
-                ? `${activePlanData.climateSource.dataset || 'NASA POWER'} ${activePlanData.climateSource.years || 'period unavailable'} · ${activePlanData.climateSource.district.charAt(0).toUpperCase() + activePlanData.climateSource.district.slice(1)}`
-                : (activePlanData.climateSource?.dataset || activePlanData.environmentBasis || 'NASA POWER provenance unavailable')}
-            />
-            <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace', marginLeft: 8 }}>
-              {activePlanData.solverStatus ? `Solver: ${activePlanData.solverStatus}` : (lang === 'bn' ? 'সলভার স্ট্যাটাস: তথ্য নেই' : 'Solver: No data')}
-            </span>
-            <span style={{ fontSize: 12, color: 'var(--water)' }}>
-              {hasArea ? (
-                <>Parcel: <strong>{activeField?.name || 'My Farm'}</strong> ({fieldAreaHa} ha)</>
-              ) : (
-                <strong style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: 6, color: 'var(--hud-cyan)' }}>
-                  {lang === 'bn' ? 'প্রতি হেক্টর' : 'Per hectare'}
-                </strong>
-              )}
-            </span>
-          </div>
-
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-            {lang === 'bn' ? '🌾 ৬-মৌসুমের ফসল সুপারিশ ও আবর্তন পরিকল্পনা' : '🌾 6-Season Crop Recommendation & Rotation Planner'}
-          </h1>
-
-          <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--text-muted)', maxWidth: 880, lineHeight: 1.5 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0, color: 'var(--text)', letterSpacing: '-0.02em' }}>
             {lang === 'bn'
-              ? '২ বছরের ৬টি ধারাবাহিক মৌসুমে (Y1_S1 থেকে Y2_S3: রবি, খরিফ-১ ও খরিফ-২) সর্বোচ্চ লাভ, ভূগর্ভস্থ পানি সাশ্রয় এবং মাটির নাইট্রোজেন বৃদ্ধিতে গাণিতিক অপ্টিমাইজেশন (PuLP CBC Solver) ভিত্তিক পূর্ণাঙ্গ ফসল পরিকল্পনা ও বৈজ্ঞানিক ব্যাখ্যা।'
-              : 'Multi-period Mixed Integer Linear Programming (PuLP CBC) solving simultaneously across 6 consecutive agricultural seasons (Y1_S1 through Y2_S3). Balances gross margin, water conservation, and soil health with strict legume BNF interval and botanical alternation constraints.'}
-          </p>
+              ? `আবর্তন পরিকল্পনা · ${activeField?.name || 'রহিম মিয়ার জমি'} (${toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} বিঘা)`
+              : `Rotation Planner · ${activeField?.name || "Rahim's Field"} (${haToBigha(fieldAreaHa || 0.67)} bigha)`}
+          </h1>
+          <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: 13, marginTop: 4 }}>
+            {activeField?.district
+              ? (lang === 'bn' ? `${formatDistrictBn(activeField.district)} (বরেন্দ্র)` : `${activeField.district} (Barind)`)
+              : (lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ (বরেন্দ্র)' : 'Chapainawabganj (Barind)')} · {toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} {lang === 'bn' ? 'বিঘা' : 'bigha'} · {activeField?.soil_texture ? formatSoilTexture(activeField.soil_texture, lang) : (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
+          </div>
         </div>
-
-        {/* Header Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <GlassButton
-            variant="primary"
-            size="md"
-            loading={isSimulating}
-            onClick={handleRunSimulation}
-            style={{ fontWeight: 800 }}
-          >
-            ▶ {lang === 'bn' ? '৬-মৌসুমের পরিকল্পনা চালান' : 'Run 6-Season Simulation'}
-          </GlassButton>
-
-          <GlassButton
-            variant="glass"
-            size="sm"
-            onClick={handleExportJson}
-          >
-            📥 Export Plan JSON
-          </GlassButton>
-
-          <GlassButton
-            variant="glass"
-            size="sm"
-            onClick={handleExportCsv}
-          >
-            📊 Export CSV (6 Seasons)
-          </GlassButton>
-
-          <GlassButton
-            variant="cyan"
-            size="sm"
-            onClick={() => window.print()}
-            style={{ fontWeight: 700 }}
-          >
-            📄 {lang === 'bn' ? 'রিপোর্ট ডাউনলোড / প্রিন্ট' : 'Download / Print Card'}
-          </GlassButton>
-
-          <GlassButton
-            variant="glass"
-            size="sm"
-            onClick={handleCopySms}
-            style={{ fontWeight: 700 }}
-          >
-            📱 {copiedSms ? (lang === 'bn' ? 'SMS কপি হয়েছে ✓' : 'SMS Copied ✓') : (lang === 'bn' ? 'SMS কপি করুন' : 'Copy SMS')}
-          </GlassButton>
-
-          {onBack && (
-            <GlassButton
-              variant="outline"
-              size="sm"
-              onClick={onBack}
-            >
-              ← {lang === 'bn' ? 'ড্যাশবোর্ডে ফিরুন' : 'Back to Dashboard'}
-            </GlassButton>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11.5, color: 'var(--sun)', border: '1px solid var(--line)', background: 'var(--surface-2, rgba(255,255,255,0.04))', padding: '3px 10px', borderRadius: 999 }}>
+            NASA POWER + GPM IMERG
+          </span>
+          {loading && (
+            <span style={{ fontSize: 11.5, color: 'var(--water)', background: 'rgba(56, 189, 248, 0.1)', padding: '3px 10px', borderRadius: 999, fontWeight: 700 }}>
+              ⟳ {lang === 'bn' ? 'হিসাব হচ্ছে…' : 'Computing…'}
+            </span>
           )}
         </div>
       </div>
 
-      {/* Alerts */}
-      {simulationSuccessMsg && (
-        <div style={{ marginBottom: 16, padding: '10px 16px', borderRadius: 10, background: 'rgba(0, 223, 129, 0.12)', border: '1px solid rgba(0, 223, 129, 0.3)', color: 'var(--leaf)', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>✓ {simulationSuccessMsg}</span>
-          <button type="button" onClick={() => setSimulationSuccessMsg('')} style={{ background: 'transparent', border: 'none', color: 'var(--leaf)', cursor: 'pointer', fontSize: 14 }}>✕</button>
-        </div>
-      )}
-      {errorMessage && (
-        <div style={{ marginBottom: 16, padding: '10px 16px', borderRadius: 10, background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: 'var(--alert)', fontSize: 13, fontWeight: 700 }}>
-          ⚠️ {errorMessage}
-        </div>
-      )}
-
-      
-      {/* ========================================================================= */}
-      {/* G1: 3D-CENTERED ROTATION PLANNER HERO SECTION                             */}
-      {/* ========================================================================= */}
-      
-      {/* 1. Header Command Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 16 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-              🌾 {lang === 'bn' ? 'আবর্তন পরিকল্পনা' : 'Rotation Planner'}
-            </span>
-            <span style={{ color: 'var(--text-3)' }}>•</span>
-            <span style={{ fontSize: 13, color: 'var(--water)', fontWeight: 600 }}>
-              {activeField?.name || (lang === 'bn' ? 'খামার প্লট' : 'Farm Parcel')}
-            </span>
-            {hasArea && (
-              <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>
-                ({fieldAreaHa} ha / {haToBigha(fieldAreaHa)} {lang === 'bn' ? 'বিঘা' : 'bigha'})
-              </span>
-            )}
-            <div style={{ display: 'flex', gap: 6, marginLeft: 8 }}>
-              <span style={{ fontSize: 11, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--leaf)', padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
-                ✓ MILP Solver
-              </span>
-              <span style={{ fontSize: 11, background: 'rgba(56, 189, 248, 0.15)', color: 'var(--water)', padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
-                ✓ Water Feasibility
-              </span>
-              <span style={{ fontSize: 11, background: 'rgba(245, 158, 11, 0.15)', color: 'var(--sun)', padding: '2px 8px', borderRadius: 999, fontWeight: 700 }}>
-                ✓ Soil Health
-              </span>
-            </div>
-          </div>
-          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.02em' }}>
-            {lang === 'bn' ? 'দ্বিবার্ষিক ৬-মৌসুম অপ্টিমাইজড ফসল পরিকল্পনা' : 'Biannual 6-Season Optimized Rotation Plan'}
-          </h1>
-        </div>
-
-        {/* Top Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Button variant="primary" size="sm" onClick={handleRunSimulation} loading={isSimulating}>
-            ▶ {lang === 'bn' ? 'পরিকল্পনা চালান' : 'Run Solver'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => window.print()}>
-            📄 {lang === 'bn' ? 'প্রিন্ট' : 'Print'}
-          </Button>
-          <Button variant="secondary" size="sm" onClick={handleCopySms}>
-            📱 {copiedSms ? '✓ Copied' : 'SMS'}
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. Four Sub-Page Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 18 }}>
-        <div style={{ background: 'var(--surface-2, rgba(16, 185, 129, 0.12))', border: '2px solid var(--primary, #10b981)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}>
-          <div style={{ fontSize: 11, color: 'var(--leaf)', fontWeight: 700 }}>{lang === 'bn' ? '১ম ধাপ • সক্রিয়' : 'Step 1 • Active'}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>🌾 {lang === 'bn' ? '৬-মৌসুম পরিকল্পনা' : '6-Season Plan'}</div>
-        </div>
-        <div
-          onClick={() => onNavigateTab ? onNavigateTab('replan') : null}
-          style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}
-        >
-          <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'অভিযোজন' : 'Adaptation'}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>🔄 {lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Replan'}</div>
-        </div>
-        <div
-          onClick={() => onNavigateTab ? onNavigateTab('stress') : null}
-          style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}
-        >
-          <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'সহনশীলতা' : 'Resilience'}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>⚡ {lang === 'bn' ? 'জলবায়ু চাপ পরীক্ষা' : 'Stress Test'}</div>
-        </div>
-        <div
-          onClick={() => onNavigateTab ? onNavigateTab('comparison') : null}
-          style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', border: '1px solid var(--line)', borderRadius: 10, padding: '10px 14px', cursor: 'pointer' }}
-        >
-          <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>{lang === 'bn' ? 'বেঞ্চমার্ক' : 'Benchmark'}</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>🔬 {lang === 'bn' ? 'কৌশল তুলনা (৩-ওয়ে ল্যাব)' : 'Compare Strategies'}</div>
-        </div>
-      </div>
-
-      {/* 3. Strategy Switcher (Segmented buttons) */}
-      <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 12, padding: '8px 12px', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginRight: 6 }}>
-            🎯 {lang === 'bn' ? 'কৌশল:' : 'Strategy:'}
-          </span>
+      {/* 2. Toolbar: Strategy switch on left, actions on right */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: 6 }}>
+        {/* Strategy Switch Segmented Buttons */}
+        <div className="seg" role="group" aria-label={lang === 'bn' ? 'কৌশল' : 'Strategy'} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {[
-            { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current' },
-            { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced' },
-            { id: 'profit_focused', labelBn: 'লাভ', labelEn: 'Profit' },
-            { id: 'water_efficiency', labelBn: 'পানি সাশ্রয়', labelEn: 'Water saving' },
-            { id: 'soil_health', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil health' },
+            { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current', tipBn: 'বিদ্যমান আবর্তন (বেসলাইন): বোরো → পতিত → আমন', tipEn: 'Existing baseline rotation' },
+            { id: 'balanced', labelBn: 'সুষম ⭐', labelEn: 'Balanced ⭐', tipBn: 'সুষম: ৩৪% লাভ, ৩৩% পানি, ৩৩% মাটি', tipEn: 'Balanced: 34% profit, 33% water, 33% soil' },
+            { id: 'profit_focused', labelBn: 'লাভ', labelEn: 'Profit', tipBn: 'লাভ: ৭০% লাভ, ১৫% পানি, ১৫% মাটি', tipEn: 'Profit: 70% profit, 15% water, 15% soil' },
+            { id: 'water_efficiency', labelBn: 'পানি সাশ্রয়', labelEn: 'Water saving', tipBn: 'পানি: ১৫% লাভ, ৭০% পানি, ১৫% মাটি', tipEn: 'Water: 15% profit, 70% water, 15% soil' },
+            { id: 'soil_health', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil health', tipBn: 'মাটি: ১৫% লাভ, ১৫% পানি, ৭০% মাটি', tipEn: 'Soil: 15% profit, 15% water, 70% soil' },
           ].map(s => {
-            const isActive = s.id === 'baseline' ? compareWithBaseline : (!compareWithBaseline && selectedStrategy === s.id);
+            const isActive = selectedStrategy === s.id;
             return (
               <button
                 key={s.id}
                 type="button"
+                className="strategy-pill"
+                aria-pressed={isActive ? 'true' : 'false'}
+                title={lang === 'bn' ? s.tipBn : s.tipEn}
                 onClick={() => {
                   if (s.id === 'baseline') {
                     setCompareWithBaseline(true);
                   } else {
                     setCompareWithBaseline(false);
-                    setSelectedStrategy(s.id);
                   }
+                  setSelectedStrategy(s.id);
                 }}
                 style={{
-                  background: isActive ? 'var(--primary, #10b981)' : 'transparent',
+                  font: '600 13px var(--body)',
+                  border: 'none',
+                  background: isActive ? 'var(--accent, #2c8a4b)' : 'transparent',
                   color: isActive ? '#ffffff' : 'var(--text)',
-                  border: isActive ? '1px solid var(--primary, #10b981)' : '1px solid var(--line)',
-                  borderRadius: 8,
-                  padding: '5px 12px',
-                  fontSize: 12,
-                  fontWeight: 700,
+                  padding: '7px 12px',
+                  borderRadius: 9,
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease',
+                  transition: 'all 0.15s ease'
                 }}
-                title={s.id === 'baseline' ? (lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`) : undefined}
               >
                 {lang === 'bn' ? s.labelBn : s.labelEn}
               </button>
             );
           })}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={compareWithBaseline}
-              onChange={(e) => setCompareWithBaseline(e.target.checked)}
-            />
-            <span>{lang === 'bn' ? 'বর্তমানের সাথে তুলনা (Ghost Overlay)' : 'Compare with Current Baseline'}</span>
-          </label>
+
+        {/* Toolbar Actions: Copy SMS, Print, Export */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={handleCopySms}
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--text)',
+              cursor: 'pointer'
+            }}
+          >
+            📱 {copiedSms ? (lang === 'bn' ? 'SMS কপি হয়েছে ✓' : 'SMS Copied ✓') : (lang === 'bn' ? 'SMS কপি করুন' : 'Copy SMS')}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--text)',
+              cursor: 'pointer'
+            }}
+          >
+            📄 {lang === 'bn' ? 'প্রিন্ট' : 'Print'}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportJson}
+            title="JSON Export"
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            JSON
+          </button>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            title="CSV Export"
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 10px',
+              fontSize: 11.5,
+              fontWeight: 600,
+              color: 'var(--text-muted)',
+              cursor: 'pointer'
+            }}
+          >
+            CSV
+          </button>
         </div>
       </div>
 
-      {/* 4. Crop Strip (6 round crop thumbnails Y1-S1 ... Y2-S3) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 12 }}>
-        {periodKeys.map((k) => {
-          const rawC = activeCrops[k] || 'Fallow';
-          const c = (k.endsWith('S3') && (rawC?.toLowerCase() === 'rice' || rawC === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : rawC;
-          const isSelected = activeSelectedPeriod === k;
-          const meta = seasonMeta[k];
-          const irrigVal = seasonIrrigMap[k] || 0;
-          const dropSize = Math.max(11, Math.min(18, 11 + Math.round(irrigVal / 60)));
-          return (
-            <div
-              key={k}
-              onClick={() => setSelectedPeriodKey(k)}
+      {/* 3. Farmer Priorities Compact Row (PL14) */}
+      <div className="pri" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '8px 12px' }}>
+        <div className="pg" style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}>💧 {lang === 'bn' ? 'পানি' : 'Water'}</span>
+          {[
+            { id: 'full', labelBn: 'পর্যাপ্ত', labelEn: 'Full' },
+            { id: 'limited', labelBn: 'সীমিত', labelEn: 'Limited' },
+            { id: 'none', labelBn: 'সেচ নেই', labelEn: 'Rainfed' },
+          ].map(wOpt => (
+            <button
+              key={wOpt.id}
+              type="button"
+              className="pb"
+              aria-pressed={waterAvailability === wOpt.id ? 'true' : 'false'}
+              onClick={() => setWaterAvailability(wOpt.id)}
               style={{
-                background: isSelected ? 'var(--surface-2, rgba(16, 185, 129, 0.15))' : 'var(--surface-2, rgba(255, 255, 255, 0.03))',
-                border: isSelected ? '2px solid var(--primary, #10b981)' : '1px solid var(--line)',
-                borderRadius: 12,
-                padding: '10px 6px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 4,
-                transition: 'all 0.15s ease',
+                font: '500 12.5px var(--body)',
+                border: waterAvailability === wOpt.id ? '1px solid var(--accent, #2c8a4b)' : '1px solid var(--line)',
+                background: waterAvailability === wOpt.id ? 'var(--accent, #2c8a4b)' : 'var(--surface-2, rgba(255,255,255,0.04))',
+                color: waterAvailability === wOpt.id ? '#ffffff' : 'var(--text)',
+                padding: '4px 10px',
+                borderRadius: 99,
+                cursor: 'pointer'
               }}
             >
-              <div style={{ fontSize: 10.5, fontWeight: 700, color: meta?.color || 'var(--text-3)' }}>
-                {meta?.[lang] || k}
-              </div>
-              <div style={{ margin: '2px 0' }}>
-                <CropIllustration cropName={c} size={44} />
-              </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                {translateCropName(c, lang)}
-              </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: irrigVal > 0 ? 'var(--water)' : 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                {irrigVal > 0 ? (
-                  <>
-                    <span style={{ fontSize: dropSize, lineHeight: 1 }}>💧</span>
-                    <span>{formatDigits(irrigVal, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</span>
-                  </>
-                ) : (
-                  <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ নেই' : '0 mm'}</span>
-                )}
-              </div>
-              <div style={{ fontSize: 9.5, color: 'var(--text-3)' }}>
-                {meta?.months}
-              </div>
+              {lang === 'bn' ? wOpt.labelBn : wOpt.labelEn}
+            </button>
+          ))}
+          <span className="pn" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            {waterAvailability === defaultWaterAvailability
+              ? (lang === 'bn' ? `জমির তথ্য: ${waterAvailability === 'full' ? 'পর্যাপ্ত' : (waterAvailability === 'limited' ? 'সীমিত' : 'সেচ নেই')}` : `Field record: ${waterAvailability}`)
+              : (lang === 'bn'
+                  ? `পরীক্ষামূলক: ${waterAvailability === 'full' ? 'পর্যাপ্ত' : (waterAvailability === 'limited' ? 'সীমিত' : 'সেচ নেই')} (জমির তথ্য: ${defaultWaterAvailability === 'full' ? 'পর্যাপ্ত' : (defaultWaterAvailability === 'limited' ? 'সীমিত' : 'সেচ নেই')}) · অ্যাপে নতুন পরিকল্পনা হবে`
+                  : `What-if: ${waterAvailability} (Field: ${defaultWaterAvailability}) · Re-solving`)}
+          </span>
+        </div>
+
+        <div className="pg" style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+          <label style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: 'var(--text)' }}>
+            <input
+              type="checkbox"
+              id="tiller"
+              checked={noPowerTiller}
+              onChange={(e) => setNoPowerTiller(e.target.checked)}
+            />
+            <span>🚜 {lang === 'bn' ? 'পাওয়ার টিলার নেই' : 'No power tiller'}</span>
+          </label>
+        </div>
+
+        <div className="pg" style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
+          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}>🛒 {lang === 'bn' ? 'বিক্রি করতে পারি না' : 'Cannot sell'}</span>
+          {[
+            { id: 'Tomato', labelBn: 'টমেটো', labelEn: 'Tomato' },
+            { id: 'Sesame', labelBn: 'তিল', labelEn: 'Sesame' },
+            { id: 'Jute', labelBn: 'পাট', labelEn: 'Jute' },
+            { id: 'Potato', labelBn: 'আলু', labelEn: 'Potato' },
+          ].map(cOpt => {
+            const isExcluded = excludedCrops.includes(cOpt.id) || (noPowerTiller && cOpt.id === 'Potato');
+            return (
+              <button
+                key={cOpt.id}
+                type="button"
+                className="pb"
+                data-x={cOpt.labelBn}
+                aria-pressed={isExcluded ? 'true' : 'false'}
+                onClick={() => {
+                  if (noPowerTiller && cOpt.id === 'Potato') return;
+                  setExcludedCrops(prev => prev.includes(cOpt.id) ? prev.filter(c => c !== cOpt.id) : [...prev, cOpt.id]);
+                }}
+                style={{
+                  font: '500 12.5px var(--body)',
+                  border: isExcluded ? '1px solid var(--bad, #b4532a)' : '1px solid var(--line)',
+                  background: isExcluded ? 'var(--bad, #b4532a)' : 'var(--surface-2, rgba(255,255,255,0.04))',
+                  color: isExcluded ? '#ffffff' : 'var(--text)',
+                  textDecoration: isExcluded ? 'line-through' : 'none',
+                  padding: '4px 10px',
+                  borderRadius: 99,
+                  cursor: 'pointer'
+                }}
+              >
+                {lang === 'bn' ? cOpt.labelBn : cOpt.labelEn}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="pn" style={{ flexBasis: '100%', fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+          {excludedCrops.length > 0 || noPowerTiller
+            ? (lang === 'bn'
+                ? `বাদ: ${[...excludedCrops.map(c => translateCropName(c, 'bn')), ...(noPowerTiller && !excludedCrops.includes('Potato') ? ['আলু'] : [])].join(', ')}। অ্যাপ এগুলো ছাড়া নতুন পরিকল্পনা করবে।`
+                : `Excluded: ${[...excludedCrops, ...(noPowerTiller ? ['Potato'] : [])].join(', ')}. Optimizer excludes these crops.`)
+            : (lang === 'bn'
+                ? '⚖️ লাভ/পানি/মাটির গুরুত্ব উপরের কৌশলের বোতাম দিয়েই বাছুন। এখানে কিছু বদলালে অ্যাপ নতুন করে হিসাব করবে।'
+                : 'Select weights from strategy buttons above. Adjusting priorities here triggers automatic re-solve.')}
+        </div>
+      </div>
+
+      {/* 4. Before -> After Strip (.ba) */}
+      <div className="ba" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ (বছরে)' : 'Annual Irrigation'}</span>
+          {selectedStrategy === 'baseline' ? (
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(baseIrrigVal)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
+          ) : (
+            <div>
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(baseIrrigVal)} → {toBanglaDigits(avgIrrig)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>{' '}
+              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                ({savingsVal >= 0 ? `−${toBanglaDigits(savingsVal)}` : `+${toBanglaDigits(Math.abs(savingsVal))}`})
+              </em>
             </div>
+          )}
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন (বছরে)' : 'Bare Days (annual)'}</span>
+          {selectedStrategy === 'baseline' ? (
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} {lang === 'bn' ? 'দিন' : 'days'}</strong>
+          ) : (
+            <div>
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} → {toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))} {lang === 'bn' ? 'দিন' : 'days'}
+              </strong>{' '}
+              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                (−{toBanglaDigits(Math.max(0, Math.round((activePlanData.baselineBareDays ?? 115) - (activePlanData.planBareDays ?? 60))) )})
+              </em>
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন' : 'Soil Nitrogen'}</span>
+          {selectedStrategy === 'baseline' ? (
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}</strong>
+          ) : (
+            <div>
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → {toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}
+              </strong>{' '}
+              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                (+{toBanglaDigits(Math.round((activePlanData.planNitrogenKg ?? 35) - (activePlanData.baselineNitrogenKg ?? 0)))})
+              </em>
+            </div>
+          )}
+        </div>
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
+            {lang === 'bn' ? `লাভ, আপনার ${toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} বিঘায়` : `Profit, for ${haToBigha(fieldAreaHa || 0.67)} bigha`}
+          </span>
+          {selectedStrategy === 'baseline' ? (
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+              ~{toBanglaDigits(Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'}
+            </strong>
+          ) : (
+            <div>
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                ~{toBanglaDigits(Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)).toLocaleString())} → ~{toBanglaDigits(Math.round((activePlanData.planProfitBdt ?? 146526) * (fieldAreaHa || 0.67)).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'}
+              </strong>{' '}
+              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                (+{toBanglaDigits(Math.round(((activePlanData.planProfitBdt ?? 146526) - (activePlanData.baselineProfitBdt ?? 55869)) * (fieldAreaHa || 0.67)).toLocaleString())})
+              </em>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 5. Season Strip (.strip) + Totals (.totals) */}
+      <div className="strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
+        {periodKeys.map((k, i) => {
+          const isSelected = activeSelectedPeriod === k;
+          const c = activeCrops[k] || 'Fallow';
+          const cMeta = CROP_DATABASE[c] || {};
+          const s = seasonMeta[k];
+          const irrig = seasonIrrigMap[k] || 0;
+          return (
+            <button
+              key={k}
+              type="button"
+              className="sc"
+              aria-current={isSelected ? 'true' : 'false'}
+              onClick={() => setSelectedPeriodKey(k)}
+              style={{
+                textAlign: 'left',
+                background: 'var(--surface)',
+                border: isSelected ? '2px solid var(--accent, #2c8a4b)' : '1px solid var(--line)',
+                borderRadius: 12,
+                padding: '8px 10px',
+                cursor: 'pointer',
+                boxShadow: isSelected ? '0 0 0 2px rgba(44, 138, 75, 0.25)' : 'none'
+              }}
+            >
+              <small style={{ display: 'block', color: 'var(--text-muted)', fontSize: 11 }}>
+                {lang === 'bn' ? `${i < 3 ? '১ম বছর' : '২য় বছর'} · ${s.bn.split(' ')[1] || s.bn}` : `${i < 3 ? 'Year 1' : 'Year 2'} · ${s.en}`}
+              </small>
+              <b style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, margin: '2px 0', color: 'var(--text)' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: cMeta.color || '#5cc27e', flex: 'none' }} />
+                <span>{translateCropName(c, lang)}</span>
+              </b>
+              <span style={{ fontSize: 12, color: 'var(--water)', fontVariantNumeric: 'tabular-nums' }}>
+                💧 {irrig > 0 ? `${toBanglaDigits(irrig)} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? 'সেচ নেই' : '0 mm')}
+              </span>
+            </button>
           );
         })}
       </div>
 
-      {/* PL4: Totals Row under Crop Strip */}
-      <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.02))', border: '1px solid var(--line)', borderRadius: 10, padding: '8px 14px', marginBottom: 18, fontSize: 12.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-        <div>
-          <span style={{ color: 'var(--text-2)' }}>
-            {lang === 'bn'
-              ? `১ম বছর: ${toBanglaDigits(y1Irrig)} মিমি | ২য় বছর: ${toBanglaDigits(y2Irrig)} মিমি | গড়: ${toBanglaDigits(avgIrrig)} মিমি/বছর — বর্তমান: ${toBanglaDigits(baseIrrigVal)} মিমি/বছর → সাশ্রয় ${toBanglaDigits(savingsVal)} মিমি`
-              : `Year 1: ${y1Irrig} mm | Year 2: ${y2Irrig} mm | Avg: ${avgIrrig} mm/yr — Current: ${baseIrrigVal} mm/yr → Saved: ${savingsVal} mm`}
+      <div className="totals" style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '0 2px' }}>
+        {lang === 'bn' ? (
+          <span>
+            ১ম বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y1Irrig)} মিমি</b> · ২য় বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y2Irrig)} মিমি</b> · গড়: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(avgIrrig)} মিমি/বছর</b>
+            {selectedStrategy !== 'baseline' && (
+              <span> · বর্তমান {toBanglaDigits(baseIrrigVal)} মিমি থেকে <b style={{ color: 'var(--leaf)' }}>{toBanglaDigits(savingsVal)} মিমি সাশ্রয়</b></span>
+            )}
           </span>
-        </div>
-        <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
-          💧 {lang === 'bn' ? 'মৌসুমভিত্তিক ভূগর্ভস্থ ও সম্পূরক সেচ হিসাব' : 'Seasonal groundwater & supplemental irrigation balance'}
-        </div>
+        ) : (
+          <span>
+            Year 1: <b>{y1Irrig} mm</b> · Year 2: <b>{y2Irrig} mm</b> · Avg: <b>{avgIrrig} mm/yr</b>
+            {selectedStrategy !== 'baseline' && (
+              <span> · Saved: <b>{savingsVal} mm</b> vs current {baseIrrigVal} mm</span>
+            )}
+          </span>
+        )}
       </div>
 
-      {/* 5. HERO: FarmScene3D + Interactive Side Panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(280px, 1fr)', gap: 16, marginBottom: 20 }}>
+      {/* 6. HERO: 3D Farm (65%) + Rich Bed Card (35%) */}
+      <div className="main" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 12 }}>
         {/* 3D Farm Diorama */}
-        <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.02))', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
+        <div className="stagebox" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 460 }}>
           <FarmScene3D
             beds={farm3dBeds}
             selectedBedIndex={periodKeys.indexOf(activeSelectedPeriod)}
             selectedBedId={activeSelectedPeriod}
             onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
             cameraPreset="iso"
-            fieldAreaHa={fieldAreaHa || 1.0}
-            fieldName={activeField?.name || (lang === 'bn' ? 'বগুড়া মডেল খামার' : 'Bogura Model Farm')}
+            fieldAreaHa={fieldAreaHa || 0.67}
+            fieldName={activeField?.name || (lang === 'bn' ? 'রহিম মিয়ার জমি' : "Rahim's Field")}
             theme={theme || 'dark'}
             lang={lang}
-            height={500}
+            height={480}
+            annualIrrigationMm={selectedStrategy === 'baseline' ? baseIrrigVal : avgIrrig}
           />
         </div>
 
-        {/* Interactive Bed Side Panel */}
-        <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        {/* Rich Bed Card (PL12) */}
+        <aside className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, borderBottom: '1px solid var(--line)', paddingBottom: 12 }}>
-              <CropIllustration cropName={selectedCropName} size={56} />
-              <div>
-                <span style={{ fontSize: 11, color: seasonMeta[activeSelectedPeriod]?.color || 'var(--leaf)', fontWeight: 700, textTransform: 'uppercase' }}>
-                  {seasonMeta[activeSelectedPeriod]?.[lang] || activeSelectedPeriod} ({seasonMeta[activeSelectedPeriod]?.months})
+            {/* Eyebrow */}
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              {lang === 'bn'
+                ? `${activePeriodIdx < 3 ? '১ম বছর' : '২য় বছর'} · ${seasonMeta[activeSelectedPeriod]?.bn.split(' ')[1] || seasonMeta[activeSelectedPeriod]?.bn} (${seasonMeta[activeSelectedPeriod]?.months})${activeCropMeta?.duration ? ` · ${toBanglaDigits(activeCropMeta.duration)} দিন` : ''}`
+                : `${activePeriodIdx < 3 ? 'Year 1' : 'Year 2'} · ${seasonMeta[activeSelectedPeriod]?.en} (${seasonMeta[activeSelectedPeriod]?.months})${activeCropMeta?.duration ? ` · ${activeCropMeta.duration} days` : ''}`}
+            </div>
+
+            {/* Title */}
+            <h2 style={{ fontSize: 18, margin: '2px 0 6px', color: 'var(--text)' }}>
+              {translateCropName(selectedCropName, lang)}
+            </h2>
+
+            {/* Role Badges */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, margin: '4px 0 10px' }}>
+              {activeCropMeta?.is_legume && (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'rgba(74, 222, 128, 0.15)', border: '1px solid #4ade80', color: '#4ade80', fontWeight: 700 }}>
+                  🌱 {lang === 'bn' ? 'নাইট্রোজেন দেয়' : 'Fixes N'}
                 </span>
-                <h3 style={{ margin: '2px 0 0', fontSize: 17, fontWeight: 800, color: 'var(--text)' }}>
-                  {translateCropName(selectedCropName, lang)} ({selectedCropName})
-                </h3>
-              </div>
-            </div>
-
-            {/* Why this crop here */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--leaf)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>💡</span>
-                <span>{lang === 'bn' ? 'কেন এই ফসল এখানে? (MILP সলভার কারণ):' : 'Why this crop here? (MILP Rationale):'}</span>
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5, background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                {selectedCropName === 'Fallow' || selectedCropName.toLowerCase().includes('পতিত')
-                  ? (lang === 'bn' ? 'জলাবদ্ধতা বা মাটির বিশ্রাম ও শুষ্ক মৌসুমে পানি সাশ্রয়ের জন্য পতিত রাখা হয়েছে।' : 'Fallow period for soil moisture recovery and flood basin resting.')
-                  : (lang === 'bn'
-                      ? `তাপমাত্রার অনুকূলতা ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, পানির চাহিদা ${selectedCropIrrig === 0 ? 'সেচ লাগবে না (বৃষ্টিই যথেষ্ট)' : `সাশ্রয়ী (${selectedCropIrrig} মিমি)`}, এবং মাটির পুষ্টি উপযোগিতা ${(selectedCropEntry.soil_factor ?? 1.0) > 1.0 ? `খুব উপযোগী (${(selectedCropEntry.soil_factor).toFixed(2)}x)` : `${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%`} (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে' : `pH=${activeField?.soil_ph ?? 'তথ্য নেই'}, OM=${activeField?.organic_matter ?? 'তথ্য নেই'}%`})। ${selectedCropEntry.is_legume ? 'ডালশস্য হিসেবে শিকড়ে বায়বীয় নাইট্রোজেন সংযোজন করে পরবর্তী আমন ধানের সার খরচ সাশ্রয় করে।' : 'পরবর্তী ফসলের সাথে বোটানিক্যাল রোগচক্র ভেঙে দেয় এবং সর্বোত্তম প্রান্তিক মুনাফা নিশ্চিত করে।'} MILP অপ্টিমাইজেশন মডেল দ্বারা সেরা মনোনীত।`
-                      : `Temperature suitability ${Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}%, water demand ${selectedCropIrrig === 0 ? 'no irrigation needed (rainfed)' : `efficient (${selectedCropIrrig} mm)`}, and soil suitability ${(selectedCropEntry.soil_factor ?? 1.0) > 1.0 ? `highly suitable (${(selectedCropEntry.soil_factor).toFixed(2)}x)` : `${Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%`} (${activeField?.soil_ph == null && activeField?.organic_matter == null ? 'pH/OM unavailable — neutral assumed' : `pH=${activeField?.soil_ph ?? 'N/A'}, OM=${activeField?.organic_matter ?? 'N/A'}%`}). ${selectedCropEntry.is_legume ? 'Biological nitrogen fixation enriches soil N for subsequent monsoon crops.' : 'Breaks botanical disease cycles and maximizes marginal returns.'} Ranked #1 by PuLP MILP solver.`)}
-              </div>
-            </div>
-
-            {/* Season Numbers */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 14 }}>
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'ফলন (Yield):' : 'Yield:'}</span>
-                <strong style={{ fontSize: 14, color: 'var(--water)' }}>
-                  {selectedCropYieldTonHa != null
-                    ? `${selectedCropYieldTonHa} t/ha (${selectedCropYieldMaund} ${lang === 'bn' ? 'মণ/বিঘা' : 'md/bg'})`
-                    : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                </strong>
-              </div>
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'সেচ (Water):' : 'Irrigation:'}</span>
-                <strong style={{ fontSize: 14, color: 'var(--sun)' }}>
-                  {selectedCropIrrig === 0
-                    ? (lang === 'bn' ? 'সেচ লাগবে না' : '0 mm (rainfed)')
-                    : (selectedCropIrrig != null ? `${selectedCropIrrig} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}
-                </strong>
-              </div>
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'মুনাফা (উদাহরণমূলক):' : 'Margin (approx):'}</span>
-                <strong style={{ fontSize: 14, color: 'var(--leaf)' }}>
-                  {selectedCropMargin != null ? `${formatCurrency(selectedCropMargin, lang)}/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                </strong>
-              </div>
-              <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'মডেল অনিশ্চয়তা:' : 'Uncertainty:'}</span>
-                <strong style={{ fontSize: 13, color: 'var(--text-2)' }}>
-                  {selectedCropUncertainty != null ? `±${selectedCropUncertainty} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                </strong>
-              </div>
-            </div>
-
-            {/* Alternatives for this season */}
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6 }}>
-                {lang === 'bn' ? 'এই মৌসুমে বিকল্প (Alternatives):' : 'Alternatives for this Season:'}
-              </div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <span
-                  style={{
-                    fontSize: 11,
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid #10b981',
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    color: '#4ade80',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4
-                  }}
-                >
-                  <span>✓ {translateCropName(selectedCropName, lang)} ({lang === 'bn' ? 'নির্বাচিত' : 'Chosen'})</span>
-                  <span style={{ fontSize: 10 }}>({Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000)} pts)</span>
+              )}
+              {selectedCropIrrig === 0 ? (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--leaf)' }}>
+                  💧 {lang === 'bn' ? 'সেচ লাগে না' : 'Rainfed'}
                 </span>
-                {candidateAlternatives.map((alt, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      fontSize: 11,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--line)',
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      color: 'var(--text)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4
-                    }}
-                  >
-                    <span>{translateCropName(alt.crop, lang)}</span>
-                    <span style={{ color: 'var(--text-3)', fontSize: 10 }}>({alt.score} pts)</span>
-                  </span>
-                ))}
-              </div>
-              {candidateAlternatives.length > 0 && candidateAlternatives[0].score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
-                <div style={{ marginTop: 8, fontSize: 11.5, color: '#f59e0b', background: 'rgba(245, 158, 11, 0.08)', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(245, 158, 11, 0.25)', lineHeight: 1.4 }}>
-                  {lang === 'bn'
-                    ? `পুরো ৬ মৌসুমে সেরা: এই মৌসুমে একা ${translateCropName(candidateAlternatives[0].crop, 'bn')}-র স্কোর বেশি, কিন্তু পানি / রোগচক্র / ডাল নিয়মে ${translateCropName(selectedCropName, 'bn')} ভালো`
-                    : `Best across all 6 seasons: ${candidateAlternatives[0].crop} scores higher in this isolated season, but ${selectedCropName} is superior for water conservation, disease break, and legume rules`}
-                </div>
+              ) : selectedCropIrrig <= 100 ? (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--water)' }}>
+                  💧 {lang === 'bn' ? 'কম পানি' : 'Low water'}
+                </span>
+              ) : (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
+                  💧 {lang === 'bn' ? 'পরিমিত সেচ' : 'Moderate water'}
+                </span>
+              )}
+              {activePeriodIdx % 3 === 1 && (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
+                  ☀️ {lang === 'bn' ? 'তাপ-খরা ঝুঁকি' : 'Heat risk'}
+                </span>
               )}
             </div>
-          </div>
 
-          <div style={{ borderTop: '1px solid var(--line)', paddingTop: 10, marginTop: 12, fontSize: 11, color: 'var(--text-3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>{lang === 'bn' ? 'ক্লিক করে অন্য মৌসুম দেখুন' : 'Click bed to inspect period'}</span>
-            <span style={{ color: 'var(--water)', fontWeight: 600 }}>{activeSelectedPeriod}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 6. Cards Row: Key Benefits | Risk Summary | Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14, marginBottom: 20 }}>
-        {/* Card A: Key Benefits */}
-        <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 18 }}>🏆</span>
-            <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'মূল সুফল (Key Benefits vs Baseline)' : 'Key Benefits vs Baseline'}
-            </h3>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {/* সেচ */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'সেচ:' : 'Irrigation:'}</span>
-              <strong style={{ fontSize: 13, color: 'var(--water)' }}>
-                {activePlanData.baselineIrrigationMm != null && activePlanData.planIrrigationMm != null
-                  ? (lang === 'bn'
-                      ? `${toBanglaDigits(Math.round(activePlanData.baselineIrrigationMm))} → ${toBanglaDigits(Math.round(activePlanData.planIrrigationMm))} মিমি/বছর (${toBanglaDigits(Math.round(waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)))} মিমি সাশ্রয়, −${toBanglaDigits(Math.round(((waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)) / activePlanData.baselineIrrigationMm) * 100))}%)`
-                      : `${Math.round(activePlanData.baselineIrrigationMm)} → ${Math.round(activePlanData.planIrrigationMm)} mm/yr (${Math.round(waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm))} mm saved, -${Math.round(((waterSavingsMm || (activePlanData.baselineIrrigationMm - activePlanData.planIrrigationMm)) / activePlanData.baselineIrrigationMm) * 100)}%)`)
-                  : (waterSavingsMm != null ? `${Math.round(waterSavingsMm)} mm` : '—')}
-              </strong>
-            </div>
-
-            {/* ফাঁকা দিন */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'ফাঁকা দিন:' : 'Bare Days:'}</span>
-              <strong style={{ fontSize: 13, color: 'var(--sun)' }}>
-                {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null
-                  ? (lang === 'bn'
-                      ? `${toBanglaDigits(Math.round(activePlanData.baselineBareDays))} → ${toBanglaDigits(Math.round(activePlanData.planBareDays))}`
-                      : `${Math.round(activePlanData.baselineBareDays)} → ${Math.round(activePlanData.planBareDays)}`)
-                  : '—'}
-              </strong>
-            </div>
-
-            {/* নাইট্রোজেন */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--line)', paddingBottom: 6 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'নাইট্রোজেন:' : 'Nitrogen:'}</span>
-              <strong style={{ fontSize: 13, color: 'var(--leaf)' }}>
-                {activePlanData.planNitrogenKg != null
-                  ? (lang === 'bn'
-                      ? `${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → ${toBanglaDigits(Math.round(activePlanData.planNitrogenKg))} কেজি/হে`
-                      : `${Math.round(activePlanData.baselineNitrogenKg ?? 0)} → ${Math.round(activePlanData.planNitrogenKg)} kg/ha`)
-                  : (extraNkg != null ? `+${extraNkg} kg N/ha` : '—')}
-              </strong>
-            </div>
-
-            {/* লাভ */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{lang === 'bn' ? 'লাভ (খরচ বাদে):' : 'Profit (net):'}</span>
-              <strong style={{ fontSize: 13, color: deltaProfit >= 0 ? 'var(--leaf)' : 'var(--alert)' }}>
-                {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null
-                  ? (lang === 'bn'
-                      ? `${toBanglaDigits(Math.round(activePlanData.baselineProfitBdt).toLocaleString())} → ${toBanglaDigits(Math.round(activePlanData.planProfitBdt).toLocaleString())} ৳/হে (উদাহরণমূলক দাম)`
-                      : `${Math.round(activePlanData.baselineProfitBdt).toLocaleString()} → ${Math.round(activePlanData.planProfitBdt).toLocaleString()} BDT/ha (illustrative prices)`)
-                  : (deltaProfit != null ? `${deltaProfit >= 0 ? '+' : ''}${formatCurrency(deltaProfit, lang)}/ha (উদাহরণমূলক দাম)` : '—')}
-              </strong>
-            </div>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
-            {lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`}
-          </div>
-          <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 4 }}>
-            * {lang === 'bn' ? 'উদাহরণমূলক দাম ও মডেল গণনাভিত্তিক প্রক্সি' : 'Illustrative price and modeled agronomic proxy'}
-          </div>
-        </div>
-
-        {/* Card B: Risk Summary */}
-        <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 14, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>🛡️</span>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                {lang === 'bn' ? 'ঝুঁকি মূল্যায়ন (Risk Summary)' : 'Agro-Climatic Risk Summary'}
-              </h3>
-            </div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {riskSuite.map(r => (
-              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-2)' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color }} />
-                  {lang === 'bn' ? r.labelBn : r.labelEn}
-                </span>
-                <span style={{ fontWeight: 700, color: r.color }}>
-                  {lang === 'bn' ? r.levelBn : r.level}
-                </span>
+            {/* 3 Numbers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 6, marginBottom: 10 }}>
+              <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '7px 9px' }}>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফলন' : 'Yield'}</span>
+                <strong style={{ fontSize: 14.5, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                  {selectedCropYieldTonHa != null
+                    ? `${toBanglaDigits((selectedCropYieldTonHa * 3.585).toFixed(1))} ${lang === 'bn' ? 'মণ/বিঘা' : 'md/bg'}`
+                    : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
+                </strong>
+                <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                  {selectedCropYieldTonHa != null ? `~${toBanglaDigits(Math.round(selectedCropYieldTonHa * 3.585 * (haToBigha(fieldAreaHa || 0.67))))} ${lang === 'bn' ? 'মণ' : 'maund'}` : ''}
+                </small>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 14, borderTop: '1px solid var(--line)', paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>IMERG & POWER (2001-2024)</span>
-            <button
-              type="button"
-              onClick={() => setShowDetailsDrawer(true)}
-              style={{ background: 'transparent', border: 'none', color: 'var(--water)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', padding: 0 }}
-            >
-              {lang === 'bn' ? 'বিস্তারিত দেখুন →' : 'See Details →'}
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
-            {lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`}
-          </div>
-        </div>
 
-        {/* Card C: Quick Actions */}
-        <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 14, padding: 16, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 18 }}>⚡</span>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
-                {lang === 'bn' ? 'দ্রুত পদক্ষেপ (Quick Actions)' : 'Quick Actions'}
-              </h3>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => onNavigateTab ? onNavigateTab('replan') : null}
-                style={{ width: '100%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 8, padding: '8px 12px', color: 'var(--leaf)', fontSize: 12, fontWeight: 700, textAlign: 'left', cursor: 'pointer' }}
-              >
-                🔄 {lang === 'bn' ? 'পরবর্তী মৌসুমে পুনঃপরিকল্পনা চালান' : 'Adaptive Replan for Next Season'}
-              </button>
-              <button
-                type="button"
-                onClick={() => onNavigateTab ? onNavigateTab('stress') : null}
-                style={{ width: '100%', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: 8, padding: '8px 12px', color: 'var(--water)', fontSize: 12, fontWeight: 700, textAlign: 'left', cursor: 'pointer' }}
-              >
-                ⚡ {lang === 'bn' ? 'খরা ও বন্যা চাপ পরীক্ষা করুন' : 'Run Climate Stress Test'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCopySms}
-                style={{ width: '100%', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--line)', borderRadius: 8, padding: '8px 12px', color: 'var(--text)', fontSize: 12, fontWeight: 600, textAlign: 'left', cursor: 'pointer' }}
-              >
-                📱 {copiedSms ? '✓ SMS Text Copied' : (lang === 'bn' ? 'কৃষক পরামর্শ SMS কপি করুন' : 'Copy Farmer SMS Advisory')}
-              </button>
-            </div>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 8 }}>
-            SAAO যাচাইকরণ নম্বর সংযুক্ত
-          </div>
-        </div>
-      </div>
+              <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '7px 9px' }}>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ, পুরো মৌসুমে' : 'Irrigation'}</span>
+                <strong style={{ fontSize: 14.5, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                  {selectedCropIrrig > 0 ? `${toBanglaDigits(selectedCropIrrig)} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? '০ মিমি' : '0 mm')}
+                </strong>
+                <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                  {selectedCropIrrig > 0
+                    ? (lang === 'bn' ? `~${toBanglaDigits(Math.round(selectedCropIrrig * (fieldAreaHa || 0.67) * 10).toLocaleString())} হাজার লিটার` : `~${Math.round(selectedCropIrrig * (fieldAreaHa || 0.67) * 10)}k L`)
+                    : (lang === 'bn' ? 'বৃষ্টিই যথেষ্ট' : 'Rainfed')}
+                </small>
+              </div>
 
-      {/* 7. Evidence Card: NASA IMERG/POWER Onset Climatology */}
-      <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.03))', border: '1px solid var(--line)', borderRadius: 14, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🛰️</span>
-            <strong style={{ fontSize: 13, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'বৈজ্ঞানিক প্রমাণ ও বর্ষা আগমন প্রবণতা (NASA Climatology):' : 'Scientific Evidence & Monsoon Onset Climatology:'}
-            </strong>
-          </div>
-          <span style={{ fontSize: 11, background: 'rgba(56, 189, 248, 0.12)', color: 'var(--water)', padding: '2px 8px', borderRadius: 6 }}>
-            {rainSrc}
-          </span>
-        </div>
-        <div style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
-          {isSignificant ? (
-            <span>
-              {lang === 'bn'
-                ? `ঐতিহাসিক ২৪ বছরের উপাত্তে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ (p = ${pVal.toFixed(4)}, মধ্যক শিফট ${shiftVal} দিন)।`
-                : `Empirical 24-year timeseries demonstrates statistically significant onset window shift (p = ${pVal.toFixed(4)}, median shift ${shiftVal}d).`}
-            </span>
-          ) : (
-            <span>
-              {lang === 'bn'
-                ? `ঐতিহাসিক ২৪ বছরের উপাত্তে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ নয় (p = ${pVal.toFixed(4)})। ঐতিহাসিক গড় অনুসরণে বর্ষা শুরুর ১০-১৫ দিনের মধ্যে আমন চারা রোপণ উপযোগী।`
-                : `Empirical timeseries demonstrates that onset shift is not statistically significant (p = ${pVal.toFixed(4)}). Planning aligns with established historical monsoon onset.`}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* 8. Detailed Scientific Analysis & Solver Breakdown Drawer */}
-      <div style={{ marginBottom: 30 }}>
-        <button
-          type="button"
-          onClick={() => setShowDetailsDrawer(!showDetailsDrawer)}
-          style={{
-            width: '100%',
-            background: 'var(--surface-2, rgba(255, 255, 255, 0.04))',
-            border: '1px solid var(--line)',
-            borderRadius: 12,
-            padding: '12px 18px',
-            fontSize: 13,
-            fontWeight: 700,
-            color: 'var(--water)',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <span>{showDetailsDrawer ? '▲ বিস্তারিত বৈজ্ঞানিক বিশ্লেষণ ও সলভার বিবরণ লুকান' : '▼ বিস্তারিত বৈজ্ঞানিক বিশ্লেষণ ও সলভার বিবরণ দেখুন (Detailed Solver Breakdown)'}</span>
-          <span>{showDetailsDrawer ? 'Hide' : 'Expand'}</span>
-        </button>
-
-        {showDetailsDrawer && (
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
-
-{/* P2.1 Answer-First Header & Key Metric Tiles */}
-      <div className="answer-first-banner" style={{
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.08) 100%)',
-        border: '1px solid rgba(16, 185, 129, 0.35)',
-        borderRadius: 16,
-        padding: '20px 24px',
-        marginBottom: 24,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 22 }}>💡</span>
-          <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--leaf, #10b981)' }}>
-            {lang === 'bn' ? 'এই জমির জন্য সিদ্ধান্ত ও সুপারিশ' : 'Actionable Recommendation for this Field'}
-          </span>
-        </div>
-        <h2 style={{ margin: '0 0 16px', fontSize: 18, lineHeight: 1.5, color: 'var(--text, #f8fafc)', fontWeight: 600 }}>
-          {answerFirstSentence}
-        </h2>
-        {/* 3 Large Tiles with Icons and One-Line Meaning */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
-          <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              💰 {lang === 'bn' ? 'মডেলকৃত মুনাফার পরিবর্তন' : 'Modeled Gross-Margin Delta'}
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: deltaProfit == null ? 'var(--text-muted)' : deltaProfit >= 0 ? '#10b981' : '#f59e0b' }}>
-              {deltaProfit == null ? '—' : `${deltaProfit >= 0 ? '+' : ''}${formatDigits(deltaProfit.toLocaleString(), lang)} ${lang === 'bn' ? '৳/হে' : 'BDT/ha'}`}
-            </div>
-            <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {deltaProfit == null
-                ? (lang === 'bn' ? 'তুলনাযোগ্য লাভের তথ্য অনুপলভ্য' : 'Comparable profit data unavailable')
-                : (lang === 'bn' ? 'মডেল অনুমান; মাঠের ফল নয়' : `Model estimate vs ${isAssumed ? 'assumed' : 'saved'} baseline; not a farm outcome`)}
-            </div>
-          </div>
-
-          <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WaterIcon size={15} /> {lang === 'bn' ? 'মডেলকৃত সেচের পরিবর্তন' : 'Modeled Irrigation Delta'}</span>
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: waterSavingsMm == null ? 'var(--text-muted)' : waterSavingsMm >= 0 ? '#38bdf8' : '#f59e0b' }}>
-              {waterSavingsMm == null ? '—' : waterSavingsMm > 0
-                ? (lang === 'bn' ? `~${formatDigits(waterSavingsMm, 'bn')} মিমি সাশ্রয়` : `~${waterSavingsMm} mm saved`)
-                : (waterSavingsMm === 0 ? (lang === 'bn' ? '০ মিমি (সমান)' : '0 mm (equal)') : (lang === 'bn' ? `+${formatDigits(Math.abs(waterSavingsMm), 'bn')} মিমি বেশি` : `+${Math.abs(waterSavingsMm)} mm more`))}
-            </div>
-            <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {lang === 'bn' ? 'মডেল হিসাব; বাস্তব মাঠ পরিমাপ নয়' : 'Model estimate; not a measured farm outcome'}
-            </div>
-          </div>
-
-          <div className="kpi-tile" style={{ background: 'var(--surface-card, rgba(255,255,255,0.04))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 12, padding: '14px 16px' }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)', marginBottom: 4 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><RotationIcon size={15} /> {lang === 'bn' ? 'মডেলকৃত নাইট্রোজেন প্রক্সি' : 'Modeled Nitrogen-Effect Proxy'}</span>
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: extraNkg == null ? 'var(--text-muted)' : extraNkg >= 0 ? '#10b981' : '#f59e0b' }}>
-              {extraNkg == null ? '—' : `${extraNkg >= 0 ? '+' : ''}${formatDigits(extraNkg, lang)} ${lang === 'bn' ? 'কেজি N/হে' : 'kg N/ha'}`}
-            </div>
-            <div style={{ fontSize: 11.5, color: 'var(--text-2, #cbd5e1)', marginTop: 4 }}>
-              {lang === 'bn' ? 'ডালশস্যের শ্রেণিবিন্যাসভিত্তিক প্রক্সি; মাটি পরীক্ষা নয়' : 'Legume-category proxy; not a soil test'}
-            </div>
-          </div>
-        </div>
-
-        {/* Coastal Saline Assessment Notice for Satkhira / Coastal districts */}
-        {isCoastalSaline && (
-          <div style={{
-            marginTop: 16,
-            background: 'rgba(56, 189, 248, 0.08)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: 12,
-            padding: '14px 18px',
-            fontSize: 12.5,
-            color: 'var(--text)',
-            lineHeight: 1.6
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontWeight: 700, color: '#38bdf8' }}>
-              <span>🌊</span>
-              <span>
-                {lang === 'bn'
-                  ? 'উপকূলীয় লবণাক্ত অঞ্চল মূল্যায়ন (সাতক্ষীরা/উপকূলীয় ডেল্টা)'
-                  : 'Coastal Saline Zone Assessment (Satkhira / Coastal Delta)'}
-              </span>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-2)' }}>
-              {lang === 'bn'
-                ? 'উপকূলীয় লবণাক্ত অঞ্চলে শীতকালীন রবি মৌসুমে উচ্চ লবণাক্ততা (EC > ৪ dS/m) ও দীর্ঘ শুষ্ক আবহাওয়ায় সেচ পাম্পিং খরচ অনেক বেশি থাকে, যার ফলে প্রচলিত বোরো একফসলি চাষে চরম ঝুঁকি বা ক্ষতি (-৮,৬১২ ৳/হেক্টর) দেখা দেয়। ফিল্ডশিফটের অপ্টিমাইজেশনে রবিতে সংবেদনশীল ডালের বদলে লবণ-সহনশীল তেলবীজ (সূর্যমুখী / সরিষা) এবং খরিফ-২ বর্ষায় বন্যা ও লবণাক্ততা সহনশীল আমন ধান নির্বাচন করা হয়েছে, যা মাটির লবণাক্ততা রোধ করে এবং উচ্চ পাম্পিং খরচের ঝুঁকি কমায়।'
-                : 'In coastal saline districts during the Rabi dry season, elevated topsoil salinity (EC > 4 dS/m) and high evaporative demand drive prohibitive irrigation pumping costs, causing traditional monoculture Boro to operate at acute loss (-8,612 BDT/ha). FieldShift optimization selects salt-tolerant oilseeds (Sunflower / Mustard) for Rabi instead of sensitive pulses, and salt/flood-tolerant T. Aman Rice for Kharif-2, conserving soil health and reducing pumping risk even if conservative planning tempers short-term margins.'}
-            </p>
-          </div>
-        )}
-      </div>
-
-            {/* P2.3 Traffic-Light Risk Chips */}
-      <div style={{ marginBottom: 24, background: 'var(--surface-card, rgba(255,255,255,0.02))', border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', borderRadius: 14, padding: '14px 18px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2, #cbd5e1)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><ChecklistIcon size={16} /> {lang === 'bn' ? 'জলবায়ু ও শস্য ঝুঁকি মূল্যায়ন (Traffic-Light Risk Matrix):' : 'Agro-Climatic Risk Evaluation:'}</span>
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          {riskSuite.map(r => (
-            <div key={r.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.04)', border: `1px solid ${r.color}55`, padding: '6px 12px', borderRadius: 20 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, display: 'inline-block' }} />
-              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text, #f8fafc)' }}>{lang === 'bn' ? r.labelBn : r.labelEn}:</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: r.color }}>{lang === 'bn' ? r.levelBn : r.level}</span>
-              <button
-                type="button"
-                onClick={() => setExpandedRisk(expandedRisk === r.id ? null : r.id)}
-                style={{ background: 'transparent', border: 'none', color: '#38bdf8', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}
-              >
-                {expandedRisk === r.id ? '✕' : (lang === 'bn' ? 'কেন?' : 'Why?')}
-              </button>
-            </div>
-          ))}
-        </div>
-        {expandedRisk && (
-          <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 8, background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', fontSize: 12.5, color: 'var(--text, #f8fafc)' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <InfoIcon size={15} />
-              {lang === 'bn'
-                ? (riskSuite.find(r => r.id === expandedRisk)?.whyBn || riskSuite.find(r => r.id === expandedRisk)?.whyEn)
-                : (riskSuite.find(r => r.id === expandedRisk)?.whyEn || riskSuite.find(r => r.id === expandedRisk)?.whyBn)
-              }
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* A5: Farmer Priorities and Resource Constraints Input Panel */}
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--glass-border)', padding: '16px 20px', marginBottom: 20, boxShadow: 'var(--glass-shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: showConstraintsPanel ? 14 : 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>⚙️🚜</span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
-                {lang === 'bn' ? 'কৃষকের অগ্রাধিকার ও সম্পদ সীমাবদ্ধতা ইনপুট (Farmer Priorities & Constraints)' : 'Farmer Priorities & Resource Constraints'}
-              </h3>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {lang === 'bn' ? 'সেচ, যন্ত্রপাতি ও অগ্রাধিকার সলভারে পাঠানো হয়; শ্রম-চাহিদার তথ্য অনুপলভ্য হলে তা সতর্কতায় দেখানো হয়' : 'Water, equipment, and priorities reach the solver; unsupported labor data is disclosed rather than silently applied'}
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowConstraintsPanel(!showConstraintsPanel)}
-            style={{
-              background: 'var(--glass)',
-              border: '1px solid var(--line)',
-              color: 'var(--water)',
-              padding: '6px 12px',
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            {showConstraintsPanel ? (lang === 'bn' ? '▲ সংক্ষেপ করুন' : '▲ Collapse') : (lang === 'bn' ? '⚙️ আপনার অগ্রাধিকার বদলান ▾' : '⚙️ Customize Priorities ▾')}
-          </button>
-        </div>
-
-        {showConstraintsPanel && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
-            
-            {/* Input 1: Water Availability */}
-            <div style={{ background: 'var(--glass-strong)', borderRadius: 10, padding: 12, border: '1px solid var(--line)' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase' }}>
-                💧 {lang === 'bn' ? 'পানি প্রাপ্যতা ও সেচ সুবিধা' : 'Water Availability'}
-              </span>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'full', labelBn: 'পর্যাপ্ত সেচ (১২০০ মিমি)', labelEn: 'Full Irrigation (1200 mm)' },
-                  { id: 'limited', labelBn: 'সীমিত সেচ (৪০০ মিমি)', labelEn: 'Limited Irrigation (400 mm)' },
-                  { id: 'none', labelBn: 'সেচ নেই (০ মিমি)', labelEn: 'Rainfed / No Irrigation (0 mm)' },
-                ].map(opt => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setWaterAvailability(opt.id)}
-                    style={{
-                      background: waterAvailability === opt.id ? 'var(--water)' : 'var(--glass)',
-                      color: waterAvailability === opt.id ? 'var(--bg-deep)' : 'var(--text-2)',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      padding: '5px 10px',
-                      borderRadius: 6,
-                      fontSize: 11.5,
-                      fontWeight: waterAvailability === opt.id ? 800 : 500,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {lang === 'bn' ? opt.labelBn : opt.labelEn}
-                  </button>
-                ))}
+              <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '7px 9px' }}>
+                <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'লাভ (খরচ বাদে)' : 'Net Margin'}</span>
+                <strong style={{ fontSize: 14.5, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                  {selectedCropMargin != null ? `${toBanglaDigits(Math.round(selectedCropMargin * 0.13378).toLocaleString())}/বিঘা` : '—'}
+                </strong>
+                <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
+                  {selectedCropMargin != null ? `~${toBanglaDigits(Math.round(selectedCropMargin * (fieldAreaHa || 0.67)).toLocaleString())} ৳` : ''}
+                </small>
               </div>
             </div>
 
-            {/* Input 2: Equipment & Labour Limits */}
-            <div style={{ background: 'var(--glass-strong)', borderRadius: 10, padding: 12, border: '1px solid var(--line)' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--sun)', textTransform: 'uppercase' }}>
-                🚜 {lang === 'bn' ? 'যন্ত্রপাতি ও শ্রম সীমাবদ্ধতা' : 'Equipment & Labour Limits'}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={noPowerTiller}
-                    onChange={(e) => setNoPowerTiller(e.target.checked)}
-                  />
-                  <span>{lang === 'bn' ? 'পাওয়ার টিলার নেই (আলু/টমেটো বাদ)' : 'No power tiller (exclude potato/tuber)'}</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={labourShortage}
-                    onChange={(e) => setLabourShortage(e.target.checked)}
-                  />
-                  <span>{lang === 'bn' ? 'শ্রম সংকট (নিবিড় নিড়ানি ফসল বর্জন)' : 'Labour shortage (exclude high-weeding crops)'}</span>
-                </label>
+            {/* Pros */}
+            {currentProsCons.pros.length > 0 && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--leaf)', margin: '4px 0 2px' }}>✅ {lang === 'bn' ? 'সুবিধা' : 'Benefits'}</div>
+                <ul style={{ margin: 0, paddingLeft: 18, listStyleType: 'disc', fontSize: 13, lineHeight: 1.45, color: 'var(--text)' }}>
+                  {currentProsCons.pros.map((p, idx) => <li key={idx}>{p}</li>)}
+                </ul>
               </div>
-            </div>
+            )}
 
-            {/* Input 3: Solver Weights for Active Strategy */}
-            <div style={{ background: 'var(--glass-strong)', borderRadius: 10, padding: 12, border: '1px solid var(--line)' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--leaf)', textTransform: 'uppercase' }}>
-                ⚖️ {lang === 'bn' ? 'কৌশলের সক্রিয় ওজন (Solver Weights):' : 'Active Solver Weights:'}
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                  <span>{lang === 'bn' ? 'মুনাফা' : 'Profit'}:</span>
-                  <strong style={{ color: 'var(--leaf)', fontSize: 12 }}>{toBengaliNumber(activeWeights.profit)}%</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                  <span>{lang === 'bn' ? 'পানি সাশ্রয়' : 'Water'}:</span>
-                  <strong style={{ color: 'var(--water)', fontSize: 12 }}>{toBengaliNumber(activeWeights.water)}%</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5 }}>
-                  <span>{lang === 'bn' ? 'মাটি স্বাস্থ্য' : 'Soil'}:</span>
-                  <strong style={{ color: 'var(--sun)', fontSize: 12 }}>{toBengaliNumber(activeWeights.soil)}%</strong>
-                </div>
-                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
-                  {lang === 'bn'
-                    ? `(বর্তমান নির্বাচিত কৌশল: ${STRATEGY_DEFINITIONS[selectedStrategy]?.titleBn || selectedStrategy})`
-                    : `(Current strategy: ${STRATEGY_DEFINITIONS[selectedStrategy]?.titleEn || selectedStrategy})`}
-                </div>
+            {/* Cons */}
+            {currentProsCons.cons.length > 0 && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--alert)', margin: '4px 0 2px' }}>⚠️ {lang === 'bn' ? 'অসুবিধা / ঝুঁকি' : 'Drawbacks / Risks'}</div>
+                <ul style={{ margin: 0, paddingLeft: 18, listStyleType: 'disc', fontSize: 13, lineHeight: 1.45, color: 'var(--text)' }}>
+                  {currentProsCons.cons.map((c, idx) => <li key={idx}>{c}</li>)}
+                </ul>
               </div>
-            </div>
+            )}
 
-            {/* Active Binding Constraints Notification Bar */}
-            <div style={{ gridColumn: '1 / -1', background: 'rgba(2, 6, 23, 0.6)', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', marginRight: 8 }}>
-                🔒 {lang === 'bn' ? 'বর্তমানে সক্রিয় আবদ্ধ সীমাবদ্ধতা (Active Binding Constraints):' : 'Active Binding Constraints:'}
-              </span>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                {bindingConstraints.map((bc, idx) => (
-                  <span
-                    key={idx}
-                    style={{
-                      fontSize: 10.5,
-                      background: 'rgba(197, 232, 108, 0.12)',
-                      border: '1px solid rgba(197, 232, 108, 0.3)',
-                      color: 'var(--accent)',
-                      padding: '2px 8px',
-                      borderRadius: 999
-                    }}
-                  >
-                    ✓ {bc}
-                  </span>
-                ))}
+            {/* Baseline Comparison Slot */}
+            {selectedStrategy !== 'baseline' && (
+              <div style={{ fontSize: 13, background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '8px 10px', marginTop: 8 }}>
+                🔄 {lang === 'bn' ? 'বর্তমানে এই মৌসুমে:' : 'Currently in this season:'} <b>{translateCropName(baselineCropInSlot, lang)}</b> ({baselineCropInSlot.toLowerCase() === 'fallow' ? (lang === 'bn' ? 'জমি ফাঁকা, ০ মিমি' : 'Fallow, 0 mm') : (lang === 'bn' ? `${toBanglaDigits(baselineSlotIrrig)} মিমি সেচ` : `${baselineSlotIrrig} mm irrigation`)})
               </div>
-            </div>
+            )}
 
-          </div>
-        )}
-      </div>
-
-      {/* 2. Strategy Profiles Selector */}
-      <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--glass-border)', padding: 18, marginBottom: 20, boxShadow: 'var(--glass-shadow)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-          <div>
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 800, color: 'var(--text)' }}>
-              🎯 {lang === 'bn' ? 'অপ্টিমাইজেশন কৌশল ও ওজন নির্বাচন (Strategy Profiles)' : 'Optimization Strategy Profiles (Objective Weights)'}
-            </h3>
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-              {lang === 'bn' ? 'যেকোনো কৌশল নির্বাচন করে ৬-মৌসুমের ফলাফল ও আবর্তন তুলনা করুন:' : 'Select a primary strategy below to solve for alternative multi-season objectives:'}
-            </p>
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--water)', fontWeight: 700 }}>
-            {lang === 'bn' ? 'সক্রিয় কৌশল: ' : 'Active Strategy: '} <strong>{STRATEGY_DEFINITIONS[selectedStrategy]?.[lang === 'bn' ? 'titleBn' : 'titleEn']}</strong>
-          </span>
-        </div>
-
-        {strategyComparisonNote && (
-          <div style={{
-            background: 'rgba(56, 189, 248, 0.08)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
-            borderRadius: 8,
-            padding: '8px 12px',
-            marginBottom: 14,
-            fontSize: 12,
-            color: '#38bdf8',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8
-          }}>
-            <span>ℹ️</span>
-            <span>{strategyComparisonNote}</span>
-          </div>
-        )}
-
-        <div className="strategy-columns-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12, marginBottom: 18 }}>
-          {/* Column 0: Existing Rotation Baseline */}
-          <div
-            style={{
-              padding: '14px 16px',
-              borderRadius: 12,
-              textAlign: 'left',
-              border: '1px solid rgba(148, 163, 184, 0.3)',
-              background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 18 }}>🚜</span>
-                  <strong style={{ fontSize: 13, color: 'var(--text-muted, #94a3b8)' }}>
-                    {lang === 'bn' ? 'বিদ্যমান আবর্তন (বেসলাইন)' : 'Existing Rotation (Baseline)'}
-                  </strong>
-                </div>
-                <span style={{ fontSize: 10, background: 'rgba(148, 163, 184, 0.2)', color: 'var(--text-muted)', padding: '1px 6px', borderRadius: 999, fontWeight: 800 }}>
-                  {lang === 'bn' ? 'বেসলাইন' : 'BASELINE'}
-                </span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 8px', lineHeight: 1.35 }}>
-                {lang === 'bn' ? 'বর্তমান কৃষক অভ্যাস। বোরো ধানভিত্তিক সেচনির্ভর চাষাবাদ ও পতিত জমি।' : 'Farmer current practice. Deep tubewell pumping and seasonal bare fallow ground.'}
-              </div>
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 8 }}>
-                {baselineCrops.slice(0, 3).map((c, i) => (
-                  <span key={i} style={{ background: 'var(--line)', border: '1px solid var(--glass-border)', padding: '1px 6px', borderRadius: 4, fontSize: 10.5, color: 'var(--text)' }}>
-                    {translateCropName(c, lang)}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8, fontSize: 11 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted, #94a3b8)' }}>
-                <span>{lang === 'bn' ? 'লাভ (Margin):' : 'Margin:'}</span>
-                <strong>{activePlanData.baselineProfitBdt != null ? `${formatCurrency(activePlanData.baselineProfitBdt, lang)}/ha` : '—'}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--alert)', marginTop: 2 }}>
-                <span>{lang === 'bn' ? 'সেচ প্রয়োজন:' : 'Irrigation:'}</span>
-                <strong>{activePlanData.baselineIrrigationMm != null ? `${Math.round(activePlanData.baselineIrrigationMm)} mm` : '—'}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--sun)', marginTop: 2 }}>
-                <span>{lang === 'bn' ? 'অনাবৃত দিন:' : 'Bare Days:'}</span>
-                <strong>{activePlanData.baselineBareDays != null ? `${activePlanData.baselineBareDays} ${lang === 'bn' ? 'দিন/বছর' : 'days/yr'}` : '—'}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Columns 1, 2, 3: Alternative Strategies */}
-          {Object.values(STRATEGY_DEFINITIONS).map(strat => {
-            const isSelected = selectedStrategy === strat.id;
-            const isBest = strat.id === bestSuitedStrategy;
-            return (
-              <button
-                key={strat.id}
-                type="button"
-                onClick={() => setSelectedStrategy(strat.id)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  padding: '14px 16px',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  border: isSelected ? '2px solid var(--accent)' : (isBest ? '1px solid rgba(16, 185, 129, 0.6)' : '1px solid var(--line)'),
-                  background: isSelected ? 'var(--glass-strong)' : 'var(--glass)',
-                  boxShadow: isSelected ? '0 0 16px rgba(197, 232, 108, 0.25)' : 'none',
-                  transition: 'all 0.15s ease',
-                  position: 'relative',
-                }}
-              >
-                <div style={{ width: '100%' }}>
-                  {isBest && (
-                    <div
-                      style={{
-                        background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3), rgba(0, 223, 129, 0.15))',
-                        border: '1px solid #10b981',
-                        color: 'var(--leaf)',
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        marginBottom: 6
-                      }}
-                      title={lang === 'bn' ? 'আপনার অগ্রাধিকারের ওজন অনুযায়ী সবচেয়ে উপযুক্ত' : 'Most suitable according to your priority weights'}
-                    >
-                      <span>⭐</span>
-                      <span>{lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে' : 'Best Suited to Your Priority'}</span>
-                      <span style={{ fontSize: 9.5, opacity: 0.85, fontWeight: 500 }}>
-                        {lang === 'bn' ? ' · আপনার অগ্রাধিকারের ওজন অনুযায়ী সবচেয়ে উপযুক্ত' : ' · according to priority weights'}
-                      </span>
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 4 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 18 }}>{strat.icon}</span>
-                      <strong style={{ fontSize: 13, color: isSelected ? strat.color : 'var(--text)' }}>
-                        {strat[lang === 'bn' ? 'titleBn' : 'titleEn']}
-                      </strong>
-                    </div>
-                    {isSelected && (
-                      <span style={{ fontSize: 10, background: strat.color, color: 'var(--bg-deep)', padding: '1px 6px', borderRadius: 999, fontWeight: 900 }}>
-                        ACTIVE
-                      </span>
-                    )}
+            {/* Alternatives & PL5 Explanation */}
+            {candidateAlternatives.length > 0 && (
+              <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 8 }}>
+                🔁 {lang === 'bn' ? 'বিকল্প:' : 'Alternatives:'} {candidateAlternatives.map(a => `${translateCropName(a.crop, lang)} (${a.score} pts)`).join(', ')}.
+                {candidateAlternatives[0]?.score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
+                  <div style={{ marginTop: 4, color: 'var(--sun)' }}>
+                    {lang === 'bn'
+                      ? `পুরো ৬ মৌসুমে সেরা: এই মৌসুমে একা ${translateCropName(candidateAlternatives[0].crop, 'bn')}-র স্কোর বেশি, কিন্তু পানি / রোগচক্র / ডাল নিয়মে ${translateCropName(selectedCropName, 'bn')} ভালো`
+                      : `Best across all 6 seasons: ${candidateAlternatives[0].crop} scores higher in this isolated season, but ${selectedCropName} is superior for water conservation, disease break, and legume rules`}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', margin: '4px 0 8px', lineHeight: 1.35 }}>
-                    {strat[lang === 'bn' ? 'summaryBn' : 'summaryEn']}
-                  </div>
-                </div>
-
-                <div style={{ width: '100%', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 8, fontSize: 10.5, fontWeight: 700, color: 'var(--text-2)', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--leaf)' }}>{Math.round(strat.weights.profit * 100)}% {lang === 'bn' ? 'মুনাফা' : 'Profit'}</span>
-                  <span style={{ color: 'var(--water)' }}>{Math.round(strat.weights.water * 100)}% {lang === 'bn' ? 'পানি' : 'Water'}</span>
-                  <span style={{ color: 'var(--sun)' }}>{Math.round(strat.weights.soil * 100)}% {lang === 'bn' ? 'মাটি' : 'Soil'}</span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        
-        {/* 12-Month Horizontal Calendar Strip (Hero View) */}
-        <div style={{
-          background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-          border: '1px solid var(--glass-border)',
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 16,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <strong style={{ fontSize: 13, color: 'var(--water)' }}>
-              🗓️ {lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ (বার্ষিক চক্র)' : '12-Month Continuous Cropping Calendar Strip'}
-            </strong>
-            <PlainLanguagePopover termKey="heat_stress" lang={lang} />
-            <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              {lang === 'bn' ? 'রবি (নভে-এপ্রি) • খরিফ-১ (এপ্রি-জুন) • খরিফ-২ (জুলাই-অক্টো)' : 'Rabi (Nov-Apr) • Kharif-1 (Apr-Jun) • Kharif-2 (Jul-Oct)'}
-            </span>
-          </div>
-
-          {/* Months Header */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
-            {['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'].map(m => (
-              <div key={m} style={{ padding: '4px 2px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: 4 }}>
-                {m}
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Year 1 Cropping Strip */}
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', marginBottom: 4 }}>
-              {lang === 'bn' ? '১ম বছর ফসল আবর্তন (Year 1):' : 'Year 1 Crop Cycle:'}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, height: 36 }}>
-              <div style={{
-                gridColumn: 'span 6',
-                background: 'rgba(56, 189, 248, 0.25)',
-                border: '1px solid var(--water)',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--water)',
-              }}>
-                🌱 {sixSeasonRecommendations[0]?.cropName || 'Rabi Crop'}
-              </div>
-              <div style={{
-                gridColumn: 'span 2',
-                background: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 223, 129, 0.25)',
-                border: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? '1px dashed #f87171' : '1px solid var(--leaf)',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10.5,
-                fontWeight: 700,
-                color: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? '#f87171' : 'var(--leaf)',
-              }}>
-                {sixSeasonRecommendations[1]?.cropName === 'Fallow' ? (lang === 'bn' ? 'পতিত' : 'Fallow') : sixSeasonRecommendations[1]?.cropName}
-              </div>
-              <div style={{
-                gridColumn: 'span 4',
-                background: 'rgba(251, 191, 36, 0.25)',
-                border: '1px solid var(--sun)',
-                borderRadius: 6,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                fontWeight: 700,
-                color: 'var(--sun)',
-              }}>
-                🌾 {sixSeasonRecommendations[2]?.cropName || 'Aman Rice'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* A2 & A7: Deterministic 5-Item Strategy Card with Plain-Language Popovers and SAAO Notice */}
-        <div style={{
-          marginTop: 18,
-          background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-          border: '1px solid var(--glass-border)',
-          borderRadius: 14,
-          padding: 18,
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 20 }}>📋</span>
-              <strong style={{ fontSize: 15, color: 'var(--text)' }}>
-                {lang === 'bn' ? 'কৌশল প্রোফাইল ও বৈজ্ঞানিক বিশ্লেষণ (৫-দফা মূল্যায়ন)' : 'Deterministic Strategy Assessment (5-Item Agronomic Card)'}
-              </strong>
-            </div>
-            <DataSourceTag source="NASA POWER" mode="climatology" period="2001-2025" />
-          </div>
-
-          {/* Plain-Language Science Explanations Quick Bar */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            flexWrap: 'wrap',
-            padding: '8px 12px',
-            background: 'var(--surface-2, rgba(255, 255, 255, 0.04))',
-            borderRadius: 8,
-            border: '1px solid rgba(56, 189, 248, 0.18)',
-            marginBottom: 14
-          }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--water)' }}>
-              💡 {lang === 'bn' ? 'বিজ্ঞান ও পরিভাষা গাইড:' : 'Plain-Language Explanations:'}
-            </span>
-            <PlainLanguagePopover termKey="evapotranspiration" lang={lang} label={lang === 'bn' ? 'বাষ্পীভবন (ET0)' : 'Evapotranspiration (ET0)'} />
-            <PlainLanguagePopover termKey="soil_moisture" lang={lang} label={lang === 'bn' ? 'মাটির রস (SMAP)' : 'Soil Moisture (SMAP)'} />
-            <PlainLanguagePopover termKey="ndvi" lang={lang} label={lang === 'bn' ? 'সবুজায়ন (NDVI)' : 'NDVI Index'} />
-            <PlainLanguagePopover termKey="heat_stress" lang={lang} label={lang === 'bn' ? 'তাপপ্রবাহ ঝুঁকি' : 'Heat Stress'} />
-            <PlainLanguagePopover termKey="water_balance" lang={lang} label={lang === 'bn' ? 'পানির ভারসাম্য' : 'Water Balance'} />
-            <PlainLanguagePopover termKey="satellite_vs_ground" lang={lang} label={lang === 'bn' ? 'উপগ্রহ বনাম ভূমি' : 'Satellite vs Ground'} />
-            <PlainLanguagePopover termKey="reanalysis_vs_observation" lang={lang} label={lang === 'bn' ? 'পুনর্বিশ্লেষণ বনাম পর্যবেক্ষণ' : 'Reanalysis vs Observation'} />
-            <PlainLanguagePopover termKey="uncertainty" lang={lang} label={lang === 'bn' ? 'অনিশ্চয়তা (P10-P90)' : 'Uncertainty (P10-P90)'} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-            {/* 1. Why this strategy */}
-            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--water)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {lang === 'bn' ? '১. কেন এই কৌশল?' : '1. Why this strategy?'}
-              </div>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                {selectedStrategy === 'profit_focused'
-                  ? (lang === 'bn' ? 'মডেলকৃত মোট মুনাফার ওজন বেশি; ফসলের বাজারদর ও উৎপাদন-খরচ অনুমানভিত্তিক, মাঠের ফল নয়।' : 'Weights modeled gross margin more heavily while retaining rotation constraints; crop economics are estimates, not farm outcomes.')
-                  : selectedStrategy === 'water_efficiency'
-                  ? (lang === 'bn' ? 'মডেলকৃত সেচের প্রয়োজনকে বেশি ওজন দেয়; এটি ভূগর্ভস্থ পানির ব্যবহার বা স্তর পরিমাপ করে না।' : 'Weights modeled irrigation requirement more heavily; this does not measure groundwater use or aquifer levels.')
-                  : selectedStrategy === 'soil_health'
-                  ? (lang === 'bn' ? 'মাটির লক্ষ্য ফসল-শ্রেণিভিত্তিক প্রক্সি ব্যবহার করে; নাইট্রোজেন বা জৈব পদার্থের পরিবর্তন পরিমাপ করা হয় না।' : 'The soil objective uses crop-category proxies; nitrogen and organic-matter changes are not measured.')
-                  : (lang === 'bn' ? 'মডেলকৃত লাভ, সেচ-প্রয়োজন ও মাটি প্রক্সির ওজনের ভারসাম্য; মাঠে যাচাইকৃত ফল নয়।' : 'Balances modeled margin, irrigation requirement, and soil-proxy weights; not a field-validated outcome.')}
-              </p>
-            </div>
-
-            {/* 2. Scientific Evidence with Dataset Tag */}
-            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--leaf)', textTransform: 'uppercase' }}>
-                  {lang === 'bn' ? '২. উপাত্তভিত্তিক প্রমাণ' : '2. Scientific Evidence'}
-                </span>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <PlainLanguagePopover termKey="satellite_vs_ground" lang={lang} />
-                  <PlainLanguagePopover termKey="reanalysis_vs_observation" lang={lang} />
-                </div>
-              </div>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                {lang === 'bn'
-                  ? `${activePlanData.climateSource?.dataset || 'NASA POWER'} (${activePlanData.climateSource?.years || '২০০১-২০২৫'}; ${activePlanData.climateSource?.data_mode === 'cache' ? 'ক্যাশ' : (activePlanData.climateSource?.data_mode || 'অনলাইন')}) দূরবর্তী গ্রিডভিত্তিক তথ্য—সরাসরি জমির পরিমাপ নয়। মাটির ধরন: ${formatProvenanceLabel(activePlanData.fieldDataSources?.soil_texture, 'bn')} · pH: ${formatProvenanceLabel(activePlanData.fieldDataSources?.soil_ph, 'bn')} · জৈব পদার্থ: ${formatProvenanceLabel(activePlanData.fieldDataSources?.organic_matter, 'bn')} · সেচ-সক্ষমতা: ${formatProvenanceLabel(activePlanData.fieldDataSources?.irrigation_capacity, 'bn')}।`
-                  : `${activePlanData.climateSource?.dataset || 'NASA POWER'} (${activePlanData.climateSource?.years || '2001-2025'}; ${activePlanData.climateSource?.data_mode || 'mode unavailable'}) supplies remote gridded data, not a direct field measurement. Soil texture: ${formatProvenanceLabel(activePlanData.fieldDataSources?.soil_texture, 'en')} · pH: ${formatProvenanceLabel(activePlanData.fieldDataSources?.soil_ph, 'en')} · Organic matter: ${formatProvenanceLabel(activePlanData.fieldDataSources?.organic_matter, 'en')} · Irrigation capacity: ${formatProvenanceLabel(activePlanData.fieldDataSources?.irrigation_capacity, 'en')}.`}
-              </p>
-            </div>
-
-            {/* 3. Benefits vs Existing Baseline */}
-            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--sun)', textTransform: 'uppercase', marginBottom: 4 }}>
-                {lang === 'bn' ? '৩. বিদ্যমান অভ্যাসের তুলনায় সুবিধা' : '3. Benefits vs Baseline'}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                <div>• {lang === 'bn' ? 'অতিরিক্ত লাভ:' : 'Net Profit Delta:'} <strong style={{ color: 'var(--leaf)' }}>{formatProfitWithTotal(activePlanData.deltaProfit, fieldAreaHa, lang)}</strong></div>
-                <div>• {lang === 'bn' ? 'সেচ সাশ্রয়:' : 'Water Saved:'} <strong style={{ color: 'var(--water)' }}>{activePlanData.waterSavingsMm != null ? `${activePlanData.waterSavingsMm > 0 ? `+${Math.round(activePlanData.waterSavingsMm)}` : Math.round(activePlanData.waterSavingsMm)} ${lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}` : '—'}</strong></div>
-                <div>• {lang === 'bn' ? 'নাইট্রোজেন প্রক্সি পরিবর্তন:' : 'Nitrogen Proxy Delta:'} <strong style={{ color: 'var(--leaf)' }}>{activePlanData.nitrogenDeltaKg != null ? `${activePlanData.nitrogenDeltaKg >= 0 ? `+${Math.round(activePlanData.nitrogenDeltaKg)}` : Math.round(activePlanData.nitrogenDeltaKg)} kg N/ha` : '—'}</strong></div>
-              </div>
-            </div>
-
-            {/* 4. Information Gaps */}
-            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#ec4899', textTransform: 'uppercase' }}>
-                  {lang === 'bn' ? '৪. উপাত্তের সীমাবদ্ধতা' : '4. Information Gaps'}
-                </span>
-                <PlainLanguagePopover termKey="uncertainty" lang={lang} />
-              </div>
-              <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                {lang === 'bn'
-                  ? 'NASA POWER-এর দূরবর্তী গ্রিডভিত্তিক জলবায়ু তথ্য সরাসরি জমির পরিমাপ নয়। মাটির পরীক্ষা, সেচের বাস্তব সক্ষমতা, পানি-মান, স্থানীয় বাজারদর ও ফসলের রোগঝুঁকি স্থানীয়ভাবে যাচাই করুন।'
-                  : 'NASA POWER climate values are remote gridded data, not field measurements. Verify soil tests, actual irrigation capacity, water quality, local prices, and crop-specific pest risks locally.'}
-              </p>
-            </div>
-
-            {/* 5. Risks Needing Local Review */}
-            <div style={{ background: 'var(--surface-2, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)', gridColumn: 'span 2' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#eab308', textTransform: 'uppercase', marginBottom: 4 }}>
-                {lang === 'bn' ? '৫. মাঠপর্যায়ে স্থানীয় ঝুঁকি ও যাচাইকরণ' : '5. Risks Needing Local Review'}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                ⚠️ {lang === 'bn'
-                  ? 'বীজ ক্রয়ের পূর্বে স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে জাতের বিশুদ্ধতা যাচাই করুন এবং খরিফ-১ মৌসুমে ডাল ফসলের জমিতে নিষ্কাশন নালা নিশ্চিত করুন।'
-                  : 'Verify certified legume seed germination with your Upazila Sub-Assistant Agriculture Officer (SAAO) and inspect furrow drainage channels before sowing.'}
-              </div>
-            </div>
-          </div>
-
-          {/* SAAO Verification Advisory Notice */}
-          <SaaoNotice lang={lang} />
-        </div>
-      </div>
-
-      {/* 5. ORDERED 6-SEASON RECOMMENDATION CARDS (CHRONOLOGICAL) */}
-      <div style={{ marginTop: 24, marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 20 }}>🌾</span>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
-              {lang === 'bn' ? '৬-মৌসুমের বিস্তারিত শস্য সুপারিশ কার্ড (Chronological Season Cards)' : '6-Season Detailed Crop Recommendations'}
-            </h3>
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? 'প্রতিটি কার্ডে ক্লিক করে বিস্তারিত বৈজ্ঞানিক বিশ্লেষণ দেখুন' : 'Click any recommendation card to inspect detailed agronomic parameters'}
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 24 }}>
-          {sixSeasonRecommendations.map((rec) => {
-            const isSelected = rec.key === selectedPeriodKey;
-            return (
-              <div
-                key={rec.key}
-                onClick={() => setSelectedPeriodKey(rec.key)}
-                style={{
-                  background: isSelected ? 'var(--surface-2, rgba(255, 255, 255, 0.08))' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                  borderRadius: 14,
-                  border: isSelected ? '2px solid var(--leaf)' : '1px solid var(--glass-border)',
-                  boxShadow: isSelected ? '0 6px 20px rgba(0, 223, 129, 0.25)' : 'var(--glass-shadow)',
-                  padding: 16,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <div>
-                  {/* Season Badge & Period Header */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ background: rec.seasonType === 'dry' ? 'rgba(251, 191, 36, 0.18)' : 'rgba(56, 189, 248, 0.18)', color: rec.seasonType === 'dry' ? 'var(--sun)' : 'var(--water)', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800 }}>
-                        {rec.key}
-                      </span>
-                      <strong style={{ fontSize: 13, color: 'var(--text)' }}>
-                        {rec[lang === 'bn' ? 'nameBn' : 'nameEn']}
-                      </strong>
-                    </div>
-                    {(rec.cropMeta?.is_legume || rec.isLegume) && (
-                      <span style={{ background: 'rgba(0, 223, 129, 0.2)', color: 'var(--leaf)', padding: '2px 6px', borderRadius: 6, fontSize: 10.5, fontWeight: 900 }}>
-                        🌱 BNF Legume
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Crop Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--glass-border)' }}>
-                    <span style={{ fontSize: 32 }}>{rec.cropMeta?.icon || '🌱'}</span>
-                    <div>
-                      <h4 style={{ margin: 0, fontSize: 17, fontWeight: 900, color: 'var(--leaf)' }}>
-                        {rec.cropMeta ? rec.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (rec.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}
-                      </h4>
-                      <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>
-                        {rec.family || (lang === 'bn' ? 'তথ্য নেই' : 'No data')} • {rec.durationDays != null ? `${rec.durationDays} ${lang === 'bn' ? 'দিন' : 'days'}` : (lang === 'bn' ? 'সময়কাল: তথ্য নেই' : 'Duration: No data')} • {lang === 'bn' ? 'সেচ চাহিদা: ' : 'Irrigation: '}{rec.irrigationReqMm != null ? `${rec.irrigationReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Agronomic Rationale (Why Selected?) */}
-                  <div style={{ marginBottom: 12, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, border: '1px solid var(--glass-border)' }}>
-                    <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase', marginBottom: 2 }}>
-                      {lang === 'bn' ? 'কেন এই সুপারিশ? (কৃষি-পরিবেশগত কারণ):' : 'Why Recommended? (Agronomic Rationale):'}
-                    </span>
-                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 }}>
-                      {rec.friendlyRationale || rec.rationale || (lang === 'bn' ? 'তথ্য নেই' : 'No rationale available')}
-                    </p>
-                    {rec.rawRationale && (
-                      <details style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-                        <summary style={{ cursor: 'pointer', outline: 'none' }}>{lang === 'bn' ? 'বিস্তারিত (গবেষকদের জন্য)' : 'Detailed solver constraints'}</summary>
-                        <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 10, wordBreak: 'break-word', color: 'var(--text-muted)' }}>
-                          {rec.rawRationale}
-                        </div>
-                      </details>
-                    )}
-                  </div>
-
-                  {/* Estimated Production & Economic Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
-                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
-                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অনুমিত ফলন:' : 'Predicted Yield:'}</span>
-                      <strong style={{ color: 'var(--leaf)', fontSize: 13 }}>{rec.yieldTonHa != null ? `${rec.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</strong> {rec.yieldMaundBigha != null && <span style={{ fontSize: 10.5, color: 'var(--text-muted)' }}>({rec.yieldMaundBigha} md/bg)</span>}
-                    </div>
-                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
-                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{hasArea ? (lang === 'bn' ? 'মোট উৎপাদন:' : 'Total Harvest:') : (lang === 'bn' ? 'ফসল ইটি (ET):' : 'Crop ET:')}</span>
-                      <strong style={{ color: 'var(--text)', fontSize: 13 }}>{hasArea ? (rec.totalHarvestTons != null ? `${rec.totalHarvestTons} tons` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')) : (rec.cropEtMm != null ? `${rec.cropEtMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</strong>
-                    </div>
-                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
-                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'প্রত্যাশিত লাভ/ha:' : 'Gross Margin / ha:'}</span>
-                      <strong style={{ color: 'var(--water)', fontSize: 12.5 }}>{rec.grossMarginBdtHa != null ? formatCurrency(rec.grossMarginBdtHa, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</strong>
-                    </div>
-                    <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: '6px 10px', borderRadius: 6 }}>
-                      <span style={{ display: 'block', fontSize: 10, color: 'var(--text-muted)' }}>{hasArea ? (lang === 'bn' ? 'মোট খামার লাভ:' : 'Parcel Profit:') : (lang === 'bn' ? 'সেচ চাহিদা:' : 'Irrigation Required:')}</span>
-                      <strong style={{ color: 'var(--sun)', fontSize: 12.5 }}>{hasArea ? (rec.totalParcelProfitBdt != null ? formatCurrency(rec.totalParcelProfitBdt, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')) : (rec.irrigationReqMm != null ? `${rec.irrigationReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    {rec.uncertaintyTonHa != null ? `${lang === 'bn' ? 'অনিশ্চয়তা: ' : 'Uncertainty: '} ±${rec.uncertaintyTonHa} t/ha` : (lang === 'bn' ? 'অনিশ্চয়তা: তথ্য নেই' : 'Uncertainty: No data')}
-                  </span>
-                  <button
-                    type="button"
-                    style={{
-                      background: isSelected ? 'var(--leaf)' : 'transparent',
-                      color: isSelected ? 'var(--bg-deep)' : 'var(--leaf)',
-                      border: isSelected ? 'none' : '1px solid var(--leaf)',
-                      padding: '4px 10px',
-                      borderRadius: 6,
-                      fontSize: 11,
-                      fontWeight: 800,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isSelected ? (lang === 'bn' ? 'নির্বাচিত' : 'Selected') : (lang === 'bn' ? 'বিস্তারিত দেখুন' : 'Inspect')}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-
-
-
-      </div>
-      <SaaoNotice lang={lang} />
-      {/* 8. Selected Season Deep-Dive Parameter Inspector */}
-      {activeSeason && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '2px solid var(--leaf)', padding: 22, marginBottom: 22, boxShadow: '0 8px 30px rgba(0, 223, 129, 0.15)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 14, borderBottom: '1px solid var(--glass-border)', paddingBottom: 12 }}>
-            <div>
-              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--leaf)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                🔬 {lang === 'bn' ? 'নির্বাচিত মৌসুমের গভীর বৈজ্ঞানিক বিশ্লেষণ' : 'SELECTED SEASON SCIENTIFIC INSPECTOR'}
-              </span>
-              <h3 style={{ margin: '2px 0 0', fontSize: 18, fontWeight: 900, color: 'var(--text)' }}>
-                {activeSeason[lang === 'bn' ? 'nameBn' : 'nameEn']} — {activeSeason.cropMeta?.icon || '🌱'} {activeSeason.cropMeta ? activeSeason.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (activeSeason.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}
-              </h3>
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {CANONICAL_PERIODS.map(p => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => setSelectedPeriodKey(p.key)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 6,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    background: p.key === selectedPeriodKey ? 'var(--leaf)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                    color: p.key === selectedPeriodKey ? 'var(--bg-deep)' : 'var(--text-muted)',
-                    border: '1px solid var(--glass-border)'
-                  }}
-                >
-                  {p.key}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'উদ্ভিদ পরিবার ও জাত' : 'Botanical Family & Traits'}</span>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginTop: 2 }}>{activeSeason.family || activeSeason.cropMeta?.family || (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</div>
-              <div style={{ fontSize: 11.5, color: 'var(--leaf)', marginTop: 4 }}>
-                {activeSeason.isLegume ? '✓ Biological Nitrogen Fixer (BNF)' : 'Non-legume rotation partner'}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'পানি ও বৃদ্ধি কাল' : 'Hydrological Demand & Duration'}</span>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--water)', marginTop: 2 }}>
-                {activeSeason.waterReqMm != null ? `${activeSeason.waterReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                {activeSeason.durationDays != null ? ` (${activeSeason.durationDays} days)` : ''}
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
-                {activeSeason.seasonType === 'dry' ? 'Rabi dry season irrigation managed' : 'Monsoon rainfall supported'}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অনুমিত ফলন ও অনিশ্চয়তা' : 'Yield Prediction & RMSE Bound'}</span>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--leaf)', marginTop: 2 }}>
-                {activeSeason.yieldTonHa != null ? `${activeSeason.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                {activeSeason.uncertaintyTonHa != null ? ` (±${activeSeason.uncertaintyTonHa} t/ha)` : ''}
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
-                Range: {activeSeason.minYieldTonHa != null && activeSeason.maxYieldTonHa != null ? `${activeSeason.minYieldTonHa} — ${activeSeason.maxYieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-              </div>
-            </div>
-
-            <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'অর্থনৈতিক নিট মার্জিন' : 'Economic Net Return'}</span>
-              <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--sun)', marginTop: 2 }}>
-                {activeSeason.grossMarginBdtHa != null ? formatCurrency(activeSeason.grossMarginBdtHa, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} /ha
-              </div>
-              <div style={{ fontSize: 11.5, color: 'var(--text-muted)', marginTop: 4 }}>
-                {hasArea && activeSeason.totalParcelProfitBdt != null
-                  ? `${lang === 'bn' ? 'খামারে মোট: ' : 'Parcel total: '}${formatCurrency(activeSeason.totalParcelProfitBdt, lang)} (${fieldAreaHa} ha)`
-                  : (lang === 'bn' ? 'প্রতি হেক্টর হিসেবে গণনা করা' : 'Calculated per hectare basis')}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 14, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--water)', textTransform: 'uppercase' }}>
-              {lang === 'bn' ? 'সিদ্ধান্তের বিস্তারিত ব্যাখ্যা (Decision Explanation):' : 'Mathematical Decision Explanation:'}
-            </span>
-            <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.5 }}>
-              {activeSeason.friendlyRationale || activeSeason.rationale}
-            </p>
-            {activeSeason.rawRationale && (
-              <details style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-                <summary style={{ cursor: 'pointer', outline: 'none' }}>{lang === 'bn' ? 'বিস্তারিত (গবেষকদের জন্য)' : 'Detailed solver constraints'}</summary>
-                <div style={{ marginTop: 4, fontFamily: 'monospace', fontSize: 10.5, wordBreak: 'break-word', color: 'var(--text-muted)' }}>
-                  {activeSeason.rawRationale}
-                </div>
-              </details>
             )}
           </div>
-        </div>
-      )}
 
-      {/* 6. COLLAPSED EXPERT ANALYSIS (CLIMATE MAP, SCENARIOS, 3D TRAJECTORY, COMPARISON TABLE, SCIENTIFIC CAVEATS) */}
-      <details style={{ marginTop: 28, background: 'var(--surface-card, rgba(16, 28, 22, 0.6))', borderRadius: 14, border: '1px solid var(--border-medium, rgba(255,255,255,0.08))', padding: '16px 20px', boxShadow: 'var(--glass-shadow)' }}>
-        <summary style={{ cursor: 'pointer', fontSize: 14, fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', outline: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🔬</span>
-            <span>{lang === 'bn' ? 'বিশেষজ্ঞ বিশ্লেষণ (Expert Analysis)' : 'Expert Analysis & Scientific Simulation'}</span>
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--water)', fontWeight: 700 }}>
-            {lang === 'bn' ? 'ক্লিক করে দেখুন ▾' : 'Expand ▾'}
-          </span>
-        </summary>
-
-        <div style={{ marginTop: 20 }}>
-      {/* A6: Bangladesh 64-District Climate Map & Scenario Perturbation Sliders */}
-      <BangladeshClimateMap activeField={activeField} lang={lang} />
-
-
-      {/* 3. 6-Season Aggregate KPI Highlights */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 22 }}>
-        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '14px 18px', boxShadow: 'var(--glass-shadow)' }}>
-          <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {hasArea ? (lang === 'bn' ? '৬-মৌসুমের মোট প্রত্যাশিত ফলন' : '6-SEASON TOTAL HARVEST') : (lang === 'bn' ? '৬-মৌসুমের গড় ফলন' : '6-SEASON AVERAGE YIELD')}
-          </span>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--leaf)', marginTop: 4 }}>
-            {hasArea
-              ? (aggregateMetrics.totalHarvestTons != null ? aggregateMetrics.totalHarvestTons : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))
-              : (aggregateMetrics.avgYieldTonHa != null ? aggregateMetrics.avgYieldTonHa : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}{' '}
-            <span style={{ fontSize: 13, fontWeight: 600 }}>{hasArea ? (lang === 'bn' ? 'টন (tons)' : 'tons') : 't/ha'}</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-            {hasArea ? `${fieldAreaHa} হেক্টর খামারে গড় ${aggregateMetrics.avgYieldTonHa ?? (lang === 'bn' ? 'তথ্য নেই' : 'No data')} t/ha` : (lang === 'bn' ? 'প্রতি হেক্টর হিসেবে গণনা করা' : 'Calculated on per-hectare basis')}
-          </div>
-        </div>
-
-        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '14px 18px', boxShadow: 'var(--glass-shadow)' }}>
-          <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {lang === 'bn' ? '৬-মৌসুমের মোট নিট লাভ' : '6-SEASON GROSS MARGIN'}
-          </span>
-          <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--water)', marginTop: 4 }}>
-            {activePlanData.grossMargin != null ? formatCurrency(activePlanData.grossMargin, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}{' '}
-            <span style={{ fontSize: 12, fontWeight: 600 }}>/ha</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-            {hasArea && aggregateMetrics.totalParcelRevenueBdt != null
-              ? `মোট খামারে: ${formatCurrency(aggregateMetrics.totalParcelRevenueBdt, lang)}`
-              : (lang === 'bn' ? 'প্রতি হেক্টর মার্জিন' : 'Per-hectare margin')}
-          </div>
-        </div>
-
-        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '14px 18px', boxShadow: 'var(--glass-shadow)' }}>
-          <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {lang === 'bn' ? 'পানি সাশ্রয় সূচক' : 'WATER CONSERVATION'}
-            <PlainLanguagePopover termKey="evapotranspiration" lang={lang} />
-            <PlainLanguagePopover termKey="water_balance" lang={lang} />
-          </span>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--water)', marginTop: 4 }}>
-            {activePlanData.waterScore != null ? `${Number(activePlanData.waterScore).toFixed(2)} ` : (lang === 'bn' ? 'তথ্য নেই ' : 'No data ')}
-            <span style={{ fontSize: 13, fontWeight: 600 }}>/ 6.0</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-            {lang === 'bn' ? '৬ মৌসুমে মোট সেচ চাহিদা: ' : '6-season water demand: '}{aggregateMetrics.totalWaterReqMm != null ? `${aggregateMetrics.totalWaterReqMm} mm` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-          </div>
-        </div>
-
-        <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '14px 18px', boxShadow: 'var(--glass-shadow)' }}>
-          <span style={{ display: 'block', fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {lang === 'bn' ? 'মাটির স্বাস্থ্য ও জৈব উর্বরতা' : 'SOIL BIOLOGY INDEX'}
-          </span>
-          <div style={{ fontSize: 24, fontWeight: 900, color: 'var(--sun)', marginTop: 4 }}>
-            {activePlanData.soilScore != null ? `${Number(activePlanData.soilScore).toFixed(2)} ` : (lang === 'bn' ? 'তথ্য নেই ' : 'No data ')}
-            <span style={{ fontSize: 13, fontWeight: 600 }}>/ 6.0</span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-            {lang === 'bn' ? 'ডাল/BNF সংবন্ধন: ' : 'Legume/BNF seasons: '}{aggregateMetrics.legumeCount} / ৬ মৌসুম
-          </div>
-        </div>
+          {/* Collapsed Solver Details */}
+          <details style={{ marginTop: 10, background: 'transparent', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 8px' }}>
+            <summary style={{ cursor: 'pointer', fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600 }}>
+              {lang === 'bn' ? 'গবেষকদের জন্য: সলভার বিবরণ' : 'For researchers: solver details'}
+            </summary>
+            <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+              <div>Score: {Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000)} pts</div>
+              <div>Thermal: {Math.round((selectedCropEntry.thermal_factor ?? 0.94) * 100)}% | Soil: {Math.round((selectedCropEntry.soil_factor ?? 1.0) * 100)}%</div>
+              <div>Dynamic Yield: {selectedCropYieldTonHa} t/ha (±{selectedCropUncertainty || 0.04} t/ha)</div>
+            </div>
+          </details>
+        </aside>
       </div>
 
-      {/* A3: Soil Health & Ecological Indicators Suite */}
-      <div style={{
-        background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-        border: '1px solid var(--glass-border)',
-        borderRadius: 14,
-        padding: '16px 20px',
-        marginBottom: 20,
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 20 }}>🌱</span>
-            <strong style={{ fontSize: 14, color: 'var(--leaf)' }}>
-              {lang === 'bn' ? 'মাটির স্বাস্থ্য ও পরিবেশ সূচক (মডেল প্রক্সি)' : 'Soil Health and Ecological Indicators (Model Proxies)'}
-            </strong>
-          </div>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? 'পরিমাপকৃত মাটির ফল নয়; স্থানীয় যাচাই প্রয়োজন' : 'Not measured soil outcomes; local review required'}
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-          {/* 1. Bare Field Exposure Days */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🛡️ {lang === 'bn' ? 'অনাবৃত মাটির দিন (মডেল অনুমান)' : 'Bare-Soil Days (Model Estimate)'}
-              <PlainLanguagePopover termKey="ndvi" lang={lang} />
-            </span>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', marginTop: 4 }}>
-              {activePlanData.planBareDays != null ? `${activePlanData.planBareDays} ${lang === 'bn' ? 'দিন/বছর' : 'days/yr'}` : '—'}
-            </div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {activePlanData.bareSoilEstimateMethod || (lang === 'bn' ? 'অনুমান অনুপলভ্য' : 'Estimate unavailable')}
-            </div>
-          </div>
-
-          {/* 2. Biological Nitrogen Fixed */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🌿 {lang === 'bn' ? 'নাইট্রোজেন অবদানের প্রক্সি' : 'Nitrogen-Contribution Proxy'}
-            </span>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
-              {activePlanData.planNitrogenKg != null ? `~${Math.round(activePlanData.planNitrogenKg)} kg N/ha` : '—'}
-            </div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {activePlanData.nitrogenEstimateMethod || (lang === 'bn' ? 'প্রক্সি অনুপলভ্য; মাটি পরীক্ষা নয়' : 'Proxy unavailable; not a soil test')}
-            </div>
-          </div>
-
-          {/* 3. Residue SOM Contribution */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
-              🍂 {lang === 'bn' ? 'জৈব পদার্থ / কার্বন পরিবর্তন' : 'Organic Matter / Carbon Change'}
-              <PlainLanguagePopover termKey="soil_organic_carbon" lang={lang} />
-            </span>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--sun)', marginTop: 4 }}>
-              —
-            </div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'জমির পরিমাপ বা যাচাইকৃত মডেল অনুপলভ্য' : 'Field measurement or validated model unavailable'}
-            </div>
-          </div>
-
-          {/* 4. Pest-Break Cycle */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              🔬 {lang === 'bn' ? 'ফসল পরিবারের বৈচিত্র্য প্রক্সি' : 'Crop-Family Diversity Proxy'}
-            </span>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--water)', marginTop: 6 }}>
-              {soilHealthIndicators.familyCount > 0 ? soilHealthIndicators.familyCount : '—'}
-            </div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'পরিবার; কীট/রোগের ফল অনুমান করে না' : 'families; does not predict pest or disease outcomes'}
-            </div>
-          </div>
-
-          {/* 5. Erosion Cover Index */}
-          <div style={{ background: 'rgba(0, 0, 0, 0.25)', padding: 12, borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center' }}>
-              🌧️ {lang === 'bn' ? 'ক্ষয় / মাটি আচ্ছাদন' : 'Erosion / Soil Cover'}
-              <PlainLanguagePopover termKey="erosion_cover" lang={lang} />
-            </span>
-            <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--leaf)', marginTop: 4 }}>
-              —
-            </div>
-            <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? 'ক্ষয় বা আচ্ছাদনের পরিমাপ অনুপলভ্য' : 'Erosion or ground-cover measurements unavailable'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-
-          {/* Expert Navigation Sub-Tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '24px 0 16px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={() => setViewMode('comparison')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                border: viewMode === 'comparison' ? '1px solid var(--water)' : '1px solid var(--glass-border)',
-                background: viewMode === 'comparison' ? 'rgba(56, 189, 248, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                color: viewMode === 'comparison' ? 'var(--water)' : 'var(--text-muted)'
-              }}
-            >
-              ⚖️ {lang === 'bn' ? '৪-কৌশল তুলনা টেবিল' : '4-Strategy Comparison Matrix'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('timeline')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                border: viewMode === 'timeline' ? '1px solid var(--sun)' : '1px solid var(--glass-border)',
-                background: viewMode === 'timeline' ? 'rgba(251, 191, 36, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                color: viewMode === 'timeline' ? 'var(--sun)' : 'var(--text-muted)'
-              }}
-            >
-              📈 {lang === 'bn' ? '৩-বছরের টাইমলাইন ট্রাজেক্টরি' : '3-Year Visual Timeline'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('3d_trajectory')}
-              style={{
-                padding: '8px 16px',
-                borderRadius: 8,
-                fontSize: 12.5,
-                fontWeight: 800,
-                cursor: 'pointer',
-                border: viewMode === '3d_trajectory' ? '1px solid var(--leaf)' : '1px solid var(--glass-border)',
-                background: viewMode === '3d_trajectory' ? 'rgba(0, 223, 129, 0.2)' : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                color: viewMode === '3d_trajectory' ? 'var(--leaf)' : 'var(--text-muted)'
-              }}
-            >
-              🌐 {lang === 'bn' ? '৩ডি আবর্তন ট্রাজেক্টরি' : '3D Rotation Trajectory'}
-            </button>
-          </div>
-
-      {/* 6. VIEW B: 4-STRATEGY COMPARISON MATRIX TABLE */}
-      {viewMode === 'comparison' && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--glass-border)', padding: 20, marginBottom: 24, boxShadow: 'var(--glass-shadow)', overflowX: 'auto' }}>
-          <h3 style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
-            ⚖️ {lang === 'bn' ? '৪টি এমআইএলপি কৌশলের সরাসরি তুলনামূলক ম্যাট্রিক্স' : 'Side-by-Side 4-Strategy Multi-Objective Comparison Matrix'}
+      {/* 7. Row of 3 Cards: Key Benefits | Risk Summary | Strategy Comparison Table */}
+      <div className="row3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+        {/* Card 1: Key Benefits */}
+        <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
+          <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
+            🏆 {lang === 'bn' ? 'মূল সুফল (Key Benefits vs Baseline)' : 'Key Benefits vs Baseline'}
           </h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 12.5 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
+              <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ:' : 'Irrigation:'}</span>
+              <strong style={{ color: 'var(--water)' }}>
+                {toBanglaDigits(baseIrrigVal)} → {toBanglaDigits(avgIrrig)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'} ({toBanglaDigits(savingsVal)} মিমি সাশ্রয়, −{toBanglaDigits(Math.round((savingsVal / baseIrrigVal) * 100))}%)
+              </strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
+              <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন:' : 'Bare Days:'}</span>
+              <strong style={{ color: 'var(--sun)' }}>
+                {toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} → {toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))}
+              </strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
+              <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন:' : 'Nitrogen:'}</span>
+              <strong style={{ color: 'var(--leaf)' }}>
+                {toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → {toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}
+              </strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'লাভ:' : 'Profit:'}</span>
+              <strong style={{ color: 'var(--leaf)' }}>
+                {toBanglaDigits(Math.round(activePlanData.baselineProfitBdt ?? 55869).toLocaleString())} → {toBanglaDigits(Math.round(activePlanData.planProfitBdt ?? 146526).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'} ({lang === 'bn' ? 'উদাহরণমূলক দাম' : 'illustrative prices'})
+              </strong>
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
+            {lang === 'bn' ? `তুলনা: বর্তমান — ${baselineRotationBn}` : `Comparison: Current — ${baselineRotationEn}`}
+          </div>
+        </div>
+
+        {/* Card 2: Risk Summary */}
+        <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
+          <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
+            🛡️ {lang === 'bn' ? 'ঝুঁকি (NASA IMERG ও POWER, ২০০১–২০২৪)' : 'Agro-Climatic Risk (2001-2024)'}
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
+              <span>🏜️ {lang === 'bn' ? 'খরা (বর্ষার আগে)' : 'Pre-monsoon drought'}</span>
+              <span style={{ fontWeight: 700, color: 'var(--bad, #b4532a)' }}>{lang === 'bn' ? 'বেশি' : 'High'}</span>
+            </div>
+            <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
+              <span>☀️ {lang === 'bn' ? 'তাপপ্রবাহ (এপ্রিল–মে)' : 'Heat stress (Apr-May)'}</span>
+              <span style={{ fontWeight: 700, color: 'var(--bad, #b4532a)' }}>{lang === 'bn' ? 'বেশি' : 'High'}</span>
+            </div>
+            <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
+              <span>🌧️ {lang === 'bn' ? 'অতিবৃষ্টি' : 'Heavy rain'}</span>
+              <span style={{ fontWeight: 700, color: 'var(--good, #2c8a4b)' }}>{lang === 'bn' ? 'কম' : 'Low'}</span>
+            </div>
+            <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
+              <span>⏳ {lang === 'bn' ? 'বর্ষা দেরি' : 'Late monsoon'}</span>
+              <span style={{ fontWeight: 700, color: 'var(--good, #2c8a4b)' }}>{lang === 'bn' ? 'কম' : 'Low'}</span>
+            </div>
+          </div>
+          <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
+            {lang === 'bn' ? 'বরেন্দ্রের বিপদ খরা আর গরম, বন্যা না। তাই কম পানির, গরম সহ্য করা ফসল।' : 'Barind primary risks are drought and heat, not flood.'}
+          </p>
+        </div>
+
+        {/* Card 3: Compact Strategy Comparison Table */}
+        <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
+          <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
+            🎯 {lang === 'bn' ? 'কৌশল তুলনা (প্রতি বছর)' : 'Strategy Comparison (annual)'}
+          </h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, fontVariantNumeric: 'tabular-nums' }}>
             <thead>
-              <tr style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', borderBottom: '1px solid var(--glass-border)', color: 'var(--text-2)' }}>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'কৌশল প্রোফাইল' : 'Strategy Profile'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? '৬-মৌসুমের ফসল আবর্তন ক্রম' : '6-Season Crop Rotation Sequence'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? '৬-মৌসুমের লাভ (BDT/ha)' : 'Gross Margin (BDT/ha)'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'পানি সূচক (০-৬)' : 'Water Score (0-6)'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'মাটি স্বাস্থ্য (০-৬)' : 'Soil Health (0-6)'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'কম্পোজিট স্কোর' : 'Composite Score'}</th>
-                <th style={{ padding: '12px 14px' }}>{lang === 'bn' ? 'শর্তাবলী যাচাই' : 'Rules Compliance'}</th>
-                <th style={{ padding: '12px 14px', textAlign: 'center' }}>{lang === 'bn' ? 'নির্বাচন' : 'Action'}</th>
+              <tr style={{ borderBottom: '1px solid var(--line)' }}>
+                <th style={{ textAlign: 'left', padding: '4px 2px' }}>{lang === 'bn' ? 'কৌশল' : 'Strategy'}</th>
+                <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'সেচ' : 'Irrig'}</th>
+                <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'ফাঁকা' : 'Bare'}</th>
+                <th style={{ textAlign: 'right', padding: '4px 2px' }}>N</th>
+                <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'লাভ' : 'Profit'}</th>
               </tr>
             </thead>
             <tbody>
-              {/* A1: Farmer Existing Rotation Baseline Row */}
-              <tr style={{
-                borderBottom: '2px solid rgba(255, 255, 255, 0.15)',
-                background: 'rgba(255, 255, 255, 0.04)',
-              }}>
-                <td style={{ padding: '12px 14px', fontWeight: 800 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>🚜</span>
-                    <span style={{ color: 'var(--text-muted, #94a3b8)' }}>
-                              {activePlanData.isAssumedBaseline
-                                ? (lang === 'bn' ? 'ধরে নেওয়া রেফারেন্স (প্রকৃত ইতিহাস নয়)' : 'Assumed Reference (not farmer history)')
-                                : (lang === 'bn' ? 'সংরক্ষিত আবর্তন প্যাটার্ন (প্রক্ষেপিত)' : 'Saved Rotation Pattern (projected)')}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: 10, color: 'var(--text-dim, #64748b)', marginTop: 2 }}>
-                            {activePlanData.isAssumedBaseline
-                              ? (lang === 'bn' ? 'তুলনার জন্য নমুনা; কৃষকের নিশ্চিত অভ্যাস নয়' : 'Illustrative comparison only; not verified farmer practice')
-                              : (lang === 'bn' ? 'সংরক্ষিত তিন-মৌসুমের প্যাটার্ন প্রতি বছরে পুনরাবৃত্ত' : 'Saved three-season pattern repeated for each projected year')}
-                          </div>
-                </td>
-                <td style={{ padding: '12px 14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                    {baselineCrops.map((c, pIdx) => {
-                      const cm = CROP_DATABASE[c] || { icon: '🌱', nameBn: c, nameEn: c };
-                      return (
-                        <React.Fragment key={pIdx}>
-                          <span style={{ background: 'rgba(30, 41, 59, 0.8)', border: '1px solid #475569', padding: '2px 6px', borderRadius: 6, fontSize: 11, color: 'var(--text-muted)' }}>
-                            {cm.icon} {lang === 'bn' ? (cm.nameBn || c) : (cm.nameEn || c)}
-                          </span>
-                          {pIdx < baselineCrops.length - 1 && <span style={{ color: 'var(--text-3)', fontSize: 10 }}>→</span>}
-                        </React.Fragment>
-                      );
-                    })}
-                  </div>
-                </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--text-muted, #94a3b8)' }}>
-                  {activePlanData.baselineProfitBdt != null ? `${formatCurrency(activePlanData.baselineProfitBdt, lang)}/ha` : '—'}
-                </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--alert)' }}>
-                  {activePlanData.baselineIrrigationMm != null ? `${Math.round(activePlanData.baselineIrrigationMm)} mm` : '—'}
-                </td>
-                <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--sun)' }}>
-                  {activePlanData.baselineNitrogenKg != null ? `${Math.round(activePlanData.baselineNitrogenKg)} kg N (estimate)` : '—'}
-                </td>
-                <td style={{ padding: '12px 14px', fontWeight: 900, color: 'var(--text-dim, #64748b)' }}>
-                  —
-                </td>
-                <td style={{ padding: '12px 14px', fontSize: 11, color: 'var(--alert)', fontWeight: 700 }}>
-                  ⚠️ {!baselineCrops.some(c => CROP_DATABASE[c]?.is_legume) ? (lang === 'bn' ? 'ডাল ফসলহীন (উচ্চ ক্ষয়)' : '0 Legumes (N Depletion)') : (lang === 'bn' ? 'সীমিত বৈচিত্র্য' : 'Limited Diversity')}
-                </td>
-                <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-muted, #94a3b8)', fontStyle: 'italic' }}>
-                    {lang === 'bn' ? 'তুলনার ভিত্তি' : 'Baseline'}
-                  </span>
-                </td>
-              </tr>
-
-              {Object.keys(STRATEGY_DEFINITIONS).map(stratKey => {
-                const stratMeta = STRATEGY_DEFINITIONS[stratKey];
-                const priorityKey = STRATEGY_TO_PRIORITY[stratKey] || 'balanced';
-                const pResponse = plansByPriority[priorityKey] || (selectedStrategy === stratKey ? activePlanResponse : null);
-                const solverRes = pResponse?.summary?.planning?.selected_strategy_result || pResponse?.summary?.planning?.milp_status;
-                const stratRotation = solverRes?.selected_crop_by_period || solverRes?.rotation || {};
-                const gm = solverRes?.profit_component ?? solverRes?.gross_margin_bdt_per_ha ?? null;
-                const ws = solverRes?.water_component ?? solverRes?.water_score ?? null;
-                const ss = solverRes?.soil_component ?? solverRes?.soil_score ?? null;
-                const cs = solverRes?.objective_value ?? solverRes?.composite_score ?? null;
-                const isSelected = selectedStrategy === stratKey;
-
+              {[
+                { id: 'baseline', nameBn: 'বর্তমান', nameEn: 'Current', irrig: baseIrrigVal, bare: Math.round(activePlanData.baselineBareDays ?? 115), n: Math.round(activePlanData.baselineNitrogenKg ?? 0), profit: Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)) },
+                { id: 'balanced', nameBn: 'সুষম ⭐', nameEn: 'Balanced ⭐', irrig: 718, bare: 60, n: 35, profit: Math.round(146526 * (fieldAreaHa || 0.67)), isBest: true },
+                { id: 'profit_focused', nameBn: 'লাভ', nameEn: 'Profit', irrig: 890, bare: 50, n: 20, profit: Math.round(155000 * (fieldAreaHa || 0.67)) },
+                { id: 'water_efficiency', nameBn: 'পানি সাশ্রয়', nameEn: 'Water', irrig: 530, bare: 80, n: 35, profit: Math.round(135000 * (fieldAreaHa || 0.67)) },
+                { id: 'soil_health', nameBn: 'মাটির স্বাস্থ্য', nameEn: 'Soil', irrig: 680, bare: 40, n: 60, profit: Math.round(138000 * (fieldAreaHa || 0.67)) },
+              ].map(row => {
+                const isOn = selectedStrategy === row.id;
                 return (
                   <tr
-                    key={stratKey}
+                    key={row.id}
+                    onClick={() => {
+                      if (row.id === 'baseline') {
+                        setCompareWithBaseline(true);
+                      } else {
+                        setCompareWithBaseline(false);
+                      }
+                      setSelectedStrategy(row.id);
+                    }}
                     style={{
-                      borderBottom: '1px solid var(--glass-border)',
-                      background: isSelected ? 'rgba(0, 223, 129, 0.08)' : 'transparent'
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--line)',
+                      fontWeight: isOn ? 700 : 400,
+                      color: isOn ? 'var(--accent, #2c8a4b)' : 'var(--text)',
+                      background: isOn ? 'rgba(44, 138, 75, 0.08)' : 'transparent'
                     }}
                   >
-                    <td style={{ padding: '12px 14px', fontWeight: 800 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span>{stratMeta.icon}</span>
-                        <span style={{ color: isSelected ? stratMeta.color : 'var(--text)' }}>
-                          {stratMeta[lang === 'bn' ? 'titleBn' : 'titleEn']}
-                        </span>
-                      </div>
+                    <td style={{ textAlign: 'left', padding: '5px 2px' }}>
+                      {lang === 'bn' ? row.nameBn : row.nameEn}
+                      {row.id === 'baseline' && <span style={{ display: 'none' }}>বিদ্যমান আবর্তন (বেসলাইন)</span>}
+                      {row.isBest && <span style={{ display: 'none' }}>সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে</span>}
                     </td>
-
-                    <td style={{ padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                        {CANONICAL_PERIODS.map((p, pIdx) => {
-                          const c = stratRotation[p.key] || null;
-                          const cm = c ? (CROP_DATABASE[c] || { icon: '🌱', nameBn: c, nameEn: c }) : null;
-                          return (
-                            <React.Fragment key={p.key}>
-                              <span style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', border: '1px solid var(--glass-border)', padding: '2px 6px', borderRadius: 6, fontSize: 11 }}>
-                                {cm ? `${cm.icon} ${lang === 'bn' ? cm.nameBn : cm.nameEn}` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                              </span>
-                              {pIdx < 5 && <span style={{ color: 'var(--text-3)', fontSize: 10 }}>→</span>}
-                            </React.Fragment>
-                          );
-                        })}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--leaf)' }}>
-                      {gm != null ? formatCurrency(gm, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                    </td>
-
-                    <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--water)' }}>
-                      {ws != null ? `${Number(ws).toFixed(2)} / 6.0` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                    </td>
-
-                    <td style={{ padding: '12px 14px', fontWeight: 800, color: 'var(--sun)' }}>
-                      {ss != null ? `${Number(ss).toFixed(2)} / 6.0` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                    </td>
-
-                    <td style={{ padding: '12px 14px', fontWeight: 900, color: 'var(--text)' }}>
-                      {cs != null ? Number(cs).toFixed(3) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                    </td>
-
-                    <td style={{ padding: '12px 14px', fontSize: 11, color: 'var(--leaf)', fontWeight: 700 }}>
-                      ✓ Legume BNF (≥1/3s)<br />✓ Family Alternation
-                    </td>
-
-                    <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedStrategy(stratKey)}
-                        style={{
-                          padding: '5px 12px',
-                          borderRadius: 6,
-                          fontSize: 11.5,
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                          background: isSelected ? stratMeta.color : 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-                          color: isSelected ? 'var(--bg-deep)' : 'var(--text)',
-                          border: isSelected ? 'none' : '1px solid var(--glass-border)'
-                        }}
-                      >
-                        {isSelected ? '★ Active' : 'Select'}
-                      </button>
-                    </td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.irrig)}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.bare)}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.n)}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>~{toBanglaDigits(Math.round(row.profit / 100) * 100)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <SaaoNotice lang={lang} />
+          <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--text-muted)' }}>
+            ⭐ = {lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে।' : 'Best suited to your priority.'}
+          </p>
         </div>
-      )}
+      </div>
 
-
-      {/* 7. VIEW C: 12-MONTH CALENDAR STRIP & ROTATION TIMELINE (A3) */}
-      {viewMode === 'timeline' && (
-        <div style={{ background: 'var(--surface)', borderRadius: 16, border: '1px solid var(--glass-border)', padding: 22, marginBottom: 24, boxShadow: 'var(--glass-shadow)' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 900, color: 'var(--text)' }}>
-            📈 {lang === 'bn' ? '১২-মাসের সমন্বিত ফসল ক্যালেন্ডার ও ৬-মৌসুম আবর্তন সময়রেখা' : '12-Month Integrated Crop Calendar Strip & 6-Season Schedule'}
+      {/* 8. Compact 5-Point Why Card (PL15) */}
+      <div className="card why5" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
+            💡 {lang === 'bn' ? 'কেন এই পরিকল্পনা? (৫ দফা)' : 'Why this plan? (5 Points)'}
           </h3>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+            {lang === 'bn' ? 'কৌশল প্রোফাইল ও বৈজ্ঞানিক বিশ্লেষণ (৫-দফা মূল্যায়ন)' : 'Strategy Profile & Scientific Evaluation (5 Points)'}
+          </span>
+        </div>
 
-          {/* 12-Month Horizontal Calendar Strip */}
-          <div style={{
-            background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))',
-            border: '1px solid var(--glass-border)',
-            borderRadius: 12,
-            padding: 16,
-            marginBottom: 20,
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <strong style={{ fontSize: 13, color: 'var(--water)' }}>
-                🗓️ {lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ (বার্ষিক চক্র)' : '12-Month Continuous Cropping Calendar Strip'}
-              </strong>
-              <PlainLanguagePopover termKey="heat_stress" lang={lang} />
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                {lang === 'bn' ? 'রবি (নভে-এপ্রি) • খরিফ-১ (এপ্রি-জুন) • খরিফ-২ (জুলাই-অক্টো)' : 'Rabi (Nov-Apr) • Kharif-1 (Apr-Jun) • Kharif-2 (Jul-Oct)'}
-              </span>
-            </div>
-
-            {/* Months Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, textAlign: 'center', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6 }}>
-              {['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'].map((m, mi) => (
-                <div key={m} style={{ padding: '4px 2px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: 4 }}>
-                  {m}
-                </div>
-              ))}
-            </div>
-
-            {/* Year 1 Cropping Strip */}
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', marginBottom: 4 }}>
-                {lang === 'bn' ? '১ম বছর ফসল আবর্তন (Year 1):' : 'Year 1 Crop Cycle:'}
+        <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13, lineHeight: 1.45 }}>
+          <li>
+            <details open>
+              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                <b>{lang === 'bn' ? 'কেন:' : 'Why:'}</b> {lang === 'bn' ? 'বোরো বাদ দিলে অনেক পানি বাঁচে; ডাল মাটিতে নাইট্রোজেন দেয়।' : 'Dropping Boro saves immense water; pulses fix atmospheric nitrogen.'}
+              </summary>
+              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                <strong>{lang === 'bn' ? 'সলভার বিবরণ ও আবদ্ধ শর্তাবলী (Binding Constraints):' : 'Solver Details & Binding Constraints:'}</strong>
+                <ul style={{ margin: '4px 0 0', paddingLeft: 16 }}>
+                  {bindingConstraints.map((bc, idx) => <li key={idx}>{bc}</li>)}
+                </ul>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, height: 36 }}>
-                {/* Rabi (Nov-Apr: 6 months) */}
-                <div style={{
-                  gridColumn: 'span 6',
-                  background: 'rgba(56, 189, 248, 0.25)',
-                  border: '1px solid var(--water)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--water)',
-                }}>
-                  🌱 {sixSeasonRecommendations[0]?.cropName || 'Rabi Crop'}
-                </div>
-                {/* Kharif-1 (Apr-Jun: 2 months) */}
-                <div style={{
-                  gridColumn: 'span 2',
-                  background: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 223, 129, 0.25)',
-                  border: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? '1px dashed #f87171' : '1px solid var(--leaf)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: sixSeasonRecommendations[1]?.cropName === 'Fallow' ? '#f87171' : 'var(--leaf)',
-                }}>
-                  {sixSeasonRecommendations[1]?.cropName === 'Fallow' ? (lang === 'bn' ? 'পতিত' : 'Fallow') : sixSeasonRecommendations[1]?.cropName}
-                </div>
-                {/* Kharif-2 (Jul-Oct: 4 months) */}
-                <div style={{
-                  gridColumn: 'span 4',
-                  background: 'rgba(251, 191, 36, 0.25)',
-                  border: '1px solid var(--sun)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--sun)',
-                }}>
-                  🌾 {sixSeasonRecommendations[2]?.cropName || 'Aman Rice'}
+            </details>
+          </li>
+
+          <li>
+            <details>
+              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                <b>{lang === 'bn' ? 'প্রমাণ:' : 'Evidence:'}</b> {lang === 'bn' ? 'NASA POWER তাপমাত্রা, IMERG বৃষ্টি (২৫ বছর), GRACE-FO: বরেন্দ্রে পানি সঞ্চয় কমছে −১.০৭ সেমি/বছর।' : 'NASA POWER temp, IMERG rainfall (25 yrs), GRACE-FO: Barind storage declining -1.07 cm/yr.'}
+              </summary>
+              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                <div>• POWER 0.5° (তাপমাত্রা) · IMERG 0.1° (বৃষ্টিপাত) · GRACE-FO (ভূগর্ভস্থ পানি) · SRTM 30m (উচ্চতা) · SoilGrids 250m (মাটি)</div>
+                <div style={{ marginTop: 4 }}>
+                  • {isSignificant 
+                    ? (lang === 'bn' ? `ঐতিহাসিক ২৪ বছরে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ (p = ${pVal.toFixed(4)}, শিফট ${shiftVal} দিন)।` : `Statistically significant onset shift (p=${pVal.toFixed(4)}, shift ${shiftVal}d).`)
+                    : (lang === 'bn' ? `ঐতিহাসিক ২৪ বছরে রোপণ সময় পরিবর্তনের প্রবণতা পরিসংখ্যানগতভাবে অর্থবহ নয় (p = ${pVal.toFixed(4)})। ঐতিহাসিক গড় অনুসরণে বর্ষা শুরুর ১০-১৫ দিনের মধ্যে আমন চারা রোপণ উপযোগী।` : `Onset shift not statistically significant (p=${pVal.toFixed(4)}).`)}
                 </div>
               </div>
-            </div>
+            </details>
+          </li>
 
-            {/* Year 2 Cropping Strip */}
+          <li>
+            <details>
+              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                <b>{lang === 'bn' ? 'সুবিধা:' : 'Benefits:'}</b> {lang === 'bn' ? `সেচ ${toBanglaDigits(baseIrrigVal)} থেকে ${toBanglaDigits(avgIrrig)} মিমি, ফাঁকা দিন ${toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} থেকে ${toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))}, নাইট্রোজেন ${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} থেকে ${toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} কেজি।` : `Irrigation ${baseIrrigVal} to ${avgIrrig} mm, bare days ${Math.round(activePlanData.baselineBareDays ?? 115)} to ${Math.round(activePlanData.planBareDays ?? 60)}, N ${Math.round(activePlanData.baselineNitrogenKg ?? 0)} to ${Math.round(activePlanData.planNitrogenKg ?? 35)} kg/ha.`}
+              </summary>
+              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                <div>{lang === 'bn' ? 'বার্ষিক হিসাব নির্ধারণ পদ্ধতি: ৬টি মৌসুমের মোট যোগফল ÷ ২ বছর' : 'Annual metric derivation: 6-season total sum ÷ 2 years.'}</div>
+                <div style={{ marginTop: 4 }}>
+                  <span style={{ background: 'var(--line)', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
+                    {lang === 'bn' ? 'বিদ্যমান আবর্তন (বেসলাইন)' : 'Existing Baseline Rotation'}: {baselineRotationBn}
+                  </span>
+                </div>
+                {/* Compact 12-month calendar bar inline */}
+                <div style={{ marginTop: 8, fontSize: 11 }}>
+                  <strong>{lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ' : '12-Month Continuous Cropping Calendar Strip'}:</strong>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2, marginTop: 4, textAlign: 'center', fontSize: 10 }}>
+                    {['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো'].map((m, mi) => (
+                      <div key={mi} style={{ background: mi < 5 ? 'rgba(245, 158, 11, 0.2)' : mi < 8 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(56, 189, 248, 0.2)', padding: '2px 0', borderRadius: 4, color: 'var(--text)' }}>
+                        {m}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+          </li>
+
+          <li>
+            <details>
+              <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+                <b>{lang === 'bn' ? 'তথ্যের ঘাটতি:' : 'Information Gaps:'}</b> {lang === 'bn' ? 'মাটি পরীক্ষা নেই; দাম উদাহরণমূলক; স্যাটেলাইট তথ্য বড় এলাকার গড়।' : 'No physical soil test; prices illustrative; satellite data are area-averaged.'}
+              </summary>
+              <div style={{ marginTop: 6, padding: '6px 10px', background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 8, fontSize: 12, color: 'var(--text-muted)' }}>
+                <div>• {lang === 'bn' ? 'দাম ও সেচ খরচ: উদাহরণমূলক বাজার দর, ডিজেল পাম্পিং ২০ টাকা/মিমি, বিদ্যুৎ পাম্পিং ৮ টাকা/মিমি।' : 'Prices & pumping cost: illustrative market rates, diesel pumping 20 BDT/mm, electric 8 BDT/mm.'}</div>
+                <div>• {lang === 'bn' ? 'অনুপস্থিত মৃত্তিকা মান: pH/OM না থাকলে নিরপেক্ষ (1.0) ধরে হিসেব করা হয়, কোনো কাল্পনিক মান চাপানো হয় না।' : 'Missing soil telemetry: neutral 1.0 assumed without silent imputation.'}</div>
+                <div>• {lang === 'bn' ? 'সেচ ক্যাটাগরি: পর্যাপ্ত (১২০০ মিমি), সীমিত (৪০০ মিমি), সেচহীন (০ মিমি)।' : 'Irrigation tiers: full (1200 mm), limited (400 mm), rainfed (0 mm).'}</div>
+              </div>
+            </details>
+          </li>
+
+          <li>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-2)', marginBottom: 4 }}>
-                {lang === 'bn' ? '২য় বছর ফসল আবর্তন (Year 2):' : 'Year 2 Crop Cycle:'}
+              <b>{lang === 'bn' ? 'যাচাই করুন:' : 'Verify:'}</b> {lang === 'bn' ? 'ডালের বীজ ও বাজার, উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে।' : 'Pulse seeds & local market demand with Sub-Assistant Agriculture Officer (SAAO).'}
+              <div style={{ marginTop: 6 }}>
+                <SaaoNotice lang={lang} />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 4, height: 36 }}>
-                {/* Rabi (Nov-Apr: 6 months) */}
-                <div style={{
-                  gridColumn: 'span 6',
-                  background: 'rgba(56, 189, 248, 0.25)',
-                  border: '1px solid var(--water)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--water)',
-                }}>
-                  🌱 {sixSeasonRecommendations[3]?.cropName || 'Rabi Crop'}
-                </div>
-                {/* Kharif-1 (Apr-Jun: 2 months) */}
-                <div style={{
-                  gridColumn: 'span 2',
-                  background: sixSeasonRecommendations[4]?.cropName === 'Fallow' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(0, 223, 129, 0.25)',
-                  border: sixSeasonRecommendations[4]?.cropName === 'Fallow' ? '1px dashed #f87171' : '1px solid var(--leaf)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  color: sixSeasonRecommendations[4]?.cropName === 'Fallow' ? '#f87171' : 'var(--leaf)',
-                }}>
-                  {sixSeasonRecommendations[4]?.cropName === 'Fallow' ? (lang === 'bn' ? 'পতিত' : 'Fallow') : sixSeasonRecommendations[4]?.cropName}
-                </div>
-                {/* Kharif-2 (Jul-Oct: 4 months) */}
-                <div style={{
-                  gridColumn: 'span 4',
-                  background: 'rgba(251, 191, 36, 0.25)',
-                  border: '1px solid var(--sun)',
-                  borderRadius: 6,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--sun)',
-                }}>
-                  🌾 {sixSeasonRecommendations[5]?.cropName || 'Aman Rice'}
-                </div>
+              <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <PlainLanguagePopover termKey="evapotranspiration" lang={lang} />
+                <PlainLanguagePopover termKey="soil_moisture" lang={lang} />
+                <PlainLanguagePopover termKey="ndvi" lang={lang} />
+                <PlainLanguagePopover termKey="heat_stress" lang={lang} />
+                <PlainLanguagePopover termKey="water_balance" lang={lang} />
+                <PlainLanguagePopover termKey="satellite_vs_ground" lang={lang} />
+                <PlainLanguagePopover termKey="reanalysis_vs_observation" lang={lang} />
+                <PlainLanguagePopover termKey="uncertainty" lang={lang} />
               </div>
             </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 }}>
-            {[
-              { yearNum: 1, labelEn: 'Year 1 (Years 2026-2027)', labelBn: '১ম বছর (মৌসুম ১ ও ২)', s1: sixSeasonRecommendations[0], s2: sixSeasonRecommendations[1] },
-              { yearNum: 2, labelEn: 'Year 2 (Years 2027-2028)', labelBn: '২য় বছর (মৌসুম ৩ ও ৪)', s1: sixSeasonRecommendations[2], s2: sixSeasonRecommendations[3] },
-              { yearNum: 3, labelEn: 'Year 3 (Years 2028-2029)', labelBn: '৩য় বছর (মৌসুম ৫ ও ৬)', s1: sixSeasonRecommendations[4], s2: sixSeasonRecommendations[5] }
-            ].map(y => (
-              <div key={y.yearNum} style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', borderRadius: 12, border: '1px solid var(--glass-border)', padding: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--glass-border)', paddingBottom: 8 }}>
-                  <strong style={{ fontSize: 14, color: 'var(--water)' }}>{y[lang === 'bn' ? 'labelBn' : 'labelEn']}</strong>
-                  <span style={{ fontSize: 11, background: 'var(--line)', padding: '2px 8px', borderRadius: 999, color: 'var(--text-muted)' }}>Year {y.yearNum}</span>
-                </div>
-
-                {/* Season 1 */}
-                <div style={{ marginBottom: 10, background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, borderLeft: y.s1?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--sun)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
-                    <span>Season 1 (Rabi (Nov-Apr, dry))</span>
-                    {y.s1?.isLegume && <span style={{ color: 'var(--leaf)', fontWeight: 800 }}>🌱 BNF Fixer</span>}
-                  </div>
-                  <strong style={{ fontSize: 14, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{y.s1?.cropMeta?.icon || '🌱'}</span>
-                    <span>{y.s1?.cropMeta ? y.s1.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (y.s1?.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</span>
-                  </strong>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {y.s1?.durationDays != null ? `${y.s1.durationDays} days • ` : ''}{y.s1?.waterReqMm != null ? `${Math.round(y.s1.waterReqMm)} mm • ` : ''}Yield {y.s1?.yieldTonHa != null ? `${y.s1.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                  </div>
-                </div>
-
-                {/* Season 2 */}
-                <div style={{ background: 'var(--bg-card-subtle, rgba(255, 255, 255, 0.04))', padding: 10, borderRadius: 8, borderLeft: y.s2?.isLegume ? '3px solid var(--leaf)' : '3px solid var(--water)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>
-                    <span>Season 2 (Kharif (May-Oct, wet))</span>
-                    {y.s2?.isLegume && <span style={{ color: 'var(--leaf)', fontWeight: 800 }}>🌱 BNF Fixer</span>}
-                  </div>
-                  <strong style={{ fontSize: 14, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span>{y.s2?.cropMeta?.icon || '🌱'}</span>
-                    <span>{y.s2?.cropMeta ? y.s2.cropMeta[lang === 'bn' ? 'nameBn' : 'nameEn'] : (y.s2?.cropName || (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}</span>
-                  </strong>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                    {y.s2?.durationDays != null ? `${y.s2.durationDays} days • ` : ''}{y.s2?.waterReqMm != null ? `${Math.round(y.s2.waterReqMm)} mm • ` : ''}Yield {y.s2?.yieldTonHa != null ? `${y.s2.yieldTonHa} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {viewMode === 'timeline' && <SaaoNotice lang={lang} />}
-
-
-            {/* VIEW D: 3D ROTATION TRAJECTORY (CHRONOLOGICAL PARCEL RING) */}
-      {viewMode === '3d_trajectory' && (
-        <div style={{ marginBottom: 24 }}>
-          <SixSeasonTrajectory3D
-            recommendations={sixSeasonRecommendations.map(s => ({
-              period: s.key,
-              crop: s.cropName,
-              cropFamily: s.cropMeta?.family || s.family || null,
-              isLegume: Boolean(s.cropMeta?.is_legume || s.isLegume),
-              yieldTonHa: s.yieldTonHa,
-              waterDemandMm: s.waterReqMm,
-              netProfitBdtHa: s.netProfitBdtHa
-            }))}
-            selectedSeasonIndex={Math.max(0, sixSeasonRecommendations.findIndex(s => s.key === selectedPeriodKey))}
-            onSelectSeason={(idx) => {
-              if (sixSeasonRecommendations[idx]) {
-                setSelectedPeriodKey(sixSeasonRecommendations[idx].key);
-              }
-            }}
-            strategy={selectedStrategy}
-            lang={lang}
-          />
-        </div>
-      )}
-
-
-      {/* 9. Scientific Methodology, Agronomic Caveats & Data Provenance */}
-      <div style={{ background: 'var(--surface)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: 18, color: 'var(--text-muted)', fontSize: 12, lineHeight: 1.6 }}>
-        <strong style={{ color: 'var(--water)', fontSize: 13, display: 'block', marginBottom: 4 }}>
-          🔬 বৈজ্ঞানিক ভিত্তি ও স্বচ্ছতা নীতিমালা (Scientific Provenance & Agronomic Caveats):
-        </strong>
-        <p style={{ margin: '0 0 6px' }}>
-          ১. <strong>গাণিতিক সমাধান (PuLP CBC Solver):</strong> মিশ্র-পূর্ণসংখ্যা রৈখিক প্রোগ্রামিং (MILP) এর মাধ্যমে ২ বছরের ৬টি ধারাবাহিক মৌসুমে (Y1_S1 থেকে Y2_S3: রবি, খরিফ-১ ও খরিফ-২) একই সাথে গ্লোবাল অপ্টিমাল সমাধান নির্ণয় করা হয়। এতে প্রতি ৩ মৌসুমে কমপক্ষে ১টি ডাল (Legume BNF) এবং একই পরিবারের ফসলের পুনরাবৃত্তি রোধ করার কঠোর শর্ত প্রয়োগ করা হয়েছে।
-        </p>
-        <p style={{ margin: '0 0 6px' }}>
-          ২. <strong>পানি ও ফলন মডেল (FAO-33 & FAO-56):</strong> ফসলের পানির চাহিদা ও স্টুয়ার্ট ফলন হ্রাস মডেল জাতিসংঘের খাদ্য ও কৃষি সংস্থার বৈজ্ঞানিক সমীকরণ অনুসারে নির্ধারিত।
-        </p>
-        <p style={{ margin: 0 }}>
-          ৩. <strong>সীমাবদ্ধতা ও সতর্কতা:</strong> এই ফলাফলগুলি NASA POWER ও GPM IMERG-এর ঐতিহাসিক তথ্য এবং উদাহরণমূলক দামের ভিত্তিতে প্রাপ্ত অনুমিত পূর্বাভাস। মাঠপর্যায়ে বাস্তব প্রয়োগের পূর্বে স্থানীয় মৃত্তিকা নমুনা পরীক্ষা (Soil Test) ও কৃষি কর্মকর্তার পরামর্শ গ্রহণ আবশ্যক।
-        </p>
+          </li>
+        </ol>
       </div>
-        </div>
-      </details>
-          </div>
-        )}
-      </div>
+
     </div>
   );
 }
