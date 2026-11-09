@@ -62,6 +62,8 @@ import { haToBigha } from './three/farmSceneHelpers.js';
 import { CropIllustration } from './ui/CropIllustration.jsx';
 import { BangladeshClimateMap } from './BangladeshClimateMap.jsx';
 import { PlainLanguagePopover, SaaoNotice } from './PlainLanguagePopover.jsx';
+import { formatSoilTextureLabel } from './utils/soilClasses.js';
+import { formatDistrictLabel } from './utils/districtLabels.js';
 
 
 const PRIORITIES = ['balanced', 'profit', 'water', 'soil'];
@@ -1190,8 +1192,8 @@ export function SixSeasonRecommendationView({
           </h1>
           <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: 13, marginTop: 4 }}>
             {activeField?.district
-              ? (lang === 'bn' ? `${formatDistrictBn(activeField.district)} (বরেন্দ্র)` : `${activeField.district} (Barind)`)
-              : (lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ (বরেন্দ্র)' : 'Chapainawabganj (Barind)')} · {toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} {lang === 'bn' ? 'বিঘা' : 'bigha'} · {activeField?.soil_texture ? formatSoilTexture(activeField.soil_texture, lang) : (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
+              ? formatDistrictLabel(activeField.district, lang)
+              : (lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ (বরেন্দ্র)' : 'Chapainawabganj (Barind)')} · {toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} {lang === 'bn' ? 'বিঘা' : 'bigha'} · {activeField?.soil_texture ? formatSoilTextureLabel(activeField.soil_texture) : (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
