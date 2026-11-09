@@ -1358,8 +1358,10 @@ export function App() {
       name: '',
       latitude: defaultLat,
       longitude: defaultLon,
+      area_input: '',
+      area_unit: 'bigha',
       area_ha: '',
-      soil_texture: 'loam',
+      soil_texture: 'unknown',
       soil_ph: '',
       organic_matter: '',
       irrigation_tier: 'ample',
@@ -1370,6 +1372,12 @@ export function App() {
       rotation_rabi: 'Boro',
       rotation_kharif1: 'Fallow',
       rotation_kharif2: 'Aman',
+      rabi_yield: '',
+      rabi_price: '',
+      k1_yield: '',
+      k1_price: '',
+      k2_yield: '',
+      k2_price: '',
       previous_crop_year: String(new Date().getFullYear()),
       seasonally_flooded: false
     });
@@ -1384,12 +1392,16 @@ export function App() {
     else if (irrVal === '400') tier = 'limited';
     else if (irrVal === '0') tier = 'rainfed';
 
+    const bighaArea = fld.area_ha != null ? String(Number((fld.area_ha / 0.13378).toFixed(1))) : '';
+
     setFieldForm({
       id: fld.id,
       farm_id: fld.farm_id,
       name: fld.name || '',
       latitude: fld.latitude != null ? String(fld.latitude) : '',
       longitude: fld.longitude != null ? String(fld.longitude) : '',
+      area_input: bighaArea,
+      area_unit: 'bigha',
       area_ha: fld.area_ha != null ? String(fld.area_ha) : '',
       soil_texture: fld.soil_texture || 'unknown',
       soil_ph: fld.soil_ph != null ? String(fld.soil_ph) : '',
@@ -1402,6 +1414,12 @@ export function App() {
       rotation_rabi: fld.existing_rotation?.rabi || fld.previous_crop || 'Boro',
       rotation_kharif1: fld.existing_rotation?.kharif1 || 'Fallow',
       rotation_kharif2: fld.existing_rotation?.kharif2 || 'Aman',
+      rabi_yield: '',
+      rabi_price: '',
+      k1_yield: '',
+      k1_price: '',
+      k2_yield: '',
+      k2_price: '',
       previous_crop_year: fld.previous_crop_year != null ? String(fld.previous_crop_year) : (fld.history && fld.history[0]?.year ? String(fld.history[0]?.year) : String(new Date().getFullYear())),
       seasonally_flooded: Boolean(fld.seasonally_flooded)
     });
@@ -1478,8 +1496,38 @@ export function App() {
         });
       }
       const newFieldId = res?.field?.id || (fieldModal === 'edit' ? fieldForm.id : null);
+      if (newFieldId) {
+        // Save farmer economics records into field history if provided (MF9)
+        const econSlots = [
+          { crop: formRot.rabi, season: 'rabi', yieldVal: fieldForm.rabi_yield, priceVal: fieldForm.rabi_price },
+          { crop: formRot.kharif1, season: 'kharif1', yieldVal: fieldForm.k1_yield, priceVal: fieldForm.k1_price },
+          { crop: formRot.kharif2, season: 'kharif2', yieldVal: fieldForm.k2_yield, priceVal: fieldForm.k2_price }
+        ];
+        for (const slot of econSlots) {
+          if (slot.crop && slot.crop !== 'Fallow' && (slot.yieldVal || slot.priceVal)) {
+            const yNum = parseFloat(slot.yieldVal);
+            const pNum = parseFloat(slot.priceVal);
+            const tonHa = Number.isFinite(yNum) ? Number((yNum * 0.278965).toFixed(3)) : null;
+            try {
+              await request(`/api/fields/${newFieldId}/history`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  crop: slot.crop,
+                  season: slot.season,
+                  year: 2025,
+                  yield_ton_per_ha: tonHa,
+                  price_bdt_per_maund: Number.isFinite(pNum) ? pNum : null,
+                  notes: 'Farmer baseline economics from rotation input'
+                })
+              });
+            } catch (hErr) {
+              console.warn('History entry saving:', hErr);
+            }
+          }
+        }
+      }
       if (newFieldId && fieldModal !== 'edit') {
-        if (fieldForm.crop && fieldForm.crop.trim()) {
+        if (fieldForm.crop && fieldForm.crop.trim() && !fieldForm.rabi_yield && !fieldForm.rabi_price) {
           try {
             await request(`/api/fields/${newFieldId}/history`, {
               method: 'POST',
@@ -4303,36 +4351,72 @@ export function App() {
 
                       <div className="form-grid-inner">
                         <div className="form-group">
-                          <label>{lang === 'bn' ? 'জমির পরিমাপ (হেক্টর) *' : 'Field Size (ha) *'}</label>
-                          <input
-                            className="input-box"
-                            type="number"
-                            step="any"
-                            min="0.01"
-                            placeholder="e.g. 1.5"
-                            value={fieldForm.area_ha}
-                            onChange={e => setFieldForm(prev => ({ ...prev, area_ha: e.target.value }))}
-                            required
-                          />
+                          <label>{lang === 'bn' ? 'জমির পরিমাপ *' : 'Field Area *'}</label>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <input
+                              className="input-box"
+                              type="number"
+                              step="any"
+                              min="0.01"
+                              placeholder={fieldForm.area_unit === 'bigha' ? (lang === 'bn' ? 'যেমন: ৫' : 'e.g. 5') : 'e.g. 1.0'}
+                              value={fieldForm.area_input != null ? fieldForm.area_input : (fieldForm.area_ha ? (Number(fieldForm.area_ha) / 0.13378).toFixed(1) : '')}
+                              onChange={e => {
+                                const val = e.target.value;
+                                const unit = fieldForm.area_unit || 'bigha';
+                                let ha = '';
+                                if (val !== '' && !isNaN(val)) {
+                                  const num = parseFloat(val);
+                                  if (unit === 'bigha') ha = (num * 0.13378).toFixed(4);
+                                  else if (unit === 'shatansh') ha = ((num * 40.47) / 10000).toFixed(4);
+                                  else ha = num.toFixed(4);
+                                }
+                                setFieldForm(prev => ({ ...prev, area_input: val, area_ha: ha }));
+                              }}
+                              required
+                              style={{ flex: 1 }}
+                            />
+                            <select
+                              className="input-box"
+                              style={{ width: 110, padding: '0 6px' }}
+                              value={fieldForm.area_unit || 'bigha'}
+                              onChange={e => {
+                                const unit = e.target.value;
+                                const val = fieldForm.area_input;
+                                let ha = '';
+                                if (val !== '' && !isNaN(val)) {
+                                  const num = parseFloat(val);
+                                  if (unit === 'bigha') ha = (num * 0.13378).toFixed(4);
+                                  else if (unit === 'shatansh') ha = ((num * 40.47) / 10000).toFixed(4);
+                                  else ha = num.toFixed(4);
+                                }
+                                setFieldForm(prev => ({ ...prev, area_unit: unit, area_ha: ha }));
+                              }}
+                            >
+                              <option value="bigha">{lang === 'bn' ? 'বিঘা' : 'Bigha'}</option>
+                              <option value="hectare">{lang === 'bn' ? 'হেক্টর' : 'Hectare'}</option>
+                              <option value="shatansh">{lang === 'bn' ? 'শতাংশ' : 'Shatansh'}</option>
+                            </select>
+                          </div>
                           {fieldForm.area_ha && Number(fieldForm.area_ha) > 0 && (
                             <small style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                              ≈ {(Number(fieldForm.area_ha) * 10000 / 1337.8).toFixed(1)} {lang === 'bn' ? 'বিঘা' : 'bigha'} (1 bigha = 1,338 m²)
+                              ≈ {Number(fieldForm.area_ha).toFixed(2)} {lang === 'bn' ? 'হেক্টর' : 'ha'} (১ বিঘা = ০.১৩৩৭৮ হেক্টর; ১ শতাংশ = ৪০.৪৭ বর্গমিটার)
                             </small>
                           )}
                         </div>
                         <div className="form-group">
-                          <label>{lang === 'bn' ? 'মাটির ধরন (Soil Texture)' : 'Soil Texture'}</label>
+                          <label>{lang === 'bn' ? 'মাটির ধরন (Soil Texture) *' : 'Soil Texture *'}</label>
                           <select
                             className="input-box"
                             value={fieldForm.soil_texture || 'unknown'}
                             onChange={e => setFieldForm(prev => ({ ...prev, soil_texture: e.target.value }))}
+                            required
                           >
+                            <option value="unknown">{lang === 'bn' ? 'জানি না (Unknown)' : 'Unknown (জানি না)'}</option>
                             <option value="loam">{lang === 'bn' ? 'দোআঁশ (Loam)' : 'Loam (দোআঁশ)'}</option>
                             <option value="silty_loam">{lang === 'bn' ? 'পলি দোআঁশ (Silty Loam)' : 'Silty Loam (পলি দোআঁশ)'}</option>
                             <option value="clay_loam">{lang === 'bn' ? 'এঁটেল দোআঁশ (Clay Loam)' : 'Clay Loam (এঁটেল দোআঁশ)'}</option>
                             <option value="clay">{lang === 'bn' ? 'এঁটেল (Clay)' : 'Clay (এঁটেল)'}</option>
                             <option value="sandy_loam">{lang === 'bn' ? 'বেলে দোআঁশ (Sandy Loam)' : 'Sandy Loam (বেলে দোআঁশ)'}</option>
-                            <option value="unknown">{lang === 'bn' ? 'জানি না (Unknown)' : 'Unknown (জানি না)'}</option>
                           </select>
                         </div>
                       </div>
@@ -4431,19 +4515,20 @@ export function App() {
                         )}
                       </div>
 
-                      {/* 3-Season Existing Rotation (M8 Baseline Alignment) */}
+                      {/* 3-Season Existing Rotation with Farmer Economics (MF8 + MF9) */}
                       <div className="form-group" style={{ padding: '12px 14px', background: 'var(--bg-card, #1e293b)', borderRadius: 8, border: '1px solid var(--border-light, #334155)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                           <label style={{ fontWeight: 600, display: 'block', margin: 0, fontSize: 13 }}>
                             🔄 {lang === 'bn' ? 'বিদ্যমান ৩-মৌসুম ফসল আবর্তন (বেসলাইন)' : 'Existing 3-Season Crop Rotation (Baseline)'}
                           </label>
                           <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
-                            {lang === 'bn' ? 'মডেল তুলনা করবে' : 'Used by solver'}
+                            {lang === 'bn' ? 'ফলন ও দাম ঐচ্ছিক' : 'Yield & price optional'}
                           </span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
-                          <div>
-                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+                          {/* Rabi */}
+                          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-light, #334155)' }}>
+                            <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-main)', marginBottom: 4, display: 'block' }}>
                               {lang === 'bn' ? 'রবি (শীতকালীন)' : 'Rabi (Winter)'}
                             </label>
                             <select
@@ -4453,15 +4538,57 @@ export function App() {
                             >
                               <option value="Boro">{lang === 'bn' ? 'বোরো ধান' : 'Boro Rice'}</option>
                               <option value="Mustard">{lang === 'bn' ? 'সরিষা' : 'Mustard'}</option>
-                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
-                              <option value="Potato">{lang === 'bn' ? 'আলু' : 'Potato'}</option>
                               <option value="Wheat">{lang === 'bn' ? 'গম' : 'Wheat'}</option>
+                              <option value="Potato">{lang === 'bn' ? 'আলু' : 'Potato'}</option>
+                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
                               <option value="Lentil">{lang === 'bn' ? 'মসুর' : 'Lentil'}</option>
+                              <option value="Chickpea">{lang === 'bn' ? 'ছোলা' : 'Chickpea'}</option>
+                              <option value="Soybean">{lang === 'bn' ? 'সয়াবিন' : 'Soybean'}</option>
+                              <option value="Groundnut">{lang === 'bn' ? 'চীনাবাদাম' : 'Groundnut'}</option>
+                              <option value="Sunflower">{lang === 'bn' ? 'সূর্যমুখী' : 'Sunflower'}</option>
+                              <option value="Tomato">{lang === 'bn' ? 'টমেটো' : 'Tomato'}</option>
                               <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
                             </select>
+                            {fieldForm.rotation_rabi !== 'Fallow' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    step="0.1"
+                                    placeholder={lang === 'bn' ? 'যেমন ২০' : 'e.g. 20'}
+                                    value={fieldForm.rabi_yield || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, rabi_yield: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    placeholder={lang === 'bn' ? 'যেমন ১২০০' : 'e.g. 1200'}
+                                    value={fieldForm.rabi_price || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, rabi_price: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic', marginTop: 8 }}>
+                                {lang === 'bn' ? 'ফাঁকা মৌসুম' : 'Fallow Season'}
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+
+                          {/* Kharif-1 */}
+                          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-light, #334155)' }}>
+                            <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-main)', marginBottom: 4, display: 'block' }}>
                               {lang === 'bn' ? 'খরিপ-১ (প্রাক-বর্ষা)' : 'Kharif-1 (Pre-Monsoon)'}
                             </label>
                             <select
@@ -4471,14 +4598,53 @@ export function App() {
                             >
                               <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
                               <option value="Aus">{lang === 'bn' ? 'আউশ ধান' : 'Aus Rice'}</option>
-                              <option value="Jute">{lang === 'bn' ? 'পাট' : 'Jute'}</option>
                               <option value="Mungbean">{lang === 'bn' ? 'মুগডাল' : 'Mungbean'}</option>
-                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
+                              <option value="Jute">{lang === 'bn' ? 'পাট' : 'Jute'}</option>
                               <option value="Sesame">{lang === 'bn' ? 'তিল' : 'Sesame'}</option>
+                              <option value="Maize">{lang === 'bn' ? 'ভুট্টা' : 'Maize'}</option>
+                              <option value="Soybean">{lang === 'bn' ? 'সয়াবিন' : 'Soybean'}</option>
+                              <option value="Groundnut">{lang === 'bn' ? 'চীনাবাদাম' : 'Groundnut'}</option>
                             </select>
+                            {fieldForm.rotation_kharif1 !== 'Fallow' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    step="0.1"
+                                    placeholder={lang === 'bn' ? 'যেমন ৫' : 'e.g. 5'}
+                                    value={fieldForm.k1_yield || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, k1_yield: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    placeholder={lang === 'bn' ? 'যেমন ৩৫০০' : 'e.g. 3500'}
+                                    value={fieldForm.k1_price || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, k1_price: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic', marginTop: 8 }}>
+                                {lang === 'bn' ? 'ফাঁকা মৌসুম' : 'Fallow Season'}
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <label style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, display: 'block' }}>
+
+                          {/* Kharif-2 */}
+                          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border-light, #334155)' }}>
+                            <label style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-main)', marginBottom: 4, display: 'block' }}>
                               {lang === 'bn' ? 'খরিপ-২ (বর্ষাকালীন)' : 'Kharif-2 (Monsoon)'}
                             </label>
                             <select
@@ -4489,6 +4655,41 @@ export function App() {
                               <option value="Aman">{lang === 'bn' ? 'আমন ধান' : 'Aman Rice'}</option>
                               <option value="Fallow">{lang === 'bn' ? 'পতিত (Fallow)' : 'Fallow'}</option>
                             </select>
+                            {fieldForm.rotation_kharif2 !== 'Fallow' ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'ফলন (মণ/বিঘা)' : 'Yield (md/bg)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    step="0.1"
+                                    placeholder={lang === 'bn' ? 'যেমন ১৪' : 'e.g. 14'}
+                                    value={fieldForm.k2_yield || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, k2_yield: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                                <div>
+                                  <label style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginBottom: 2 }}>
+                                    {lang === 'bn' ? 'বিক্রয় (টাকা/মণ)' : 'Price (৳/md)'}
+                                  </label>
+                                  <input
+                                    className="input-box"
+                                    type="number"
+                                    placeholder={lang === 'bn' ? 'যেমন ১১০০' : 'e.g. 1100'}
+                                    value={fieldForm.k2_price || ''}
+                                    onChange={e => setFieldForm(prev => ({ ...prev, k2_price: e.target.value }))}
+                                    style={{ fontSize: 11, padding: '4px 6px' }}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: 11, color: 'var(--text-dim)', fontStyle: 'italic', marginTop: 8 }}>
+                                {lang === 'bn' ? 'ফাঁকা মৌসুম' : 'Fallow Season'}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -4587,8 +4788,15 @@ export function App() {
                         type="submit"
                         className="run-cta-btn"
                         style={{ padding: '8px 20px', fontSize: 13.5 }}
-                        disabled={fieldModalLoading || !fieldForm.name?.trim() || !fieldForm.latitude || !fieldForm.longitude}
-                        title={(!fieldForm.latitude || !fieldForm.longitude) ? (lang === 'bn' ? 'ম্যাপে ক্লিক করে বা জিপিএস দিয়ে স্থানাঙ্ক নির্বাচন করুন' : 'Place map pin or use GPS first') : ''}
+                        disabled={
+                          fieldModalLoading ||
+                          !fieldForm.name?.trim() ||
+                          !Number.isFinite(parseFloat(fieldForm.latitude)) ||
+                          !Number.isFinite(parseFloat(fieldForm.longitude)) ||
+                          !Number.isFinite(parseFloat(fieldForm.area_ha)) ||
+                          parseFloat(fieldForm.area_ha) <= 0
+                        }
+                        title={(!Number.isFinite(parseFloat(fieldForm.latitude)) || !Number.isFinite(parseFloat(fieldForm.longitude))) ? (lang === 'bn' ? '⚠ মানচিত্রে জমি চিহ্নিত করুন' : 'Please set field pin on map') : ''}
                       >
                         {fieldModalLoading
                           ? (lang === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…')

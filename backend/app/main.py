@@ -227,7 +227,16 @@ def use_field_record(data: dict[str, Any], field: FarmField, db: DbSession) -> d
         data["season"] = histories[0].season or data.get("season", "dry")
         data["history_crops"] = [h.crop for h in histories if h.crop]
         data["_saved_field_history"] = [
-            {"year": h.year, "season": h.season, "crop": h.crop}
+            {
+                "id": h.id,
+                "year": h.year,
+                "season": h.season,
+                "crop": h.crop,
+                "yield_ton_per_ha": h.yield_ton_per_ha,
+                "price_bdt_per_maund": getattr(h, "price_bdt_per_maund", None),
+                "cost_bdt_per_bigha": getattr(h, "cost_bdt_per_bigha", None),
+                "water_applied_mm": getattr(h, "water_applied_mm", None),
+            }
             for h in histories
             if h.year is not None and h.season and h.crop
         ]
@@ -590,6 +599,10 @@ def startup() -> None:
                 conn.execute(text("ALTER TABLE field_history ADD COLUMN yield_ton_per_ha FLOAT"))
             if "water_applied_mm" not in hist_cols:
                 conn.execute(text("ALTER TABLE field_history ADD COLUMN water_applied_mm FLOAT"))
+            if "price_bdt_per_maund" not in hist_cols:
+                conn.execute(text("ALTER TABLE field_history ADD COLUMN price_bdt_per_maund FLOAT"))
+            if "cost_bdt_per_bigha" not in hist_cols:
+                conn.execute(text("ALTER TABLE field_history ADD COLUMN cost_bdt_per_bigha FLOAT"))
     except Exception as e:
         logger.warning(f"Field table column migration notice: {e}")
 
@@ -2957,6 +2970,24 @@ def create_field_history(field_id: str, payload: Payload, user: User | None = De
         try: w_val = float(data["water"])
         except (ValueError, TypeError): pass
 
+    price_val = None
+    for pk in ("price_bdt_per_maund", "price_per_maund", "sale_price", "price"):
+        if data.get(pk) not in (None, ""):
+            try:
+                price_val = float(data[pk])
+                break
+            except (ValueError, TypeError):
+                pass
+
+    cost_val = None
+    for ck in ("cost_bdt_per_bigha", "cost_per_bigha", "cost"):
+        if data.get(ck) not in (None, ""):
+            try:
+                cost_val = float(data[ck])
+                break
+            except (ValueError, TypeError):
+                pass
+
     yr = None
     if data.get("year") not in (None, ""):
         try: yr = int(data["year"])
@@ -2969,6 +3000,8 @@ def create_field_history(field_id: str, payload: Payload, user: User | None = De
         year=yr,
         yield_ton_per_ha=y_val,
         water_applied_mm=w_val,
+        price_bdt_per_maund=price_val,
+        cost_bdt_per_bigha=cost_val,
         notes=data.get("notes"),
         created_at=stamp
     )

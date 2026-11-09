@@ -69,6 +69,8 @@ class FieldHistory(Base):
     year: Mapped[int | None] = mapped_column(Integer)
     yield_ton_per_ha: Mapped[float | None] = mapped_column(Float, nullable=True)
     water_applied_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    price_bdt_per_maund: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cost_bdt_per_bigha: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
