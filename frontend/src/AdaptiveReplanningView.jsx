@@ -1141,10 +1141,10 @@ export function AdaptiveReplanningView({
                   marginBottom: 12,
                 }}
               >
-                <b>ℹ️ {lang === 'bn' ? 'সতর্কীকরণ:' : 'Methodology Disclosure:'}</b>{' '}
+                <b>ℹ️ {lang === 'bn' ? 'পদ্ধতি প্রকাশ (Methodology):' : 'Methodology Disclosure:'}</b>{' '}
                 {lang === 'bn'
-                  ? 'এটা পুরো Reinforcement Learning না: মৌসুমের ফলাফল থেকে শেখা (feedback calibration) + MILP দিয়ে বাকি মৌসুম পুনঃঅপ্টিমাইজ। শেষ হওয়া মৌসুম আটকানো থাকে।'
-                  : 'This is not full Reinforcement Learning: it is feedback calibration from recorded outcomes + MILP re-optimization of remaining seasons with finished seasons locked.'}
+                  ? 'প্রতি মৌসুমের ফলাফল থেকে শেখা (feedback calibration) + MILP দিয়ে বাকি মৌসুম পুনঃঅপ্টিমাইজ। শেষ হওয়া মৌসুম আটকানো থাকে।'
+                  : 'Learning from each season’s outcome (feedback calibration) + MILP re-optimization of remaining seasons with finished seasons locked.'}
               </div>
 
               {/* Optional RL Second Opinion Card (R6) */}
