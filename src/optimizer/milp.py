@@ -439,6 +439,7 @@ def build_milp_model(
     min_cereals_per_year: int = 1,
     seasonally_flooded: Optional[bool] = None,
     excluded_crops: Optional[Sequence[str]] = None,
+    fixed_crops_by_period: Optional[Mapping[str, str]] = None,
 ):
     """Build and return a PuLP problem and its prepared model metadata.
 
@@ -522,6 +523,8 @@ def build_milp_model(
 
     for crop_name in excluded_names:
         for period in periods:
+            if fixed_crops_by_period and period in fixed_crops_by_period:
+                continue
             problem += variables[(crop_name, period)] == 0, (
                 f"farmer_excluded_{candidate_names.index(crop_name)}_{periods.index(period)}"
             )
@@ -531,12 +534,16 @@ def build_milp_model(
     ]
     for crop_name in excluded_static:
         for period in periods:
+            if fixed_crops_by_period and period in fixed_crops_by_period:
+                continue
             problem += variables[(crop_name, period)] == 0, (
                 f"static_incompatibility_{candidate_names.index(crop_name)}_{periods.index(period)}"
             )
 
     # Dynamic seasonal incompatibility enforcement (water deficit, thermal boundary)
     for period_idx, period in enumerate(periods):
+        if fixed_crops_by_period and period in fixed_crops_by_period:
+            continue
         for crop_idx, crop_name in enumerate(candidate_names):
             if not dyn_matrix[period][crop_name]["is_feasible"]:
                 problem += variables[(crop_name, period)] == 0, (
@@ -548,6 +555,7 @@ def build_milp_model(
     for period_idx, period in enumerate(periods):
         p_season = _period_season(period, period_idx)
         excluded_for_period = []
+        is_fixed_period = bool(fixed_crops_by_period and period in fixed_crops_by_period)
         for crop_idx, crop_name in enumerate(candidate_names):
             crop_row = crop_frame.loc[crop_frame["crop"] == crop_name].iloc[0]
             allowed_str = str(crop_row.get("allowed_seasons", "rabi|kharif1|kharif2")).lower()
@@ -558,16 +566,31 @@ def build_milp_model(
             )
             if not is_match:
                 excluded_for_period.append(crop_name)
-                problem += variables[(crop_name, period)] == 0, (
-                    f"season_suitability_{crop_idx}_{period_idx}"
-                )
+                if not is_fixed_period:
+                    problem += variables[(crop_name, period)] == 0, (
+                        f"season_suitability_{crop_idx}_{period_idx}"
+                    )
         season_suitability_exclusions[period] = excluded_for_period
+
+    # Enforce fixed crops for completed periods (e.g. from adaptive replan feedback loop)
+    if fixed_crops_by_period:
+        cand_map = {c.lower(): c for c in candidate_names}
+        for p_fix, c_fix in fixed_crops_by_period.items():
+            if p_fix in periods:
+                matched = cand_map.get(str(c_fix).strip().lower())
+                if matched:
+                    problem += (
+                        variables[(matched, p_fix)] == 1,
+                        f"fixed_crop_{candidate_names.index(matched)}_{periods.index(p_fix)}",
+                    )
 
     # Duration vs window occupancy constraint
     # If crop 1 duration + crop 2 duration > 240 days, they cannot be grown in adjacent seasons
     for p_idx in range(len(periods) - 1):
         p_curr = periods[p_idx]
         p_next = periods[p_idx + 1]
+        if fixed_crops_by_period and p_curr in fixed_crops_by_period and p_next in fixed_crops_by_period:
+            continue
         for c1 in candidate_names:
             dur1 = float(crop_frame.loc[crop_frame["crop"] == c1, "duration_days"].iloc[0])
             for c2 in candidate_names:
@@ -583,6 +606,8 @@ def build_milp_model(
         for s in range(3):
             p_y1 = periods[s]
             p_y2 = periods[s + 3]
+            if fixed_crops_by_period and p_y1 in fixed_crops_by_period and p_y2 in fixed_crops_by_period:
+                continue
             for c in candidate_names:
                 is_rice_in_k2 = (s == 2 and ("rice" in c.lower() or c == "Rice"))
                 is_fallow = (c.lower() == "fallow")
@@ -595,7 +620,7 @@ def build_milp_model(
 
     previous_family = _previous_crop_family(field_state, history, crop_frame)
     first_period_blocked = []
-    if previous_family is not None:
+    if previous_family is not None and not (fixed_crops_by_period and periods[0] in fixed_crops_by_period):
         for _, crop in crop_frame.iterrows():
             if not _compatible_pair(
                 crop,
@@ -628,6 +653,8 @@ def build_milp_model(
                 crop_frame,
             )
     for previous_period, current_period in zip(periods, periods[1:]):
+        if fixed_crops_by_period and previous_period in fixed_crops_by_period and current_period in fixed_crops_by_period:
+            continue
         for previous_crop_name in candidate_names:
             previous_crop = crop_frame.loc[
                 crop_frame["crop"] == previous_crop_name
@@ -710,6 +737,8 @@ def build_milp_model(
     # C4: Seasonally flooded haor land constraints vs C3 normal land
     if seasonally_flooded:
         for period_idx, period in enumerate(periods):
+            if fixed_crops_by_period and period in fixed_crops_by_period:
+                continue
             p_season = _period_season(period, period_idx)
             if p_season == "kharif2":
                 # Haor land is under 2-4m deep water from June to November -> forced Fallow / uncropped
@@ -731,6 +760,8 @@ def build_milp_model(
         # provided at least one suitable Kharif-2 crop is agronomically feasible.
         if not allow_kharif2_fallow and "Fallow" in candidate_names:
             for period_idx, period in enumerate(periods):
+                if fixed_crops_by_period and period in fixed_crops_by_period:
+                    continue
                 p_season = _period_season(period, period_idx)
                 if p_season == "kharif2":
                     feasible_k2 = [
@@ -795,6 +826,7 @@ def build_milp_model(
         "legume_interval_seasons": legume_interval_seasons,
         "objective_expression": objective_expression,
         "history": history,
+        "fixed_crops_by_period": fixed_crops_by_period,
     }
     return problem, metadata
 
@@ -911,6 +943,7 @@ def optimize_rotation(
     existing_rotation_year: Optional[int] = None,
     excluded_crops: Optional[Sequence[str]] = None,
     solver: Optional[pulp.LpSolver] = None,
+    fixed_crops_by_period: Optional[Mapping[str, str]] = None,
 ) -> dict[str, Any]:
     """Optimize a long-term rotation for the supplied periods and priorities."""
     crops_copy = crops.copy() if isinstance(crops, pd.DataFrame) else load_crop_knowledge().copy()
@@ -953,6 +986,7 @@ def optimize_rotation(
         min_cereals_per_year=min_cereals_per_year,
         seasonally_flooded=seasonally_flooded,
         excluded_crops=excluded_crops,
+        fixed_crops_by_period=fixed_crops_by_period,
     )
     tmp_dir = None
     if solver is None:

@@ -1900,11 +1900,14 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
                 crop_name = parts[0].get("crop")
             if not isinstance(crop_name, str) or not crop_name.strip():
                 raise HTTPException(422, f"Completed season {i + 1} must include its recorded crop.")
+            canonical_period = f"Y{1 + (i // 3)}_S{1 + (i % 3)}"
             completed_seasons.append({
-                "period": item.get("period") or f"Y{1+(i//2)}_S{1+(i%2)}",
+                "period": item.get("period") or canonical_period,
                 "crop": crop_name.strip(),
                 "crop_planted": crop_name.strip(),
                 "parts": parts,
+                "yield_maund_bigha": item.get("yield_maund_bigha", item.get("yield")),
+                "sale_price_bdt_maund": item.get("sale_price_bdt_maund", item.get("price_bdt_maund", item.get("sale_price", item.get("price")))),
                 "yield_kg_ha": item.get("yield_kg_ha"),
                 "actual_yield_t_ha": (float(item["yield_kg_ha"]) / 1000.0) if item.get("yield_kg_ha") is not None else item.get("actual_yield_t_ha"),
                 "actual_water_mm": item.get("water_applied_mm") or item.get("actual_water_mm"),
@@ -1917,9 +1920,20 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     priority = str(data.get("priority") or "balanced")
 
     crops_df = load_crop_knowledge()
-    state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power, crop_knowledge=crops_df)
+    state = build_field_state(str(data.get("field_id") or "demo"), lat, lon, power["date"].max(), power.tail(60), crop_knowledge=crops_df)
     state.field_size_ha = field_area_ha
     state.area_ha = state.field_size_ha
+    state.district = dist_key
+    from src.optimizer.dynamic_agronomy import COASTAL_SALINE_DISTRICTS
+    state.coastal_saline = dist_key in COASTAL_SALINE_DISTRICTS
+
+    if data.get("soil_ph") is not None:
+        state.ph = data["soil_ph"]
+    if data.get("organic_matter") is not None:
+        state.organic_matter = data["organic_matter"]
+    if data.get("irrigation_capacity_mm") is not None:
+        state.irrigation_capacity_mm = data["irrigation_capacity_mm"]
+
     soil_texture_source = "request input" if data.get("soil_texture") not in (None, "", "unknown") else "district reference"
     if "soil_texture" in data and data["soil_texture"] != "unknown":
         state.texture = str(data["soil_texture"])
@@ -1932,6 +1946,10 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
         is_haor = dist_key in {"sunamganj", "netrokona", "kishoreganj", "habiganj", "moulvibazar"}
     state.seasonally_flooded = bool(is_haor)
 
+    excluded_crops = ([c for c in data.get("excluded_crops", []) if c] + (["Potato"] if data.get("no_power_tiller") and "Potato" not in data.get("excluded_crops", []) else [])) or None
+    allow_k2_fallow = bool(data.get("allow_kharif2_fallow", is_haor))
+    water_availability = data.get("water_availability") or data.get("irrigation_class") or updated_field_conditions.get("irrigation_class")
+
     features = build_features(state, environmental_history=power)
 
     result = run_adaptive_replan(
@@ -1941,6 +1959,9 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
         crops=crops_df,
         priority=priority,
         features=features,
+        water_availability=water_availability,
+        excluded_crops=excluded_crops,
+        allow_kharif2_fallow=allow_k2_fallow,
     )
     result["district"] = dist_key
     result["climate_source"] = f"NASA POWER ({dist_key})"

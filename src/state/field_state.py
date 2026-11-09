@@ -115,6 +115,7 @@ class FieldState:
     potassium: float = float("nan")
     ph: float = float("nan")
     organic_matter: float = float("nan")
+    irrigation_capacity_mm: float = float("nan")
     texture: Optional[str] = None
     previous_crop: Optional[str] = None
     previous_crop_family: Optional[str] = None
