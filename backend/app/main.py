@@ -976,7 +976,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             existing_rotation=existing_rotation,
             existing_rotation_source=existing_rotation_source,
             existing_rotation_year=existing_rotation_year,
-            excluded_crops=["Potato"] if data.get("no_power_tiller") else None,
+            excluded_crops=([c for c in data.get("excluded_crops", []) if c] + (["Potato"] if data.get("no_power_tiller") and "Potato" not in data.get("excluded_crops", []) else [])) or None,
         )
         from src.explainability.explanations import explain_milp_plan
         milp_res["decision_explanation"] = explain_milp_plan(
