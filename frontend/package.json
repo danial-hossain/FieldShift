@@ -8,7 +8,7 @@
     "build": "node node_modules/vite/bin/vite.js build",
     "preview": "node node_modules/vite/bin/vite.js preview",
     "test": "node --test src/*.test.js",
-    "smoke": "node node_modules/vite/bin/vite.js build --ssr scripts/smoke-ssr.jsx --outDir .smoke --emptyOutDir && node .smoke/smoke-ssr.js",
+    "smoke": "npm run lint && node node_modules/vite/bin/vite.js build --ssr scripts/smoke-ssr.jsx --outDir .smoke --emptyOutDir && node .smoke/smoke-ssr.js",
     "lint": "eslint src",
     "e2e": "node e2e/runner.js"
   },
@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "eslint": "^10.14.0",
-    "eslint-plugin-react-hooks": "^7.1.1"
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.14.0"
   }
 }
