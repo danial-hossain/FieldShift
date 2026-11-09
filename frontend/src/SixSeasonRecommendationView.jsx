@@ -360,6 +360,27 @@ export function SixSeasonRecommendationView({
     };
   }, [activePlanResponse, selectedStrategy, summary]);
 
+  // Notice when two strategies yield the identical rotation sequence
+  const strategyComparisonNote = useMemo(() => {
+    if (!plansByPriority || !plansByPriority.balanced) return null;
+    const balancedCrops = plansByPriority.balanced?.summary?.planning?.selected_strategy_result?.selected_crop_by_period || {};
+    const bSeq = Object.values(balancedCrops).join(' → ');
+    if (!bSeq) return null;
+
+    if (selectedStrategy !== 'balanced') {
+      const curPriority = STRATEGY_TO_PRIORITY[selectedStrategy] || selectedStrategy;
+      const curCrops = plansByPriority[curPriority]?.summary?.planning?.selected_strategy_result?.selected_crop_by_period || {};
+      const cSeq = Object.values(curCrops).join(' → ');
+      if (cSeq && cSeq === bSeq) {
+        const stratTitle = STRATEGY_DEFINITIONS[selectedStrategy]?.[lang === 'bn' ? 'titleBn' : 'titleEn'] || selectedStrategy;
+        return lang === 'bn'
+          ? `এই জমিতে সুষম আর ${stratTitle} কৌশলের ফল একই`
+          : `For this field, Balanced and ${stratTitle} strategies produce the identical rotation`;
+      }
+    }
+    return null;
+  }, [plansByPriority, selectedStrategy, lang]);
+
   // Active solver weights for currently selected strategy
   const activeWeights = useMemo(() => {
     const fromSolver = activePlanData?.solverResult?.weights?.effective || activePlanData?.solverResult?.weights?.requested;
@@ -1951,6 +1972,24 @@ export function SixSeasonRecommendationView({
           </span>
         </div>
 
+        {strategyComparisonNote && (
+          <div style={{
+            background: 'rgba(56, 189, 248, 0.08)',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            borderRadius: 8,
+            padding: '8px 12px',
+            marginBottom: 14,
+            fontSize: 12,
+            color: '#38bdf8',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            <span>ℹ️</span>
+            <span>{strategyComparisonNote}</span>
+          </div>
+        )}
+
         <div className="strategy-columns-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 12, marginBottom: 18 }}>
           {/* Column 0: Existing Rotation Baseline */}
           <div
@@ -2031,21 +2070,27 @@ export function SixSeasonRecommendationView({
               >
                 <div style={{ width: '100%' }}>
                   {isBest && (
-                    <div style={{
-                      background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3), rgba(0, 223, 129, 0.15))',
-                      border: '1px solid #10b981',
-                      color: 'var(--leaf)',
-                      padding: '2px 8px',
-                      borderRadius: 999,
-                      fontSize: 10,
-                      fontWeight: 800,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      marginBottom: 6
-                    }}>
+                    <div
+                      style={{
+                        background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.3), rgba(0, 223, 129, 0.15))',
+                        border: '1px solid #10b981',
+                        color: 'var(--leaf)',
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        fontSize: 10,
+                        fontWeight: 800,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        marginBottom: 6
+                      }}
+                      title={lang === 'bn' ? 'আপনার অগ্রাধিকারের ওজন অনুযায়ী সবচেয়ে উপযুক্ত' : 'Most suitable according to your priority weights'}
+                    >
                       <span>⭐</span>
                       <span>{lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে' : 'Best Suited to Your Priority'}</span>
+                      <span style={{ fontSize: 9.5, opacity: 0.85, fontWeight: 500 }}>
+                        {lang === 'bn' ? ' · আপনার অগ্রাধিকারের ওজন অনুযায়ী সবচেয়ে উপযুক্ত' : ' · according to priority weights'}
+                      </span>
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: 4 }}>
