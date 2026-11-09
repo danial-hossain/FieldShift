@@ -72,11 +72,52 @@ const STRATEGY_TO_PRIORITY = {
   soil_health: 'soil'
 };
 
+const CROP_TRANSLATIONS = {
+  'Boro Rice': { bn: 'বোরো', en: 'Boro Rice' },
+  'T. Aman Rice': { bn: 'আমন ধান', en: 'Aman' },
+  'T. Aman': { bn: 'আমন ধান', en: 'Aman' },
+  'Aus Rice': { bn: 'আউশ', en: 'Aus Rice' },
+  'Fallow': { bn: 'পতিত', en: 'Fallow' },
+  'Mustard': { bn: 'সরিষা', en: 'Mustard' },
+  'Mungbean': { bn: 'মুগডাল', en: 'Mungbean' },
+  'Lentil': { bn: 'মসুর', en: 'Lentil' },
+  'Wheat': { bn: 'গম', en: 'Wheat' },
+  'Maize': { bn: 'ভুট্টা', en: 'Maize' },
+  'Potato': { bn: 'আলু', en: 'Potato' },
+  'Sesame': { bn: 'তিল', en: 'Sesame' },
+  'Soybean': { bn: 'সয়াবিন', en: 'Soybean' },
+  'Sunflower': { bn: 'সূর্যমুখী', en: 'Sunflower' },
+  'Jute': { bn: 'পাট', en: 'Jute' },
+};
+
+const translateCropName = (crop, l, seasonCode = null) => {
+  if (!crop) return l === 'bn' ? 'পতিত' : 'Fallow';
+  const cStr = String(crop).trim();
+  const cLower = cStr.toLowerCase();
+  if (cLower === 'rice' || cLower === 'dhan' || cLower === 'ধান') {
+    if (!seasonCode || seasonCode.includes('S3') || seasonCode.toLowerCase().includes('kharif2') || seasonCode.toLowerCase().includes('kharif-2')) {
+      return l === 'bn' ? 'আমন ধান' : 'Aman';
+    }
+    if (seasonCode.includes('S1') || seasonCode.toLowerCase().includes('rabi')) {
+      return l === 'bn' ? 'বোরো ধান' : 'Boro Rice';
+    }
+    if (seasonCode.includes('S2') || seasonCode.toLowerCase().includes('kharif1')) {
+      return l === 'bn' ? 'আউশ ধান' : 'Aus Rice';
+    }
+    return l === 'bn' ? 'আমন ধান' : 'Aman';
+  }
+  const entry = CROP_TRANSLATIONS[cStr];
+  if (entry) return entry[l] || entry.en;
+  return cStr;
+};
+
 export {
   CANONICAL_PERIODS,
   CROP_DATABASE,
   STRATEGY_DEFINITIONS,
-  buildSixSeasonRecommendations
+  buildSixSeasonRecommendations,
+  CROP_TRANSLATIONS,
+  translateCropName
 };
 
 export function SixSeasonRecommendationView({
@@ -772,12 +813,12 @@ export function SixSeasonRecommendationView({
   
   // Baseline crop sequence
   const baselineCropMap = {
-    Y1_S1: baselineCropsEarly?.[0] || 'Boro Rice',
-    Y1_S2: baselineCropsEarly?.[1] || 'Fallow',
-    Y1_S3: baselineCropsEarly?.[2] || ['R', 'i', 'c', 'e'].join(''),
-    Y2_S1: baselineCropsEarly?.[0] || 'Boro Rice',
-    Y2_S2: baselineCropsEarly?.[1] || 'Fallow',
-    Y2_S3: baselineCropsEarly?.[2] || ['R', 'i', 'c', 'e'].join(''),
+    Y1_S1: baselineCropsEarly?.[0] || null,
+    Y1_S2: baselineCropsEarly?.[1] || null,
+    Y1_S3: baselineCropsEarly?.[2] || null,
+    Y2_S1: baselineCropsEarly?.[0] || null,
+    Y2_S2: baselineCropsEarly?.[1] || null,
+    Y2_S3: baselineCropsEarly?.[2] || null,
   };
 
   const activeCrops = compareWithBaseline ? baselineCropMap : planCropMap;
@@ -876,6 +917,102 @@ export function SixSeasonRecommendationView({
     return list;
   }, [selectedPeriodMatrix, selectedCropName, activeSelectedPeriod]);
 
+  // Active Bed Index & Baseline Helpers (unconditionally derived above all conditional returns)
+  const activePeriodIdx = periodKeys.indexOf(activeSelectedPeriod);
+  const activeCropMeta = CROP_DATABASE[selectedCropName] || {};
+  const baselineCropInSlot = baselineCropMap[activeSelectedPeriod] || null;
+  const baselineSeasonData = activePlanData?.baselineComparison?.baseline_seasons?.[activePeriodIdx]
+    || activePlanData?.milpStatus?.baseline_comparison?.baseline_seasons?.[activePeriodIdx]
+    || activePlanData?.baseline_seasons?.[activePeriodIdx];
+
+  const baselineSlotIrrig = baselineSeasonData?.irrigation_mm != null
+    ? baselineSeasonData.irrigation_mm
+    : (baselineCropInSlot && activePlanData?.cropSeasonMatrix?.[activeSelectedPeriod]?.[baselineCropInSlot]?.water_balance?.irrigation_required_mm != null
+        ? Math.round(activePlanData.cropSeasonMatrix[activeSelectedPeriod][baselineCropInSlot].water_balance.irrigation_required_mm)
+        : null);
+
+  // Deterministic Pros & Cons Generator (matching docs/design/planner_layout_reference.html:562-585)
+  // Kept unconditionally above any early return to strictly satisfy React Rules of Hooks
+  const currentProsCons = useMemo(() => {
+    const pros = [];
+    const cons = [];
+    if (!selectedCropName || loading || !activePlanData) {
+      return { pros, cons };
+    }
+    const isBn = lang === 'bn';
+    const k = selectedCropName;
+    const kLower = String(k || '').toLowerCase();
+    const bk = baselineCropInSlot;
+    const bkLower = String(bk || '').toLowerCase();
+
+    if (kLower === 'fallow' || kLower.includes('পতিত')) {
+      cons.push(isBn ? 'জমি ফাঁকা: বৃষ্টিতে মাটির ক্ষয়, আগাছা বাড়ে' : 'Bare ground: Soil erosion during rain, weeds increase');
+      cons.push(isBn ? 'এই মৌসুমে কোনো আয় নেই' : 'No farm income this season');
+      return { pros, cons };
+    }
+
+    if (activeCropMeta.is_legume || selectedCropEntry?.is_legume) {
+      pros.push(isBn ? 'মাটিতে নাইট্রোজেন দেয়, তাই পরের ফসলে কম ইউরিয়া লাগে' : 'Fixes atmospheric N in soil, reducing urea need for next crop');
+    }
+
+    if (activeCropMeta.duration && activeCropMeta.duration <= 90) {
+      pros.push(isBn ? `অল্প দিনে ওঠে (${toBanglaDigits(activeCropMeta.duration)} দিন)` : `Short duration (${activeCropMeta.duration} days)`);
+    }
+
+    if (selectedCropIrrig === 0) {
+      pros.push(isBn ? 'সেচ লাগে না, বৃষ্টিই যথেষ্ট' : 'No irrigation required (rainfed)');
+    }
+
+    if (selectedStrategy !== 'baseline') {
+      if (bk && (bkLower === 'fallow' || bkLower.includes('পতিত'))) {
+        pros.push(isBn ? 'আগে এই সময়ে জমি ফাঁকা থাকত, এখন মাটি ঢাকা থাকবে' : 'Previously fallow, now continuous soil cover protects land');
+      }
+      if (baselineSlotIrrig != null && selectedCropIrrig != null) {
+        const dIrrig = selectedCropIrrig - baselineSlotIrrig;
+        const bkLabel = bk ? translateCropName(bk, isBn ? 'bn' : 'en') : (isBn ? 'তথ্য নেই' : 'No data');
+        if (dIrrig < 0) {
+          pros.push(isBn ? `বর্তমানের (${bkLabel}) চেয়ে ${toBanglaDigits(Math.abs(dIrrig))} মিমি কম সেচ` : `${Math.abs(dIrrig)} mm less irrigation than baseline`);
+        } else if (dIrrig > 0) {
+          cons.push(bkLower === 'fallow'
+            ? (isBn ? `আগে ০ মিমি, এখন ${toBanglaDigits(dIrrig)} মিমি সেচ লাগবে` : `Requires ${dIrrig} mm irrigation compared to 0 mm fallow`)
+            : (isBn ? `বর্তমানের চেয়ে ${toBanglaDigits(dIrrig)} মিমি বেশি সেচ` : `${dIrrig} mm higher irrigation than baseline`));
+        }
+      }
+
+      if (selectedCropMargin != null && bk) {
+        const bkMargin = bkLower.includes('boro') ? 42000 : (bkLower.includes('aman') || bkLower === 'rice' ? 38000 : 0);
+        const diffProfit = Math.round((selectedCropMargin - bkMargin) * 0.13378);
+        if (diffProfit > 0) {
+          pros.push(isBn ? `এই মৌসুমে লাভ বেশি (+${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা)` : `Higher seasonal profit (+${diffProfit.toLocaleString()} BDT/bigha)`);
+        } else if (diffProfit < 0) {
+          cons.push(isBn ? `এই মৌসুমে লাভ কম (${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা), কিন্তু পানি ও মাটির উপকার` : `Lower seasonal profit (${diffProfit.toLocaleString()} BDT/bigha), but water & soil benefit`);
+        }
+      }
+    }
+
+    if (activePeriodIdx > 0) {
+      const prevKey = periodKeys[activePeriodIdx - 1];
+      const prevCrop = activeCrops[prevKey];
+      if (prevCrop && prevCrop.toLowerCase() !== 'fallow') {
+        const prevMeta = CROP_DATABASE[prevCrop] || {};
+        if (prevMeta.family && activeCropMeta.family && prevMeta.family !== activeCropMeta.family) {
+          pros.push(isBn ? `আগের মৌসুমের ${translateCropName(prevCrop, 'bn')} থেকে আলাদা পরিবার, তাই রোগ-পোকার চক্র ভাঙে` : `Different botanical family from preceding ${translateCropName(prevCrop, 'en')}, breaking pest/disease cycle`);
+        }
+      }
+    }
+
+    if (activePeriodIdx % 3 === 1) {
+      cons.push(isBn ? 'ফুল আসার সময় (এপ্রিল–মে) ৩৫°C+ গরম পড়লে ফলন কমে' : 'High temperature (>35°C) at flowering reduces yield');
+      cons.push(isBn ? 'বর্ষার আগে খরা: দরকার হলে একবার হালকা সেচ' : 'Pre-monsoon dry spell: supplemental irrigation needed if rainfall is delayed');
+    }
+
+    if (kLower.includes('boro') || kLower.includes('বোরো')) {
+      cons.push(isBn ? 'অনেক সেচ: বরেন্দ্রে ভূগর্ভস্থ পানির উপর চাপ (GRACE-FO: সঞ্চয় কমছে)' : 'Heavy groundwater irrigation: stresses Barind aquifer (GRACE-FO: -1.07 cm/yr storage depletion)');
+    }
+
+    return { pros, cons };
+  }, [selectedCropName, loading, activePlanData, baselineCropInSlot, activeCropMeta, selectedCropEntry, selectedCropIrrig, baselineSlotIrrig, selectedStrategy, selectedCropMargin, activePeriodIdx, periodKeys, activeCrops, lang]);
+
 
   if (loading) {
     return (
@@ -915,45 +1052,7 @@ export function SixSeasonRecommendationView({
     );
   }
 
-  // P2: Explain-the-result metrics and plain-language texts
-  const CROP_TRANSLATIONS = {
-    'Boro Rice': { bn: 'বোরো', en: 'Boro Rice' },
-    'T. Aman Rice': { bn: 'আমন ধান', en: 'Aman' },
-    'T. Aman': { bn: 'আমন ধান', en: 'Aman' },
-    'Aus Rice': { bn: 'আউশ', en: 'Aus Rice' },
-    'Fallow': { bn: 'পতিত', en: 'Fallow' },
-    'Mustard': { bn: 'সরিষা', en: 'Mustard' },
-    'Mungbean': { bn: 'মুগডাল', en: 'Mungbean' },
-    'Lentil': { bn: 'মসুর', en: 'Lentil' },
-    'Wheat': { bn: 'গম', en: 'Wheat' },
-    'Maize': { bn: 'ভুট্টা', en: 'Maize' },
-    'Potato': { bn: 'আলু', en: 'Potato' },
-    'Sesame': { bn: 'তিল', en: 'Sesame' },
-    'Soybean': { bn: 'সয়াবিন', en: 'Soybean' },
-    'Sunflower': { bn: 'সূর্যমুখী', en: 'Sunflower' },
-    'Jute': { bn: 'পাট', en: 'Jute' },
-  };
-
-  const translateCropName = (crop, l, seasonCode = null) => {
-    if (!crop) return l === 'bn' ? 'পতিত' : 'Fallow';
-    const cStr = String(crop).trim();
-    const cLower = cStr.toLowerCase();
-    if (cLower === 'rice' || cLower === 'dhan' || cLower === 'ধান') {
-      if (!seasonCode || seasonCode.includes('S3') || seasonCode.toLowerCase().includes('kharif2') || seasonCode.toLowerCase().includes('kharif-2')) {
-        return l === 'bn' ? 'আমন ধান' : 'Aman';
-      }
-      if (seasonCode.includes('S1') || seasonCode.toLowerCase().includes('rabi')) {
-        return l === 'bn' ? 'বোরো ধান' : 'Boro Rice';
-      }
-      if (seasonCode.includes('S2') || seasonCode.toLowerCase().includes('kharif1')) {
-        return l === 'bn' ? 'আউশ ধান' : 'Aus Rice';
-      }
-      return l === 'bn' ? 'আমন ধান' : 'Aman';
-    }
-    const entry = CROP_TRANSLATIONS[cStr];
-    if (entry) return entry[l] || entry.en;
-    return cStr;
-  };
+  // P2: Explain-the-result metrics and plain-language texts (CROP_TRANSLATIONS & translateCropName hoisted to module scope)
 
   const currentRotation = activePlanData.rotation || {};
   const currentRotationList = Object.values(currentRotation);
@@ -1077,83 +1176,7 @@ export function SixSeasonRecommendationView({
   const rainSrc = advisoryOnset?.precipitation_source || 'NASA POWER / GPM IMERG Calibrated (2001-2024)';
   const isSignificant = pVal < 0.05;
 
-  // Active Bed Index & Helpers
-  const activePeriodIdx = periodKeys.indexOf(activeSelectedPeriod);
-  const activeCropMeta = CROP_DATABASE[selectedCropName] || {};
-  const baselineCropInSlot = baselineCropMap[activeSelectedPeriod] || 'Boro Rice';
-  const baselineSlotIrrig = baselineCropInSlot.toLowerCase().includes('boro') ? 1200 : (baselineCropInSlot.toLowerCase().includes('aman') ? 348 : 0);
-
-  // Deterministic Pros & Cons Generator (matching docs/design/planner_layout_reference.html:562-585)
-  const currentProsCons = useMemo(() => {
-    const pros = [];
-    const cons = [];
-    const isBn = lang === 'bn';
-    const k = selectedCropName;
-    const kLower = String(k || '').toLowerCase();
-    const bk = baselineCropInSlot;
-    const bkLower = String(bk || '').toLowerCase();
-
-    if (kLower === 'fallow' || kLower.includes('পতিত')) {
-      cons.push(isBn ? 'জমি ফাঁকা: বৃষ্টিতে মাটির ক্ষয়, আগাছা বাড়ে' : 'Bare ground: Soil erosion during rain, weeds increase');
-      cons.push(isBn ? 'এই মৌসুমে কোনো আয় নেই' : 'No farm income this season');
-      return { pros, cons };
-    }
-
-    if (activeCropMeta.is_legume || selectedCropEntry?.is_legume) {
-      pros.push(isBn ? 'মাটিতে নাইট্রোজেন দেয়, তাই পরের ফসলে কম ইউরিয়া লাগে' : 'Fixes atmospheric N in soil, reducing urea need for next crop');
-    }
-
-    if (activeCropMeta.duration && activeCropMeta.duration <= 90) {
-      pros.push(isBn ? `অল্প দিনে ওঠে (${toBanglaDigits(activeCropMeta.duration)} দিন)` : `Short duration (${activeCropMeta.duration} days)`);
-    }
-
-    if (selectedCropIrrig === 0) {
-      pros.push(isBn ? 'সেচ লাগে না, বৃষ্টিই যথেষ্ট' : 'No irrigation required (rainfed)');
-    }
-
-    if (selectedStrategy !== 'baseline') {
-      if (bkLower === 'fallow' || bkLower.includes('পতিত')) {
-        pros.push(isBn ? 'আগে এই সময়ে জমি ফাঁকা থাকত, এখন মাটি ঢাকা থাকবে' : 'Previously fallow, now continuous soil cover protects land');
-      }
-      const dIrrig = selectedCropIrrig - baselineSlotIrrig;
-      if (dIrrig < 0) {
-        pros.push(isBn ? `বর্তমানের (${translateCropName(bk, 'bn')}) চেয়ে ${toBanglaDigits(Math.abs(dIrrig))} মিমি কম সেচ` : `${Math.abs(dIrrig)} mm less irrigation than baseline`);
-      } else if (dIrrig > 0) {
-        cons.push(bkLower === 'fallow'
-          ? (isBn ? `আগে ০ মিমি, এখন ${toBanglaDigits(dIrrig)} মিমি সেচ লাগবে` : `Requires ${dIrrig} mm irrigation compared to 0 mm fallow`)
-          : (isBn ? `বর্তমানের চেয়ে ${toBanglaDigits(dIrrig)} মিমি বেশি সেচ` : `${dIrrig} mm higher irrigation than baseline`));
-      }
-
-      const diffProfit = selectedCropMargin != null ? Math.round((selectedCropMargin - (bkLower.includes('boro') ? 42000 : 38000)) * 0.13378) : 0;
-      if (diffProfit > 0) {
-        pros.push(isBn ? `এই মৌসুমে লাভ বেশি (+${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা)` : `Higher seasonal profit (+${diffProfit.toLocaleString()} BDT/bigha)`);
-      } else if (diffProfit < 0) {
-        cons.push(isBn ? `এই মৌসুমে লাভ কম (${toBanglaDigits(diffProfit.toLocaleString())} টাকা/বিঘা), কিন্তু পানি ও মাটির উপকার` : `Lower seasonal profit (${diffProfit.toLocaleString()} BDT/bigha), but water & soil benefit`);
-      }
-    }
-
-    if (activePeriodIdx > 0) {
-      const prevKey = periodKeys[activePeriodIdx - 1];
-      const prevCrop = activeCrops[prevKey];
-      if (prevCrop && prevCrop.toLowerCase() !== 'fallow') {
-        const prevMeta = CROP_DATABASE[prevCrop] || {};
-        if (prevMeta.family && activeCropMeta.family && prevMeta.family !== activeCropMeta.family) {
-          pros.push(isBn ? `আগের মৌসুমের ${translateCropName(prevCrop, 'bn')} থেকে আলাদা পরিবার, তাই রোগ-পোকার চক্র ভাঙে` : `Different botanical family from preceding ${translateCropName(prevCrop, 'en')}, breaking pest/disease cycle`);
-        }
-      }
-    }
-
-    if (activePeriodIdx % 3 === 1) {
-      cons.push(isBn ? 'ফুল আসার সময় (এপ্রিল–মে) ৩৫°C+ গরম পড়লে ফলন কমে' : 'High temperature (>35°C) at flowering reduces yield');
-      cons.push(isBn ? 'বর্ষার আগে খরা: দরকার হলে একবার হালকা সেচ' : 'Pre-monsoon dry spell: supplemental irrigation needed if rainfall is delayed');
-    }
-
-    if (kLower.includes('boro') || kLower.includes('বোরো')) {
-      cons.push(isBn ? 'অনেক সেচ: বরেন্দ্রে ভূগর্ভস্থ পানির উপর চাপ (GRACE-FO: সঞ্চয় কমছে)' : 'Heavy groundwater irrigation: stresses Barind aquifer (GRACE-FO: -1.07 cm/yr storage depletion)');
-    }
-
-    return { pros, cons };
-  }, [selectedCropName, baselineCropInSlot, activeCropMeta, selectedCropEntry, selectedCropIrrig, baselineSlotIrrig, selectedStrategy, selectedCropMargin, activePeriodIdx, periodKeys, activeCrops, lang]);
+  // (activePeriodIdx, activeCropMeta, baselineCropInSlot, baselineSlotIrrig, and currentProsCons derived unconditionally above)
 
   return (
     <div className="six-season-recommendation-workspace wrap" style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px 40px', color: 'var(--text)' }}>
@@ -1643,7 +1666,7 @@ export function SixSeasonRecommendationView({
             {/* Baseline Comparison Slot */}
             {selectedStrategy !== 'baseline' && (
               <div style={{ fontSize: 13, background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '8px 10px', marginTop: 8 }}>
-                🔄 {lang === 'bn' ? 'বর্তমানে এই মৌসুমে:' : 'Currently in this season:'} <b>{translateCropName(baselineCropInSlot, lang)}</b> ({baselineCropInSlot.toLowerCase() === 'fallow' ? (lang === 'bn' ? 'জমি ফাঁকা, ০ মিমি' : 'Fallow, 0 mm') : (lang === 'bn' ? `${toBanglaDigits(baselineSlotIrrig)} মিমি সেচ` : `${baselineSlotIrrig} mm irrigation`)})
+                🔄 {lang === 'bn' ? 'বর্তমানে এই মৌসুমে:' : 'Currently in this season:'} <b>{baselineCropInSlot ? translateCropName(baselineCropInSlot, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</b> ({baselineSlotIrrig != null ? (baselineCropInSlot?.toLowerCase() === 'fallow' ? (lang === 'bn' ? 'জমি ফাঁকা, ০ মিমি' : 'Fallow, 0 mm') : (lang === 'bn' ? `${toBanglaDigits(baselineSlotIrrig)} মিমি সেচ` : `${baselineSlotIrrig} mm irrigation`)) : (lang === 'bn' ? 'সেচের তথ্য নেই' : 'No irrigation data')})
               </div>
             )}
 

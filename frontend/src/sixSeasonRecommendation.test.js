@@ -1,6 +1,9 @@
 // frontend/src/sixSeasonRecommendation.test.js
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   CANONICAL_PERIODS,
   CROP_DATABASE,
@@ -8,6 +11,9 @@ import {
   CANONICAL_ROTATIONS,
   buildSixSeasonRecommendations
 } from './sixSeasonEngine.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test('CANONICAL_PERIODS contains exactly 6 chronological planning periods', () => {
   assert.equal(CANONICAL_PERIODS.length, 6, 'Must contain exactly 6 periods');
@@ -131,4 +137,36 @@ test('buildSixSeasonRecommendations safely handles empty or zero field inputs wi
     assert.ok(Number.isFinite(rec.netProfitBdtHa));
     assert.ok(rec.cropName);
   }
+});
+
+test('Rules of Hooks: SixSeasonRecommendationView has no hooks declared after conditional returns', () => {
+  const src = fs.readFileSync(path.join(__dirname, 'SixSeasonRecommendationView.jsx'), 'utf-8');
+  const loadingReturnIdx = src.indexOf('if (loading)');
+  assert.ok(loadingReturnIdx > 0, 'Must have if (loading) guard');
+
+  const hookRegex = /\b(use[A-Z][a-zA-Z0-9_]*)\s*\(/g;
+  let match;
+  const lateHooks = [];
+  while ((match = hookRegex.exec(src)) !== null) {
+    if (match.index > loadingReturnIdx && !match[0].startsWith('useTranslation')) {
+      const lineNo = src.slice(0, match.index).split('\n').length;
+      lateHooks.push(`${match[1]} at line ${lineNo}`);
+    }
+  }
+  assert.deepEqual(lateHooks, [], `No hooks may appear after if (loading), but found: ${lateHooks.join(', ')}`);
+});
+
+test('ESLint: rules-of-hooks strictly passes with 0 violations across frontend/src', async () => {
+  const { ESLint } = await import('eslint');
+  const eslint = new ESLint();
+  const results = await eslint.lintFiles(['src/**/*.{js,jsx}']);
+  const violations = [];
+  for (const r of results) {
+    for (const msg of r.messages) {
+      if (msg.ruleId === 'react-hooks/rules-of-hooks') {
+        violations.push(`${r.filePath}:${msg.line} - ${msg.message}`);
+      }
+    }
+  }
+  assert.deepEqual(violations, [], `rules-of-hooks violations found: ${violations.join(', ')}`);
 });

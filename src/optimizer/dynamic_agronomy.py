@@ -885,6 +885,21 @@ def compute_rotation_comparison(
         else "App estimate · Illustrative prices (verify with local market)"
     )
 
+    baseline_seasons = []
+    for i, p in enumerate(periods):
+        s_code = "S1" if "S1" in p else ("S2" if "S2" in p else "S3")
+        b_c = b_map.get(s_code)
+        b_irrig = b_irrig_list[i] if i < len(b_irrig_list) else 0.0
+        b_prof = b_profit_list[i] if i < len(b_profit_list) else 0.0
+        baseline_seasons.append({
+            "period": p,
+            "season": s_code,
+            "crop": b_c,
+            "crop_bn": crop_names_bn.get(b_c, b_c) if b_c else None,
+            "irrigation_mm": round(b_irrig, 1) if b_c else None,
+            "profit_bdt_ha": round(b_prof, 0) if b_c else None,
+        })
+
     return {
         "baseline_rotation": [b_s1, b_s2, b_s3] if b_map else None,
         "baseline_rotation_text_bn": baseline_rotation_text_bn,
@@ -898,6 +913,7 @@ def compute_rotation_comparison(
         "baseline_irrigation_mm": base_irrig if b_map else None,
         "plan_irrigation_mm": plan_irrig if b_map else None,
         "water_savings_mm": water_saving if b_map else None,
+        "baseline_seasons": baseline_seasons,
         "baseline_profit_bdt": base_profit if b_map else None,
         "plan_profit_bdt": plan_profit,
         "profit_delta_bdt": profit_delta if b_map else None,

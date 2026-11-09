@@ -9,6 +9,7 @@
     "preview": "node node_modules/vite/bin/vite.js preview",
     "test": "node --test src/*.test.js",
     "smoke": "node node_modules/vite/bin/vite.js build --ssr scripts/smoke-ssr.jsx --outDir .smoke --emptyOutDir && node .smoke/smoke-ssr.js",
+    "lint": "eslint src",
     "e2e": "node e2e/runner.js"
   },
   "dependencies": {
@@ -22,5 +23,9 @@
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "1.2.15",
     "lightningcss-linux-x64-gnu": "1.33.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1"
   }
 }

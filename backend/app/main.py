@@ -1125,6 +1125,7 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "environment_basis": env_basis,
                     "selected_strategy_result": milp_res,
                     "baseline_comparison": milp_res.get("baseline_comparison", {}),
+                    "baseline_seasons": (milp_res.get("baseline_comparison") or {}).get("baseline_seasons", []),
                     "baseline_irrigation_mm": milp_res.get("baseline_irrigation_mm"),
                     "plan_irrigation_mm": milp_res.get("plan_irrigation_mm"),
                     "water_savings_mm": milp_res.get("water_savings_mm"),

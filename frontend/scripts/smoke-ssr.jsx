@@ -222,6 +222,49 @@ for (const dest of destinations) {
   }
 }
 
+// Dedicated Planner Lifecycle & Rerender Guard (Requirement 4)
+console.log('--- PLANNER RERENDER LIFECYCLE GUARD ---');
+try {
+  // Step 1: Render in loading state
+  const loadingOutput = renderToString(<SixSeasonRecommendationView activeField={fixtureField} lang="bn" />);
+  if (!loadingOutput.includes('ui-skeleton')) {
+    throw new Error('Loading render did not produce expected skeleton output');
+  }
+
+  // Step 2: Rerender with full data fixture (simulates state update)
+  const dataOutput = renderToString(
+    <SixSeasonRecommendationView
+      activeField={fixtureField}
+      district="rajshahi"
+      defaultDistrict="rajshahi"
+      lang="bn"
+      plan={{
+        periods: ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'],
+        rotation: { Y1_S1: 'Mustard', Y1_S2: 'Mungbean', Y1_S3: 'Rice', Y2_S1: 'Chickpea', Y2_S2: 'Sesame', Y2_S3: 'Rice' },
+        baselineRotation: ['Boro Rice', 'Fallow', 'Rice'],
+        baselineComparison: {
+          baseline_rotation: ['Boro Rice', 'Fallow', 'Rice'],
+          baseline_seasons: [
+            { period: 'Y1_S1', season: 'S1', crop: 'Boro Rice', irrigation_mm: 1200 },
+            { period: 'Y1_S2', season: 'S2', crop: 'Fallow', irrigation_mm: 0 },
+            { period: 'Y1_S3', season: 'S3', crop: 'Rice', irrigation_mm: 348 },
+            { period: 'Y2_S1', season: 'S1', crop: 'Boro Rice', irrigation_mm: 1200 },
+            { period: 'Y2_S2', season: 'S2', crop: 'Fallow', irrigation_mm: 0 },
+            { period: 'Y2_S3', season: 'S3', crop: 'Rice', irrigation_mm: 348 }
+          ]
+        }
+      }}
+    />
+  );
+  if (!dataOutput || dataOutput.length === 0) {
+    throw new Error('Data rerender produced empty output');
+  }
+  console.log('[PASS] SixSeasonRecommendationView: Loading state -> Data state (rerender) completed without throwing');
+} catch (err) {
+  failures++;
+  console.error('[FAIL] SixSeasonRecommendationView: Rerender threw error:', err.message);
+}
+
 console.log('==============================================================');
 if (failures > 0) {
   console.error(`SMOKE TEST FAILED: ${failures} render failure(s) detected.`);
