@@ -572,6 +572,7 @@ def run_adaptive_replan(
         "annual_irrigation_new_mm": round(
             (actual_water_so_far_mm + projected_remaining_water_mm) / (len(periods) / 3.0), 1
         ),
+        "nitrogen_delta_kg": round((sum(35.0 for c in new_crops if crop_lookup.get(c.strip().lower(), {}).get("is_legume")) - sum(35.0 for c in initial_crops if crop_lookup.get(c.strip().lower(), {}).get("is_legume"))) / (len(periods) / 3.0), 1),
     }
 
     elapsed_ms = round((time.perf_counter() - start_time) * 1000.0, 2)
@@ -582,7 +583,7 @@ def run_adaptive_replan(
         "changed_periods": [p for p, o, n in zip(periods, initial_crops, new_crops) if o != n],
         "profit_delta_bdt": totals["profit_delta_bdt"],
         "water_delta_mm": totals["irrigation_delta_mm"],
-        "nitrogen_delta_kg": 0.0,
+        "nitrogen_delta_kg": totals["nitrogen_delta_kg"],
     }
 
     return {

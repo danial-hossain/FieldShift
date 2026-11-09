@@ -118,6 +118,45 @@ def test_r2_low_mustard_yield_reduces_margin_and_adapts():
     assert mustard_cal["is_uncertain"] is True  # 1 record -> uncertain badge
 
 
+def test_r2_high_mungbean_price_raises_mungbean_margin():
+    """Verify high Mungbean price raises Mungbean margin for future seasons."""
+    crops_df = load_crop_knowledge()
+    power, _ = load_district_climate_data("chapainawabganj", offline=True)
+    if "date" in power.columns:
+        power["date"] = pd.to_datetime(power["date"])
+
+    state = build_field_state(
+        "rahim_field",
+        24.62,
+        88.55,
+        power["date"].max(),
+        power.tail(60),
+        crop_knowledge=crops_df,
+    )
+    state.field_size_ha = 0.67
+    state.district = "chapainawabganj"
+
+    # Farmer recorded high Mungbean sale price: 9000 BDT/maund
+    completed = [
+        {"period": "Y1_S1", "crop": "Mustard", "yield_maund_bigha": 6.0, "sale_price_bdt_maund": 3000.0},
+        {"period": "Y1_S2", "crop": "Mungbean", "yield_maund_bigha": 4.0, "sale_price_bdt_maund": 9000.0},
+    ]
+
+    replan_res = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=completed,
+        crops=crops_df,
+        priority="profit",
+    )
+
+    assert replan_res["completed_seasons_count"] == 2
+    assert replan_res["remaining_seasons_count"] == 4
+    mungbean_cal = [c for c in replan_res["calibration_table"] if "mungbean" in c["crop"].lower()][0]
+    assert mungbean_cal["price_bdt_maund"] == 9000.0
+    assert mungbean_cal["price_source"] == "কৃষকের দেওয়া"
+
+
 def test_r2_five_finished_seasons_leaves_one_to_plan():
     """Verify recording 5 finished seasons leaves exactly 1 remaining season to replan."""
     crops_df = load_crop_knowledge()
