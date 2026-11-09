@@ -366,13 +366,16 @@ def compute_crop_soil_suitability(
             salinity_factor = 1.08  # Salt-tolerant coastal recommendation
 
     soil_factor = round(ph_factor * om_factor * tex_factor * salinity_factor, 4)
-    soil_inputs = (
-        f"pH={ph:.1f}" if ph is not None else "pH unavailable"
-    ) + (
-        f", OM={om:.1f}%" if om is not None else ", OM unavailable"
-    ) + (
-        f", Texture={texture}" if texture is not None else ", Texture unavailable"
-    )
+    if ph is None and om is None:
+        soil_inputs = "pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে"
+    else:
+        soil_inputs = (
+            f"pH={ph:.1f}" if ph is not None else "pH তথ্য নেই (নিরপেক্ষ)"
+        ) + (
+            f", OM={om:.1f}%" if om is not None else ", OM তথ্য নেই (নিরপেক্ষ)"
+        ) + (
+            f", Texture={texture}" if texture is not None else ""
+        )
     return soil_factor, f"{soil_inputs} (factor={soil_factor:.2f}; missing measurements neutral)"
 
 

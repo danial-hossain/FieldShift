@@ -2219,18 +2219,20 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
     # Deterministic rule-based offline fallback tailored to the 6-part structure
     fname = field_info.get("name") or "Selected Field"
     texture = field_info.get("soil_texture") or "loam"
-    ph = field_info.get("soil_ph", 6.5)
-    om = field_info.get("organic_matter") or field_info.get("organic_matter_pct", 2.0)
+    ph = field_info.get("soil_ph")
+    om = field_info.get("organic_matter") or field_info.get("organic_matter_pct")
     irrig = field_info.get("irrigation_capacity_mm", 400)
     temp = weather_info.get("temperature") or weather_info.get("temperature_c", 26.0)
 
     if lang == "bn" or any(w in msg_low for w in ["bangla", "banglae", "বাংলা"]):
+        soil_stat_line = f"pH {ph}, জৈব পদার্থ {om}%" if (ph is not None and om is not None) else "pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে"
+        ph_evidence = f"পরিমাপকৃত pH: **{ph}** (অনুকূল পরিসীমা: ৬.০-৭.৫)" if ph is not None else "pH/OM তথ্য নেই — নিরপেক্ষ ধরা হয়েছে"
         fallback_reply = (
             f"**[অফলাইন কৃষি পরামর্শ — নিয়ম-ভিত্তিক সিদ্ধান্ত সমর্থন]**\n\n"
             f"### ১. সংক্ষিপ্ত উত্তর (SHORT ANSWER)\n"
-            f"আপনার **{fname}** জমির জন্য ({texture} মাটি, pH {ph}, জৈব পদার্থ {om}%), রবি মৌসুমে ডাল বা তৈলবীজ (যেমন মসুর/সরিষা) এবং খরিফ মৌসুমে ধানের পর্যায়ক্রমিক ফসল আবর্তন সবচেয়ে কার্যকর।\n\n"
+            f"আপনার **{fname}** জমির জন্য ({texture} মাটি, {soil_stat_line}), রবি মৌসুমে ডাল বা তৈলবীজ (যেমন মসুর/সরিষা) এবং খরিফ মৌসুমে ধানের পর্যায়ক্রমিক ফসল আবর্তন সবচেয়ে কার্যকর।\n\n"
             f"### ২. এই জমির প্রমাণাদি (EVIDENCE FROM THIS FIELD)\n"
-            f"- মাটির গঠন: **{texture}**, পরিমাপকৃত pH: **{ph}** (অনুকূল পরিসীমা: ৬.০-৭.৫)।\n"
+            f"- মাটির গঠন: **{texture}**, {ph_evidence}।\n"
             f"- সেচ সক্ষমতা: **{irrig} মিমি**, নাসা পাওয়ার পর্যবেক্ষিত তাপমাত্রা: **{temp}°C**।\n\n"
             f"### ৩. প্রস্তাবিত পরবর্তী পদক্ষেপ (RECOMMENDED NEXT STEP)\n"
             f"পরপর দুই মৌসুম একই গোত্রের ফসল চাষ পরিহার করুন। লিগিউম জাতীয় ফসল (যেমন মুগ বা মসুর) অন্তর্ভুক্ত করে প্রাকৃতিক নাইট্রোজেন সংবন্ধন বাড়ান।\n\n"
@@ -2242,12 +2244,14 @@ def call_gemini_chat(message: str = "", history: list | None = None, context: di
             f"পরবর্তী মৌসুমের জন্য 'Adaptive Replanning' মডিউলে মাটির সাম্প্রতিক পরীক্ষার মান আপডেট করুন।"
         )
     else:
+        soil_stat_line_en = f"pH {ph}, {om}% organic matter" if (ph is not None and om is not None) else "pH/OM unavailable — evaluated as neutral"
+        ph_evidence_en = f"measured pH **{ph}** is suitable for legumes and cereals" if ph is not None else "pH/OM unavailable — evaluated as neutral"
         fallback_reply = (
             f"**[Offline Agronomic Guidance — Rule-Based Decision Support]**\n\n"
             f"### 1. SHORT ANSWER\n"
-            f"For **{fname}** with **{texture}** soil, measured pH **{ph}**, and **{om}% organic matter**, an alternating Rabi pulse/oilseed (Lentil, Mustard) followed by Kharif cereal (Aus, Aman Rice) provides the strongest balance of revenue and soil preservation.\n\n"
+            f"For **{fname}** with **{texture}** soil and {soil_stat_line_en}, an alternating Rabi pulse/oilseed (Lentil, Mustard) followed by Kharif cereal (Aus, Aman Rice) provides the strongest balance of revenue and soil preservation.\n\n"
             f"### 2. EVIDENCE FROM THIS FIELD\n"
-            f"- Soil Profile: **{texture}** with **{om}% OM**; measured pH **{ph}** is suitable for legumes and cereals.\n"
+            f"- Soil Profile: **{texture}**; {ph_evidence_en}.\n"
             f"- Hydrology: Seasonal irrigation capacity is **{irrig} mm**; NASA POWER ambient temp is **{temp}°C**.\n\n"
             f"### 3. RECOMMENDED NEXT STEP\n"
             f"Maintain strict botanical family alternation (Poaceae -> Fabaceae -> Brassicaceae) to break root-zone pathogen cycles and fix biological nitrogen.\n\n"
