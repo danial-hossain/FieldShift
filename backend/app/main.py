@@ -1016,8 +1016,61 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                 "market_preferences (crop-specific market suitability data is not connected to the optimizer)"
             )
 
+        from src.optimizer.strategy_scoring import score_and_rank_strategies
+        strategy_weights_map = {
+            "balanced": (0.34, 0.33, 0.33, 0.0),
+            "profit": (0.60, 0.20, 0.20, 0.0),
+            "water": (0.20, 0.60, 0.20, 0.0),
+            "soil": (0.20, 0.20, 0.60, 0.0),
+        }
+        canonical_priority = "profit" if priority in {"profit", "profit_focused", "লাভ", "মুনাফা"} else (
+            "water" if priority in {"water", "water_efficiency", "পানি", "পানি সাশ্রয়"} else (
+                "soil" if priority in {"soil", "soil_health", "মাটি", "মাটির স্বাস্থ্য"} else "balanced"
+            )
+        )
+        all_strat_plans = {}
+        for s_key, (pw, ww, sw, nw) in strategy_weights_map.items():
+            if s_key == canonical_priority:
+                all_strat_plans[s_key] = milp_res
+            else:
+                all_strat_plans[s_key] = optimize_rotation(
+                    field_state=f_state,
+                    crops=crops,
+                    environmental_history=climate_df,
+                    profit_weight=pw,
+                    water_weight=ww,
+                    soil_weight=sw,
+                    national_need_weight=nw,
+                    allow_kharif2_fallow=allow_k2_fallow,
+                    min_cereals_per_year=int(data.get("min_cereals_per_year", 1)),
+                    seasonally_flooded=bool(is_haor),
+                    field_history_crops=hist_crops_param,
+                    field_history_records=history_records if saved_field_record else (data.get("field_history_records") or data.get("crop_history") or []),
+                    existing_rotation=existing_rotation,
+                    existing_rotation_source=existing_rotation_source,
+                    existing_rotation_year=existing_rotation_year,
+                    excluded_crops=([c for c in data.get("excluded_crops", []) if c] + (["Potato"] if data.get("no_power_tiller") and "Potato" not in data.get("excluded_crops", []) else [])) or None,
+                )
+
+        strategy_ranking = score_and_rank_strategies(
+            all_strat_plans,
+            irrigation_capacity_mm=data.get("irrigation_capacity_mm"),
+        )
+        milp_res["best_strategy"] = strategy_ranking["best_strategy"]
+        milp_res["best_reason"] = strategy_ranking["best_reason_bn"]
+        milp_res["best_reason_bn"] = strategy_ranking["best_reason_bn"]
+        milp_res["best_reason_en"] = strategy_ranking["best_reason_en"]
+        milp_res["identical_strategy_note_bn"] = strategy_ranking["identical_strategy_note_bn"]
+        milp_res["identical_strategy_note_en"] = strategy_ranking["identical_strategy_note_en"]
+        milp_res["strategy_recommendation"] = strategy_ranking
+
         final_resp = finite_json_value(jsonable_encoder({
             "status": "ok",
+            "best_strategy": strategy_ranking["best_strategy"],
+            "best_reason": strategy_ranking["best_reason_bn"],
+            "best_reason_bn": strategy_ranking["best_reason_bn"],
+            "best_reason_en": strategy_ranking["best_reason_en"],
+            "strategy_recommendation": strategy_ranking,
             "mode": data_mode or "offline",
             "climate_source": {
                 "dataset": "NASA POWER",
@@ -1121,6 +1174,13 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                 },
                 "planning": {
                     "selected_strategy": priority,
+                    "best_strategy": strategy_ranking["best_strategy"],
+                    "best_reason": strategy_ranking["best_reason_bn"],
+                    "best_reason_bn": strategy_ranking["best_reason_bn"],
+                    "best_reason_en": strategy_ranking["best_reason_en"],
+                    "identical_strategy_note_bn": strategy_ranking["identical_strategy_note_bn"],
+                    "identical_strategy_note_en": strategy_ranking["identical_strategy_note_en"],
+                    "strategy_recommendation": strategy_ranking,
                     "milp_status": milp_res,
                     "environment_basis": env_basis,
                     "selected_strategy_result": milp_res,

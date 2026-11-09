@@ -457,23 +457,63 @@ export function SixSeasonRecommendationView({
     return null;
   }, [plansByPriority, selectedStrategy, lang]);
 
-  // Determine best scoring strategy from API objective_value (not hardcoded on balanced)
+  // Determine best scoring strategy from API multi-criteria ranking (or fallback to balanced)
   const bestScoringStrategyId = useMemo(() => {
-    let bestId = null;
-    let maxScore = -Infinity;
-    const strategyKeys = ['balanced', 'profit_focused', 'water_efficiency', 'soil_health'];
-    for (const sId of strategyKeys) {
-      const pKey = STRATEGY_TO_PRIORITY[sId] || sId;
+    const PRIORITY_TO_STRATEGY = {
+      balanced: 'balanced',
+      profit: 'profit_focused',
+      profit_focused: 'profit_focused',
+      water: 'water_efficiency',
+      water_efficiency: 'water_efficiency',
+      soil: 'soil_health',
+      soil_health: 'soil_health',
+    };
+    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
       const pData = plansByPriority[pKey]?.summary?.planning;
-      const res = pData?.selected_strategy_result || pData?.milp_status;
-      const objVal = res?.objective_value != null ? Number(res.objective_value) : null;
-      if (objVal != null && objVal > maxScore) {
-        maxScore = objVal;
-        bestId = sId;
+      const bStrat = pData?.best_strategy || pData?.milp_status?.best_strategy || plansByPriority[pKey]?.best_strategy;
+      if (bStrat && PRIORITY_TO_STRATEGY[bStrat]) {
+        return PRIORITY_TO_STRATEGY[bStrat];
       }
     }
-    return bestId;
+    return 'balanced';
   }, [plansByPriority]);
+
+  const bestStrategyReason = useMemo(() => {
+    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
+      const pData = plansByPriority[pKey]?.summary?.planning;
+      const rBn = pData?.best_reason_bn || pData?.best_reason || plansByPriority[pKey]?.best_reason;
+      const rEn = pData?.best_reason_en || plansByPriority[pKey]?.best_reason_en;
+      if (rBn || rEn) {
+        return lang === 'bn' ? (rBn || rEn) : (rEn || rBn);
+      }
+    }
+    return null;
+  }, [plansByPriority, lang]);
+
+  const identicalStrategyNote = useMemo(() => {
+    for (const pKey of ['balanced', 'profit', 'water', 'soil']) {
+      const pData = plansByPriority[pKey]?.summary?.planning;
+      const nBn = pData?.identical_strategy_note_bn || pData?.milp_status?.identical_strategy_note_bn;
+      const nEn = pData?.identical_strategy_note_en || pData?.milp_status?.identical_strategy_note_en;
+      if (nBn || nEn) {
+        return lang === 'bn' ? (nBn || nEn) : (nEn || nBn);
+      }
+    }
+    if (plansByPriority && plansByPriority.balanced) {
+      const bCrops = plansByPriority.balanced?.summary?.planning?.milp_status?.selected_crop_by_period || {};
+      const bSeq = Object.values(bCrops).join(' → ');
+      if (bSeq) {
+        const wCrops = plansByPriority.water?.summary?.planning?.milp_status?.selected_crop_by_period || {};
+        const wSeq = Object.values(wCrops).join(' → ');
+        if (wSeq && wSeq === bSeq) {
+          return lang === 'bn'
+            ? 'এই জমিতে সুষম আর পানি সাশ্রয় একই পরিকল্পনা দেয়'
+            : 'For this field, Balanced and Water-Saving strategies produce the identical rotation';
+        }
+      }
+    }
+    return null;
+  }, [plansByPriority, lang]);
 
   // Active solver weights for currently selected strategy
   const activeWeights = useMemo(() => {
@@ -1523,6 +1563,39 @@ export function SixSeasonRecommendationView({
           </button>
         </div>
       </div>
+
+      {/* 2b. Strategy Recommendation & Comparison Line (S1) */}
+      {(bestStrategyReason || identicalStrategyNote || strategyComparisonNote) && (
+        <div
+          style={{
+            marginTop: 6,
+            marginBottom: 2,
+            background: 'var(--surface, #ffffff)',
+            border: '1px solid var(--line, #dfe6dc)',
+            borderRadius: 10,
+            padding: '7px 14px',
+            fontSize: 12.5,
+            color: 'var(--text)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            lineHeight: 1.45,
+          }}
+        >
+          {bestStrategyReason && (
+            <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>{bestStrategyReason}</span>
+            </div>
+          )}
+          {(strategyComparisonNote || identicalStrategyNote) && (
+            <div style={{ fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
+              ℹ️ {strategyComparisonNote || identicalStrategyNote}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 3. Farmer Priorities Compact Row (PL14) */}
       <div className="pri" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '8px 12px' }}>
