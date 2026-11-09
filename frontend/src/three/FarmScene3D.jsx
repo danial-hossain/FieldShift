@@ -454,7 +454,7 @@ export function FarmScene3D({
   selectedBedIndex = 0,
   onBedClick = null,
   cameraPreset = 'iso', // 'iso' | 'top' | 'close'
-  fieldAreaHa = 1.0,
+  fieldAreaHa = null,
   fieldName = 'খামার প্লট',
   theme = 'dark',
   lang = 'bn',
@@ -495,8 +495,9 @@ export function FarmScene3D({
   }, []);
 
   const bighaStr = useMemo(() => {
+    if (!fieldAreaHa || fieldAreaHa <= 0) return '—';
     const b = haToBigha(fieldAreaHa);
-    return b ? `${b} ${lang === 'bn' ? 'বিঘা' : 'bigha'}` : '';
+    return b ? `${b} ${lang === 'bn' ? 'বিঘা' : 'bigha'}` : '—';
   }, [fieldAreaHa, lang]);
 
   // Sync internal preset state with prop
@@ -1542,7 +1543,7 @@ export function FarmScene3D({
           <span>{fieldName}</span>
           <span style={{ opacity: 0.5 }}>•</span>
           <span style={{ color: '#5cc27e' }}>
-            {bighaStr} ({Number(fieldAreaHa || 1).toFixed(1)} ha)
+            {fieldAreaHa && fieldAreaHa > 0 ? `${bighaStr} (${Number(fieldAreaHa).toFixed(1)} ha)` : '—'}
           </span>
         </div>
 

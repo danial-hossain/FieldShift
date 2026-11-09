@@ -842,8 +842,8 @@ export function SixSeasonRecommendationView({
   const y1Irrig = (seasonIrrigMap['Y1_S1'] || 0) + (seasonIrrigMap['Y1_S2'] || 0) + (seasonIrrigMap['Y1_S3'] || 0);
   const y2Irrig = (seasonIrrigMap['Y2_S1'] || 0) + (seasonIrrigMap['Y2_S2'] || 0) + (seasonIrrigMap['Y2_S3'] || 0);
   const avgIrrig = Math.round((y1Irrig + y2Irrig) / 2);
-  const baseIrrigVal = activePlanData.baselineIrrigationMm != null ? Math.round(activePlanData.baselineIrrigationMm) : 1548;
-  const savingsVal = Math.round(baseIrrigVal - avgIrrig);
+  const baseIrrigVal = activePlanData.baselineIrrigationMm != null ? Math.round(activePlanData.baselineIrrigationMm) : null;
+  const savingsVal = baseIrrigVal != null ? Math.round(baseIrrigVal - avgIrrig) : null;
 
   const farm3dBeds = useMemo(() => {
     return periodKeys.map(k => {
@@ -1187,13 +1187,13 @@ export function SixSeasonRecommendationView({
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 600, margin: 0, color: 'var(--text)', letterSpacing: '-0.02em' }}>
             {lang === 'bn'
-              ? `আবর্তন পরিকল্পনা · ${activeField?.name || 'রহিম মিয়ার জমি'} (${toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} বিঘা)`
-              : `Rotation Planner · ${activeField?.name || "Rahim's Field"} (${haToBigha(fieldAreaHa || 0.67)} bigha)`}
+              ? `আবর্তন পরিকল্পনা · ${activeField?.name || 'জমি বাছাই করুন'} (${fieldAreaHa != null ? `${toBanglaDigits(haToBigha(fieldAreaHa))} বিঘা` : 'তথ্য নেই'})`
+              : `Rotation Planner · ${activeField?.name || 'Select a field'} (${fieldAreaHa != null ? `${haToBigha(fieldAreaHa)} bigha` : 'তথ্য নেই'})`}
           </h1>
           <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: 13, marginTop: 4 }}>
             {activeField?.district
               ? formatDistrictLabel(activeField.district, lang)
-              : (lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ (বরেন্দ্র)' : 'Chapainawabganj (Barind)')} · {toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} {lang === 'bn' ? 'বিঘা' : 'bigha'} · {activeField?.soil_texture ? formatSoilTextureLabel(activeField.soil_texture) : (lang === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay Loam')} · NASA POWER + GPM IMERG
+              : 'তথ্য নেই'} · {fieldAreaHa != null ? `${toBanglaDigits(haToBigha(fieldAreaHa))} ${lang === 'bn' ? 'বিঘা' : 'bigha'}` : 'তথ্য নেই'} · {activeField?.soil_texture ? formatSoilTextureLabel(activeField.soil_texture) : 'তথ্য নেই'} · NASA POWER + GPM IMERG
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1425,13 +1425,19 @@ export function SixSeasonRecommendationView({
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ (বছরে)' : 'Annual Irrigation'}</span>
           {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(baseIrrigVal)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+              {baseIrrigVal != null ? `${toBanglaDigits(baseIrrigVal)} ${lang === 'bn' ? 'মিমি' : 'mm'}` : '…'}
+            </strong>
           ) : (
             <div>
-              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(baseIrrigVal)} → {toBanglaDigits(avgIrrig)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>{' '}
-              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                ({savingsVal >= 0 ? `−${toBanglaDigits(savingsVal)}` : `+${toBanglaDigits(Math.abs(savingsVal))}`})
-              </em>
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {baseIrrigVal != null ? `${toBanglaDigits(baseIrrigVal)} → ` : ''}{toBanglaDigits(avgIrrig)} {lang === 'bn' ? 'মিমি' : 'mm'}
+              </strong>{' '}
+              {savingsVal != null && (
+                <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                  ({savingsVal >= 0 ? `−${toBanglaDigits(savingsVal)}` : `+${toBanglaDigits(Math.abs(savingsVal))}`})
+                </em>
+              )}
             </div>
           )}
         </div>
@@ -1439,15 +1445,23 @@ export function SixSeasonRecommendationView({
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন (বছরে)' : 'Bare Days (annual)'}</span>
           {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} {lang === 'bn' ? 'দিন' : 'days'}</strong>
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+              {activePlanData.baselineBareDays != null ? `${toBanglaDigits(Math.round(activePlanData.baselineBareDays))} ${lang === 'bn' ? 'দিন' : 'days'}` : '…'}
+            </strong>
           ) : (
             <div>
-              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                {toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} → {toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))} {lang === 'bn' ? 'দিন' : 'days'}
-              </strong>{' '}
-              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                (−{toBanglaDigits(Math.max(0, Math.round((activePlanData.baselineBareDays ?? 115) - (activePlanData.planBareDays ?? 60))) )})
-              </em>
+              {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null ? (
+                <>
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                    {toBanglaDigits(Math.round(activePlanData.baselineBareDays))} → {toBanglaDigits(Math.round(activePlanData.planBareDays))} {lang === 'bn' ? 'দিন' : 'days'}
+                  </strong>{' '}
+                  <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                    (−{toBanglaDigits(Math.max(0, Math.round(activePlanData.baselineBareDays - activePlanData.planBareDays)))})
+                  </em>
+                </>
+              ) : (
+                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+              )}
             </div>
           )}
         </div>
@@ -1455,35 +1469,57 @@ export function SixSeasonRecommendationView({
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন' : 'Soil Nitrogen'}</span>
           {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>{toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}</strong>
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+              {activePlanData.baselineNitrogenKg != null ? `${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg))} ${lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}` : '…'}
+            </strong>
           ) : (
             <div>
-              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                {toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → {toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}
-              </strong>{' '}
-              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                (+{toBanglaDigits(Math.round((activePlanData.planNitrogenKg ?? 35) - (activePlanData.baselineNitrogenKg ?? 0)))})
-              </em>
+              {activePlanData.baselineNitrogenKg != null && activePlanData.planNitrogenKg != null ? (
+                <>
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                    {toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg))} → {toBanglaDigits(Math.round(activePlanData.planNitrogenKg))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}
+                  </strong>{' '}
+                  <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                    (+{toBanglaDigits(Math.round(activePlanData.planNitrogenKg - activePlanData.baselineNitrogenKg))})
+                  </em>
+                </>
+              ) : (
+                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+              )}
             </div>
           )}
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? `লাভ, আপনার ${toBanglaDigits(haToBigha(fieldAreaHa || 0.67))} বিঘায়` : `Profit, for ${haToBigha(fieldAreaHa || 0.67)} bigha`}
+            {lang === 'bn'
+              ? `লাভ${fieldAreaHa != null ? `, আপনার ${toBanglaDigits(haToBigha(fieldAreaHa))} বিঘায়` : ''}`
+              : `Profit${fieldAreaHa != null ? `, for ${haToBigha(fieldAreaHa)} bigha` : ''}`}
           </span>
-          {selectedStrategy === 'baseline' ? (
+          {fieldAreaHa == null ? (
             <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              ~{toBanglaDigits(Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'}
+              {lang === 'bn' ? 'তথ্য নেই' : 'No data'}
+            </strong>
+          ) : selectedStrategy === 'baseline' ? (
+            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+              {activePlanData.baselineProfitBdt != null
+                ? `~${toBanglaDigits(Math.round(activePlanData.baselineProfitBdt * fieldAreaHa).toLocaleString())} ${lang === 'bn' ? 'টাকা' : 'BDT'}`
+                : '…'}
             </strong>
           ) : (
             <div>
-              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                ~{toBanglaDigits(Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)).toLocaleString())} → ~{toBanglaDigits(Math.round((activePlanData.planProfitBdt ?? 146526) * (fieldAreaHa || 0.67)).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'}
-              </strong>{' '}
-              <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                (+{toBanglaDigits(Math.round(((activePlanData.planProfitBdt ?? 146526) - (activePlanData.baselineProfitBdt ?? 55869)) * (fieldAreaHa || 0.67)).toLocaleString())})
-              </em>
+              {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null ? (
+                <>
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                    ~{toBanglaDigits(Math.round(activePlanData.baselineProfitBdt * fieldAreaHa).toLocaleString())} → ~{toBanglaDigits(Math.round(activePlanData.planProfitBdt * fieldAreaHa).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'}
+                  </strong>{' '}
+                  <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                    (+{toBanglaDigits(Math.round((activePlanData.planProfitBdt - activePlanData.baselineProfitBdt) * fieldAreaHa).toLocaleString())})
+                  </em>
+                </>
+              ) : (
+                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+              )}
             </div>
           )}
         </div>
@@ -1557,12 +1593,12 @@ export function SixSeasonRecommendationView({
             selectedBedId={activeSelectedPeriod}
             onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
             cameraPreset="iso"
-            fieldAreaHa={fieldAreaHa || 0.67}
-            fieldName={activeField?.name || (lang === 'bn' ? 'রহিম মিয়ার জমি' : "Rahim's Field")}
+            fieldAreaHa={fieldAreaHa || null}
+            fieldName={activeField?.name || (lang === 'bn' ? 'জমি বাছাই করুন' : 'Select a field')}
             theme={theme || 'dark'}
             lang={lang}
             height={480}
-            annualIrrigationMm={selectedStrategy === 'baseline' ? baseIrrigVal : avgIrrig}
+            annualIrrigationMm={selectedStrategy === 'baseline' ? (baseIrrigVal ?? avgIrrig) : avgIrrig}
           />
         </div>
 
@@ -1618,7 +1654,9 @@ export function SixSeasonRecommendationView({
                     : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                 </strong>
                 <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
-                  {selectedCropYieldTonHa != null ? `~${toBanglaDigits(Math.round(selectedCropYieldTonHa * 3.585 * (haToBigha(fieldAreaHa || 0.67))))} ${lang === 'bn' ? 'মণ' : 'maund'}` : ''}
+                  {selectedCropYieldTonHa != null
+                    ? (fieldAreaHa != null ? `~${toBanglaDigits(Math.round(selectedCropYieldTonHa * 3.585 * (haToBigha(fieldAreaHa))))} ${lang === 'bn' ? 'মণ' : 'maund'}` : '—')
+                    : ''}
                 </small>
               </div>
 
@@ -1629,7 +1667,7 @@ export function SixSeasonRecommendationView({
                 </strong>
                 <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
                   {selectedCropIrrig > 0
-                    ? (lang === 'bn' ? `~${toBanglaDigits(Math.round(selectedCropIrrig * (fieldAreaHa || 0.67) * 10).toLocaleString())} হাজার লিটার` : `~${Math.round(selectedCropIrrig * (fieldAreaHa || 0.67) * 10)}k L`)
+                    ? (fieldAreaHa != null ? (lang === 'bn' ? `~${toBanglaDigits(Math.round(selectedCropIrrig * fieldAreaHa * 10).toLocaleString())} হাজার লিটার` : `~${Math.round(selectedCropIrrig * fieldAreaHa * 10)}k L`) : '—')
                     : (lang === 'bn' ? 'বৃষ্টিই যথেষ্ট' : 'Rainfed')}
                 </small>
               </div>
@@ -1640,7 +1678,9 @@ export function SixSeasonRecommendationView({
                   {selectedCropMargin != null ? `${toBanglaDigits(Math.round(selectedCropMargin * 0.13378).toLocaleString())}/বিঘা` : '—'}
                 </strong>
                 <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
-                  {selectedCropMargin != null ? `~${toBanglaDigits(Math.round(selectedCropMargin * (fieldAreaHa || 0.67)).toLocaleString())} ৳` : ''}
+                  {selectedCropMargin != null
+                    ? (fieldAreaHa != null ? `~${toBanglaDigits(Math.round(selectedCropMargin * fieldAreaHa).toLocaleString())} ৳` : '—')
+                    : ''}
                 </small>
               </div>
             </div>
@@ -1712,25 +1752,33 @@ export function SixSeasonRecommendationView({
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ:' : 'Irrigation:'}</span>
               <strong style={{ color: 'var(--water)' }}>
-                {toBanglaDigits(baseIrrigVal)} → {toBanglaDigits(avgIrrig)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'} ({toBanglaDigits(savingsVal)} মিমি সাশ্রয়, −{toBanglaDigits(Math.round((savingsVal / baseIrrigVal) * 100))}%)
+                {baseIrrigVal != null
+                  ? `${toBanglaDigits(baseIrrigVal)} → ${toBanglaDigits(avgIrrig)} ${lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}${savingsVal != null ? ` (${toBanglaDigits(savingsVal)} মিমি সাশ্রয়${baseIrrigVal > 0 ? `, −${toBanglaDigits(Math.round((savingsVal / baseIrrigVal) * 100))}%` : ''})` : ''}`
+                  : `${toBanglaDigits(avgIrrig)} ${lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}`}
               </strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন:' : 'Bare Days:'}</span>
               <strong style={{ color: 'var(--sun)' }}>
-                {toBanglaDigits(Math.round(activePlanData.baselineBareDays ?? 115))} → {toBanglaDigits(Math.round(activePlanData.planBareDays ?? 60))}
+                {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null
+                  ? `${toBanglaDigits(Math.round(activePlanData.baselineBareDays))} → ${toBanglaDigits(Math.round(activePlanData.planBareDays))}`
+                  : '…'}
               </strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন:' : 'Nitrogen:'}</span>
               <strong style={{ color: 'var(--leaf)' }}>
-                {toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg ?? 0))} → {toBanglaDigits(Math.round(activePlanData.planNitrogenKg ?? 35))} {lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}
+                {activePlanData.baselineNitrogenKg != null && activePlanData.planNitrogenKg != null
+                  ? `${toBanglaDigits(Math.round(activePlanData.baselineNitrogenKg))} → ${toBanglaDigits(Math.round(activePlanData.planNitrogenKg))} ${lang === 'bn' ? 'কেজি/হে' : 'kg/ha'}`
+                  : '…'}
               </strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'লাভ:' : 'Profit:'}</span>
               <strong style={{ color: 'var(--leaf)' }}>
-                {toBanglaDigits(Math.round(activePlanData.baselineProfitBdt ?? 55869).toLocaleString())} → {toBanglaDigits(Math.round(activePlanData.planProfitBdt ?? 146526).toLocaleString())} {lang === 'bn' ? 'টাকা' : 'BDT'} ({lang === 'bn' ? 'উদাহরণমূলক দাম' : 'illustrative prices'})
+                {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null
+                  ? `${toBanglaDigits(Math.round(activePlanData.baselineProfitBdt).toLocaleString())} → ${toBanglaDigits(Math.round(activePlanData.planProfitBdt).toLocaleString())} ${lang === 'bn' ? 'টাকা/হে' : 'BDT/ha'}`
+                  : '…'}
               </strong>
             </div>
           </div>
@@ -1784,11 +1832,52 @@ export function SixSeasonRecommendationView({
             </thead>
             <tbody>
               {[
-                { id: 'baseline', nameBn: 'বর্তমান', nameEn: 'Current', irrig: baseIrrigVal, bare: Math.round(activePlanData.baselineBareDays ?? 115), n: Math.round(activePlanData.baselineNitrogenKg ?? 0), profit: Math.round((activePlanData.baselineProfitBdt ?? 55869) * (fieldAreaHa || 0.67)) },
-                { id: 'balanced', nameBn: 'সুষম ⭐', nameEn: 'Balanced ⭐', irrig: 718, bare: 60, n: 35, profit: Math.round(146526 * (fieldAreaHa || 0.67)), isBest: true },
-                { id: 'profit_focused', nameBn: 'লাভ', nameEn: 'Profit', irrig: 890, bare: 50, n: 20, profit: Math.round(155000 * (fieldAreaHa || 0.67)) },
-                { id: 'water_efficiency', nameBn: 'পানি সাশ্রয়', nameEn: 'Water', irrig: 530, bare: 80, n: 35, profit: Math.round(135000 * (fieldAreaHa || 0.67)) },
-                { id: 'soil_health', nameBn: 'মাটির স্বাস্থ্য', nameEn: 'Soil', irrig: 680, bare: 40, n: 60, profit: Math.round(138000 * (fieldAreaHa || 0.67)) },
+                {
+                  id: 'baseline',
+                  nameBn: 'বর্তমান',
+                  nameEn: 'Current',
+                  irrig: baseIrrigVal,
+                  bare: activePlanData.baselineBareDays != null ? Math.round(activePlanData.baselineBareDays) : null,
+                  n: activePlanData.baselineNitrogenKg != null ? Math.round(activePlanData.baselineNitrogenKg) : null,
+                  profit: (activePlanData.baselineProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.baselineProfitBdt * fieldAreaHa) : null
+                },
+                {
+                  id: 'balanced',
+                  nameBn: 'সুষম ⭐',
+                  nameEn: 'Balanced ⭐',
+                  irrig: 718,
+                  bare: 60,
+                  n: 35,
+                  profit: (activePlanData.planProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.planProfitBdt * fieldAreaHa) : null,
+                  isBest: true
+                },
+                {
+                  id: 'profit_focused',
+                  nameBn: 'লাভ',
+                  nameEn: 'Profit',
+                  irrig: 890,
+                  bare: 50,
+                  n: 20,
+                  profit: fieldAreaHa != null ? Math.round(155000 * fieldAreaHa) : null
+                },
+                {
+                  id: 'water_efficiency',
+                  nameBn: 'পানি সাশ্রয়',
+                  nameEn: 'Water',
+                  irrig: 530,
+                  bare: 80,
+                  n: 35,
+                  profit: fieldAreaHa != null ? Math.round(135000 * fieldAreaHa) : null
+                },
+                {
+                  id: 'soil_health',
+                  nameBn: 'মাটির স্বাস্থ্য',
+                  nameEn: 'Soil',
+                  irrig: 680,
+                  bare: 40,
+                  n: 60,
+                  profit: fieldAreaHa != null ? Math.round(138000 * fieldAreaHa) : null
+                },
               ].map(row => {
                 const isOn = selectedStrategy === row.id;
                 return (
@@ -1815,10 +1904,10 @@ export function SixSeasonRecommendationView({
                       {row.id === 'baseline' && <span style={{ display: 'none' }}>বিদ্যমান আবর্তন (বেসলাইন)</span>}
                       {row.isBest && <span style={{ display: 'none' }}>সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে</span>}
                     </td>
-                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.irrig)}</td>
-                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.bare)}</td>
-                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{toBanglaDigits(row.n)}</td>
-                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>~{toBanglaDigits(Math.round(row.profit / 100) * 100)}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.irrig != null ? toBanglaDigits(row.irrig) : '…'}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.bare != null ? toBanglaDigits(row.bare) : '…'}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.n != null ? toBanglaDigits(row.n) : '…'}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.profit != null ? `~${toBanglaDigits(Math.round(row.profit / 100) * 100)}` : '…'}</td>
                   </tr>
                 );
               })}
