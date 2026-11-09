@@ -548,9 +548,9 @@ export function FarmScene3D({
     scene.add(skyMesh);
     disposables.push(skyMat, skyMesh.geometry);
 
-    // 2. Renderer (ACESFilmic, SRGB, PCFSoft Shadows, pixel ratio <= 2)
+    // 2. Renderer (ACESFilmic, SRGB, PCFSoft Shadows, pixel ratio <= 1.5 for high performance)
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(width, sceneHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -580,7 +580,7 @@ export function FarmScene3D({
     const sun = new THREE.DirectionalLight('#fff1d6', 2.6);
     sun.position.set(55, 70, 35);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 10, far: 220 });
     sun.shadow.camera.updateProjectionMatrix();
     sun.shadow.bias = -0.0004;
@@ -1083,7 +1083,7 @@ export function FarmScene3D({
       b.soil.material = isRice ? wetSoilMat : soilMat;
 
       const geo = geoFor(geoKey, seasonKind);
-      const spacing = SPACING[geoKey] || 0.7;
+      const spacing = (SPACING[geoKey] || 0.7) * (isLowLod ? 1.25 : 1.0);
       const cols = Math.floor((BED.w - 1.6) / spacing);
       const rows = Math.floor((BED.d - 1.6) / spacing);
 
@@ -1099,7 +1099,7 @@ export function FarmScene3D({
 
       const im = new THREE.InstancedMesh(geo, cropMat, list.length);
       im.castShadow = !isFallow;
-      im.receiveShadow = true;
+      im.receiveShadow = false;
       im.userData.base = list.map((pPoint) => ({
         x: pPoint[0],
         z: pPoint[1],
@@ -1222,11 +1222,23 @@ export function FarmScene3D({
       });
     };
 
-    // 11. Render Loop & Idle Throttling
-    let animationFrameId;
+    // 11. Render Loop & Idle Throttling (On-demand rendering for >=30 FPS target)
+    let animationFrameId = null;
+    let isLoopRunning = false;
+    let needsRender = true;
+    let idleFrames = 0;
     const clock = new THREE.Clock();
     let lastRenderStatsTime = performance.now();
     let frameCount = 0;
+
+    const requestRender = () => {
+      needsRender = true;
+      idleFrames = 0;
+      if (!isLoopRunning) {
+        isLoopRunning = true;
+        animationFrameId = requestAnimationFrame(render);
+      }
+    };
 
     const render = () => {
       const dt = Math.min(clock.getDelta(), 0.05);
@@ -1248,21 +1260,39 @@ export function FarmScene3D({
       frameCount++;
       const now = performance.now();
       if (now - lastRenderStatsTime >= 1000) {
-        const fps = Math.round((frameCount * 1000) / (now - lastRenderStatsTime));
+        const measuredFps = Math.round((frameCount * 1000) / (now - lastRenderStatsTime));
         const calls = renderer.info.render.calls;
         const triangles = renderer.info.render.triangles;
-        setInfoStats({ calls, triangles, fps });
+        setInfoStats({ calls, triangles, fps: measuredFps });
         if (onRendererInfo) {
-          onRendererInfo({ calls, triangles, fps });
+          onRendererInfo({ calls, triangles, fps: measuredFps });
+        }
+        if (measuredFps < 30 && !isLowLod) {
+          isLowLod = true;
         }
         frameCount = 0;
         lastRenderStatsTime = now;
       }
 
-      animationFrameId = requestAnimationFrame(render);
+      if (isAnimatingGrowth || needsRender) {
+        needsRender = false;
+        idleFrames = 0;
+        animationFrameId = requestAnimationFrame(render);
+      } else {
+        idleFrames++;
+        if (idleFrames < 15) {
+          animationFrameId = requestAnimationFrame(render);
+        } else {
+          isLoopRunning = false;
+          animationFrameId = null;
+        }
+      }
     };
 
-    animationFrameId = requestAnimationFrame(render);
+    controls.addEventListener('change', requestRender);
+    container.addEventListener('pointermove', requestRender);
+    container.addEventListener('pointerdown', requestRender);
+    requestRender();
 
     // 12. Resize Listener
     const onResize = () => {
@@ -1273,16 +1303,24 @@ export function FarmScene3D({
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
       updateLabels();
+      requestRender();
     };
     window.addEventListener('resize', onResize);
 
     // Save references to update on prop changes
     container.__farm3d = {
       bedObjects,
-      plantBed,
-      applyCameraPreset,
+      plantBed: (idx, crop) => {
+        plantBed(idx, crop);
+        requestRender();
+      },
+      applyCameraPreset: (preset, idx) => {
+        applyCameraPreset(preset, idx);
+        requestRender();
+      },
       controls,
       renderer,
+      requestRender,
     };
     if (typeof window !== 'undefined') {
       window.__farm3dRenderer = renderer;
@@ -1295,7 +1333,10 @@ export function FarmScene3D({
         if (window.__farm3dRenderer === renderer) window.__farm3dRenderer = null;
         if (window.__farm3d === container.__farm3d) window.__farm3d = null;
       }
-      cancelAnimationFrame(animationFrameId);
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      controls.removeEventListener('change', requestRender);
+      container.removeEventListener('pointermove', requestRender);
+      container.removeEventListener('pointerdown', requestRender);
       window.removeEventListener('resize', onResize);
       renderer.domElement.removeEventListener('pointerdown', onPointerDown);
       renderer.domElement.removeEventListener('pointerup', onPointerUp);
@@ -1345,12 +1386,18 @@ export function FarmScene3D({
         b.edges.material.opacity = j === activeIndex ? 0.95 : 0;
       }
     });
+    if (containerRef.current.__farm3d.requestRender) {
+      containerRef.current.__farm3d.requestRender();
+    }
   }, [beds, activeIndex]);
 
   // Apply Camera Presets when currentPreset changes
   useEffect(() => {
     if (!containerRef.current || !containerRef.current.__farm3d) return;
     containerRef.current.__farm3d.applyCameraPreset(currentPreset, activeIndex);
+    if (containerRef.current.__farm3d.requestRender) {
+      containerRef.current.__farm3d.requestRender();
+    }
   }, [currentPreset, activeIndex]);
 
   // -------------------------------------------------------------
@@ -1557,9 +1604,11 @@ export function FarmScene3D({
         <div style={{ background: 'rgba(15, 21, 17, 0.88)', padding: '3px 8px', borderRadius: 6 }}>
           {lang === 'bn' ? 'টেনে ঘোরান · স্ক্রল করে জুম · জমিতে ক্লিক করুন' : 'Drag to rotate · Scroll to zoom · Click bed to inspect'}
         </div>
-        <div style={{ background: 'rgba(15, 21, 17, 0.88)', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
-          Calls: {infoStats.calls} | {infoStats.fps} FPS
-        </div>
+        {typeof window !== 'undefined' && Boolean(new URLSearchParams(window.location.search).get('debug') === '1') && (
+          <div style={{ background: 'rgba(15, 21, 17, 0.88)', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+            Calls: {infoStats.calls} | {infoStats.fps} FPS
+          </div>
+        )}
       </div>
     </div>
   );
