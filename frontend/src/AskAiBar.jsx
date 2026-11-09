@@ -119,6 +119,7 @@ export function AskAiBar({
               <button
                 key={idx}
                 type="button"
+                className="ask-ai-chip"
                 onClick={() => handleTrigger(chipText)}
                 style={{
                   display: 'inline-flex',
