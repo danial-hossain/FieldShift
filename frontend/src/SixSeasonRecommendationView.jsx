@@ -462,7 +462,7 @@ export function SixSeasonRecommendationView({
         seasonName,
         family,
         yieldTonHa: dynamicYieldTHa,
-        yieldMaundBigha: dynamicYieldTHa != null ? Number(((dynamicYieldTHa * 25) / 7.47).toFixed(1)) : null,
+        yieldMaundBigha: dynamicYieldTHa != null ? Number((dynamicYieldTHa * 3.585).toFixed(1)) : null,
         totalHarvestTons,
         waterReqMm: irrigationReqMm != null ? Math.round(irrigationReqMm) : (cropEtMm != null ? Math.round(cropEtMm) : null),
         cropEtMm,
@@ -743,16 +743,24 @@ export function SixSeasonRecommendationView({
   // Selected period details for side panel
   const activeSelectedPeriod = selectedPeriodKey || 'Y1_S1';
   const selectedCropName = activeCrops[activeSelectedPeriod] || 'Mustard';
+  const matchingRec = sixSeasonRecommendations.find(r => r.id === activeSelectedPeriod);
   const selectedPeriodMatrix = activePlanData?.cropSeasonMatrix?.[activeSelectedPeriod] || {};
   const selectedCropEntry = selectedPeriodMatrix[selectedCropName] || {};
-  const selectedCropYieldTonHa = selectedCropEntry.yield_ton_ha || selectedCropEntry.yield_ton_per_ha || 3.5;
-  const selectedCropYieldMaund = (selectedCropYieldTonHa * 7.4749 * (1000 / 37.32) / 7.4749).toFixed(1);
+  const selectedCropYieldTonHa = matchingRec?.yieldTonHa != null
+    ? matchingRec.yieldTonHa
+    : (selectedCropEntry.dynamic_yield_t_ha != null ? Number(selectedCropEntry.dynamic_yield_t_ha) : null);
+  const selectedCropYieldMaund = selectedCropYieldTonHa != null
+    ? Number((selectedCropYieldTonHa * 3.585).toFixed(1))
+    : null;
   const selectedCropMargin = selectedCropEntry.dynamic_gross_margin_bdt_ha != null
     ? Math.round(selectedCropEntry.dynamic_gross_margin_bdt_ha)
-    : 75000;
+    : (matchingRec?.grossMarginBdtHa != null ? Math.round(matchingRec.grossMarginBdtHa) : null);
   const selectedCropIrrig = selectedCropEntry.water_balance?.irrigation_required_mm != null
     ? Math.round(selectedCropEntry.water_balance.irrigation_required_mm)
-    : 80;
+    : (matchingRec?.waterReqMm != null ? Math.round(matchingRec.waterReqMm) : 0);
+  const selectedCropUncertainty = matchingRec?.uncertaintyTonHa != null
+    ? matchingRec.uncertaintyTonHa
+    : (selectedCropYieldTonHa != null ? Number((selectedCropYieldTonHa * 0.045).toFixed(2)) : null);
 
   // Alternatives for this season (next 2 best crops)
   const candidateAlternatives = useMemo(() => {
@@ -1309,25 +1317,29 @@ export function SixSeasonRecommendationView({
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'ফলন (Yield):' : 'Yield:'}</span>
                 <strong style={{ fontSize: 14, color: 'var(--water)' }}>
-                  {selectedCropYieldTonHa.toFixed(1)} t/ha ({selectedCropYieldMaund} {lang === 'bn' ? 'মণ/বিঘা' : 'maund/bigha'})
+                  {selectedCropYieldTonHa != null
+                    ? `${selectedCropYieldTonHa} t/ha (${selectedCropYieldMaund} ${lang === 'bn' ? 'মণ/বিঘা' : 'md/bg'})`
+                    : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                 </strong>
               </div>
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'সেচ (Water):' : 'Irrigation:'}</span>
                 <strong style={{ fontSize: 14, color: 'var(--sun)' }}>
-                  {selectedCropIrrig} {lang === 'bn' ? 'মিমি' : 'mm'}
+                  {selectedCropIrrig === 0
+                    ? (lang === 'bn' ? 'সেচ লাগবে না' : '0 mm (rainfed)')
+                    : (selectedCropIrrig != null ? `${selectedCropIrrig} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? 'তথ্য নেই' : 'No data'))}
                 </strong>
               </div>
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'মুনাফা (উদাহরণমূলক):' : 'Margin (approx):'}</span>
                 <strong style={{ fontSize: 14, color: 'var(--leaf)' }}>
-                  {formatCurrency(selectedCropMargin, lang)}/ha
+                  {selectedCropMargin != null ? `${formatCurrency(selectedCropMargin, lang)}/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                 </strong>
               </div>
               <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '8px 10px', borderRadius: 8 }}>
                 <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>{lang === 'bn' ? 'মডেল অনিশ্চয়তা:' : 'Uncertainty:'}</span>
                 <strong style={{ fontSize: 13, color: 'var(--text-2)' }}>
-                  ±12% (NASA POWER)
+                  {selectedCropUncertainty != null ? `±${selectedCropUncertainty} t/ha` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}
                 </strong>
               </div>
             </div>
