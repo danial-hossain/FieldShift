@@ -455,6 +455,24 @@ export function SixSeasonRecommendationView({
     return null;
   }, [plansByPriority, selectedStrategy, lang]);
 
+  // Determine best scoring strategy from API objective_value (not hardcoded on balanced)
+  const bestScoringStrategyId = useMemo(() => {
+    let bestId = null;
+    let maxScore = -Infinity;
+    const strategyKeys = ['balanced', 'profit_focused', 'water_efficiency', 'soil_health'];
+    for (const sId of strategyKeys) {
+      const pKey = STRATEGY_TO_PRIORITY[sId] || sId;
+      const pData = plansByPriority[pKey]?.summary?.planning;
+      const res = pData?.selected_strategy_result || pData?.milp_status;
+      const objVal = res?.objective_value != null ? Number(res.objective_value) : null;
+      if (objVal != null && objVal > maxScore) {
+        maxScore = objVal;
+        bestId = sId;
+      }
+    }
+    return bestId;
+  }, [plansByPriority]);
+
   // Active solver weights for currently selected strategy
   const activeWeights = useMemo(() => {
     const fromSolver = activePlanData?.solverResult?.weights?.effective || activePlanData?.solverResult?.weights?.requested;
@@ -845,6 +863,67 @@ export function SixSeasonRecommendationView({
   const baseIrrigVal = activePlanData.baselineIrrigationMm != null ? Math.round(activePlanData.baselineIrrigationMm) : null;
   const savingsVal = baseIrrigVal != null ? Math.round(baseIrrigVal - avgIrrig) : null;
 
+  // H3: Build strategy comparison table dynamically from API responses
+  const strategyComparisonRows = useMemo(() => {
+    const baseProfitBdt = activePlanData.baselineProfitBdt;
+    const baseProfit = (baseProfitBdt != null && fieldAreaHa != null)
+      ? Math.round(baseProfitBdt * fieldAreaHa)
+      : (baseProfitBdt != null ? Math.round(baseProfitBdt) : null);
+
+    const rows = [
+      {
+        id: 'baseline',
+        nameBn: 'বর্তমান',
+        nameEn: 'Current',
+        irrig: baseIrrigVal,
+        bare: activePlanData.baselineBareDays != null ? Math.round(activePlanData.baselineBareDays) : null,
+        n: activePlanData.baselineNitrogenKg != null ? Math.round(activePlanData.baselineNitrogenKg) : null,
+        profit: baseProfit,
+        isBest: false,
+      }
+    ];
+
+    const strategyDefs = [
+      { id: 'balanced', nameBn: 'সুষম', nameEn: 'Balanced', pKey: 'balanced' },
+      { id: 'profit_focused', nameBn: 'লাভ', nameEn: 'Profit', pKey: 'profit' },
+      { id: 'water_efficiency', nameBn: 'পানি সাশ্রয়', nameEn: 'Water', pKey: 'water' },
+      { id: 'soil_health', nameBn: 'মাটির স্বাস্থ্য', nameEn: 'Soil', pKey: 'soil' },
+    ];
+
+    strategyDefs.forEach(({ id, nameBn, nameEn, pKey }) => {
+      const pPlan = plansByPriority[pKey]?.summary?.planning;
+      const res = pPlan?.selected_strategy_result || pPlan?.milp_status;
+      const irrig = pPlan?.plan_irrigation_mm != null
+        ? Math.round(pPlan.plan_irrigation_mm)
+        : (res?.annual_irrigation_mm != null ? Math.round(res.annual_irrigation_mm) : (res?.plan_irrigation_mm != null ? Math.round(res.plan_irrigation_mm) : null));
+      const bare = pPlan?.plan_bare_days != null
+        ? Math.round(pPlan.plan_bare_days)
+        : (res?.bare_days_per_year != null ? Math.round(res.bare_days_per_year) : (res?.plan_bare_days != null ? Math.round(res.plan_bare_days) : null));
+      const n = pPlan?.plan_nitrogen_kg != null
+        ? Math.round(pPlan.plan_nitrogen_kg)
+        : (res?.annual_nitrogen_fixation_kg_ha != null ? Math.round(res.annual_nitrogen_fixation_kg_ha) : (res?.plan_nitrogen_kg != null ? Math.round(res.plan_nitrogen_kg) : null));
+      const profitBdtHa = pPlan?.plan_profit_bdt != null
+        ? pPlan.plan_profit_bdt
+        : (res?.annual_net_profit_bdt_ha != null ? res.annual_net_profit_bdt_ha : (res?.plan_profit_bdt != null ? res.plan_profit_bdt : null));
+      const profit = (profitBdtHa != null && fieldAreaHa != null)
+        ? Math.round(profitBdtHa * fieldAreaHa)
+        : (profitBdtHa != null ? Math.round(profitBdtHa) : null);
+
+      rows.push({
+        id,
+        nameBn: `${nameBn}${bestScoringStrategyId === id ? ' ⭐' : ''}`,
+        nameEn: `${nameEn}${bestScoringStrategyId === id ? ' ⭐' : ''}`,
+        irrig,
+        bare,
+        n,
+        profit,
+        isBest: bestScoringStrategyId === id,
+      });
+    });
+
+    return rows;
+  }, [activePlanData, fieldAreaHa, baseIrrigVal, plansByPriority, bestScoringStrategyId]);
+
   const farm3dBeds = useMemo(() => {
     return periodKeys.map(k => {
       const c = activeCrops[k] || 'Fallow';
@@ -1213,13 +1292,15 @@ export function SixSeasonRecommendationView({
         {/* Strategy Switch Segmented Buttons */}
         <div className="seg" role="group" aria-label={lang === 'bn' ? 'কৌশল' : 'Strategy'} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {[
-            { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current', tipBn: 'বিদ্যমান আবর্তন (বেসলাইন): বোরো → পতিত → আমন', tipEn: 'Existing baseline rotation' },
-            { id: 'balanced', labelBn: 'সুষম ⭐', labelEn: 'Balanced ⭐', tipBn: 'সুষম: ৩৪% লাভ, ৩৩% পানি, ৩৩% মাটি', tipEn: 'Balanced: 34% profit, 33% water, 33% soil' },
+            { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current', tipBn: 'বিদ্যমান আবর্তন (বেসলাইন)', tipEn: 'Existing baseline rotation' },
+            { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced', tipBn: 'সুষম: ৩৪% লাভ, ৩৩% পানি, ৩৩% মাটি', tipEn: 'Balanced: 34% profit, 33% water, 33% soil' },
             { id: 'profit_focused', labelBn: 'লাভ', labelEn: 'Profit', tipBn: 'লাভ: ৭০% লাভ, ১৫% পানি, ১৫% মাটি', tipEn: 'Profit: 70% profit, 15% water, 15% soil' },
             { id: 'water_efficiency', labelBn: 'পানি সাশ্রয়', labelEn: 'Water saving', tipBn: 'পানি: ১৫% লাভ, ৭০% পানি, ১৫% মাটি', tipEn: 'Water: 15% profit, 70% water, 15% soil' },
             { id: 'soil_health', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil health', tipBn: 'মাটি: ১৫% লাভ, ১৫% পানি, ৭০% মাটি', tipEn: 'Soil: 15% profit, 15% water, 70% soil' },
           ].map(s => {
             const isActive = selectedStrategy === s.id;
+            const isBest = s.id === bestScoringStrategyId;
+            const labelText = (lang === 'bn' ? s.labelBn : s.labelEn) + (isBest ? ' ⭐' : '');
             return (
               <button
                 key={s.id}
@@ -1246,7 +1327,7 @@ export function SixSeasonRecommendationView({
                   transition: 'all 0.15s ease'
                 }}
               >
-                {lang === 'bn' ? s.labelBn : s.labelEn}
+                {labelText}
               </button>
             );
           })}
@@ -1827,58 +1908,15 @@ export function SixSeasonRecommendationView({
                 <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'সেচ' : 'Irrig'}</th>
                 <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'ফাঁকা' : 'Bare'}</th>
                 <th style={{ textAlign: 'right', padding: '4px 2px' }}>N</th>
-                <th style={{ textAlign: 'right', padding: '4px 2px' }}>{lang === 'bn' ? 'লাভ' : 'Profit'}</th>
+                <th style={{ textAlign: 'right', padding: '4px 2px' }}>
+                  {lang === 'bn'
+                    ? (fieldAreaHa != null ? `টাকা/বছর, আপনার ${toBanglaDigits(haToBigha(fieldAreaHa))} বিঘায়` : 'টাকা/হেক্টর/বছর')
+                    : (fieldAreaHa != null ? `BDT/yr, ${haToBigha(fieldAreaHa)} bigha` : 'BDT/ha/yr')}
+                </th>
               </tr>
             </thead>
             <tbody>
-              {[
-                {
-                  id: 'baseline',
-                  nameBn: 'বর্তমান',
-                  nameEn: 'Current',
-                  irrig: baseIrrigVal,
-                  bare: activePlanData.baselineBareDays != null ? Math.round(activePlanData.baselineBareDays) : null,
-                  n: activePlanData.baselineNitrogenKg != null ? Math.round(activePlanData.baselineNitrogenKg) : null,
-                  profit: (activePlanData.baselineProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.baselineProfitBdt * fieldAreaHa) : null
-                },
-                {
-                  id: 'balanced',
-                  nameBn: 'সুষম ⭐',
-                  nameEn: 'Balanced ⭐',
-                  irrig: 718,
-                  bare: 60,
-                  n: 35,
-                  profit: (activePlanData.planProfitBdt != null && fieldAreaHa != null) ? Math.round(activePlanData.planProfitBdt * fieldAreaHa) : null,
-                  isBest: true
-                },
-                {
-                  id: 'profit_focused',
-                  nameBn: 'লাভ',
-                  nameEn: 'Profit',
-                  irrig: 890,
-                  bare: 50,
-                  n: 20,
-                  profit: fieldAreaHa != null ? Math.round(155000 * fieldAreaHa) : null
-                },
-                {
-                  id: 'water_efficiency',
-                  nameBn: 'পানি সাশ্রয়',
-                  nameEn: 'Water',
-                  irrig: 530,
-                  bare: 80,
-                  n: 35,
-                  profit: fieldAreaHa != null ? Math.round(135000 * fieldAreaHa) : null
-                },
-                {
-                  id: 'soil_health',
-                  nameBn: 'মাটির স্বাস্থ্য',
-                  nameEn: 'Soil',
-                  irrig: 680,
-                  bare: 40,
-                  n: 60,
-                  profit: fieldAreaHa != null ? Math.round(138000 * fieldAreaHa) : null
-                },
-              ].map(row => {
+              {strategyComparisonRows.map(row => {
                 const isOn = selectedStrategy === row.id;
                 return (
                   <tr
@@ -1907,7 +1945,7 @@ export function SixSeasonRecommendationView({
                     <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.irrig != null ? toBanglaDigits(row.irrig) : '…'}</td>
                     <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.bare != null ? toBanglaDigits(row.bare) : '…'}</td>
                     <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.n != null ? toBanglaDigits(row.n) : '…'}</td>
-                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.profit != null ? `~${toBanglaDigits(Math.round(row.profit / 100) * 100)}` : '…'}</td>
+                    <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.profit != null ? `~${toBanglaDigits(row.profit.toLocaleString())}` : '…'}</td>
                   </tr>
                 );
               })}
