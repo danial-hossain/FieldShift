@@ -1579,7 +1579,10 @@ export function SixSeasonRecommendationView({
           <strong>{lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ' : '12-Month Continuous Cropping Calendar Strip'}:</strong>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 2, textAlign: 'center', fontSize: 10 }}>
-          {['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো'].map((m, mi) => (
+          {(lang === 'bn'
+            ? ['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো']
+            : ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']
+          ).map((m, mi) => (
             <div key={mi} style={{ background: mi < 5 ? 'rgba(245, 158, 11, 0.2)' : mi < 8 ? 'rgba(74, 222, 128, 0.2)' : 'rgba(56, 189, 248, 0.2)', padding: '2px 0', borderRadius: 4, color: 'var(--text)' }}>
               {m}
             </div>
@@ -1862,8 +1865,8 @@ export function SixSeasonRecommendationView({
                   >
                     <td style={{ textAlign: 'left', padding: '5px 2px' }}>
                       {lang === 'bn' ? row.nameBn : row.nameEn}
-                      {row.id === 'baseline' && <span style={{ display: 'none' }}>বিদ্যমান আবর্তন (বেসলাইন)</span>}
-                      {row.isBest && <span style={{ display: 'none' }}>সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে</span>}
+                      {row.id === 'baseline' && <span style={{ display: 'none' }}>{lang === 'bn' ? 'বিদ্যমান আবর্তন (বেসলাইন)' : 'Existing baseline rotation'}</span>}
+                      {row.isBest && <span style={{ display: 'none' }}>{lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে' : 'Best suited to your priority'}</span>}
                     </td>
                     <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.irrig != null ? formatNumber(row.irrig, lang) : '…'}</td>
                     <td style={{ textAlign: 'right', padding: '5px 2px' }}>{row.bare != null ? formatNumber(row.bare, lang) : '…'}</td>

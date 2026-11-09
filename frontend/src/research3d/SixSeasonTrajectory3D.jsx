@@ -148,16 +148,16 @@ export function SixSeasonTrajectory3D({
         {/* Quantified Seasonal Outputs */}
         <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '8px 10px', borderRadius: 6, fontSize: 11.5 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>অনুমিত ফলন:</span>
-            <strong style={{ color: '#00df81' }}>{activeRec?.yieldTonHa} t/ha ({activeRec?.totalHarvestTons} টন)</strong>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'অনুমিত ফলন:' : 'Estimated Yield:'}</span>
+            <strong style={{ color: '#00df81' }}>{activeRec?.yieldTonHa} {lang === 'bn' ? 'টন/হেক্টর' : 't/ha'} ({activeRec?.totalHarvestTons} {lang === 'bn' ? 'টন' : 'ton'})</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>পানি চাহিদা:</span>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'পানি চাহিদা:' : 'Water Demand:'}</span>
             <strong style={{ color: '#38bdf8' }}>{activeRec?.waterMm} mm</strong>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>প্রত্যাশিত নিট লাভ:</span>
-            <strong style={{ color: '#facc15' }}>৳{activeRec?.netProfitBdt?.toLocaleString()}</strong>
+            <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>{lang === 'bn' ? 'প্রত্যাশিত নিট লাভ:' : 'Net Profit:'}</span>
+            <strong style={{ color: '#facc15' }}>{lang === 'bn' ? `৳${activeRec?.netProfitBdt?.toLocaleString()}` : `${activeRec?.netProfitBdt?.toLocaleString()} BDT`}</strong>
           </div>
         </div>
 

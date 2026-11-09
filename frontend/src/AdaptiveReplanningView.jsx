@@ -1005,7 +1005,7 @@ export function AdaptiveReplanningView({
           }}
         >
           <span style={{ color: '#2c8a4b', fontWeight: 800 }}>✓</span> {lang === 'bn' ? 'শেষ হয়েছে (আসল ফসল)' : 'Finished (actual)'} ·{' '}
-          <span style={{ color: '#c46818', fontWeight: 800 }}>⟳ নতুন</span> {lang === 'bn' ? 'নতুন পরিকল্পনা' : 'Adapted Plan'}
+          <span style={{ color: '#c46818', fontWeight: 800 }}>{lang === 'bn' ? '⟳ নতুন' : '⟳ New'}</span> {lang === 'bn' ? 'নতুন পরিকল্পনা' : 'Adapted Plan'}
         </div>
       </div>
 

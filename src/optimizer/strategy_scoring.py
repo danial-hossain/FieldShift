@@ -217,7 +217,7 @@ def score_and_rank_strategies(
         )
         best_reason_en = (
             f"⭐ Profit: Your irrigation capacity is {irrig_en}, this strategy achieves the highest profit "
-            f"(৳{int(round(p_best)):,}), {diff_pct}% higher than Balanced"
+            f"(BDT {int(round(p_best)):,}), {diff_pct}% higher than Balanced"
         )
     elif best_key == "balanced":
         if water_equals_balanced:
@@ -227,7 +227,7 @@ def score_and_rank_strategies(
             )
             best_reason_en = (
                 f"⭐ Balanced: Your irrigation capacity is {irrig_en}; Balanced and Water-Saving strategies yield "
-                f"the identical plan for this field ({w_best} mm/yr, ৳{int(round(p_best)):,})"
+                f"the identical plan for this field ({w_best} mm/yr, BDT {int(round(p_best)):,})"
             )
         else:
             best_reason_bn = (
@@ -236,7 +236,7 @@ def score_and_rank_strategies(
             )
             best_reason_en = (
                 f"⭐ Balanced: Your irrigation capacity is {irrig_en}, optimal multi-criteria trade-off between "
-                f"profit (৳{int(round(p_best)):,}) and water conservation ({w_best} mm)"
+                f"profit (BDT {int(round(p_best)):,}) and water conservation ({w_best} mm)"
             )
     else:  # soil
         best_reason_bn = (

@@ -63,6 +63,41 @@ PERIOD_MONTHS_EN = [
     "Jul–Oct",
 ]
 
+CROP_NAMES_BN = {
+    "Boro Rice": "বোরো ধান",
+    "Rice": "আমন ধান",
+    "T. Aman Rice": "আমন ধান",
+    "Aus Rice": "আউশ ধান",
+    "Mustard": "সরিষা",
+    "Lentil": "মসুর ডাল",
+    "Mungbean": "মুগ ডাল",
+    "Potato": "আলু",
+    "Wheat": "গম",
+    "Maize": "ভুট্টা",
+    "Jute": "পাট",
+    "Sunflower": "সূর্যমুখী",
+    "Soybean": "সয়াবিন",
+    "Sesame": "তিল",
+    "Groundnut": "চীনাবাদাম",
+    "Tomato": "টমেটো",
+    "Chickpea": "ছোলা",
+    "Fallow": "পতিত",
+}
+
+OUTCOME_NAMES_BN = {
+    "normal": "স্বাভাবিক",
+    "poor": "খারাপ",
+    "excellent": "চমৎকার",
+    "failure": "ফসলহানি",
+}
+
+
+def to_bn_digits(val: Any) -> str:
+    s = str(val)
+    bn_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+    return s.translate(bn_map)
+
+
 MAUND_KG = 37.32
 BDP_HA_PER_BIGHA = 0.13378  # 1 bigha = 0.13378 ha
 TON_PER_MAUND = 0.03732
@@ -388,6 +423,7 @@ def run_adaptive_replan(
 
         for pt in c_parts:
             pt_crop = pt["crop"]
+            pt_crop_bn = CROP_NAMES_BN.get(pt_crop, pt_crop)
             pt_share = pt["area_share"]
             pt_info = crop_lookup.get(pt_crop.strip().lower(), {})
             pt_y_tha = pt["yield_t_ha"] if pt["yield_t_ha"] > 0 else safe_num(pt_info.get("expected_yield"), 1.0)
@@ -402,7 +438,7 @@ def run_adaptive_replan(
             calc_water_mm += safe_num(pt_info.get("water_requirement"), 300.0) * pt_share
 
             pct = int(round(pt_share * 100))
-            part_strs_bn.append(f"{pt_crop} ({pct}%)" if len(c_parts) > 1 else pt_crop)
+            part_strs_bn.append(f"{pt_crop_bn} ({to_bn_digits(pct)}%)" if len(c_parts) > 1 else pt_crop_bn)
             part_strs_en.append(f"{pt_crop} ({pct}%)" if len(c_parts) > 1 else pt_crop)
 
         if actual_water_mm <= 0:
@@ -414,6 +450,7 @@ def run_adaptive_replan(
 
         display_crop_bn = " + ".join(part_strs_bn)
         display_crop_en = " + ".join(part_strs_en)
+        outcome_bn = OUTCOME_NAMES_BN.get(c_parsed["outcome"], c_parsed["outcome"])
 
         seasonal_comparison.append({
             "period": p_id,
@@ -424,6 +461,7 @@ def run_adaptive_replan(
             "months_en": PERIOD_MONTHS_EN[idx],
             "stage": "completed",
             "initial_planned_crop": orig_crop,
+            "initial_planned_crop_bn": CROP_NAMES_BN.get(orig_crop, orig_crop),
             "actual_or_replanned_crop": display_crop_en,
             "actual_or_replanned_crop_bn": display_crop_bn,
             "is_modified": display_crop_en != orig_crop,
@@ -435,7 +473,7 @@ def run_adaptive_replan(
             "total_gross_margin_bdt": round(actual_season_profit_bdt, 2),
             "water_mm": round(actual_water_mm, 1),
             "note": f"Historical season completed ({c_parsed['outcome']}).",
-            "note_bn": f"মৌসুম সম্পন্ন ({c_parsed['outcome']})।",
+            "note_bn": f"মৌসুম সম্পন্ন ({outcome_bn})।",
             "parts": c_parts,
         })
 
@@ -491,25 +529,28 @@ def run_adaptive_replan(
         p_name_bn = PERIOD_LABELS_BN[rem_idx]
         p_name_en = PERIOD_LABELS_EN[rem_idx]
 
+        orig_crop_bn = CROP_NAMES_BN.get(orig_crop, orig_crop)
+        new_crop_bn = CROP_NAMES_BN.get(new_crop, new_crop)
+
         if is_shifted:
             # Check reasons: water constraint, yield calibration, price calibration, family break
             cur_irrig_cap = safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0)
             if cur_irrig_cap < 300.0 and old_water_mm > 300.0:
-                reason_bn = f"{p_name_bn}: সেচ সুবিধা সীমিত/নেই, তাই উচ্চ পানির চাহিদার {orig_crop} বাদ দিয়ে কম পানির {new_crop} রাখা হয়েছে।"
+                reason_bn = f"{p_name_bn}: সেচ সুবিধা সীমিত/নেই, তাই উচ্চ পানির চাহিদার {orig_crop_bn} বাদ দিয়ে কম পানির {new_crop_bn} রাখা হয়েছে।"
                 reason_en = f"{p_name_en}: Limited/no irrigation; replaced water-demanding {orig_crop} with {new_crop}."
             elif orig_crop.strip().lower() in crop_yield_ratios:
                 r_val = crop_yield_ratios[orig_crop.strip().lower()][0]
-                reason_bn = f"{p_name_bn}: আপনার {orig_crop}-এর ফলন মডেলের {int(round(r_val*100))}% → {new_crop} বেশি লাভজনক।"
+                reason_bn = f"{p_name_bn}: আপনার {orig_crop_bn}-এর ফলন মডেলের {int(round(r_val*100))}% → {new_crop_bn} বেশি লাভজনক।"
                 reason_en = f"{p_name_en}: Your {orig_crop} yield was {int(round(r_val*100))}% of model → {new_crop} is more profitable."
             elif new_crop.strip().lower() in crop_prices_recorded:
                 pr = crop_prices_recorded[new_crop.strip().lower()]
-                reason_bn = f"{p_name_bn}: আপনার {new_crop}-এর বিক্রয়মূল্য (৳{int(pr)}/মণ) অনুযায়ী এটি অধিক লাভজনক।"
-                reason_en = f"{p_name_en}: Based on your {new_crop} price (৳{int(pr)}/maund), margin increases."
+                reason_bn = f"{p_name_bn}: আপনার {new_crop_bn}-এর বিক্রয়মূল্য (৳{int(pr)}/মণ) অনুযায়ী এটি অধিক লাভজনক।"
+                reason_en = f"{p_name_en}: Based on your {new_crop} price (BDT {int(pr)}/maund), margin increases."
             else:
-                reason_bn = f"{p_name_bn}: পূর্ববর্তী ফসল ও মাটির ভারসাম্যের কারণে {orig_crop} থেকে {new_crop}-এ পরিবর্তন।"
+                reason_bn = f"{p_name_bn}: পূর্ববর্তী ফসল ও মাটির ভারসাম্যের কারণে {orig_crop_bn} থেকে {new_crop_bn}-এ পরিবর্তন।"
                 reason_en = f"{p_name_en}: Shifted from {orig_crop} to {new_crop} for botanical break and soil balance."
         else:
-            reason_bn = f"{p_name_bn}: {orig_crop} বহাল রাখা হয়েছে (সর্বোচ্চ সুষম লাভ ও মাটির স্বাস্থ্য রক্ষার্থে)।"
+            reason_bn = f"{p_name_bn}: {orig_crop_bn} বহাল রাখা হয়েছে (সর্বোচ্চ সুষম লাভ ও মাটির স্বাস্থ্য রক্ষার্থে)।"
             reason_en = f"{p_name_en}: Maintained {orig_crop} for optimal balanced profit and soil health."
 
         why_changed_explanations.append({
@@ -534,8 +575,9 @@ def run_adaptive_replan(
             "months_en": PERIOD_MONTHS_EN[rem_idx],
             "stage": "replanned_future",
             "initial_planned_crop": orig_crop,
+            "initial_planned_crop_bn": orig_crop_bn,
             "actual_or_replanned_crop": new_crop,
-            "actual_or_replanned_crop_bn": new_crop,
+            "actual_or_replanned_crop_bn": new_crop_bn,
             "is_modified": is_shifted,
             "outcome": "projected",
             "yield_t_ha": round(new_yield_tha, 2),
