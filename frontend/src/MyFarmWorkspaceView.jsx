@@ -298,6 +298,62 @@ export function MyFarmWorkspaceView({
     }
   };
 
+  const renderSharedTelemetryStatus = () => {
+    const hasPower = Boolean(activeField?.power_cell);
+    const hasImerg = Boolean(activeField?.imerg_cell || activeField?.power_cell);
+    const hasSoilGrids = Boolean(activeField?.soilgrids_sand != null && activeField?.soilgrids_clay != null);
+    const syncTimeStr = activeField?.updated_at
+      ? new Date(activeField.updated_at).toLocaleTimeString(lang === 'bn' ? 'bn-BD' : 'en-US', { hour: '2-digit', minute: '2-digit' })
+      : (lang === 'bn' ? 'আজ' : 'Today');
+
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: 12,
+        padding: '12px 14px',
+        borderRadius: 8,
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid var(--line)',
+        margin: '12px 0 16px 0'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 600 }}>
+            {lang === 'bn' ? 'উৎস উপাত্ত সংযোগ ও সিঙ্ক স্থিতি:' : 'Telemetry Provenance & Sync Status:'}
+          </span>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <span style={{ color: hasPower ? '#38bdf8' : '#f87171' }}>
+              NASA POWER {hasPower ? '✓' : '✗'}
+            </span>
+            <span style={{ color: 'var(--text-3)' }}>·</span>
+            <span style={{ color: hasImerg ? '#0ea5e9' : '#f87171' }}>
+              GPM IMERG {hasImerg ? '✓' : '✗'}
+            </span>
+            <span style={{ color: 'var(--text-3)' }}>·</span>
+            <span style={{ color: hasSoilGrids ? '#10b981' : '#f59e0b' }}>
+              {hasSoilGrids
+                ? (lang === 'bn' ? 'SoilGrids ✓ (২৫০মি. ক্যাশ)' : 'SoilGrids ✓ (250m cache)')
+                : (lang === 'bn' ? 'SoilGrids ✗ (অফলাইন, কাছে ক্যাশ নেই)' : 'SoilGrids ✗ (offline, no local cache)')}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+            {lang === 'bn' ? `সর্বশেষ সিঙ্ক: ${syncTimeStr}` : `Last sync: ${syncTimeStr}`}
+          </span>
+        </div>
+        <Button
+          variant="secondary"
+          size="xs"
+          onClick={handleReEnrich}
+          disabled={isEnriching}
+        >
+          {isEnriching ? '...' : (lang === 'bn' ? 'পুনরায় সমৃদ্ধ করুন (Re-enrich)' : 'Re-enrich')}
+        </Button>
+      </div>
+    );
+  };
+
   // Moving map pin saves and re-enriches (P2)
   const [isUpdatingCoords, setIsUpdatingCoords] = useState(false);
   const handleUpdateCoords = async (newLat, newLng) => {
@@ -1319,37 +1375,17 @@ export function MyFarmWorkspaceView({
               </div>
             </Card>
 
-            {/* 2. Enrich Status Card (P2) */}
+            {/* 2. Enrich Status Card (P2 / MF3) */}
             <Card variant="glass">
               <CardHeader
                 title={lang === 'bn' ? 'নাসা ও মাটি উপাত্ত সমৃদ্ধকরণ' : 'Environmental Data Telemetry Status'}
                 subtitle={lang === 'bn' ? 'NASA POWER, GPM ও SoilGrids সিঙ্ক্রোনাইজেশন' : 'NASA POWER, GPM IMERG and ISRIC SoilGrids sync'}
               />
               <div style={{ marginTop: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--line)', marginBottom: 12 }}>
-                  <div>
-                    <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'block' }}>
-                      {lang === 'bn' ? 'সর্বশেষ সংযোগ অবস্থা:' : 'Telemetry status:'}
-                    </span>
-                    <strong style={{ fontSize: 13, color: 'var(--water, #38bdf8)' }}>
-                      {activeField.power_cell || activeField.soilgrids_soil
-                        ? (lang === 'bn' ? 'NASA ও মাটির তথ্য আনা হয়েছে (সক্রিয়)' : 'NASA & SoilGrids telemetry linked')
-                        : (lang === 'bn' ? 'আনা যায়নি (অফলাইন মোড)' : 'Offline mode / local cache')
-                      }
-                    </strong>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    onClick={handleReEnrich}
-                    disabled={isEnriching}
-                  >
-                    {isEnriching ? '...' : (lang === 'bn' ? 'আবার আনুন' : 'Re-enrich')}
-                  </Button>
-                </div>
+                {renderSharedTelemetryStatus()}
                 <p style={{ margin: 0, fontSize: 11.5, color: 'var(--text-3)', lineHeight: 1.4 }}>
                   {lang === 'bn'
-                    ? 'নাসার ৩০ বছরের আবহাওয়া উপাত্ত ও মাটির রাসায়নিক গঠন স্বয়ংক্রিয় যুক্ত করতে "আবার আনুন" ব্যবহার করুন।'
+                    ? 'নাসার আবহাওয়া উপাত্ত ও মাটির রাসায়নিক গঠন স্বয়ংক্রিয় যুক্ত করতে "পুনরায় সমৃদ্ধ করুন" ব্যবহার করুন।'
                     : 'Query nearest ISRIC SoilGrids 250m profile and NASA climate baseline for this parcel.'}
                 </p>
               </div>
@@ -1423,30 +1459,7 @@ export function MyFarmWorkspaceView({
             subtitle={lang === 'bn' ? 'প্রতিটি মানের পাশে তার নির্ভরযোগ্য তথ্যসূত্র প্রদর্শন করা হয়েছে' : 'Honest source provenance badge attached to every soil property'}
           />
 
-          {!hasRealSoilGrids && (
-            <div style={{
-              margin: '12px 0 16px 0',
-              padding: '10px 14px',
-              borderRadius: 8,
-              background: 'rgba(245, 158, 11, 0.08)',
-              border: '1px solid rgba(245, 158, 11, 0.25)',
-              fontSize: 12.5,
-              color: '#fbbf24',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 12
-            }}>
-              <span>
-                ℹ️ {lang === 'bn'
-                  ? 'এই জমির জন্য সরাসরি SoilGrids গ্রিড ক্যাশ নেই। বর্তমানে মাটির শ্রেণির গড় মান প্রদর্শন করা হচ্ছে।'
-                  : 'Direct SoilGrids cache unavailable. Displaying standard mechanical class averages.'}
-              </span>
-              <Button size="xs" variant="secondary" onClick={handleReEnrich} disabled={isEnriching}>
-                {lang === 'bn' ? 'SoilGrids সন্ধান করুন' : 'Query SoilGrids'}
-              </Button>
-            </div>
-          )}
+          {renderSharedTelemetryStatus()}
 
           {/* Key Soil Numbers with SourceChip next to each */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, margin: '16px 0' }}>
