@@ -131,6 +131,7 @@ export function SixSeasonRecommendationView({
   user,
   userFields = [],
   onNavigateTab,
+  onNavigate,
   onBack,
   lang = 'bn',
   theme = 'dark',
@@ -2095,7 +2096,7 @@ export function SixSeasonRecommendationView({
         page="farm_planning"
         context={plannerAiContext}
         suggestions={plannerAiSuggestions}
-        onNavigate={onNavigateTab}
+        onNavigate={onNavigate || onNavigateTab}
         lang={lang}
       />
 

@@ -44,7 +44,11 @@ export default function AiAssistantView({
   user,
   lang = 'bn',
   onBack,
-  onNavigateTab
+  onNavigateTab,
+  initialQuestion = null,
+  pageContext = null,
+  fromPage = null,
+  onReturn = null
 }) {
   const [language, setLanguage] = useState(lang || 'bn'); // 'en' | 'bn'
   const [presentationMode, setPresentationMode] = useState(false);
@@ -52,6 +56,7 @@ export default function AiAssistantView({
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState(0);
+  const hasSentInitialRef = useRef(false);
 
   useEffect(() => {
     if (lang && (lang === 'bn' || lang === 'en')) {
@@ -191,6 +196,13 @@ export default function AiAssistantView({
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
+
+  useEffect(() => {
+    if (initialQuestion && !hasSentInitialRef.current) {
+      hasSentInitialRef.current = true;
+      handleSend(initialQuestion);
+    }
+  }, [initialQuestion]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -347,7 +359,31 @@ export default function AiAssistantView({
             {presentationMode ? '📋 Briefing Mode ON' : '🔬 Scientific Detail'}
           </button>
 
-          {onBack && (
+          {fromPage && (
+            <button
+              type="button"
+              className="btn btn-primary btn-return-planner"
+              onClick={() => {
+                if (onReturn) onReturn();
+                else if (onNavigateTab) onNavigateTab(fromPage);
+                else if (onBack) onBack();
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontWeight: 600,
+                fontSize: 13,
+                padding: '6px 14px',
+                borderRadius: 8,
+                cursor: 'pointer'
+              }}
+            >
+              {language === 'bn' ? '← আবর্তন পরিকল্পনায় ফিরুন' : '← Back to Rotation Planner'}
+            </button>
+          )}
+
+          {!fromPage && onBack && (
             <button type="button" className="btn-secondary" onClick={onBack}>
               ← Dashboard
             </button>

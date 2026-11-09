@@ -85,7 +85,17 @@ export function FarmPlanningView({
           ml={ml}
           user={user}
           userFields={userFields}
-          onNavigateTab={(t) => setSubTab(t)}
+          onNavigateTab={(t, extra) => {
+            if (t === 'assistant' || t === 'dashboard' || t === 'field' || t === 'water_irrigation') {
+              if (onNavigate) onNavigate(t, extra);
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+              setSubTab(t);
+            } else if (onNavigate) {
+              onNavigate(t, extra);
+            } else {
+              setSubTab(t);
+            }
+          }}
           onBack={() => setSubTab('milp')}
           lang={lang}
           theme={theme}
@@ -129,7 +139,17 @@ export function FarmPlanningView({
           activeField={activeField}
           lang={lang}
           onBack={() => setSubTab('milp')}
-          onNavigateTab={(t) => setSubTab(t)}
+          onNavigateTab={(t, extra) => {
+            if (t === 'assistant' || t === 'dashboard' || t === 'field' || t === 'water_irrigation') {
+              if (onNavigate) onNavigate(t, extra);
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+              setSubTab(t);
+            } else if (onNavigate) {
+              onNavigate(t, extra);
+            } else {
+              setSubTab(t);
+            }
+          }}
         />
       )}
 

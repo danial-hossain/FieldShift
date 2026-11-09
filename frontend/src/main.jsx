@@ -524,6 +524,7 @@ export function App() {
   const [weatherSubTab, setWeatherSubTab] = useState('station_3d'); // 'station_3d' | 'uncertainty' | 'satellites'
   const [harvestSubTab, setHarvestSubTab] = useState('calculator'); // 'calculator' | 'market' | 'outcomes' | 'sustainability'
   const [assistantSubTab, setAssistantSubTab] = useState('chat'); // 'chat' | 'voice'
+  const [assistantParams, setAssistantParams] = useState(null); // { question, context, fromPage }
   const [farmPlanningSubTab, setFarmPlanningSubTab] = useState('milp'); // 'milp' | 'replan' | 'comparison'
   const [waterSubTab, setWaterSubTab] = useState('balance'); // 'balance' | 'optimization' | 'profile' | 'stress'
   const [twinSubTab, setTwinSubTab] = useState('farm'); // 'farm' | 'growth' | 'hydrology' | 'climate' | 'compare'
@@ -537,6 +538,21 @@ export function App() {
 
   const handleNavigate = (nav, tab = null) => {
     setMobileNavOpen(false);
+
+    // AI Assistant routing with parameter support: handleNavigate('assistant', { question, context, fromPage })
+    if (nav === 'assistant') {
+      if (tab && typeof tab === 'object') {
+        setAssistantParams(tab);
+        if (tab.subTab) setAssistantSubTab(tab.subTab);
+      } else if (typeof tab === 'string') {
+        setAssistantSubTab(tab);
+        setAssistantParams(null);
+      } else {
+        setAssistantParams(null);
+      }
+      setActiveNav('assistant');
+      return;
+    }
 
     // Backward-compatible mapping for legacy analytics tab calls
     if (nav === 'analytics') {
@@ -2117,12 +2133,23 @@ export function App() {
           {/* 8. Evidence & Method */}
           <button
             type="button"
-            className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' || activeNav === 'assistant' ? 'active' : ''}`}
+            className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' ? 'active' : ''}`}
             data-nav="data_evidence" onClick={() => handleNavigate('data_evidence')}
             title={lang === 'bn' ? '৮. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '8. Evidence & Method - Datasets, Methods & Research'}
           >
             <span className="nav-item-icon">📊</span>
             <span className="nav-item-label">{lang === 'bn' ? 'প্রমাণ ও পদ্ধতি' : 'Evidence & Method'}</span>
+          </button>
+
+          {/* 9. AI Assistant */}
+          <button
+            type="button"
+            className={`nav-item ${activeNav === 'assistant' ? 'active' : ''}`}
+            data-nav="assistant" onClick={() => handleNavigate('assistant')}
+            title={lang === 'bn' ? '৯. AI সহকারী - শস্য আবর্তন ও কৃষি পরামর্শ' : '9. AI Assistant - Crop Rotation & Agricultural Advice'}
+          >
+            <span className="nav-item-icon">🤖</span>
+            <span className="nav-item-label">{lang === 'bn' ? 'AI সহকারী' : 'AI Assistant'}</span>
           </button>
         </nav>
 
@@ -3948,10 +3975,17 @@ export function App() {
                 plan={plan}
                 ml={ml}
                 rl={rl}
+                comparisonLab={comparisonLab}
+                robustness={robustness}
+                outcomes={outcomes}
                 user={user}
                 lang={lang}
-                onBack={() => handleNavigate('dashboard')}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
+                onBack={() => handleNavigate(assistantParams?.fromPage || 'dashboard')}
+                onNavigateTab={(tab) => handleNavigate(tab === 'farm_planning' ? 'farm_planning' : 'analytics', tab)}
+                initialQuestion={assistantParams?.question}
+                pageContext={assistantParams?.context}
+                fromPage={assistantParams?.fromPage}
+                onReturn={() => handleNavigate(assistantParams?.fromPage || 'farm_planning')}
               />
             )}
             {assistantSubTab === 'voice' && (
