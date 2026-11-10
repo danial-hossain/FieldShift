@@ -699,12 +699,56 @@ def climate_scenario_endpoint(payload: Payload, db: DbSession = Depends(get_db))
 
     base_annual_rain = float(df["rainfall"].sum() / n_years)
     rain_delta_mm = base_annual_rain * (rain_delta_pct / 100.0)
-    base_et0_mm = 1350.0
+
+    # Dynamic annual reference evapotranspiration from district daily observations
+    import pandas as pd
+    sample_year = df.tail(365)
+    d_lat = float(DISTRICT_REGISTRY.get(dist_key, {}).get("latitude", 24.0))
+    from src.compute.water_service import fao56_penman_monteith_et0
+    base_et0_mm = 0.0
+    for _, r in sample_year.iterrows():
+        d_val = pd.to_datetime(r["date"]) if "date" in r else None
+        doy = int(d_val.dayofyear) if d_val is not None else 1
+        base_et0_mm += fao56_penman_monteith_et0(
+            t_mean=float(r.get("temperature", 25.0)),
+            t_min=float(r.get("temp_min", 20.0)),
+            t_max=float(r.get("temp_max", 30.0)),
+            rh=float(r.get("humidity", 70.0)),
+            u2=float(r.get("wind_speed", 1.5)),
+            rs=float(r.get("solar_radiation", 16.0)),
+            lat=d_lat,
+            doy=doy,
+        )
+    base_et0_mm = round(base_et0_mm, 1) if base_et0_mm > 0 else 1250.0
     water_delta_mm = round((base_et0_mm * (et0_increase_pct / 100.0)) - (0.6 * rain_delta_mm), 1)
 
-    existing_profit_delta_pct = round(- (temp_delta_c * 3.2) + (rain_delta_pct * 0.4), 1)
-    water_strat_profit_delta_pct = round(- (temp_delta_c * 1.8) + (rain_delta_pct * 0.15), 1)
-    soil_strat_profit_delta_pct = round(- (temp_delta_c * 1.5) + (rain_delta_pct * 0.10), 1)
+    # Dynamic profit delta percentages calculated from climate stress engine on each rotation
+    from src.compute.climate_stress import run_climate_stress_test
+    strat_rotations = {
+        "existing": ["Boro Rice", "Fallow", "Rice", "Boro Rice", "Fallow", "Rice"],
+        "water": ["Mustard", "Mungbean", "Rice", "Chickpea", "Sesame", "Rice"],
+        "soil": ["Lentil", "Mungbean", "Rice", "Chickpea", "Soybean", "Rice"],
+    }
+    sc_type = "heatwave" if temp_delta_c > 0 and rain_delta_pct >= 0 else ("drought" if rain_delta_pct < 0 else "heatwave")
+    sc_int = "severe" if (temp_delta_c >= 3.0 or rain_delta_pct <= -30.0) else ("moderate" if (temp_delta_c >= 1.5 or rain_delta_pct <= -15.0) else "mild")
+    
+    loss_results = {}
+    for sk, r_crops in strat_rotations.items():
+        st_out = run_climate_stress_test(
+            district=dist_key,
+            strategy=sk,
+            scenario=sc_type,
+            intensity=sc_int,
+            plan_crops=r_crops,
+            area_ha=1.0,
+            climate_df=df,
+        )
+        loss_pct = float(st_out.get("summary", {}).get("total_profit_loss_pct", 0.0))
+        loss_results[sk] = round(-loss_pct * (max(temp_delta_c, 0.5) / 4.0 if temp_delta_c > 0 else 1.0), 1)
+
+    existing_profit_delta_pct = loss_results["existing"]
+    water_strat_profit_delta_pct = loss_results["water"]
+    soil_strat_profit_delta_pct = loss_results["soil"]
 
     return {
         "status": "ok",
@@ -1226,6 +1270,98 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
     if "summary" in resp and "planning" in resp["summary"]:
         resp["summary"]["planning"]["environment_basis"] = env_basis
     return resp
+
+@app.post("/api/planning/stress")
+def planning_stress(
+    payload: Payload,
+    fieldshift_session: str | None = Cookie(None),
+    db: DbSession = Depends(get_db),
+):
+    data = payload.model_dump()
+    user = None
+    if fieldshift_session:
+        try:
+            user = require_user(fieldshift_session, db)
+        except HTTPException:
+            user = None
+
+    field_record = None
+    requested_field_id = data.get("field_id")
+    if requested_field_id not in (None, "", "demo"):
+        try:
+            fid = int(requested_field_id)
+            if user:
+                field_record = owned_field(db, fid, user)
+            else:
+                field_record = db.query(Field).filter(Field.id == fid).first()
+        except Exception:
+            field_record = None
+
+    dist_raw = data.get("district")
+    if not dist_raw and field_record:
+        dist_raw = getattr(field_record, "district", None)
+    if not dist_raw and data.get("latitude") and data.get("longitude"):
+        from src.compute.advisory_service import nearest_district
+        try:
+            dist_raw = nearest_district(float(data["latitude"]), float(data["longitude"]))
+        except Exception:
+            dist_raw = "bogura"
+    dist_key = str(dist_raw or "bogura").strip().lower()
+
+    area_val = data.get("area_ha") or data.get("field_size_ha")
+    if area_val is None and field_record:
+        area_val = getattr(field_record, "area_ha", 0.133)
+    try:
+        area_ha = float(area_val) if area_val is not None else 0.133
+    except (ValueError, TypeError):
+        area_ha = 0.133
+    if not math.isfinite(area_ha) or area_ha <= 0:
+        area_ha = 0.133
+
+    strategy = str(data.get("strategy") or "balanced").strip().lower()
+    scenario = str(data.get("scenario") or "heatwave").strip().lower()
+    intensity = str(data.get("intensity") or "moderate").strip().lower()
+    seasons_hit = data.get("seasons_hit") or data.get("seasons")
+
+    plan_crops = data.get("plan_crops") or data.get("selected_crop_by_period")
+    if isinstance(plan_crops, dict):
+        from src.compute.climate_stress import CANONICAL_PERIODS
+        plan_crops = [plan_crops.get(k) for k in CANONICAL_PERIODS if plan_crops.get(k)]
+
+    if not plan_crops or len(plan_crops) != 6:
+        strat_rotations = {
+            "balanced": ["Mustard", "Soybean", "Rice", "Chickpea", "Sesame", "Rice"],
+            "profit": ["Mustard", "Soybean", "Rice", "Tomato", "Mungbean", "Rice"],
+            "water": ["Mustard", "Mungbean", "Rice", "Chickpea", "Sesame", "Rice"],
+            "soil": ["Lentil", "Mungbean", "Rice", "Chickpea", "Soybean", "Rice"],
+        }
+        plan_crops = strat_rotations.get(strategy, strat_rotations["balanced"])
+
+    baseline_crops = data.get("baseline_crops")
+    if isinstance(baseline_crops, dict):
+        from src.compute.climate_stress import CANONICAL_PERIODS
+        baseline_crops = [baseline_crops.get(k) for k in CANONICAL_PERIODS if baseline_crops.get(k)]
+    if not baseline_crops and field_record and getattr(field_record, "existing_rotation", None):
+        er = field_record.existing_rotation
+        if isinstance(er, dict):
+            rabi = er.get("rabi") or "Boro Rice"
+            k1 = er.get("kharif1") or "Fallow"
+            k2 = er.get("kharif2") or "Rice"
+            baseline_crops = [rabi, k1, k2, rabi, k1, k2]
+
+    from src.compute.climate_stress import run_climate_stress_test
+    result = run_climate_stress_test(
+        field_id=str(requested_field_id or "demo"),
+        district=dist_key,
+        strategy=strategy,
+        scenario=scenario,
+        intensity=intensity,
+        seasons_hit=seasons_hit,
+        plan_crops=plan_crops,
+        baseline_crops=baseline_crops,
+        area_ha=area_ha,
+    )
+    return finite_json_value(jsonable_encoder(result))
 
 @app.post("/api/planning/robustness")
 def planning_robustness(payload: Payload):
