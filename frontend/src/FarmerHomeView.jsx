@@ -12,6 +12,66 @@ import { TwoFieldComparisonModal } from './TwoFieldComparisonModal.jsx';
 
 const OrbitToFieldStory = React.lazy(() => import('./overview/OrbitToFieldStory.jsx'));
 
+// ── Story-level ErrorBoundary: if the 3D story crashes, show a still fallback
+// and let the rest of the app keep working ────────────────────────────────────
+class StoryErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { crashed: false, errorMsg: '' };
+  }
+  static getDerivedStateFromError(error) {
+    return { crashed: true, errorMsg: error?.message || String(error) };
+  }
+  componentDidCatch(error, info) {
+    console.error('[StoryErrorBoundary] 3D story crashed:', error.message, '\nComponent stack:', info?.componentStack);
+  }
+  render() {
+    if (this.state.crashed) {
+      const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+      return (
+        <div style={{
+          position: 'relative',
+          height: '60vh',
+          borderRadius: 20,
+          marginBottom: 24,
+          overflow: 'hidden',
+          background: 'linear-gradient(180deg, #04070d 0%, #060f0a 40%, #0d1e10 70%, #111809 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 12,
+          border: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          {/* SVG still background */}
+          <svg viewBox="0 0 800 400" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.35 }} preserveAspectRatio="xMidYMid slice">
+            <circle cx="600" cy="200" r="140" fill="#1a3a6a" />
+            {[...Array(50)].map((_, i) => (
+              <circle key={i} cx={Math.round(Math.random() * 800)} cy={Math.round(Math.random() * 300)} r="1.5" fill="white" opacity="0.6" />
+            ))}
+            <ellipse cx="200" cy="300" rx="140" ry="80" fill="#1e5c38" opacity="0.7" />
+          </svg>
+          <div style={{ position: 'relative', textAlign: 'center', color: '#EAF2EC', padding: '0 24px' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🛰️</div>
+            <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 22, marginBottom: 6 }}>FieldShift</div>
+            <div style={{ fontSize: 13, color: '#9fb3a5', maxWidth: 400 }}>
+              {this.props.lang === 'bn'
+                ? 'থ্রিডি দৃশ্য লোড হয়নি। নিচের ড্যাশবোর্ড থেকে সব ফিচার পাওয়া যাবে।'
+                : '3D story could not load. All features are available below in the dashboard.'}
+            </div>
+            {isDev && (
+              <details style={{ marginTop: 10, textAlign: 'left', maxWidth: 500 }}>
+                <summary style={{ cursor: 'pointer', fontSize: 11, color: '#F5B04C' }}>DEV: {this.state.errorMsg}</summary>
+              </details>
+            )}
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export function FarmerHomeView({
   activeField,
   userFields = [],
@@ -133,15 +193,17 @@ export function FarmerHomeView({
 
   return (
     <div className="farmer-home-container">
-      {/* Immersive 3D Scroll Story "From Orbit to Field" (OV1-OV4) */}
-      <React.Suspense fallback={<div style={{ height: 600, borderRadius: 24, background: 'rgba(10, 20, 15, 0.4)', marginBottom: 24 }} />}>
-        <OrbitToFieldStory
-          activeField={activeField}
-          lang={lang}
-          onNavigate={onNavigate}
-          advisoryData={advisoryData}
-        />
-      </React.Suspense>
+      {/* Immersive 3D Scroll Story "From Orbit to Field" — isolated ErrorBoundary */}
+      <StoryErrorBoundary lang={lang}>
+        <React.Suspense fallback={<div style={{ height: 480, borderRadius: 20, background: 'rgba(10, 20, 15, 0.4)', marginBottom: 24 }} />}>
+          <OrbitToFieldStory
+            activeField={activeField}
+            lang={lang}
+            onNavigate={onNavigate}
+            advisoryData={advisoryData}
+          />
+        </React.Suspense>
+      </StoryErrorBoundary>
 
       {/* 2-Field Comparison Modal */}
       <TwoFieldComparisonModal

@@ -432,12 +432,14 @@ class GlobalErrorBoundary extends React.Component {
   };
   render() {
     if (this.state.hasError) {
+      const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
       return (
         <div
           role="alert"
+          data-testid="global-error-boundary"
           style={{
             padding: '28px 24px',
-            maxWidth: 560,
+            maxWidth: 680,
             margin: '40px auto',
             background: 'var(--surface, #121A15)',
             borderRadius: 'var(--r-lg, 16px)',
@@ -451,9 +453,20 @@ class GlobalErrorBoundary extends React.Component {
           <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text, #E8ECE9)' }}>
             Something went wrong / একটি সমস্যা দেখা দিয়েছে
           </h3>
-          <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted, #9AA5A0)', lineHeight: 1.5 }}>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-muted, #9AA5A0)', lineHeight: 1.5 }}>
             An unexpected error occurred while rendering this section. You can retry loading or refresh the application.
           </p>
+          {isDev && this.state.error && (
+            <details open style={{ textAlign: 'left', marginBottom: 16 }}>
+              <summary style={{ cursor: 'pointer', fontSize: 12, color: '#F5B04C', marginBottom: 6 }}>
+                DEV: {this.state.error.message}
+              </summary>
+              <pre data-error-detail style={{ fontSize: 10, overflowX: 'auto', background: 'rgba(0,0,0,0.4)', padding: 10, borderRadius: 8, color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 200 }}>
+                {this.state.error.stack}
+                {this.state.errorInfo ? '\n\nComponent Stack:\n' + this.state.errorInfo.componentStack : ''}
+              </pre>
+            </details>
+          )}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button
               type="button"

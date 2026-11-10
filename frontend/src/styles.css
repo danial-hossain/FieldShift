@@ -16993,3 +16993,70 @@ span[style*="197, 232, 108"] {
   }
 }
 
+
+
+/* ============================================================
+   OVERVIEW STORY — OF1-OF6 CSS
+   The fixed 3D canvas sits at z-index: 0 behind everything.
+   Sidebar (z 30) and topbar (z 30) float above it.
+   Story glass cards use backdrop-filter blur.
+   Dashboard page (data-nav="dashboard"): sidebar is glass.
+   ============================================================ */
+
+/* When on the overview/dashboard page, let the 3D canvas show through
+   the sidebar and topbar by making them glass */
+[data-nav="dashboard"] .sidebar {
+  background: rgba(8, 14, 10, 0.72) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-nav="dashboard"] .topbar,
+[data-nav="dashboard"] .active-field-context-strip {
+  background: rgba(6, 10, 8, 0.65) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Story glass card: backdrop blur for real glass effect */
+.story-glass-card {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* Ensure the main-content area on dashboard does NOT clip the
+   fixed 3D canvas (no overflow: hidden on scrolling container) */
+[data-nav="dashboard"] .main-content {
+  overflow: visible;
+  /* The story provides its own scroll height via the spacer div */
+}
+
+/* On the dashboard page, the farmer-home-container scrolls normally;
+   the fixed canvas is z:0 behind everything */
+[data-nav="dashboard"] .farmer-home-container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Fade-in animation for scene cards */
+@keyframes storyCardIn {
+  from { opacity: 0; transform: translateY(12px) translateX(-8px); }
+  to   { opacity: 1; transform: translateY(-50%); }
+}
+
+.story-glass-card {
+  animation: storyCardIn 0.45s ease both;
+}
+
+/* Light theme: glass cards stay dark so they read on the light bg */
+[data-theme="light"] .story-glass-card {
+  background: rgba(10, 20, 15, 0.82) !important;
+  color: #EAF2EC !important;
+}
+
+/* Mobile: cards full-width, left only */
+@media (max-width: 700px) {
+  .story-glass-card {
+    width: 90% !important;
+    left: 5% !important;
+    right: auto !important;
+  }
+}
