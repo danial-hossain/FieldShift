@@ -713,26 +713,23 @@ def build_milp_model(
         dist = str(getattr(field_state, "district", "") or "").lower().strip()
         seasonally_flooded = (dist in HAOR_DISTRICTS) or bool(getattr(field_state, "seasonally_flooded", False))
 
-    # C3: Minimum cereal staple / income constraint per full year
+    # C3: Minimum cereal staple / income constraint across rotation
     cereal_names = [c for c in candidate_names if any(k in c.lower() for k in ["rice", "wheat", "maize", "sorghum"])]
     full_years = len(periods) // seasons_per_year
     if min_cereals_per_year > 0 and cereal_names and full_years > 0:
-        for y in range(full_years):
-            year_periods = periods[y * seasons_per_year : (y + 1) * seasons_per_year]
-            if len(year_periods) == seasons_per_year:
-                # Only enforce if at least one cereal is feasible in this year's seasonal environments
-                feasible_cereals = [
-                    (c, p)
-                    for c in cereal_names
-                    for p in year_periods
-                    if dyn_matrix[p][c]["is_feasible"]
-                    and c not in season_suitability_exclusions.get(p, [])
-                ]
-                if feasible_cereals:
-                    problem += (
-                        pulp.lpSum(variables[(c, p)] for (c, p) in feasible_cereals) >= min_cereals_per_year,
-                        f"min_cereal_staple_year_{y}",
-                    )
+        feasible_cereals_all = [
+            (c, p)
+            for c in cereal_names
+            for p in periods
+            if dyn_matrix[p][c]["is_feasible"]
+            and c not in season_suitability_exclusions.get(p, [])
+        ]
+        if feasible_cereals_all:
+            # Rule: at least 1 cereal in the 2-year rotation (not forced in every year/Kharif-2)
+            problem += (
+                pulp.lpSum(variables[(c, p)] for (c, p) in feasible_cereals_all) >= 1,
+                "min_cereal_staple_rotation",
+            )
 
     # C4: Seasonally flooded haor land constraints vs C3 normal land
     if seasonally_flooded:

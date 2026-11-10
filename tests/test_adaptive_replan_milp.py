@@ -365,3 +365,49 @@ def test_rd1_failed_crop_loss_and_calibration():
     assert cal["ratio"] <= 0.7
     assert cal["outcome"] == "failed"
 
+
+def test_rd2_learning_updates_and_why_changed_explanations():
+    """RD2: Low Aman rice yield / price crash updates calibrated model yield/price in remaining seasons,
+    and why_changed explicitly explains why Rice is kept for Year 2 (erosion prevention vs fallow)."""
+    crops_df = load_crop_knowledge()
+    power, _ = load_district_climate_data("chapainawabganj", offline=True)
+    if "date" in power.columns:
+        power["date"] = pd.to_datetime(power["date"])
+
+    state = build_field_state(
+        "rahim_field",
+        24.62,
+        88.55,
+        power["date"].max(),
+        power.tail(60),
+        crop_knowledge=crops_df,
+    )
+    state.field_size_ha = 0.67
+    state.area_ha = 0.67
+    state.texture = "clay_loam"
+    state.district = "chapainawabganj"
+
+    completed = [
+        {"crop": "Mustard", "yield_maund_bigha": 5.0, "sale_price_bdt_maund": 3200, "outcome": "normal"},
+        {"crop": "Mungbean", "yield_maund_bigha": 4.0, "sale_price_bdt_maund": 3000, "outcome": "normal"},
+        {"crop": "Aman rice", "yield_maund_bigha": 7.0, "sale_price_bdt_maund": 1100, "outcome": "poor"},
+    ]
+    res_poor_rice = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=completed,
+        priority="balanced",
+    )
+
+    # 1. Calibration table includes Rice
+    cal_crops = {c["crop"]: c for c in res_poor_rice["calibration_table"]}
+    assert "Rice" in cal_crops
+    assert cal_crops["Rice"]["ratio"] <= 0.6
+    assert cal_crops["Rice"]["price_bdt_maund"] == 1100.0
+
+    # 2. why_changed explains why Rice was kept in Year 2 Kharif-2
+    y2_k2_explanation = res_poor_rice["why_changed_en"][-1]
+    assert "Rice kept for Year 2 despite" in y2_k2_explanation
+    assert "erosion" in y2_k2_explanation
+
+

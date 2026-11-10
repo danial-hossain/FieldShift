@@ -91,6 +91,45 @@ OUTCOME_NAMES_BN = {
     "failure": "ফসলহানি",
 }
 
+CROP_ALIASES = {
+    "aman rice": "Rice",
+    "aman": "Rice",
+    "t. aman": "Rice",
+    "t. aman rice": "Rice",
+    "robona aman": "Rice",
+    "boro rice": "Boro Rice",
+    "boro": "Boro Rice",
+    "aus rice": "Aus Rice",
+    "aus": "Aus Rice",
+    "paddy": "Rice",
+    "dhan": "Rice",
+    "sarisha": "Mustard",
+    "mustard": "Mustard",
+    "chana": "Chickpea",
+    "chickpea": "Chickpea",
+    "moog": "Mungbean",
+    "mug": "Mungbean",
+    "mungbean": "Mungbean",
+    "masur": "Lentil",
+    "lentil": "Lentil",
+    "alu": "Potato",
+    "potato": "Potato",
+    "corn": "Maize",
+    "maize": "Maize",
+    "soya": "Soybean",
+    "soybean": "Soybean",
+    "wheat": "Wheat",
+    "gam": "Wheat",
+    "tomato": "Tomato",
+    "til": "Sesame",
+    "sesame": "Sesame",
+    "pat": "Jute",
+    "jute": "Jute",
+    "surjamukhi": "Sunflower",
+    "sunflower": "Sunflower",
+    "fallow": "Fallow",
+}
+
 
 def to_bn_digits(val: Any) -> str:
     s = str(val)
@@ -163,6 +202,12 @@ def run_adaptive_replan(
 
     crop_lookup = {str(row["crop"]).strip().lower(): row.to_dict() for _, row in crops.iterrows()}
     crop_canonical = {str(row["crop"]).strip().lower(): str(row["crop"]).strip() for _, row in crops.iterrows()}
+
+    for alias, canon in CROP_ALIASES.items():
+        c_l = canon.lower()
+        if c_l in crop_lookup and alias not in crop_lookup:
+            crop_lookup[alias] = crop_lookup[c_l]
+            crop_canonical[alias] = canon
 
     field_area_ha = safe_num(getattr(field_state, "field_size_ha", None), 0.0)
     if field_area_ha <= 0:
@@ -309,15 +354,16 @@ def run_adaptive_replan(
                 clamped_ratio = clamped_ratio * 0.7  # Crop failure penalty factor
 
         c_name = crop_canonical.get(c_low, c_low.capitalize())
-        c_info = crop_lookup.get(c_low, {})
+        c_canonical_low = c_name.strip().lower()
+        c_info = crop_lookup.get(c_canonical_low, crop_lookup.get(c_low, {}))
         model_y_tha = safe_num(c_info.get("expected_yield"), 1.0)
         model_y_mb = t_ha_to_maund_bigha(model_y_tha)
 
-        m = crops_replan["crop"].str.casefold() == c_low
+        m = (crops_replan["crop"].str.casefold() == c_low) | (crops_replan["crop"].str.casefold() == c_canonical_low)
         if m.any():
             crops_replan.loc[m, "expected_yield"] = model_y_tha * clamped_ratio
 
-        pr_used = crop_prices_recorded.get(c_low)
+        pr_used = crop_prices_recorded.get(c_low, crop_prices_recorded.get(c_canonical_low))
         pr_source = "কৃষকের দেওয়া" if pr_used is not None else "ক্যাটালগ"
         pr_source_en = "farmer_provided" if pr_used is not None else "catalog"
         if pr_used is None:
@@ -343,7 +389,9 @@ def run_adaptive_replan(
     # Apply prices to crops_replan
     for c_low, pr_mb in crop_prices_recorded.items():
         bdt_ton = pr_mb / TON_PER_MAUND
-        m = crops_replan["crop"].str.casefold() == c_low
+        c_name = crop_canonical.get(c_low, c_low.capitalize())
+        c_canonical_low = c_name.strip().lower()
+        m = (crops_replan["crop"].str.casefold() == c_low) | (crops_replan["crop"].str.casefold() == c_canonical_low)
         if m.any():
             crops_replan.loc[m, "market_price"] = bdt_ton
 
@@ -577,8 +625,41 @@ def run_adaptive_replan(
                 reason_bn = f"{p_name_bn}: পূর্ববর্তী ফসল ও মাটির ভারসাম্যের কারণে {orig_crop_bn} থেকে {new_crop_bn}-এ পরিবর্তন।"
                 reason_en = f"{p_name_en}: Shifted from {orig_crop} to {new_crop} for botanical break and soil balance."
         else:
-            reason_bn = f"{p_name_bn}: {orig_crop_bn} বহাল রাখা হয়েছে (সর্বোচ্চ সুষম লাভ ও মাটির স্বাস্থ্য রক্ষার্থে)।"
-            reason_en = f"{p_name_en}: Maintained {orig_crop} for optimal balanced profit and soil health."
+            # Crop was maintained (is_shifted is False)
+            c_key = orig_crop.strip().lower()
+            cal_ratio = None
+            if c_key in crop_yield_ratios and crop_yield_ratios[c_key]:
+                cal_ratio = crop_yield_ratios[c_key][0]
+            else:
+                for k, v in crop_yield_ratios.items():
+                    if crop_canonical.get(k) == orig_crop and v:
+                        cal_ratio = v[0]
+                        break
+
+            has_lower_price = False
+            rec_price = None
+            if c_key in crop_prices_recorded:
+                rec_price = crop_prices_recorded[c_key]
+            else:
+                for k, v in crop_prices_recorded.items():
+                    if crop_canonical.get(k) == orig_crop:
+                        rec_price = v
+                        break
+            if rec_price is not None:
+                cat_p = safe_num(crop_lookup.get(c_key, {}).get("market_price"), 0) * TON_PER_MAUND
+                if cat_p > 0 and rec_price < cat_p * 0.9:
+                    has_lower_price = True
+
+            if cal_ratio is not None and cal_ratio < 0.9:
+                r_pct = int(round(cal_ratio * 100))
+                reason_bn = f"{p_name_bn}: ফলন {to_bn_digits(r_pct)}% কম হওয়া সত্ত্বেও {orig_crop_bn} বহাল রাখা হয়েছে (বর্ষায় মাটির ক্ষয় রোধ ও আচ্ছাদন রক্ষার্থে)।"
+                reason_en = f"{p_name_en}: {orig_crop} kept for Year 2 despite {100 - r_pct}% lower yield because it prevents severe monsoon soil erosion (fallow bare penalty) and fulfills essential crop cover."
+            elif has_lower_price and rec_price is not None:
+                reason_bn = f"{p_name_bn}: বাজারমূল্য কম (৳{to_bn_digits(int(rec_price))}/মণ) হওয়া সত্ত্বেও {orig_crop_bn} বহাল রাখা হয়েছে (মাটির ক্ষয় রোধ ও বিকল্প না থাকায়)।"
+                reason_en = f"{p_name_en}: {orig_crop} kept for Year 2 despite lower market price (BDT {int(rec_price)}/maund) to prevent monsoon soil erosion vs fallow."
+            else:
+                reason_bn = f"{p_name_bn}: {orig_crop_bn} বহাল রাখা হয়েছে (সর্বোচ্চ সুষম লাভ ও মাটির স্বাস্থ্য রক্ষার্থে)।"
+                reason_en = f"{p_name_en}: Maintained {orig_crop} for optimal balanced profit and soil health."
 
         why_changed_explanations.append({
             "period": p_id,
