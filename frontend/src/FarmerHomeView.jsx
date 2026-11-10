@@ -90,7 +90,7 @@ export function FarmerHomeView({
         if (district) queryParams.append('district', district.toLowerCase());
         if (lat) queryParams.append('latitude', lat);
         if (lon) queryParams.append('longitude', lon);
-        const url = `http://127.0.0.1:8000/api/advisory?${queryParams.toString()}`;
+        const url = `/api/advisory?${queryParams.toString()}`;
         const res = await fetch(url);
         if (res.ok && isMounted) {
           const data = await res.json();

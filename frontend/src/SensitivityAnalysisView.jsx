@@ -57,7 +57,7 @@ export function SensitivityAnalysisView({
   });
 
   return (
-    <div className="sensitivity-analysis-container" style={{ padding: '24px 32px', maxWidth: 1400, margin: '0 auto' }}>
+    <div className="sensitivity-analysis-container" style={{ padding: '0 0 32px 0' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div>

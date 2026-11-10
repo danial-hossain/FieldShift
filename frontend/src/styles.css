@@ -14993,26 +14993,7 @@ select option {
   color: #0f172a;
 }
 
-/* Page Container (Gutter, max-width, gap) */
-.main-content,
-.main-wrapper > main,
-.dashboard-main-view {
-  max-width: 1680px !important;
-  margin: 0 auto !important;
-  padding: 0 24px 40px 24px !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-  gap: 24px !important;
-}
 
-@media (max-width: 768px) {
-  .main-content,
-  .main-wrapper > main,
-  .dashboard-main-view {
-    padding: 0 16px 80px 16px !important;
-    gap: 16px !important;
-  }
-}
 
 /* UI 5: Research Mode Unified Styling (R5) */
 [data-mode="research"] .research-nav-item {
@@ -17145,4 +17126,96 @@ span[style*="197, 232, 108"] {
   margin: 0;
   padding: 0;
 }
+
+/* ============================================================
+   UP3: Unified Content Container (1320px)
+   One page width for every page and every tab.
+   ============================================================ */
+.content-container,
+.main-content,
+.main-wrapper > main,
+.dashboard-main-view,
+.farm-planning-workspace,
+.my-farm-workspace,
+.climate-risk-view,
+.water-planner-view,
+.market-profit-view,
+.data-evidence-workspace,
+.research-workspace,
+.research-workspace-container,
+.crop-advice-workspace,
+.account-workspace,
+.profile-3d-wrapper,
+.farm-planning-container,
+.water-irrigation-container,
+.nasa-weather-container,
+.market-intelligence-container,
+.data-evidence-container,
+.account-cockpit-container,
+.dash-container,
+.workspace-container,
+.app-shell .main-content > div {
+  max-width: 1320px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 24px 40px 24px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 900px) {
+  .content-container,
+  .main-content,
+  .main-wrapper > main,
+  .dashboard-main-view,
+  .farm-planning-workspace,
+  .my-farm-workspace,
+  .climate-risk-view,
+  .water-planner-view,
+  .market-profit-view,
+  .data-evidence-workspace,
+  .research-workspace,
+  .research-workspace-container,
+  .crop-advice-workspace,
+  .account-workspace,
+  .profile-3d-wrapper,
+  .farm-planning-container,
+  .water-irrigation-container,
+  .nasa-weather-container,
+  .market-intelligence-container,
+  .data-evidence-container,
+  .account-cockpit-container,
+  .dash-container,
+  .workspace-container,
+  .app-shell .main-content > div {
+    padding: 0 16px 80px 16px !important;
+  }
+}
+
+/* Inner sub-views inside tabs must take 100% of the container and not set a narrower max-width */
+.six-season-recommendation-workspace,
+.adaptive-replan-root,
+.climate-stress-workspace,
+.your-farming-workspace,
+.multi-field-experiment-container,
+.synthetic-lab-container,
+.sensitivity-analysis-container,
+.onset-science-view,
+.farmer-view-container,
+.nasa-advisory-container {
+  max-width: 100% !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* On overview story page, do not constrain width */
+[data-nav="dashboard"] .farmer-home-container,
+[data-nav="dashboard"] .overview-story-stage {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 

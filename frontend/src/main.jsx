@@ -996,6 +996,67 @@ export function App() {
 
   // Dark Theme Dashboard UI States
   const [showNotifications, setShowNotifications] = useState(false);
+  const [cropCategoryFilter, setCropCategoryFilter] = useState('All');
+  const [selectedCropItem, setSelectedCropItem] = useState('Sorghum');
+  const [isPlayingCamera, setIsPlayingCamera] = useState(true);
+  const [cameraScrubberPct, setCameraScrubberPct] = useState(65);
+
+  // Dedicated Field Management State for Profile
+  const [fieldModal, setFieldModal] = useState(null); // 'add' | 'edit' | null
+  const [fieldModalError, setFieldModalError] = useState('');
+  const [fieldModalLoading, setFieldModalLoading] = useState(false);
+  const [viewingField, setViewingField] = useState(null);
+  const [fieldForm, setFieldForm] = useState({
+    id: null,
+    name: '',
+    latitude: '',
+    longitude: '',
+    area_ha: '',
+    soil_texture: 'unknown',
+    soil_ph: '',
+    organic_matter: '',
+    irrigation_capacity_mm: '',
+    crop: '',
+    previous_crop_year: ''
+  });
+
+  // The selected PostgreSQL field is held once in selectedFieldId. The form
+  // contains only analysis controls and is hydrated from that row at submit.
+  const [form, setForm] = useState(() => ({
+    start_date: '2026-08-31',
+    end_date: '2026-09-29',
+    mode: 'live',
+    season: 'dry',
+    include_history: true,
+    counterfactual_rainfall_delta_mm: ''
+  }));
+
+  const demoField = useMemo(() => ({
+    id: 'demo',
+    is_demo: true,
+    name: lang === 'bn' ? 'বগুড়া ডেমো খামার [DEMO]' : 'Demo Field (Bogura 10 ha) [DEMO]',
+    full_name: lang === 'bn' ? 'বগুড়া কৃষি গবেষণা প্লট [DEMO]' : 'Bogura Agricultural Research Plot (10 ha) [DEMO]',
+    latitude: 24.8500,
+    longitude: 89.3700,
+    district: 'bogura',
+    area_ha: 10.0,
+    soil_texture: 'loam',
+    soil_ph: 6.5,
+    organic_matter: 2.5,
+    irrigation_capacity_mm: 90,
+    crop: 'Maize',
+    previous_crop: 'Maize',
+    previous_crop_year: 2024,
+    source_label: 'Offline Research Benchmark'
+  }), [lang]);
+
+  // Registered fields always resolve by the shared selectedFieldId.
+  // Explicit demo option maps consistently to demoField across all views.
+  const activeField = useMemo(() => {
+    if (selectedFieldId === 'demo') return demoField;
+    if (selectedFieldId == null) return null;
+    return userFields.find(field => String(field.id) === String(selectedFieldId)) || null;
+  }, [userFields, selectedFieldId, demoField]);
 
   // Real Alerts computed for the ACTIVE field (UP1)
   const activeFieldAlerts = useMemo(() => {
@@ -1087,67 +1148,6 @@ export function App() {
 
     return list;
   }, [activeField, lang]);
-  const [cropCategoryFilter, setCropCategoryFilter] = useState('All');
-  const [selectedCropItem, setSelectedCropItem] = useState('Sorghum');
-  const [isPlayingCamera, setIsPlayingCamera] = useState(true);
-  const [cameraScrubberPct, setCameraScrubberPct] = useState(65);
-
-  // Dedicated Field Management State for Profile
-  const [fieldModal, setFieldModal] = useState(null); // 'add' | 'edit' | null
-  const [fieldModalError, setFieldModalError] = useState('');
-  const [fieldModalLoading, setFieldModalLoading] = useState(false);
-  const [viewingField, setViewingField] = useState(null);
-  const [fieldForm, setFieldForm] = useState({
-    id: null,
-    name: '',
-    latitude: '',
-    longitude: '',
-    area_ha: '',
-    soil_texture: 'unknown',
-    soil_ph: '',
-    organic_matter: '',
-    irrigation_capacity_mm: '',
-    crop: '',
-    previous_crop_year: ''
-  });
-
-  // The selected PostgreSQL field is held once in selectedFieldId. The form
-  // contains only analysis controls and is hydrated from that row at submit.
-  const [form, setForm] = useState(() => ({
-    start_date: '2026-08-31',
-    end_date: '2026-09-29',
-    mode: 'live',
-    season: 'dry',
-    include_history: true,
-    counterfactual_rainfall_delta_mm: ''
-  }));
-
-  const demoField = useMemo(() => ({
-    id: 'demo',
-    is_demo: true,
-    name: lang === 'bn' ? 'বগুড়া ডেমো খামার [DEMO]' : 'Demo Field (Bogura 10 ha) [DEMO]',
-    full_name: lang === 'bn' ? 'বগুড়া কৃষি গবেষণা প্লট [DEMO]' : 'Bogura Agricultural Research Plot (10 ha) [DEMO]',
-    latitude: 24.8500,
-    longitude: 89.3700,
-    district: 'bogura',
-    area_ha: 10.0,
-    soil_texture: 'loam',
-    soil_ph: 6.5,
-    organic_matter: 2.5,
-    irrigation_capacity_mm: 90,
-    crop: 'Maize',
-    previous_crop: 'Maize',
-    previous_crop_year: 2024,
-    source_label: 'Offline Research Benchmark'
-  }), [lang]);
-
-  // Registered fields always resolve by the shared selectedFieldId.
-  // Explicit demo option maps consistently to demoField across all views.
-  const activeField = useMemo(() => {
-    if (selectedFieldId === 'demo') return demoField;
-    if (selectedFieldId == null) return null;
-    return userFields.find(field => String(field.id) === String(selectedFieldId)) || null;
-  }, [userFields, selectedFieldId, demoField]);
 
   const workflowPayload = (controls = form, field = activeField) => {
     const payload = {
@@ -2729,8 +2729,8 @@ export function App() {
 
         {/* -------------------- VIEW: CROP ADVICE (FARMER FRIENDLY) -------------------- */}
         {activeNav === 'crop_advice' && (
-          <div>
-            <div className="subnav-pills-bar" style={{ display: 'flex', gap: 8, padding: '10px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-medium)', marginBottom: 16, overflowX: 'auto' }}>
+          <div className="crop-advice-workspace content-container">
+            <div className="subnav-pills-bar" style={{ display: 'flex', gap: 8, padding: '10px 0', marginBottom: 16, overflowX: 'auto' }}>
               <button
                 type="button"
                 className={`btn ${cropSubTab === 'advisory' ? 'btn-primary' : 'btn-outline'}`}
@@ -3938,7 +3938,7 @@ export function App() {
 
         {/* -------------------- VIEW 7: ACCOUNT & PROFILE (P1) -------------------- */}
         {activeNav === 'account' && (
-          <div className="profile-3d-wrapper" style={{ maxWidth: 1040, margin: '0 auto', padding: '24px 16px' }}>
+          <div className="profile-3d-wrapper content-container">
             {/* 1. Header with Title & Profile Actions */}
             <div className="profile-3d-header" style={{ marginBottom: 24 }}>
               <div className="profile-3d-title-group">

@@ -49,8 +49,7 @@ export function OnsetScienceView({
       border: '1px solid rgba(56, 189, 248, 0.2)',
       padding: '24px',
       color: 'var(--text, #f8fafc)',
-      maxWidth: '1680px',
-      margin: '0 auto'
+      width: '100%'
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>

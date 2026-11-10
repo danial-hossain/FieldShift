@@ -29,11 +29,10 @@ export function DataEvidenceView({
 
   return (
     <div
-      className="data-evidence-workspace"
+      className="data-evidence-workspace content-container"
       style={{
-        padding: '4px 0 14px 0',
-        maxWidth: 1260,
-        margin: '0 auto',
+        paddingTop: '4px',
+        paddingBottom: '14px',
       }}
     >
       {/* Top Header Banner */}

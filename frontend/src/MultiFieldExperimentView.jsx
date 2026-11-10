@@ -115,7 +115,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
   };
 
   return (
-    <div className="multi-field-experiment-container" style={{ padding: '16px', maxWidth: '1400px', margin: '0 auto', color: '#e2e8f0' }}>
+    <div className="multi-field-experiment-container" style={{ padding: '0 0 16px 0', color: '#e2e8f0' }}>
       {/* 1. Header with Synthetic Badge */}
       <div style={{
         background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.90))',

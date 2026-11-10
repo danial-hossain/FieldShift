@@ -902,7 +902,7 @@ export function MyFarmWorkspaceView({
   ];
 
   return (
-    <div className="my-farm-workspace" style={{ padding: '16px 24px 48px', maxWidth: 1680, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+    <div className="my-farm-workspace" style={{ padding: 0, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
       
       {/* Top Header Card */}
       <Card variant="glass" style={{ marginBottom: 20 }}>

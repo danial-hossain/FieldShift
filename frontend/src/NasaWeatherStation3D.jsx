@@ -421,7 +421,7 @@ export function NasaWeatherStation3D({
   };
 
   return (
-    <div className="climate-risk-view" style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 48px', color: 'var(--fg, #e7efe8)' }}>
+    <div className="climate-risk-view content-container" style={{ padding: '0 0 48px', color: 'var(--fg, #e7efe8)' }}>
       {/* Top Header & Field Context */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
         <div>

@@ -171,7 +171,7 @@ export function FarmerCropAdviceView({
     : CROPS_DATA.filter(c => c.season_tag === selectedSeason);
 
   return (
-    <div className="farmer-view-container" style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
+    <div className="farmer-view-container" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Top Advisory Nav Switcher */}
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <Tabs

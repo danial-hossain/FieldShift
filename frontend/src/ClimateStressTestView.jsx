@@ -274,7 +274,7 @@ export function ClimateStressTestView({
   const summaryData = stressResult?.summary;
 
   return (
-    <div className="climate-stress-workspace" style={{ maxWidth: 1400, margin: '0 auto', padding: '8px 0 36px 0' }}>
+    <div className="climate-stress-workspace" style={{ width: '100%', margin: 0, padding: 0 }}>
       
       {/* Header Banner */}
       <Card variant="glass" style={{ marginBottom: 20 }}>

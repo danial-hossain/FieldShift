@@ -1191,7 +1191,7 @@ export function SixSeasonRecommendationView({
   const isSignificant = pVal < 0.05;
 
   return (
-    <div className="six-season-recommendation-workspace wrap" style={{ maxWidth: 1180, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 16px 40px', color: 'var(--text)' }}>
+    <div className="six-season-recommendation-workspace wrap" style={{ width: '100%', margin: 0, display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 0 40px', color: 'var(--text)' }}>
       {/* 1. Header (Compact Single Header) */}
       <div className="head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12, marginBottom: 4 }}>
         <div>

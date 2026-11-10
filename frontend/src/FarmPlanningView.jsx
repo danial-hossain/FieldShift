@@ -44,7 +44,7 @@ export function FarmPlanningView({
   ];
 
   return (
-    <div className="farm-planning-workspace" style={{ padding: '8px 0 32px 0', maxWidth: 1400, margin: '0 auto' }}>
+    <div className="farm-planning-workspace" style={{ padding: 0, width: '100%', margin: '0 auto' }}>
       
       {/* Top Banner & Sub-Navigation */}
       <Card variant="glass" style={{ marginBottom: 20 }}>

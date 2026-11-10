@@ -200,11 +200,10 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
   return (
     <div
-      className="market-profit-view"
+      className="market-profit-view content-container"
       style={{
-        padding: '24px 20px 80px',
-        maxWidth: 1360,
-        margin: '0 auto',
+        paddingTop: '8px',
+        paddingBottom: '80px',
         fontFamily: isBn ? 'var(--font-bangla, Hind Siliguri, sans-serif)' : 'var(--font-body, Inter, sans-serif)',
         color: 'var(--text, #F4F7F4)',
       }}

@@ -113,7 +113,7 @@ export function NasaPlantingAdvisoryView({
   const doyRange = maxDoy - minDoy || 1;
 
   return (
-    <div className="nasa-advisory-container" style={{ display: 'flex', flexDirection: 'column', gap: 24, maxWidth: 1200, margin: '0 auto' }}>
+    <div className="nasa-advisory-container" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
       {/* Header */}
       <PageHeader

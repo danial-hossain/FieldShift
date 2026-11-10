@@ -399,7 +399,7 @@ export function AdaptiveReplanningView({
   const calibrationTable = replanData?.calibration_table || [];
 
   return (
-    <div className="adaptive-replan-root" style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 20px', color: 'var(--text, #1b261d)' }}>
+    <div className="adaptive-replan-root" style={{ width: '100%', margin: 0, padding: 0, color: 'var(--text, #1b261d)' }}>
       {/* Top Breadcrumb & Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
         <div>
