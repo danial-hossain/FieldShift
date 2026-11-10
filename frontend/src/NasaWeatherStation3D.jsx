@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { request } from './apiClient.js';
+import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
 
 export function NasaWeatherStation3D({
   nasa = {},
@@ -13,6 +14,71 @@ export function NasaWeatherStation3D({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [hoveredChartPoint, setHoveredChartPoint] = useState(null); // { chartId, year, val, unit, x, y }
+  const [activePlanYear, setActivePlanYear] = useState(0); // 0 = Y1, 1 = Y2
+
+  // Shared rotation plan store
+  const { plansByPriority, selectedPriority } = useRotationPlans({ field: activeField, lang, request });
+  const selectedPlan = plansByPriority[selectedPriority] || plansByPriority.balanced;
+  const rawPlanCrops = useMemo(() => extractPlanCrops(selectedPlan), [selectedPlan]);
+
+  // Dynamic crops mapped from the chosen rotation plan
+  const displayedCrops = useMemo(() => {
+    const fallbackY1 = [
+      { name: lang === 'bn' ? 'সরিষা' : 'Mustard', color: '#f2c94c', from: 0, to: 3, fl: [1, 2] },
+      { name: lang === 'bn' ? 'মুগ ডাল' : 'Mungbean', color: '#9fd36a', from: 5, to: 7, fl: [6] },
+      { name: lang === 'bn' ? 'আমন ধান' : 'Aman Rice', color: '#5fbf6a', from: 8, to: 11, fl: [10] },
+    ];
+    const fallbackY2 = [
+      { name: lang === 'bn' ? 'ছোলা' : 'Chickpea', color: '#c9d88a', from: 0, to: 4, fl: [3] },
+      { name: lang === 'bn' ? 'তিল' : 'Sesame', color: '#e8e2cf', from: 5, to: 7, fl: [6, 7] },
+      { name: lang === 'bn' ? 'আমন ধান' : 'Aman Rice', color: '#5fbf6a', from: 8, to: 11, fl: [10] },
+    ];
+
+    const getCropWindow = (cropName, defaultCrop) => {
+      if (!cropName) return defaultCrop;
+      const c = String(cropName).toLowerCase();
+      if (c.includes('mustard') || c.includes('সরিষা')) {
+        return { name: lang === 'bn' ? 'সরিষা' : 'Mustard', color: '#f2c94c', from: 0, to: 3, fl: [1, 2] };
+      }
+      if (c.includes('mung') || c.includes('মুগ')) {
+        return { name: lang === 'bn' ? 'মুগ ডাল' : 'Mungbean', color: '#9fd36a', from: 5, to: 7, fl: [6] };
+      }
+      if (c.includes('chickpea') || c.includes('ছোলা')) {
+        return { name: lang === 'bn' ? 'ছোলা' : 'Chickpea', color: '#c9d88a', from: 0, to: 4, fl: [3] };
+      }
+      if (c.includes('sesame') || c.includes('তিল')) {
+        return { name: lang === 'bn' ? 'তিল' : 'Sesame', color: '#e8e2cf', from: 5, to: 7, fl: [6, 7] };
+      }
+      if (c.includes('wheat') || c.includes('গম')) {
+        return { name: lang === 'bn' ? 'গম' : 'Wheat', color: '#e5b869', from: 0, to: 4, fl: [2, 3] };
+      }
+      if (c.includes('sunflower') || c.includes('সূর্যমুখী')) {
+        return { name: lang === 'bn' ? 'সূর্যমুখী' : 'Sunflower', color: '#f59e0b', from: 0, to: 4, fl: [2, 3] };
+      }
+      if (c.includes('tomato') || c.includes('টমেটো')) {
+        return { name: lang === 'bn' ? 'টমেটো' : 'Tomato', color: '#ef4444', from: 0, to: 4, fl: [2, 3] };
+      }
+      if (c.includes('boro') || c.includes('বোরো')) {
+        return { name: lang === 'bn' ? 'বোরো ধান' : 'Boro Rice', color: '#3b82f6', from: 1, to: 5, fl: [3, 4] };
+      }
+      if (c.includes('aman') || c.includes('ধান') || c.includes('rice')) {
+        return { name: lang === 'bn' ? 'আমন ধান' : 'Aman Rice', color: '#5fbf6a', from: 8, to: 11, fl: [10] };
+      }
+      return { name: cropName, color: defaultCrop.color, from: defaultCrop.from, to: defaultCrop.to, fl: defaultCrop.fl };
+    };
+
+    return activePlanYear === 0
+      ? [
+          getCropWindow(rawPlanCrops?.[0], fallbackY1[0]),
+          getCropWindow(rawPlanCrops?.[1], fallbackY1[1]),
+          getCropWindow(rawPlanCrops?.[2], fallbackY1[2]),
+        ]
+      : [
+          getCropWindow(rawPlanCrops?.[3], fallbackY2[0]),
+          getCropWindow(rawPlanCrops?.[4], fallbackY2[1]),
+          getCropWindow(rawPlanCrops?.[5], fallbackY2[2]),
+        ];
+  }, [activePlanYear, rawPlanCrops, lang]);
 
   // Target coordinates
   const lat = activeField?.latitude != null ? Number(activeField.latitude) : 24.59;
@@ -754,6 +820,383 @@ export function NasaWeatherStation3D({
                 trend: summary.annual_trend?.[0],
               })}
             </div>
+          </section>
+
+          {/* ==============================================================
+              SECTION 2: আপনার পরিকল্পনার ঝুঁকি ক্যালেন্ডার (Nov–Oct)
+          ============================================================== */}
+          <section
+            className="card"
+            style={{
+              background: 'var(--surface, #131b16)',
+              border: '1px solid var(--line, rgba(255,255,255,0.1))',
+              borderRadius: 16,
+              padding: 20,
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '8px 12px', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h2 style={{ fontSize: '18px', margin: '0 0 4px', fontWeight: 700 }}>
+                  {lang === 'bn' ? '২. আপনার পরিকল্পনার ঝুঁকি ক্যালেন্ডার' : '2. Your Plan Risk Calendar'}
+                </h2>
+                <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
+                  {lang === 'bn'
+                    ? 'নভেম্বর থেকে অক্টোবর। নির্বাচিত আবর্তন পরিকল্পনার কোন ফসলে কখন জলবায়ুর চাপ পড়ার ঝুঁকি আছে।'
+                    : 'November to October. Highlights empirical climate stress windows for your chosen rotation plan.'}
+                </div>
+              </div>
+
+              {/* Y1 / Y2 Toggle Segment */}
+              <div
+                style={{
+                  display: 'inline-flex',
+                  gap: 4,
+                  background: 'var(--surface-2, #18221c)',
+                  border: '1px solid var(--line, rgba(255,255,255,0.1))',
+                  borderRadius: 10,
+                  padding: 3,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActivePlanYear(0)}
+                  style={{
+                    font: '600 12.5px inherit',
+                    border: 'none',
+                    background: activePlanYear === 0 ? 'var(--accent, #c8e46a)' : 'transparent',
+                    color: activePlanYear === 0 ? 'var(--accent-ink, #0f1a07)' : 'var(--fg, #e7efe8)',
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {lang === 'bn' ? 'বছর ১ (Year 1)' : 'Year 1'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePlanYear(1)}
+                  style={{
+                    font: '600 12.5px inherit',
+                    border: 'none',
+                    background: activePlanYear === 1 ? 'var(--accent, #c8e46a)' : 'transparent',
+                    color: activePlanYear === 1 ? 'var(--accent-ink, #0f1a07)' : 'var(--fg, #e7efe8)',
+                    padding: '5px 12px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {lang === 'bn' ? 'বছর ২ (Year 2)' : 'Year 2'}
+                </button>
+              </div>
+            </div>
+
+            {/* Calendar Grid Container */}
+            <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '150px repeat(12, minmax(44px, 1fr))',
+                  gap: 3,
+                  minWidth: 720,
+                  fontSize: 12,
+                }}
+              >
+                {/* Header row: Month names (Nov..Oct) */}
+                <div style={{ color: 'var(--muted, #93a597)', fontWeight: 600, padding: '4px 6px' }}>
+                  {lang === 'bn' ? 'ফসলের পর্যায়' : 'Crop Stage'}
+                </div>
+                {['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো'].map((mName, idx) => (
+                  <div key={idx} style={{ color: 'var(--muted, #93a597)', textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>
+                    {lang === 'bn' ? mName : ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'][idx]}
+                  </div>
+                ))}
+
+                {/* Crop Bars Row */}
+                <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: '12.5px', paddingRight: 6 }}>
+                  {lang === 'bn' ? `পরিকল্পিত ফসল (বছর ${activePlanYear + 1})` : `Planned Crops (Y${activePlanYear + 1})`}
+                </div>
+                {(() => {
+                  const elements = [];
+                  let currentCol = 0;
+
+                  displayedCrops.forEach((c, cIdx) => {
+                    if (c.from > currentCol) {
+                      elements.push(
+                        <div key={`gap-${cIdx}`} style={{ gridColumn: `span ${c.from - currentCol}` }} />
+                      );
+                    }
+                    const spanWidth = c.to - c.from + 1;
+                    const flLabel = c.fl.map((fi) => (lang === 'bn' ? ['নভে', 'ডিসে', 'জানু', 'ফেব্রু', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো'][fi] : ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'][fi])).join('–');
+                    elements.push(
+                      <div
+                        key={`crop-${cIdx}`}
+                        style={{
+                          gridColumn: `span ${spanWidth}`,
+                          background: c.color,
+                          borderRadius: 6,
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '0 8px',
+                          fontWeight: 700,
+                          fontSize: '12px',
+                          color: '#10170f',
+                          height: 30,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                        <span
+                          style={{
+                            marginLeft: 'auto',
+                            fontSize: '11px',
+                            background: 'rgba(255,255,255,0.65)',
+                            borderRadius: 99,
+                            padding: '1px 6px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          🌸 {flLabel}
+                        </span>
+                      </div>
+                    );
+                    currentCol = c.to + 1;
+                  });
+
+                  if (currentCol < 12) {
+                    elements.push(
+                      <div key="gap-end" style={{ gridColumn: `span ${12 - currentCol}` }} />
+                    );
+                  }
+
+                  return elements;
+                })()}
+
+                {/* Separator Line */}
+                <div style={{ gridColumn: '1 / -1', height: 8 }} />
+
+                {/* Hazard Rows */}
+                {[
+                  {
+                    name_bn: '🔥 গরমের চাপ',
+                    name_en: '🔥 Heat Stress',
+                    sub_bn: '৩৫°C-এর বেশি দিন',
+                    sub_en: 'Days >35°C',
+                    arr: summary.month_heat5 || [],
+                    color: 'var(--red, #f07a6a)',
+                  },
+                  {
+                    name_bn: '🌵 শুকনো টান',
+                    name_en: '🌵 Dry Spell',
+                    sub_bn: '১০+ দিন বৃষ্টিহীন',
+                    sub_en: 'Dry spell >=10 days',
+                    arr: summary.month_dry10 || [],
+                    color: 'var(--amber, #f2b24c)',
+                  },
+                  {
+                    name_bn: '🌊 ভারী বৃষ্টি',
+                    name_en: '🌊 Heavy Rain',
+                    sub_bn: '১ দিনে ৫০+ মিমি',
+                    sub_en: 'Days >50mm rain',
+                    arr: summary.month_heavy || [],
+                    color: 'var(--blue, #5fb0ef)',
+                  },
+                  {
+                    name_bn: '❄️ শীতের টান',
+                    name_en: '❄️ Cold Stress',
+                    sub_bn: '৫+ রাত ১০°C-এর নিচে',
+                    sub_en: '5+ nights <10°C',
+                    arr: summary.month_cold5 || [],
+                    color: 'var(--purple, #a855f7)',
+                  },
+                ].map((hz, hIdx) => {
+                  const MI = [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                  return (
+                    <React.Fragment key={hIdx}>
+                      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', fontWeight: 600, fontSize: '12.5px', paddingRight: 6 }}>
+                        <span>{lang === 'bn' ? hz.name_bn : hz.name_en}</span>
+                        <small style={{ fontWeight: 400, color: 'var(--muted, #93a597)', fontSize: '11px' }}>
+                          {lang === 'bn' ? hz.sub_bn : hz.sub_en}
+                        </small>
+                      </div>
+                      {MI.map((m, mIdx) => {
+                        const v = hz.arr[m - 1] ?? 0.0;
+                        const pct = Math.round(v * 100);
+                        const shadeStyle = v <= 0
+                          ? 'var(--surface-2, #18221c)'
+                          : `color-mix(in srgb, ${hz.color} ${Math.round(18 + v * 72)}%, var(--surface-2, #18221c))`;
+                        return (
+                          <div
+                            key={mIdx}
+                            style={{
+                              height: 30,
+                              borderRadius: 5,
+                              background: shadeStyle,
+                              display: 'grid',
+                              placeItems: 'center',
+                              fontSize: '11px',
+                              fontVariantNumeric: 'tabular-nums',
+                              color: 'var(--fg, #e7efe8)',
+                              fontWeight: v > 0.4 ? 700 : 500,
+                            }}
+                            title={`${lang === 'bn' ? hz.name_bn : hz.name_en}: ${pct}%`}
+                          >
+                            {v > 0 ? `${bn(pct)}%` : ''}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Calendar Legend */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', fontSize: '12px', color: 'var(--muted, #93a597)', marginTop: 12, alignItems: 'center' }}>
+              <span>
+                <span style={{ display: 'inline-flex', gap: 3, verticalAlign: 'middle', marginRight: 6 }}>
+                  <i style={{ width: 14, height: 10, borderRadius: 2, background: 'var(--surface-2, #18221c)', display: 'inline-block' }} />
+                  <i style={{ width: 14, height: 10, borderRadius: 2, background: 'color-mix(in srgb, var(--red, #f07a6a) 35%, var(--surface-2, #18221c))', display: 'inline-block' }} />
+                  <i style={{ width: 14, height: 10, borderRadius: 2, background: 'color-mix(in srgb, var(--red, #f07a6a) 65%, var(--surface-2, #18221c))', display: 'inline-block' }} />
+                  <i style={{ width: 14, height: 10, borderRadius: 2, background: 'var(--red, #f07a6a)', display: 'inline-block' }} />
+                </span>
+                {lang === 'bn' ? '২৪ বছরের মধ্যে কত বছর (০% → ১০০%)' : 'Frequency over 24 years (0% → 100%)'}
+              </span>
+              <span>🌸 = {lang === 'bn' ? 'ফুল আসার সময় (ফসলের সবচেয়ে নাজুক পর্যায়)' : 'Flowering window (most sensitive stage)'}</span>
+            </div>
+
+            {/* Climate Warnings List (Flowering overlap >= 35%) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+              {(() => {
+                const MI = [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                const MLOC_BN = ['নভেম্বরে', 'ডিসেম্বরে', 'জানুয়ারিতে', 'ফেব্রুয়ারিতে', 'মার্চে', 'এপ্রিলে', 'মে মাসে', 'জুনে', 'জুলাইয়ে', 'আগস্টে', 'সেপ্টেম্বরে', 'অক্টোবরে'];
+                const MLOC_EN = ['in November', 'in December', 'in January', 'in February', 'in March', 'in April', 'in May', 'in June', 'in July', 'in August', 'in September', 'in October'];
+
+                const crops = displayedCrops;
+
+                const hzList = [
+                  { name_bn: 'গরমের চাপ', name_en: 'Heat Stress', arr: summary.month_heat5 || [] },
+                  { name_bn: 'শুকনো টান', name_en: 'Dry Spell', arr: summary.month_dry10 || [] },
+                  { name_bn: 'ভারী বৃষ্টি', name_en: 'Heavy Rain', arr: summary.month_heavy || [] },
+                  { name_bn: 'শীতের টান', name_en: 'Cold Stress', arr: summary.month_cold5 || [] },
+                ];
+
+                const warnings = [];
+                crops.forEach((c) => {
+                  c.fl.forEach((fIdx) => {
+                    const mNum = MI[fIdx];
+                    hzList.forEach((hz) => {
+                      const v = hz.arr[mNum - 1] ?? 0.0;
+                      if (v >= 0.35) {
+                        warnings.push({ crop: c, fIdx, hz, v });
+                      }
+                    });
+                  });
+                });
+
+                // Deduplicate
+                const uniqueWarns = {};
+                warnings.forEach((w) => {
+                  const key = `${w.crop.name}-${w.hz.name_en}`;
+                  if (!uniqueWarns[key] || uniqueWarns[key].v < w.v) {
+                    uniqueWarns[key] = w;
+                  }
+                });
+
+                const sortedWarns = Object.values(uniqueWarns).sort((a, b) => b.v - a.v);
+
+                if (sortedWarns.length === 0) {
+                  return (
+                    <p style={{ margin: 0, color: 'var(--muted, #93a597)', fontSize: '13px' }}>
+                      {lang === 'bn' ? 'ফুলের সময় বড় কোনো জলবায়ু ঝুঁকির আশঙ্কা নেই।' : 'No major climate hazard overlaps the flowering window.'}
+                    </p>
+                  );
+                }
+
+                return sortedWarns.map((w, idx) => {
+                  const isHigh = w.v >= 0.60;
+                  const yearsCount = Math.round(w.v * 24);
+                  let advice_bn = '';
+                  let advice_en = '';
+
+                  if (w.hz.name_en.includes('Heat')) {
+                    advice_bn = 'ফুল ঝরে, দানা কম হয় — বীজ বোনার তারিখ কিছুটা এগিয়ে আনুন বা তাপ-সহনশীল জাত বাছুন';
+                    advice_en = 'Risks floret sterility and poor grain fill — advance sowing date or choose heat-tolerant cultivars';
+                  } else if (w.hz.name_en.includes('Dry')) {
+                    advice_bn = w.crop.name.includes('ছোলা')
+                      ? 'ছোলা মাটির রসে বাঁচে, তবে ফুলের সময় একটা হালকা সেচ নিশ্চিত ফলন বাঁচায়'
+                      : 'এই মৌসুমে বৃষ্টি প্রায় হয় না, তাই ফুলের স্পর্শকাতর সময়ে সেচ নিশ্চিত করুন';
+                    advice_en = 'Negligible rainfall during this window — ensure timely supplemental irrigation during flowering';
+                  } else if (w.hz.name_en.includes('Heavy')) {
+                    advice_bn = 'ভারী বৃষ্টি ও ঝড়ে পরাগায়ন ধুয়ে যায় ও গাছ হেলে পড়তে পারে — পানি নিষ্কাশনের নালা পরিষ্কার রাখুন';
+                    advice_en = 'Heavy rain risks washing pollen and crop lodging — maintain clean field drainage';
+                  } else {
+                    advice_bn = 'অতিরিক্ত ঠান্ডায় পরাগায়ন বিঘ্নিত হতে পারে — হালকা সেচ মাটির তাপমাত্রা বজায় রাখতে সহায়ক';
+                    advice_en = 'Cold nights can impair pollination — light evening irrigation helps buffer soil temperature';
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        gap: 12,
+                        alignItems: 'flex-start',
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'var(--surface-2, #18221c)',
+                        fontSize: '13px',
+                      }}
+                    >
+                      <b
+                        style={{
+                          flex: 'none',
+                          fontSize: '11px',
+                          borderRadius: 99,
+                          padding: '2px 8px',
+                          color: isHigh ? 'var(--red, #f07a6a)' : 'var(--amber, #f2b24c)',
+                          background: isHigh ? 'rgba(240, 122, 106, 0.15)' : 'rgba(242, 178, 76, 0.15)',
+                        }}
+                      >
+                        {isHigh ? (lang === 'bn' ? 'বেশি ঝুঁকি' : 'High Risk') : (lang === 'bn' ? 'মাঝারি' : 'Medium')}
+                      </b>
+                      <div style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
+                        ⚠ <b>{w.crop.name}</b>{' '}
+                        {lang === 'bn'
+                          ? `ফুল আসে ${MLOC_BN[w.fIdx]} — ${w.hz.name_bn} ২৪ বছরে ${bn(yearsCount)} বছর (${bn(Math.round(w.v * 100))}%)। ${advice_bn}।`
+                          : `flowers ${MLOC_EN[w.fIdx]} — ${w.hz.name_en} occurs in ${yearsCount} of 24 years (${Math.round(w.v * 100)}%). ${advice_en}.`}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onNavigate && onNavigate('farm_planning')}
+                        style={{
+                          flex: 'none',
+                          marginLeft: 'auto',
+                          background: 'var(--surface, #131b16)',
+                          color: 'var(--fg, #e7efe8)',
+                          border: '1px solid var(--line, rgba(255,255,255,0.1))',
+                          borderRadius: 8,
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {lang === 'bn' ? 'চাপ পরীক্ষা →' : 'Stress Test →'}
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Disclaimer note */}
+            <p style={{ margin: '14px 0 0', fontSize: '12px', color: 'var(--faint, #5f7064)', lineHeight: 1.4 }}>
+              {lang === 'bn'
+                ? 'এগুলো অতীতের আসল ঘটনার হার, পূর্বাভাস নয়। NASA POWER প্রায় ৫০ কিমি, IMERG প্রায় ১০ কিমি এলাকার গড়; স্থানীয় স্টেশনের সাথে পার্থক্য থাকতে পারে।'
+                : 'These represent empirical historical frequencies over 24 years, not forecasts. NASA POWER (~50 km) and IMERG (~10 km) reflect regional grid averages; local microclimate may vary.'}
+            </p>
           </section>
         </div>
       )}
