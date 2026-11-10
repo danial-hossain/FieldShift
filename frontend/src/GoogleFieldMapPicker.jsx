@@ -9,6 +9,58 @@ const PRESETS = [
   { name: 'Rajshahi', lat: 24.3636, lng: 88.6241, desc: 'Northwest Arid / Barind Tract' }
 ];
 
+// Web Mercator Slippy Tile Projection (EPSG:3857)
+function calculateVisibleTiles(centerLat, centerLng, zoom, width, height) {
+  const n = Math.pow(2, zoom);
+  const xExact = ((centerLng + 180) / 360) * n;
+  const clampedLat = Math.max(-85, Math.min(85, centerLat));
+  const latRad = (clampedLat * Math.PI) / 180;
+  const yExact = ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
+
+  const originX = xExact * 256 - width / 2;
+  const originY = yExact * 256 - height / 2;
+
+  const minX = Math.floor(originX / 256);
+  const maxX = Math.floor((originX + width) / 256);
+  const minY = Math.floor(originY / 256);
+  const maxY = Math.floor((originY + height) / 256);
+
+  const tiles = [];
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minY; y <= maxY; y++) {
+      if (y >= 0 && y < n) {
+        const wrappedX = ((x % n) + n) % n;
+        tiles.push({
+          zoom,
+          x: wrappedX,
+          y,
+          left: Math.round(x * 256 - originX),
+          top: Math.round(y * 256 - originY)
+        });
+      }
+    }
+  }
+
+  const project = (lat, lng) => {
+    const px = ((lng + 180) / 360) * n * 256 - originX;
+    const lClamped = Math.max(-85, Math.min(85, lat));
+    const lRad = (lClamped * Math.PI) / 180;
+    const py = ((1 - Math.log(Math.tan(lRad) + 1 / Math.cos(lRad)) / Math.PI) / 2) * n * 256 - originY;
+    return { left: Math.round(px), top: Math.round(py) };
+  };
+
+  const unproject = (screenX, screenY) => {
+    const worldX = originX + screenX;
+    const worldY = originY + screenY;
+    const uLng = (worldX / 256 / n) * 360 - 180;
+    const nRad = Math.PI - (2 * Math.PI * worldY) / (256 * n);
+    const uLat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(nRad) - Math.exp(-nRad)));
+    return { lat: Number(uLat.toFixed(4)), lng: Number(uLng.toFixed(4)) };
+  };
+
+  return { tiles, project, unproject };
+}
+
 export function GoogleFieldMapPicker({
   latitude,
   longitude,
@@ -32,12 +84,46 @@ export function GoogleFieldMapPicker({
   const [selectedAddress, setSelectedAddress] = useState('');
   const [isLocating, setIsLocating] = useState(false);
   const [mapType, setMapType] = useState('hybrid'); // 'hybrid' | 'roadmap' | 'satellite'
+  const [tileSource, setTileSource] = useState('esri'); // 'esri' | 'osm'
+  const [zoomLevel, setZoomLevel] = useState(fields && fields.length > 1 ? 8 : 13);
+  const [containerDimensions, setContainerDimensions] = useState({ width: 700, height: 380 });
+  const fallbackContainerRef = useRef(null);
 
-  const parsedLat = latitude === '' || latitude == null ? NaN : Number(latitude);
-  const parsedLng = longitude === '' || longitude == null ? NaN : Number(longitude);
+  // Measure fallback container dimensions for exact Web Mercator projection
+  useEffect(() => {
+    if (!fallbackContainerRef.current) return;
+    const updateSize = () => {
+      const rect = fallbackContainerRef.current?.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        setContainerDimensions({ width: Math.round(rect.width), height: Math.round(rect.height) });
+      }
+    };
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(fallbackContainerRef.current);
+    return () => ro.disconnect();
+  }, [height]);
+
+  // Resolve active field from fields if latitude/longitude not explicitly passed
+  const activeFieldMatch = (fields && selectedFieldId)
+    ? fields.find(f => String(f.id) === String(selectedFieldId))
+    : null;
+
+  const rawLat = latitude !== undefined && latitude !== '' && latitude !== null
+    ? latitude
+    : (activeFieldMatch?.latitude);
+  const rawLng = longitude !== undefined && longitude !== '' && longitude !== null
+    ? longitude
+    : (activeFieldMatch?.longitude);
+
+  const parsedLat = rawLat === '' || rawLat == null ? NaN : Number(rawLat);
+  const parsedLng = rawLng === '' || rawLng == null ? NaN : Number(rawLng);
   const hasCoordinates = Number.isFinite(parsedLat) && Number.isFinite(parsedLng);
   const currentLat = hasCoordinates ? parsedLat : null;
   const currentLng = hasCoordinates ? parsedLng : null;
+
+  const centerLat = currentLat || (fields && fields[0]?.latitude ? Number(fields[0].latitude) : 24.62);
+  const centerLng = currentLng || (fields && fields[0]?.longitude ? Number(fields[0].longitude) : 88.55);
 
   // Reverse Geocode helper
   const reverseGeocode = (lat, lng) => {
@@ -303,20 +389,34 @@ export function GoogleFieldMapPicker({
     }
   };
 
-  // Get User's Browser GPS Location
+  // Get User's Browser GPS Location (UP5: 8s timeout with subtle spinner, small toast)
   const handleGetGPS = () => {
     setStatusMessage('');
     if (!navigator.geolocation) {
-      setStatusMessage('Geolocation is not supported by your browser.');
+      setStatusMessage(lang === 'bn' ? 'জিপিএস পাওয়া যায়নি — মানচিত্রে ট্যাপ করে জমি চিহ্নিত করুন' : 'GPS not available — tap the map to place your field');
+      setTimeout(() => setStatusMessage(''), 4000);
       return;
     }
     setIsLocating(true);
+    let resolved = false;
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        setIsLocating(false);
+        setStatusMessage(lang === 'bn' ? 'জিপিএস পাওয়া যায়নি — মানচিত্রে ট্যাপ করে জমি চিহ্নিত করুন' : 'GPS not available — tap the map to place your field');
+        setTimeout(() => setStatusMessage(''), 4000);
+      }
+    }, 8000);
+
     navigator.geolocation.getCurrentPosition(
       pos => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeoutId);
         setIsLocating(false);
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-        onChange(lat.toFixed(4), lng.toFixed(4));
+        if (onChange) onChange(lat.toFixed(4), lng.toFixed(4));
         if (mapInstanceRef.current && markerInstanceRef.current) {
           const loc = { lat, lng };
           mapInstanceRef.current.panTo(loc);
@@ -327,11 +427,15 @@ export function GoogleFieldMapPicker({
           setSelectedAddress(`${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (GPS Measured)`);
         }
       },
-      err => {
+      () => {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(timeoutId);
         setIsLocating(false);
-        setStatusMessage(`Could not retrieve GPS location: ${err.message}`);
+        setStatusMessage(lang === 'bn' ? 'জিপিএস পাওয়া যায়নি — মানচিত্রে ট্যাপ করে জমি চিহ্নিত করুন' : 'GPS not available — tap the map to place your field');
+        setTimeout(() => setStatusMessage(''), 4000);
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      { timeout: 8000, enableHighAccuracy: true }
     );
   };
 
@@ -441,21 +545,23 @@ export function GoogleFieldMapPicker({
             className="preset-pill-btn gps-btn"
             onClick={handleGetGPS}
             disabled={isLocating}
-            title="Detect GPS coordinates from browser"
+            title={lang === 'bn' ? 'ব্রাউজার থেকে জিপিএস স্থানাঙ্ক নির্ধারণ করুন' : 'Detect GPS coordinates from browser'}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            {isLocating ? 'Locating…' : '🎯 Current GPS'}
+            {isLocating ? (
+              <>
+                <span style={{ display: 'inline-block', width: 11, height: 11, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span>{lang === 'bn' ? 'জিপিএস খোঁজা হচ্ছে…' : 'Locating…'}</span>
+              </>
+            ) : (
+              <span>🎯 {lang === 'bn' ? 'বর্তমান জিপিএস' : 'Current GPS'}</span>
+            )}
           </button>
         </div>
       )}
 
-      {statusMessage && (
-        <div style={{ fontSize: 12, color: 'var(--danger, #ef4444)', padding: '6px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, margin: '8px 0' }}>
-          {statusMessage}
-        </div>
-      )}
-
       {/* Google Maps Canvas Container */}
-      <div className="map-canvas-container">
+      <div className="map-canvas-container" style={{ position: 'relative' }}>
         {/* Real Google Map Element */}
         <div
           ref={mapContainerRef}
@@ -467,143 +573,282 @@ export function GoogleFieldMapPicker({
           }}
         />
 
-        {/* Fallback Interactive Map (when Google CDN is unreachable) */}
-        {mapStatus === 'fallback_interactive' && !hasCoordinates && (!fields || fields.length === 0) && (
-          <div className="fallback-interactive-map" style={{ width: '100%', height: height || 260, display: 'grid', placeItems: 'center', color: '#bbb' }}>
-            {readOnly ? 'Coordinates not registered' : 'Choose a preset, search for a location, or use GPS to set coordinates.'}
-          </div>
-        )}
-        {mapStatus === 'fallback_interactive' && (hasCoordinates || (fields && fields.length > 0)) && (
+        {/* Fallback Real Map Slippy Tile Layer (ESRI World Imagery / OSM) */}
+        {mapStatus === 'fallback_interactive' && (
           <div
+            ref={fallbackContainerRef}
             className="fallback-interactive-map"
-            onClick={handleFallbackCanvasClick}
+            onClick={e => {
+              if (readOnly) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const clickX = e.clientX - rect.left;
+              const clickY = e.clientY - rect.top;
+              const { unproject } = calculateVisibleTiles(centerLat, centerLng, zoomLevel, containerDimensions.width, containerDimensions.height);
+              const { lat: newLat, lng: newLng } = unproject(clickX, clickY);
+              if (onChange) onChange(newLat.toFixed(4), newLng.toFixed(4));
+              setSelectedAddress(`${newLat.toFixed(4)}° N, ${newLng.toFixed(4)}° E`);
+              if (onLocationNameChange) onLocationNameChange(`${newLat.toFixed(4)}° N, ${newLng.toFixed(4)}° E`);
+            }}
             style={{
               width: '100%',
               height: height || '260px',
               position: 'relative',
-              background: 'radial-gradient(ellipse at center, #1b3826 0%, #0d1e14 100%)',
+              backgroundColor: '#0c150f',
               cursor: readOnly ? 'default' : 'crosshair',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              borderRadius: 12
             }}
           >
-            {/* Topographic grid overlay */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: 'linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)',
-                backgroundSize: '40px 40px'
-              }}
-            />
-            {/* Map terrain badge */}
+            {/* Real Map Tiles */}
+            {(() => {
+              const { tiles, project } = calculateVisibleTiles(centerLat, centerLng, zoomLevel, containerDimensions.width, containerDimensions.height);
+              return (
+                <>
+                  <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+                    {tiles.map(t => (
+                      <img
+                        key={`${t.zoom}-${t.x}-${t.y}`}
+                        src={
+                          tileSource === 'esri'
+                            ? `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${t.zoom}/${t.y}/${t.x}`
+                            : `https://tile.openstreetmap.org/${t.zoom}/${t.x}/${t.y}.png`
+                        }
+                        alt=""
+                        loading="lazy"
+                        style={{
+                          position: 'absolute',
+                          left: `${t.left}px`,
+                          top: `${t.top}px`,
+                          width: '256px',
+                          height: '256px',
+                          userSelect: 'none',
+                          display: 'block'
+                        }}
+                        onError={ev => { ev.currentTarget.style.display = 'none'; }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Multi-Field Markers or Single Field Pin */}
+                  {fields && fields.length > 0 ? (
+                    fields.map(f => {
+                      const fLat = Number(f.latitude);
+                      const fLng = Number(f.longitude);
+                      if (!Number.isFinite(fLat) || !Number.isFinite(fLng)) return null;
+                      const pos = project(fLat, fLng);
+                      if (pos.left < -60 || pos.left > containerDimensions.width + 60 || pos.top < -60 || pos.top > containerDimensions.height + 60) return null;
+                      const isSelected = selectedFieldId && String(f.id) === String(selectedFieldId);
+                      return (
+                        <div
+                          key={f.id}
+                          onClick={ev => {
+                            ev.stopPropagation();
+                            if (onSelectField) onSelectField(f);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            left: `${pos.left}px`,
+                            top: `${pos.top}px`,
+                            transform: 'translate(-50%, -100%)',
+                            cursor: 'pointer',
+                            zIndex: isSelected ? 25 : 15,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            transition: 'transform 0.15s ease'
+                          }}
+                          title={`${f.name} (${fLat.toFixed(4)}°N, ${fLng.toFixed(4)}°E)`}
+                        >
+                          <div
+                            style={{
+                              background: isSelected ? 'var(--primary, #10b981)' : 'rgba(10,16,12,0.85)',
+                              color: '#ffffff',
+                              padding: '2px 8px',
+                              borderRadius: 10,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              whiteSpace: 'nowrap',
+                              marginBottom: 2,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.6)',
+                              border: isSelected ? '2px solid #ffffff' : '1px solid rgba(255,255,255,0.3)'
+                            }}
+                          >
+                            {f.name}
+                          </div>
+                          <svg width={isSelected ? "32" : "24"} height={isSelected ? "32" : "24"} viewBox="0 0 24 24" fill={isSelected ? "#10b981" : "#38bdf8"} stroke="#ffffff" strokeWidth="1.5">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                            <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
+                          </svg>
+                        </div>
+                      );
+                    })
+                  ) : hasCoordinates ? (
+                    (() => {
+                      const pos = project(currentLat, currentLng);
+                      return (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${pos.left}px`,
+                            top: `${pos.top}px`,
+                            transform: 'translate(-50%, -100%)',
+                            pointerEvents: 'none',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            zIndex: 20
+                          }}
+                        >
+                          <div
+                            style={{
+                              background: '#ef4444',
+                              color: '#fff',
+                              padding: '3px 8px',
+                              borderRadius: 12,
+                              fontSize: 11,
+                              fontWeight: 700,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                              whiteSpace: 'nowrap',
+                              marginBottom: 2
+                            }}
+                          >
+                            {`${Number(currentLat).toFixed(4)}° N, ${Number(currentLng).toFixed(4)}° E`}
+                          </div>
+                          <svg width="32" height="32" viewBox="0 0 24 24" fill="#ef4444" stroke="#ffffff" strokeWidth="1.5">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                            <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
+                          </svg>
+                        </div>
+                      );
+                    })()
+                  ) : null}
+                </>
+              );
+            })()}
+
+            {/* Map terrain badge & Layer label */}
             <div
               style={{
                 position: 'absolute',
                 top: 10,
                 left: 10,
-                background: 'rgba(0,0,0,0.7)',
+                background: 'rgba(10, 16, 12, 0.85)',
                 color: '#85e89d',
                 padding: '4px 10px',
-                borderRadius: 6,
+                borderRadius: 8,
                 fontSize: 11,
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 6,
-                zIndex: 2
+                gap: 8,
+                zIndex: 10,
+                border: '1px solid rgba(255,255,255,0.12)'
               }}
             >
-              <span>🛰️ Satellite Agriculture Grid</span>
-              <span style={{ color: '#bbb', fontSize: 10 }}>· {fields && fields.length > 0 ? `${fields.length} Fields on Map` : 'Click map to set pin'}</span>
+              <span>{tileSource === 'esri' ? '🛰️ ESRI World Imagery' : '🗺️ OpenStreetMap'}</span>
+              <span style={{ color: '#bbb', fontSize: 10 }}>
+                {fields && fields.length > 0 ? `${fields.length} Fields` : (hasCoordinates ? `${Number(currentLat).toFixed(2)}°N, ${Number(currentLng).toFixed(2)}°E` : 'Click to pin')}
+              </span>
             </div>
 
-            {/* If multiple fields provided: render markers for all fields */}
-            {fields && fields.length > 0 ? (
-              fields.map(f => {
-                const fLat = Number(f.latitude);
-                const fLng = Number(f.longitude);
-                if (!Number.isFinite(fLat) || !Number.isFinite(fLng)) return null;
-                // Bangladesh bounds: lat 20.5 to 26.7, lng 88.0 to 92.7
-                const topPct = Math.max(8, Math.min(88, ((26.7 - fLat) / 6.2) * 80 + 10));
-                const leftPct = Math.max(8, Math.min(88, ((fLng - 88.0) / 4.7) * 80 + 10));
-                const isSelected = selectedFieldId && String(f.id) === String(selectedFieldId);
-                return (
-                  <div
-                    key={f.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onSelectField) onSelectField(f);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: `${topPct}%`,
-                      left: `${leftPct}%`,
-                      transform: 'translate(-50%, -100%)',
-                      cursor: 'pointer',
-                      zIndex: isSelected ? 12 : 5,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      transition: 'transform 0.15s ease'
-                    }}
-                    title={`${f.name} (${fLat.toFixed(4)}°N, ${fLng.toFixed(4)}°E)`}
-                  >
-                    <div
-                      style={{
-                        background: isSelected ? 'var(--primary, #10b981)' : 'rgba(0,0,0,0.8)',
-                        color: isSelected ? '#ffffff' : '#e2e8f0',
-                        padding: '2px 7px',
-                        borderRadius: 10,
-                        fontSize: 10.5,
-                        fontWeight: 700,
-                        whiteSpace: 'nowrap',
-                        marginBottom: 2,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
-                        border: isSelected ? '1px solid #fff' : '1px solid rgba(255,255,255,0.2)'
-                      }}
-                    >
-                      {f.name}
-                    </div>
-                    <svg width={isSelected ? "28" : "22"} height={isSelected ? "28" : "22"} viewBox="0 0 24 24" fill={isSelected ? "#10b981" : "#38bdf8"} stroke="#ffffff" strokeWidth="1.5">
-                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                      <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
-                    </svg>
-                  </div>
-                );
-              })
-            ) : (
-              /* Centered Marker Pin for single field */
-              <div
+            {/* Zoom & Layer Toggle Controls */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 10,
+                right: 10,
+                display: 'flex',
+                gap: 6,
+                zIndex: 10
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setTileSource(prev => prev === 'esri' ? 'osm' : 'esri')}
                 style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -100%)',
-                  pointerEvents: 'none',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center'
+                  padding: '4px 8px',
+                  borderRadius: 6,
+                  background: 'rgba(10, 16, 12, 0.85)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer'
                 }}
+                title={tileSource === 'esri' ? 'Switch to OpenStreetMap' : 'Switch to ESRI Satellite'}
               >
-                <div
-                  style={{
-                    background: '#e74c3c',
-                    color: '#fff',
-                    padding: '3px 8px',
-                    borderRadius: 12,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-                    whiteSpace: 'nowrap',
-                    marginBottom: 2
-                  }}
-                >
-                  {hasCoordinates ? `${Number(currentLat).toFixed(4)}° N, ${Number(currentLng).toFixed(4)}° E` : 'Coordinates not set'}
-                </div>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="#e74c3c" stroke="#ffffff" strokeWidth="1.5">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                  <circle cx="12" cy="9" r="2.5" fill="#ffffff" />
-                </svg>
+                {tileSource === 'esri' ? '🗺️ Map' : '🛰️ Satellite'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(z => Math.min(17, z + 1))}
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 6,
+                  background: 'rgba(10, 16, 12, 0.85)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                title="Zoom In"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomLevel(z => Math.max(6, z - 1))}
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: 6,
+                  background: 'rgba(10, 16, 12, 0.85)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+                title="Zoom Out"
+              >
+                −
+              </button>
+            </div>
+
+            {/* Attribution */}
+            <div style={{ position: 'absolute', bottom: 4, right: 8, fontSize: 10, color: 'rgba(255,255,255,0.65)', zIndex: 10, pointerEvents: 'none' }}>
+              © Esri · OpenStreetMap
+            </div>
+
+            {/* Small non-blocking GPS Toast at the bottom (UP5: auto-dismisses after 4s) */}
+            {statusMessage && (
+              <div style={{
+                position: 'absolute',
+                bottom: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#ffffff',
+                padding: '6px 14px',
+                background: 'rgba(15, 23, 18, 0.94)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: 9999,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                zIndex: 100,
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none'
+              }}>
+                📍 {statusMessage}
               </div>
             )}
           </div>

@@ -1679,13 +1679,17 @@ export function SixSeasonRecommendationView({
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--leaf)' }}>
                   💧 {lang === 'bn' ? 'সেচ লাগে না' : 'Rainfed'}
                 </span>
-              ) : selectedCropIrrig <= 100 ? (
+              ) : selectedCropIrrig <= 150 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--water)' }}>
                   💧 {lang === 'bn' ? 'কম পানি' : 'Low water'}
                 </span>
-              ) : (
+              ) : selectedCropIrrig <= 400 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
                   💧 {lang === 'bn' ? 'পরিমিত সেচ' : 'Moderate water'}
+                </span>
+              ) : (
+                <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--hud-red, #ef4444)' }}>
+                  💧 {lang === 'bn' ? 'বেশি পানি' : 'High water'}
                 </span>
               )}
               {activePeriodIdx % 3 === 1 && (
@@ -1718,7 +1722,17 @@ export function SixSeasonRecommendationView({
                 </strong>
                 <small style={{ display: 'block', fontSize: 11, color: 'var(--text-muted)' }}>
                   {selectedCropIrrig > 0
-                    ? (fieldAreaHa != null ? (lang === 'bn' ? `~${formatNumber(Math.round(selectedCropIrrig * fieldAreaHa * 10), lang)} হাজার লিটার` : `~${Math.round(selectedCropIrrig * fieldAreaHa * 10)}k L`) : '—')
+                    ? (fieldAreaHa != null
+                        ? (() => {
+                            const totalL = selectedCropIrrig * fieldAreaHa * 10000;
+                            if (totalL >= 1000000) {
+                              const val = (totalL / 1000000).toFixed(1);
+                              return lang === 'bn' ? `~${formatNumber(val, lang)} মিলিয়ন লিটার` : `~${val} million L`;
+                            }
+                            const valK = Math.round(totalL / 1000);
+                            return lang === 'bn' ? `~${formatNumber(valK, lang)} হাজার লিটার` : `~${valK}k L`;
+                          })()
+                        : '—')
                     : (lang === 'bn' ? 'বৃষ্টিই যথেষ্ট' : 'Rainfed')}
                 </small>
               </div>

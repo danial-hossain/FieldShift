@@ -261,21 +261,22 @@ export function YourFarmingVsPlanView({
 
   // 3D Beds generation
   const beds3D = useMemo(() => {
-    return CANONICAL_PERIOD_KEYS.map((pk, i) => {
-      if (effectiveViewMode === 'current') {
-        const isYear2 = i >= 3;
-        const crop = baselineMetrics.crops ? baselineMetrics.crops[i % 3] : null;
+    if (effectiveViewMode === 'current') {
+      // UP5: "Your Farming" in 3D shows 3 beds only (1 year, 3 seasons)
+      return CANONICAL_PERIOD_KEYS.slice(0, 3).map((pk, i) => {
+        const crop = baselineMetrics.crops ? baselineMetrics.crops[i] : null;
         return {
           id: pk,
-          isGreyedOut: isYear2,
-          crop: isYear2 ? null : crop,
-          cropLabel: isYear2
-            ? (lang === 'bn' ? '২য় বছর: একই' : 'Year 2: Same')
-            : (crop ? cropLabel(crop, lang) : ''),
-          irrigation_mm: isYear2 ? 0 : (baselineMetrics.seasonIrrigs ? baselineMetrics.seasonIrrigs[i % 3] : 0),
+          isGreyedOut: false,
+          crop,
+          cropLabel: crop ? cropLabel(crop, lang) : '',
+          irrigation_mm: baselineMetrics.seasonIrrigs ? baselineMetrics.seasonIrrigs[i] : 0,
           isLegume: crop ? LEGUMES.has(crop.toLowerCase()) : false,
         };
-      } else if (effectiveViewMode === 'updated' && appliedReplanMetrics) {
+      });
+    }
+    return CANONICAL_PERIOD_KEYS.map((pk, i) => {
+      if (effectiveViewMode === 'updated' && appliedReplanMetrics) {
         const crop = appliedReplanMetrics.crops[i];
         const isDone = i < (appliedReplanMetrics.finishedCount || 0);
         const isChg = Boolean(appliedReplanMetrics.changedMap[i]);

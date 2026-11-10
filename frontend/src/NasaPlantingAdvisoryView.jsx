@@ -191,7 +191,7 @@ export function NasaPlantingAdvisoryView({
             )}
           </div>
           <span style={{ fontSize: 12, color: 'var(--text-3)', fontFamily: 'JetBrains Mono, monospace' }}>
-            {district.toUpperCase()} · {crop.toUpperCase()}
+            {district.charAt(0).toUpperCase() + district.slice(1).toLowerCase()} · {crop.toUpperCase()}
           </span>
         </div>
 

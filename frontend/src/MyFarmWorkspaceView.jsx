@@ -845,7 +845,7 @@ export function MyFarmWorkspaceView({
     if (found) {
       return lang === 'bn' ? `${found.bn_name} (${found.name})` : `${found.name} (${found.bn_name})`;
     }
-    return activeField?.district ? activeField.district.toUpperCase() : 'BOGURA';
+    return activeField?.district ? (activeField.district.charAt(0).toUpperCase() + activeField.district.slice(1).toLowerCase()) : 'Bogura';
   }, [activeField?.district, lang]);
 
   // Selected Field Completeness
@@ -979,6 +979,9 @@ export function MyFarmWorkspaceView({
               <GoogleFieldMapPicker
                 fields={userFields}
                 selectedFieldId={activeField?.id}
+                latitude={activeField?.latitude}
+                longitude={activeField?.longitude}
+                readOnly={true}
                 lang={lang}
                 onSelectField={(f) => {
                   if (onSelectField) onSelectField(f);
@@ -1090,7 +1093,7 @@ export function MyFarmWorkspaceView({
                             </span>
                           </div>
                           <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ color: 'var(--water)', fontWeight: 700 }}>{f.district ? f.district.toUpperCase() : 'BOGURA'}</span>
+                            <span style={{ color: 'var(--water)', fontWeight: 700 }}>{f.district ? (f.district.charAt(0).toUpperCase() + f.district.slice(1).toLowerCase()) : 'Bogura'}</span>
                             <span>•</span>
                             <span>{formatNumber(f.latitude, 4)}°N, {formatNumber(f.longitude, 4)}°E</span>
                           </div>

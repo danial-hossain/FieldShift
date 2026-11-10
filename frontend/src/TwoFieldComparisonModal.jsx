@@ -450,7 +450,7 @@ export function TwoFieldComparisonModal({
               </div>
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-2, #cbd5e1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldA.district.toUpperCase()}</div>
+                <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldA.district.charAt(0).toUpperCase() + selectedFieldA.district.slice(1).toLowerCase()}</div>
                 <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {soilLabel(selectedFieldA.soil_texture, lang)}</div>
                 <div><strong>{lang === 'bn' ? 'উচ্চতা ও ঢাল (SRTM):' : 'Elevation & Slope (SRTM):'}</strong> {metricsA.elevationM}m ({metricsA.slopePct}% slope)</div>
                 <div><strong>{lang === 'bn' ? 'হাইড্রোলজি (GRACE):' : 'Aquifer Trend (GRACE):'}</strong> {metricsA.graceTrend} cm/yr ({metricsA.graceLabel})</div>
@@ -485,7 +485,7 @@ export function TwoFieldComparisonModal({
               </div>
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-2, #cbd5e1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldB.district.toUpperCase()}</div>
+                <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldB.district.charAt(0).toUpperCase() + selectedFieldB.district.slice(1).toLowerCase()}</div>
                 <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {soilLabel(selectedFieldB.soil_texture, lang)}</div>
                 <div><strong>{lang === 'bn' ? 'উচ্চতা ও ঢাল (SRTM):' : 'Elevation & Slope (SRTM):'}</strong> {metricsB.elevationM}m ({metricsB.slopePct}% slope)</div>
                 <div><strong>{lang === 'bn' ? 'হাইড্রোলজি (GRACE):' : 'Aquifer Trend (GRACE):'}</strong> {metricsB.graceTrend} cm/yr ({metricsB.graceLabel})</div>
