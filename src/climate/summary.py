@@ -502,7 +502,7 @@ def compute_climate_summary(
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         with open(cache_file, "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
+            json.dump(result, f, ensure_ascii=False, separators=(',', ':'))
     except Exception as e:
         logger.warning(f"Failed to cache climate summary: {e}")
 

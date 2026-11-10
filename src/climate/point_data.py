@@ -45,6 +45,33 @@ def is_offline() -> bool:
     return os.environ.get("OFFLINE", "").strip() in ("1", "true", "True", "yes")
 
 
+POWER_SCHEMA = ["date", "tmax", "tmin", "tavg", "humidity", "solar_radiation", "wind_speed", "rainfall"]
+IMERG_SCHEMA = ["date", "rainfall"]
+
+
+def _unpack_series(cached: Dict[str, Any]) -> Dict[str, Any]:
+    """Unpack compact tabular rows into list of dicts if stored in schema/rows format."""
+    if "rows" in cached and "schema" in cached:
+        schema = cached["schema"]
+        cached["series"] = [dict(zip(schema, row)) for row in cached["rows"]]
+    return cached
+
+
+def _save_power_cache(cache_file: Path, result: Dict[str, Any]) -> None:
+    """Save NASA POWER result to cache file in compact tabular schema/rows format."""
+    rows = []
+    for item in result.get("series", []):
+        rows.append([item.get(k) for k in POWER_SCHEMA])
+    payload = {
+        "schema": POWER_SCHEMA,
+        "rows": rows,
+        "provenance": result.get("provenance", {}),
+    }
+    cache_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(cache_file, "w", encoding="utf-8") as f:
+        json.dump(payload, f, separators=(',', ':'))
+
+
 # ==============================================================================
 # a) NASA POWER
 # ==============================================================================
@@ -69,6 +96,7 @@ def get_nasa_power(
         try:
             with open(cache_file, "r", encoding="utf-8") as f:
                 cached = json.load(f)
+            cached = _unpack_series(cached)
             # Check if tail refresh needed (older than 7 days) and online
             retrieved_at = cached.get("provenance", {}).get("retrieved_at")
             needs_refresh = False
@@ -125,8 +153,7 @@ def get_nasa_power(
                         "method": "point",
                     },
                 }
-                with open(cache_file, "w", encoding="utf-8") as f:
-                    json.dump(result, f)
+                _save_power_cache(cache_file, result)
                 return result
         except Exception:
             # Fall back to offline cached candidates
@@ -178,6 +205,7 @@ def _find_nearest_cached_power(lat: float, lon: float) -> Tuple[Optional[Dict[st
                 if dist < min_dist:
                     with open(p, "r", encoding="utf-8") as f:
                         data = json.load(f)
+                    data = _unpack_series(data)
                     if data.get("series"):
                         min_dist = dist
                         best_data = data
@@ -300,7 +328,8 @@ def get_gpm_imerg(
         if cache_file.exists():
             try:
                 with open(cache_file, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                    cached = json.load(f)
+                return _unpack_series(cached)
             except Exception:
                 pass
 
@@ -319,27 +348,34 @@ def get_gpm_imerg(
             })
 
         dist_km = haversine_km(lat, lon, c_lat, c_lon)
-        result = {
-            "series": series,
-            "provenance": {
-                "source": "NASA GPM IMERG",
-                "product": "GPM_3IMERGDF (Daily Final V07B)",
-                "resolution": "0.1° × 0.1° (~10 km)",
-                "cell_center": [round(c_lat, 2), round(c_lon, 2)],
-                "period": f"{series[0]['date'][:4]}–{series[-1]['date'][:4]}",
-                "retrieved_at": datetime.now(timezone.utc).isoformat(),
-                "method": "grid_cell",
-                "distance_km": round(dist_km, 1),
-            },
+        prov = {
+            "source": "NASA GPM IMERG",
+            "product": "GPM_3IMERGDF (Daily Final V07B)",
+            "resolution": "0.1° × 0.1° (~10 km)",
+            "cell_center": [round(c_lat, 2), round(c_lon, 2)],
+            "period": f"{series[0]['date'][:4]}–{series[-1]['date'][:4]}",
+            "retrieved_at": datetime.now(timezone.utc).isoformat(),
+            "method": "grid_cell",
+            "distance_km": round(dist_km, 1),
+        }
+        rows = [[item["date"], item["rainfall"]] for item in series]
+        payload = {
+            "schema": IMERG_SCHEMA,
+            "rows": rows,
+            "provenance": prov,
         }
 
         try:
+            cache_file.parent.mkdir(parents=True, exist_ok=True)
             with open(cache_file, "w", encoding="utf-8") as f:
-                json.dump(result, f)
+                json.dump(payload, f, separators=(',', ':'))
         except Exception:
             pass
 
-        return result
+        return {
+            "series": series,
+            "provenance": prov,
+        }
 
     # Outside Bangladesh grid: Check EARTHDATA_TOKEN or fall back to NASA POWER
     token = os.environ.get("EARTHDATA_TOKEN", "").strip()
@@ -470,8 +506,9 @@ def get_grace(lat: float, lon: float) -> Dict[str, Any]:
             }
 
             try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
                 with open(cache_file, "w", encoding="utf-8") as f:
-                    json.dump(result, f)
+                    json.dump(result, f, separators=(',', ':'))
             except Exception:
                 pass
 
@@ -602,8 +639,9 @@ def get_onset(
             }
 
             try:
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
                 with open(cache_file, "w", encoding="utf-8") as f:
-                    json.dump(result, f)
+                    json.dump(result, f, separators=(',', ':'))
             except Exception:
                 pass
 
