@@ -65,7 +65,7 @@ setTimeout(async () => {
           hasGlobalError: document.body.innerText.includes('Something went wrong'),
           canvasCount: document.querySelectorAll('canvas').length,
           cardCount: document.querySelectorAll('.story-glass-card').length,
-          bodyTextSnippet: document.body.innerText.slice(0, 300)
+          forbiddenFound: ['NASA POWER CLIMATOLOGY', 'MONITORED DISTRICTS', 'Recent 7 Days', 'Manage Parcel', 'Play story'].filter(t => document.body.innerText.includes(t))
         })
       `,
       returnByValue: true

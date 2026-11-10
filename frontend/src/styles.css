@@ -17060,3 +17060,16 @@ span[style*="197, 232, 108"] {
     right: auto !important;
   }
 }
+
+/* Overview page = pure story stage, no context strip, no dashboard padding */
+[data-nav="dashboard"] .active-field-context-strip {
+  display: none !important;
+}
+
+[data-nav="dashboard"] .overview-story-stage {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+

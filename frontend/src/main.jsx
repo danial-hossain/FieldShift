@@ -2624,32 +2624,20 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 1: FARMER HOME DASHBOARD (DEFAULT) -------------------- */}
+        {/* -------------------- VIEW 1: OVERVIEW 3D STORY (DEFAULT) -------------------- */}
         {activeNav === 'dashboard' && dashboardMode === 'farmer' && (
-          <div>
-            <FarmerHomeView
-              activeField={activeField}
-              userFields={userFields}
-              nasa={nasa}
-              lang={lang}
-              onNavigate={handleNavigate}
-              onSelectField={handleSelectActiveField}
-              onOpenVoice={() => {
-                const fab = document.querySelector('.farmer-voice-fab');
-                if (fab) fab.click();
-              }}
-            />
-            <div style={{ textAlign: 'center', padding: '16px 0 32px' }}>
-              <button
-                type="button"
-                className="btn btn-outline"
-                onClick={() => setDashboardMode('advanced')}
-                style={{ fontSize: 13, padding: '8px 20px', borderRadius: 9999, cursor: 'pointer', background: 'var(--bg-card-subtle)', border: '1px dashed var(--border-medium)', color: 'var(--text-muted)' }}
-              >
-                🔬 {lang === 'bn' ? 'গবেষকদের জন্য জটিল বৈজ্ঞানিক ড্যাশবোর্ড দেখুন' : 'Switch to Advanced Research Dashboard'}
-              </button>
-            </div>
-          </div>
+          <FarmerHomeView
+            activeField={activeField}
+            userFields={userFields}
+            nasa={nasa}
+            lang={lang}
+            onNavigate={handleNavigate}
+            onSelectField={handleSelectActiveField}
+            onOpenVoice={() => {
+              const fab = document.querySelector('.farmer-voice-fab');
+              if (fab) fab.click();
+            }}
+          />
         )}
 
         {/* -------------------- VIEW 1: ADVANCED OVERVIEW DASHBOARD -------------------- */}
