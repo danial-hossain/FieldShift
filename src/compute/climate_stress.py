@@ -444,6 +444,7 @@ def compute_season_hazard_loss(
     is_hit: bool,
     area_ha: float,
     catalog_df: pd.DataFrame,
+    district: Optional[str] = None,
 ) -> dict[str, Any]:
     """Compute physical yield loss and financial changes for a single season bed."""
     crop_str = str(crop).strip()
@@ -599,7 +600,18 @@ def compute_season_hazard_loss(
             mechanism_en = "Outside cold season or not chill sensitive"
 
     elif scenario == "salinity":
-        ece = float(int_info.get("ece_ds_m", 8.0))
+        base_ece = float(int_info.get("ece_ds_m", 8.0))
+        if district is None:
+            is_coastal = True
+        else:
+            dist_clean = str(district).strip().lower()
+            is_coastal = dist_clean in COASTAL_SALINE_DISTRICTS
+
+        # In coastal districts (e.g. Satkhira, Khulna), marine tides and saline aquifers deliver full ECe intrusion (4-12 dS/m).
+        # In inland districts (e.g. Bogura, Chapainawabganj), freshwater alluvial buffer keeps dry-season soil
+        # ECe <= 1.8 dS/m (SRDI 2020 Soil Survey), remaining below crop tolerance thresholds.
+        ece = base_ece if is_coastal else min(1.8, round(base_ece * 0.2, 1))
+
         sal_spec = stress_info.get("salinity", {})
         thresh_a = sal_spec.get("threshold_a")
         slope_b = sal_spec.get("slope_b")
@@ -612,8 +624,12 @@ def compute_season_hazard_loss(
             else:
                 loss_pct = 0.0
             model_basis = "FAO-29"
-            mechanism_bn = f"মাটির ECe {ece:.1f} dS/m (সহনশীল সীমা a={thresh_a:.1f}, ক্ষতি b={slope_b:.1f}%/dS·m)"
-            mechanism_en = f"Soil ECe {ece:.1f} dS/m (thresh a={thresh_a:.1f}, slope b={slope_b:.1f}%/dS·m)"
+            if is_coastal:
+                mechanism_bn = f"উপকূলীয় লবণাক্ততা: মাটির ECe {ece:.1f} dS/m (সহনশীল সীমা a={thresh_a:.1f}, ক্ষতি b={slope_b:.1f}%/dS·m)"
+                mechanism_en = f"Coastal salinity: Soil ECe {ece:.1f} dS/m (thresh a={thresh_a:.1f}, slope b={slope_b:.1f}%/dS·m)"
+            else:
+                mechanism_bn = f"অভ্যন্তরীণ মিঠাপানি অঞ্চল: মাটির ECe {ece:.1f} dS/m সহনশীল সীমার (a={thresh_a:.1f} dS/m) নিচে (SRDI)"
+                mechanism_en = f"Inland freshwater zone: Soil ECe {ece:.1f} dS/m is below crop threshold (a={thresh_a:.1f} dS/m; SRDI)"
         else:
             loss_pct = 0.0
             mechanism_bn = "লবণাক্ততার তথ্য নেই"
@@ -732,6 +748,7 @@ def run_climate_stress_test(
             is_hit=is_hit,
             area_ha=area_ha,
             catalog_df=catalog_df,
+            district=dist_key,
         )
         res["period_label_bn"] = PERIOD_LABELS[p_key]["bn"]
         res["period_label_en"] = PERIOD_LABELS[p_key]["en"]
@@ -775,6 +792,7 @@ def run_climate_stress_test(
             is_hit=is_hit,
             area_ha=area_ha,
             catalog_df=catalog_df,
+            district=dist_key,
         )
         baseline_seasons.append(b_res)
         baseline_total_loss_bdt += b_res["profit_loss_bdt"]
