@@ -490,7 +490,8 @@ export function YourFarmingVsPlanView({
     }
 
     if (identicalStrategyNote && (selectedPriority === 'balanced' || selectedPriority === 'water')) {
-      res = `${identicalStrategyNote}। ` + res;
+      const noteSep = lang === 'bn' ? '। ' : '. ';
+      res = `${identicalStrategyNote}${noteSep}` + res;
     }
     return res;
   }, [currentPlanMetrics, baselineMetrics, lang, selectedPriority, strategyLabels, seasonRows, identicalStrategyNote]);
@@ -673,7 +674,7 @@ export function YourFarmingVsPlanView({
             )}
             {identicalStrategyNote && (selectedPriority === 'balanced' || selectedPriority === 'water') && (
               <p className="cv-note" style={{ fontStyle: 'italic', marginTop: 4 }}>
-                {identicalStrategyNote}।
+                {identicalStrategyNote}{lang === 'bn' ? '।' : '.'}
               </p>
             )}
           </button>
