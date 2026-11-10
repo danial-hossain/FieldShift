@@ -2332,10 +2332,18 @@ export function App() {
 
   return (
     <div className="app-shell" data-mode={currentMode} data-nav={activeNav} data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}>
-      {/* Fixed NASA VIIRS Background Layer */}
-      <div className="nasa-bg-layer" aria-hidden="true">
-        <div className="nasa-bg-image" />
-        <div className="nasa-bg-vignette" />
+      {/* Village Dusk Responsive Picture Background (UP2) */}
+      <div className="village-bg-layer" aria-hidden="true">
+        <picture className="village-bg-picture">
+          <source media="(min-width: 1700px)" srcSet="/bg/village_dusk_bg_2560.webp" type="image/webp" />
+          <source srcSet="/bg/village_dusk_bg_1600.webp" type="image/webp" />
+          <img
+            src="/bg/village_dusk_bg_1600.webp"
+            alt=""
+            className="village-bg-img"
+          />
+        </picture>
+        <div className="village-bg-overlay" />
       </div>
       {/* Mobile Drawer Backdrop */}
       {mobileNavOpen && (
