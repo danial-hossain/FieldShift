@@ -1602,14 +1602,14 @@ export function SixSeasonRecommendationView({
                 <span>
                   ১ম বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y1Irrig)} মিমি</b> · ২য় বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y2Irrig)} মিমি</b> · গড়: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(avgIrrig)} মিমি/বছর</b>
                   {selectedStrategy !== 'baseline' && (
-                    <span> · বর্তমান {toBanglaDigits(baseIrrigVal)} মিমি থেকে <b style={{ color: 'var(--leaf)' }}>{toBanglaDigits(savingsVal)} মিমি সাশ্রয়</b></span>
+                    <span> · বর্তমান {toBanglaDigits(baseIrrigVal)} মিমি থেকে <b style={{ color: 'var(--leaf)' }}>বছরে মোট সাশ্রয়: {toBanglaDigits(savingsVal)} মিমি</b></span>
                   )}
                 </span>
               ) : (
                 <span>
                   Year 1: <b>{y1Irrig} mm</b> · Year 2: <b>{y2Irrig} mm</b> · Avg: <b>{avgIrrig} mm/yr</b>
                   {selectedStrategy !== 'baseline' && (
-                    <span> · Saved: <b>{savingsVal} mm</b> vs current {baseIrrigVal} mm</span>
+                    <span> · Current {baseIrrigVal} mm → <b style={{ color: 'var(--leaf)' }}>Total annual saving: {savingsVal} mm</b></span>
                   )}
                 </span>
               )
@@ -1806,7 +1806,7 @@ export function SixSeasonRecommendationView({
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ:' : 'Irrigation:'}</span>
               <strong style={{ color: 'var(--water)' }}>
                 {baseIrrigVal != null
-                  ? `${formatNumber(baseIrrigVal, lang)} → ${formatNumber(avgIrrig, lang)} ${unitLabel('mm', lang)}/${lang === 'bn' ? 'বছর' : 'yr'}${savingsVal != null ? ` (${lang === 'bn' ? `${formatNumber(savingsVal, lang)} মিমি সাশ্রয়` : `${formatNumber(savingsVal, lang)} mm saved`}${baseIrrigVal > 0 ? `, −${formatNumber(Math.round((savingsVal / baseIrrigVal) * 100), lang)}%` : ''})` : ''}`
+                  ? `${formatNumber(baseIrrigVal, lang)} → ${formatNumber(avgIrrig, lang)} ${unitLabel('mm', lang)}/${lang === 'bn' ? 'বছর' : 'yr'}${savingsVal != null ? ` (${lang === 'bn' ? `বছরে মোট সাশ্রয়: ${formatNumber(savingsVal, lang)} মিমি` : `Total annual saving: ${formatNumber(savingsVal, lang)} mm`}${baseIrrigVal > 0 ? `, −${formatNumber(Math.round((savingsVal / baseIrrigVal) * 100), lang)}%` : ''})` : ''}`
                   : `${formatNumber(avgIrrig, lang)} ${unitLabel('mm', lang)}/${lang === 'bn' ? 'বছর' : 'yr'}`}
               </strong>
             </div>
