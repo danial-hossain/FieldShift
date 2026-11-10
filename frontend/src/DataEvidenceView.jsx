@@ -9,6 +9,7 @@ import { SystemMap3D } from './SystemMap3D.jsx';
 import { NasaDataCardsSection } from './NasaDataCardsSection.jsx';
 import { MilpDecisionSection } from './MilpDecisionSection.jsx';
 import { AdaptiveLearningSection } from './AdaptiveLearningSection.jsx';
+import { VerificationLimitationsSection } from './VerificationLimitationsSection.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
 import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
@@ -207,6 +208,11 @@ export function DataEvidenceView({
         {/* Section EV5: শেখা: মাঠের ফল থেকে (Adaptive Feedback Loop & Honest RL Box) */}
         <div style={{ marginTop: 28 }}>
           <AdaptiveLearningSection lang={lang} onNavigate={onNavigate} />
+        </div>
+
+        {/* Section EV6: যাচাই ও সীমাবদ্ধতা (Quality Guards, SAAO Guidance, Price Table) */}
+        <div style={{ marginTop: 28 }}>
+          <VerificationLimitationsSection lang={lang} />
         </div>
 
         {/* Sub-Navigation Pills */}
