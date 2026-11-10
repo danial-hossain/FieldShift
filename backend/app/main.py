@@ -1670,6 +1670,62 @@ def get_advisory_onset_comparison():
     return {"districts": records}
 
 
+@app.get("/api/climate/field-summary")
+def get_climate_field_summary(
+    field_id: str | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    offline: bool | None = None,
+    fieldshift_session: str | None = Cookie(None),
+    db: DbSession = Depends(get_db),
+):
+    """Return point-specific climate summary, decadal trends, and risk calendar distributions."""
+    from src.climate.summary import compute_climate_summary
+
+    actual_lat = lat if lat is not None else latitude
+    actual_lon = lon if lon is not None else longitude
+    field_name = None
+
+    if actual_lat is not None and actual_lon is not None:
+        if not (-90.0 <= actual_lat <= 90.0) or not (-180.0 <= actual_lon <= 180.0):
+            raise HTTPException(422, "Coordinates outside valid geographical range.")
+        if field_id and field_id not in ("", "demo"):
+            try:
+                fid = int(field_id)
+                fld = db.get(FarmField, fid)
+                if fld:
+                    field_name = fld.name
+            except Exception:
+                pass
+    elif field_id is not None and field_id not in ("", "demo"):
+        try:
+            fid = int(field_id)
+            fld = db.get(FarmField, fid)
+            if not fld or fld.latitude is None or fld.longitude is None:
+                raise HTTPException(404, f"Field {field_id} not found or missing coordinates.")
+            actual_lat = fld.latitude
+            actual_lon = fld.longitude
+            field_name = fld.name
+        except ValueError:
+            raise HTTPException(400, "field_id must be an integer or 'demo'.")
+    else:
+        # Default demo field: Rahim's plot in Chapainawabganj
+        actual_lat = 24.59
+        actual_lon = 88.27
+        field_id = "demo"
+        field_name = "রহিম মিয়ার জমি"
+
+    return compute_climate_summary(
+        lat=actual_lat,
+        lon=actual_lon,
+        field_id=str(field_id or "demo"),
+        field_name=field_name,
+        offline=offline,
+    )
+
+
 @app.get("/api/satellite/readiness")
 def satellite_readiness(latitude: float | None = None, longitude: float | None = None, lat: float | None = None, lon: float | None = None):
     from src.data.bangladesh_crops import get_satellite_readiness_status
