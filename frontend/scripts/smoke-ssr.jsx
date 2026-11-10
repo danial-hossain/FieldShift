@@ -69,6 +69,7 @@ import { NasaPlantingAdvisoryView } from '../src/NasaPlantingAdvisoryView.jsx';
 import { NasaWeatherStation3D } from '../src/NasaWeatherStation3D.jsx';
 import { FarmPlanningView } from '../src/FarmPlanningView.jsx';
 import { SixSeasonRecommendationView } from '../src/SixSeasonRecommendationView.jsx';
+import { ClimateStressTestView } from '../src/ClimateStressTestView.jsx';
 import { WaterIrrigationView } from '../src/WaterIrrigationView.jsx';
 import { ResearchWorkspaceView } from '../src/ResearchWorkspaceView.jsx';
 import { DigitalTwin3DView } from '../src/DigitalTwin3DView.jsx';
@@ -148,6 +149,12 @@ const destinations = [
     component: SixSeasonRecommendationView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, district: 'rajshahi', defaultDistrict: 'rajshahi', lang: 'bn' }
+  },
+  {
+    name: '05c. ClimateStressTestView (Climate Stress Test Sub-Lab)',
+    component: ClimateStressTestView,
+    noDataProps: {},
+    fixtureProps: { activeField: fixtureField, lang: 'bn' }
   },
   {
     name: '06. WaterIrrigationView (water_irrigation)',

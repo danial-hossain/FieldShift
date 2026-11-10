@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
+import { ClimateStressTestView } from './ClimateStressTestView.jsx';
 import { ComparisonLabView } from './ComparisonLabView.jsx';
 import { ExperimentSimulator3DView } from './ExperimentSimulator3DView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
@@ -89,7 +90,7 @@ export function FarmPlanningView({
           onNavigateTab={(t, extra) => {
             if (t === 'assistant' || t === 'dashboard' || t === 'field' || t === 'water_irrigation') {
               if (onNavigate) onNavigate(t, extra);
-            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
               if (extra?.strategy && activeField?.id) {
                 setFieldSelectedStrategy(activeField.id, extra.strategy);
               }
@@ -129,7 +130,7 @@ export function FarmPlanningView({
           onNavigateTab={(t, extra) => {
             if (t === 'milp') {
               setSubTab('milp');
-            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
               setSubTab(t);
             } else if (onNavigate) {
               onNavigate(t, extra);
@@ -137,6 +138,29 @@ export function FarmPlanningView({
           }}
           onBack={() => setSubTab('milp')}
           onRunWorkflow={onRunWorkflow}
+        />
+      )}
+
+      {subTab === 'stress' && (
+        <ClimateStressTestView
+          activeField={activeField}
+          user={user}
+          lang={lang}
+          theme={theme}
+          request={request}
+          onBack={() => setSubTab('milp')}
+          onNavigateTab={(t, extra) => {
+            if (t === 'milp') {
+              setSubTab('milp');
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
+              if (extra?.strategy && activeField?.id) {
+                setFieldSelectedStrategy(activeField.id, extra.strategy);
+              }
+              setSubTab(t);
+            } else if (onNavigate) {
+              onNavigate(t, extra);
+            }
+          }}
         />
       )}
 
@@ -157,7 +181,7 @@ export function FarmPlanningView({
           onNavigateTab={(t, extra) => {
             if (t === 'assistant' || t === 'dashboard' || t === 'field' || t === 'water_irrigation') {
               if (onNavigate) onNavigate(t, extra);
-            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'comparison', 'simulation'].includes(t)) {
+            } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
               setSubTab(t);
             } else if (onNavigate) {
               onNavigate(t, extra);
