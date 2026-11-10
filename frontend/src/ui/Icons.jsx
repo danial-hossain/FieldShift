@@ -210,6 +210,39 @@ export const ChevronDownIcon = ({ size = 20, className = '' }) => (
   </svg>
 );
 
+export const GlobeIcon = ({ size = 20, className = '' }) => (
+  <svg {...baseProps(size, className)}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+);
+
+export const BellIcon = ({ size = 20, className = '' }) => (
+  <svg {...baseProps(size, className)}>
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
+export const BotIcon = ({ size = 20, className = '' }) => (
+  <svg {...baseProps(size, className)}>
+    <path d="M12 8V4H8" />
+    <rect width="16" height="12" x="4" y="8" rx="2" />
+    <path d="M2 14h2" />
+    <path d="M20 14h2" />
+    <path d="M15 13v2" />
+    <path d="M9 13v2" />
+  </svg>
+);
+
+export const UserIcon = ({ size = 20, className = '' }) => (
+  <svg {...baseProps(size, className)}>
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
+
 export const ChevronRightIcon = ({ size = 20, className = '' }) => (
   <svg {...baseProps(size, className)}>
     <polyline points="9 18 15 12 9 6" />

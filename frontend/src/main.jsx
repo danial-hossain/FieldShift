@@ -44,6 +44,9 @@ import {
   SunIcon,
   MoonIcon,
   HelpIcon,
+  BotIcon,
+  GlobeIcon,
+  BellIcon,
 } from './ui/index.js';
 
 const API = import.meta.env.VITE_API_URL || '';
@@ -2020,7 +2023,7 @@ export function App() {
             onClick={() => handleNavigate('dashboard')}
             title={lang === 'bn' ? '১. হোম - আজকের সারসংক্ষেপ ও পরামর্শ' : '1. Overview - Today\'s Summary & Answer'}
           >
-            <span className="nav-item-icon">🏠</span>
+            <span className="nav-item-icon"><HomeIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'হোম' : 'Overview'}</span>
           </button>
 
@@ -2031,7 +2034,7 @@ export function App() {
             data-nav="field" onClick={() => handleNavigate('field')}
             title={lang === 'bn' ? '২. আমার জমি - সীমানা, স্যাটেলাইট ম্যাপ ও মাটি' : '2. My Fields - Parcels, Map & Soil'}
           >
-            <span className="nav-item-icon">🗺️</span>
+            <span className="nav-item-icon"><FieldIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'আমার জমি' : 'My Fields'}</span>
           </button>
 
@@ -2042,7 +2045,7 @@ export function App() {
             data-nav="farm_planning" onClick={() => handleNavigate('farm_planning')}
             title={lang === 'bn' ? '৩. আবর্তন পরিকল্পনা - বর্তমান বনাম ৩ বিকল্প কৌশল' : '3. Rotation Planner - Existing vs 3 Strategies'}
           >
-            <span className="nav-item-icon">📐</span>
+            <span className="nav-item-icon"><RotationIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'আবর্তন পরিকল্পনা' : 'Rotation Planner'}</span>
           </button>
 
@@ -2053,7 +2056,7 @@ export function App() {
             data-nav="weather" onClick={() => handleNavigate('weather')}
             title={lang === 'bn' ? '৪. আবহাওয়া ও ঝুঁকি - নাসা বৃষ্টি, অনসেট ও খরা ঝুঁকি' : '4. Climate & Risk - NASA Rain, Onset & Heat'}
           >
-            <span className="nav-item-icon">🌦️</span>
+            <span className="nav-item-icon"><WeatherIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'আবহাওয়া ও ঝুঁকি' : 'Climate & Risk'}</span>
           </button>
 
@@ -2064,7 +2067,7 @@ export function App() {
             data-nav="water_irrigation" onClick={() => handleNavigate('water_irrigation')}
             title={lang === 'bn' ? '৫. পানি ও সেচ - সেচ ক্যালেন্ডার ও মাটির স্তর' : '5. Water - Irrigation Calendar & Soil Column'}
           >
-            <span className="nav-item-icon">💧</span>
+            <span className="nav-item-icon"><WaterIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'পানি ও সেচ' : 'Water'}</span>
           </button>
 
@@ -2075,7 +2078,7 @@ export function App() {
             data-nav="harvest_profit" onClick={() => handleNavigate('harvest_profit')}
             title={lang === 'bn' ? '৬. বাজার - বাজারদর, আয় ও জাতীয় চাহিদা' : '6. Market - Prices, Revenue & National Need'}
           >
-            <span className="nav-item-icon">💰</span>
+            <span className="nav-item-icon"><MarketIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'বাজার' : 'Market'}</span>
           </button>
 
@@ -2086,7 +2089,7 @@ export function App() {
             data-nav="data_evidence" onClick={() => handleNavigate('data_evidence')}
             title={lang === 'bn' ? '৭. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '7. Evidence & Method - Datasets, Methods & Research'}
           >
-            <span className="nav-item-icon">📊</span>
+            <span className="nav-item-icon"><EvidenceIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'প্রমাণ ও পদ্ধতি' : 'Evidence & Method'}</span>
           </button>
 
@@ -2097,7 +2100,7 @@ export function App() {
             data-nav="assistant" onClick={() => handleNavigate('assistant')}
             title={lang === 'bn' ? '৮. AI সহকারী - শস্য আবর্তন ও কৃষি পরামর্শ' : '8. AI Assistant - Crop Rotation & Agricultural Advice'}
           >
-            <span className="nav-item-icon">🤖</span>
+            <span className="nav-item-icon"><BotIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'AI সহকারী' : 'AI Assistant'}</span>
           </button>
         </nav>
@@ -2286,7 +2289,7 @@ export function App() {
           <div className="global-top-bar-right">
             {/* Header Field Selector for Instant Context Switching Across Any View */}
             <div className="header-field-selector" title="Active Field Parcel">
-              <span style={{ fontSize: 13 }}>🌾</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)' }}><FieldIcon size={16} /></span>
               <select
                 aria-label="Active field parcel"
                 value={selectedFieldId == null ? '' : String(selectedFieldId)}
@@ -2332,7 +2335,7 @@ export function App() {
                   : (nasa?.data_status === 'observed' ? 'NASA POWER: Observed' : 'NASA POWER: Standby')}
               </span>
               <span className="nasa-badge-short-text">
-                NASA 🛰️
+                NASA
               </span>
             </div>
 
@@ -2359,7 +2362,7 @@ export function App() {
                 cursor: 'pointer'
               }}
             >
-              <span style={{ fontSize: 15 }}>🌐</span>
+              <GlobeIcon size={16} />
               <span>{lang === 'bn' ? 'বাংলা' : 'English'}</span>
             </button>
 
@@ -2396,10 +2399,7 @@ export function App() {
                 onClick={() => setShowNotifications(prev => !prev)}
                 aria-label="System notifications"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                </svg>
+                <BellIcon size={18} />
                 <span className="notification-badge-count">2</span>
               </button>
 
@@ -2419,7 +2419,7 @@ export function App() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border-light, #2d3748)', paddingBottom: 6 }}>
                     <strong style={{ fontSize: 13 }}>{lang === 'bn' ? 'সিস্টেম নোটিফিকেশন' : 'System Notifications'}</strong>
-                    <button type="button" onClick={() => setShowNotifications(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted, #9ca3af)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                    <button type="button" className="modal-close-btn" onClick={() => setShowNotifications(false)}>✕</button>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
                     <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(0, 223, 129, 0.08)', borderLeft: '3px solid #00df81' }}>
