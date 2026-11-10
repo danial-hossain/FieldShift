@@ -134,10 +134,10 @@ export function ClimateStressTestView({
 
   // Strategy definition metadata
   const strategies = useMemo(() => [
-    { id: 'balanced', labelBn: 'সুষম (Balanced)', labelEn: 'Balanced', icon: '⚖️' },
-    { id: 'profit', labelBn: 'সর্বোচ্চ লাভ (Profit)', labelEn: 'Max Profit', icon: '💰' },
-    { id: 'water', labelBn: 'পানি সাশ্রয় (Water)', labelEn: 'Water Saving', icon: '💧' },
-    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য (Soil)', labelEn: 'Soil Health', icon: '🌱' },
+    { id: 'balanced', labelBn: 'সুষম কৌশল', labelEn: 'Balanced Plan', icon: '⚖️' },
+    { id: 'profit', labelBn: 'সর্বোচ্চ লাভ', labelEn: 'Max Profit', icon: '💰' },
+    { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water Saving', icon: '💧' },
+    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health', icon: '🌱' },
   ], []);
 
   // 2. Scenario & Simulation State
@@ -289,7 +289,7 @@ export function ClimateStressTestView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 14 }}>
           <div>
             <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--primary)' }}>
-              {lang === 'bn' ? 'পরীক্ষাধীন পরিকল্পনা (Choose Strategy):' : 'Plan Under Stress Test:'}
+              {lang === 'bn' ? 'পরীক্ষাধীন পরিকল্পনা:' : 'Plan Under Stress Test:'}
             </span>
           </div>
 
@@ -425,7 +425,7 @@ export function ClimateStressTestView({
           {/* Intensity Selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'তীব্রতা (Intensity):' : 'Intensity:'}
+              {lang === 'bn' ? 'তীব্রতা:' : 'Intensity:'}
             </span>
             <div style={{ display: 'flex', background: 'var(--surface-2)', borderRadius: 999, padding: 3, border: '1px solid var(--glass-border)' }}>
               {INTENSITIES.map((intObj) => {
@@ -495,7 +495,7 @@ export function ClimateStressTestView({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 16 }}>🏡</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? '৩ডি ক্ষেত্র প্রভাব ডায়োরামা (3D Stress Diorama)' : '3D Farm Stress Diorama'}
+              {lang === 'bn' ? '৩ডি ক্ষেত্র প্রভাব ডায়োরামা' : '3D Farm Stress Diorama'}
             </span>
             <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               {lang === 'bn' ? 'বেডে ক্লিক করে বিস্তারিত দেখুন' : 'Click bed to inspect impact'}
@@ -522,7 +522,7 @@ export function ClimateStressTestView({
                   transition: 'all 0.18s ease',
                 }}
               >
-                {lang === 'bn' ? 'আগে (Before)' : 'Before'}
+                {lang === 'bn' ? 'আগে (স্বাভাবিক)' : 'Before (Normal)'}
               </button>
               <button
                 onClick={() => setIsPostStress(true)}
@@ -538,7 +538,7 @@ export function ClimateStressTestView({
                   transition: 'all 0.18s ease',
                 }}
               >
-                {lang === 'bn' ? 'পরে (After Stress)' : 'After Stress'}
+                {lang === 'bn' ? 'পরে (চাপগ্রস্ত)' : 'After (Stressed)'}
               </button>
             </div>
           </div>
@@ -634,7 +634,7 @@ export function ClimateStressTestView({
       <Card variant="glass" style={{ marginBottom: 24, padding: '18px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            {lang === 'bn' ? 'মৌসুমভিত্তিক প্রভাব বিশ্লেষণ (Season-by-Season Impact Table)' : 'Season-by-Season Impact Breakdown'}
+            {lang === 'bn' ? 'মৌসুমভিত্তিক প্রভাব বিশ্লেষণ' : 'Season-by-Season Impact Breakdown'}
           </h3>
           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
             {lang === 'bn' ? 'সারির ওপর ক্লিক করলে ৩ডি বেড ফোকাস হবে' : 'Click any row to focus that bed in 3D'}
@@ -717,7 +717,7 @@ export function ClimateStressTestView({
                         background: badgeBg,
                         color: badgeColor,
                       }}>
-                        {loss > 0 ? `−${formatDigits(Math.round(loss), lang)}%` : '০%'}
+                        {loss > 0 ? `−${formatDigits(Math.round(loss), lang)}%` : (lang === 'bn' ? '০%' : '0%')}
                       </span>
                     </td>
                     <td style={{ padding: '10px', textAlign: 'right' }}>
