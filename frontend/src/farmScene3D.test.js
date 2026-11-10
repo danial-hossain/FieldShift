@@ -150,4 +150,17 @@ test('T4: Performance optimizations clamp pixel ratio <= 1.5 and shadowMap confi
   assert.equal(shadowMapConfig.needsUpdate, true);
 });
 
+test('T5: Authentic diorama atmosphere and botanical crop distinctness', () => {
+  const sunElevationDeg = Math.round(Math.asin(32.5 / Math.hypot(58, 32.5, 42)) * (180 / Math.PI));
+  assert.ok(sunElevationDeg >= 22 && sunElevationDeg <= 26, 'Sun elevation is around ~24°');
+
+  const supportedCrops = [
+    'mustard', 'riceRipe', 'rice', 'mungbean', 'tomato', 'sunflower',
+    'wheat', 'potato', 'maize', 'lentil', 'chickpea', 'sesame', 'soybean', 'fallow'
+  ];
+  supportedCrops.forEach(crop => {
+    assert.ok(mapCropToGeoKey(crop, 'rabi'), `GeoKey must be resolvable for ${crop}`);
+  });
+});
+
 

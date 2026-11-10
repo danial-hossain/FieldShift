@@ -577,7 +577,7 @@ export function FarmScene3D({
     disposables.push(skyMat, skyMesh.geometry);
 
     // 2. Renderer (ACESFilmic, SRGB, PCFSoft Shadows, pixel ratio <= 1.5 for high performance)
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(width, sceneHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -1415,6 +1415,15 @@ export function FarmScene3D({
         calls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
       }),
+      captureCropCloseUp: (cropName) => {
+        plantBed(0, cropName, true);
+        const targetBed = bedCenters[0];
+        camera.position.set(targetBed.x + 4.2, 3.2, targetBed.z + 4.8);
+        controls.target.set(targetBed.x, 0.9, targetBed.z);
+        controls.update();
+        renderer.render(scene, camera);
+        return renderer.domElement.toDataURL('image/png');
+      },
     };
     if (typeof window !== 'undefined') {
       window.__farm3dRenderer = renderer;
