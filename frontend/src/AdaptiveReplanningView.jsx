@@ -61,6 +61,7 @@ export function AdaptiveReplanningView({
   onNavigateTab,
   onBack,
   lang = 'bn',
+  stressContext,
 }) {
   const request = typeof propRequest === 'function' ? propRequest : defaultRequest;
 
@@ -115,6 +116,32 @@ export function AdaptiveReplanningView({
       );
     }
   }, [plannerCrops]);
+
+  // SF4: Pre-fill finished seasons when loaded from Climate Stress Test
+  useEffect(() => {
+    if (stressContext?.stressResult?.seasons && Array.isArray(stressContext.stressResult.seasons)) {
+      const sArr = stressContext.stressResult.seasons;
+      const hitIndices = sArr.slice(0, 5).map((s, idx) => (s.hit ? idx + 1 : 0)).filter(Boolean);
+      const targetCount = hitIndices.length > 0 ? Math.max(...hitIndices) : 1;
+      setFinishedCount(Math.min(5, Math.max(1, targetCount)));
+
+      setSeasonRows((prev) =>
+        prev.map((r, i) => {
+          const s = sArr[i];
+          if (!s) return r;
+          const stressedYield = s.yield_after_mon ?? s.yield_after_maund;
+          return {
+            ...r,
+            crop: s.crop || r.crop || (plannerCrops && plannerCrops[i]) || '',
+            yieldMb: stressedYield != null ? String(stressedYield) : r.yieldMb,
+            outcome: s.hit ? 'low_yield' : 'normal',
+            userEditedCrop: true,
+          };
+        })
+      );
+      setIsDirty(true);
+    }
+  }, [stressContext, plannerCrops]);
 
   // 4. Irrigation selector for remaining seasons
   const defaultIrrigClass = useMemo(() => {
@@ -396,6 +423,43 @@ export function AdaptiveReplanningView({
           {lang === 'bn' ? 'ফিডব্যাক ক্যালিব্রেশন + MILP শাখা-সীমাবদ্ধ সমাধান' : 'Feedback Calibration + MILP Branch-and-Bound'}
         </div>
       </div>
+
+      {/* SF4: One-line Note when Loaded from Stress Test */}
+      {stressContext && (
+        <div
+          className="stress-loaded-note"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            padding: '10px 16px',
+            borderRadius: 10,
+            background: 'rgba(56, 189, 248, 0.12)',
+            border: '1.5px solid rgba(56, 189, 248, 0.35)',
+            marginBottom: 16,
+            fontSize: 13,
+            fontWeight: 700,
+            color: 'var(--cyan)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>⚡</span>
+            <span>
+              {(() => {
+                const hName = stressContext.hazard || 'Drought';
+                const iName = stressContext.intensity ? (stressContext.intensity.charAt(0).toUpperCase() + stressContext.intensity.slice(1)) : 'Moderate';
+                return lang === 'bn'
+                  ? `চাপ পরীক্ষা থেকে লোড করা: ${hName} (${iName})`
+                  : `Loaded from stress test: ${hName} (${iName})`;
+              })()}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 500 }}>
+            {lang === 'bn' ? 'ক্ষতিগ্রস্ত ফলন স্বয়ংক্রিয়ভাবে পূরণ করা হয়েছে' : 'Stressed yields populated into finished seasons'}
+          </span>
+        </div>
+      )}
 
       {/* 3 Step Guidance Strip */}
       <div

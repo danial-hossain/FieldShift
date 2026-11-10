@@ -30,6 +30,7 @@ export function FarmPlanningView({
 }) {
   const { t } = useTranslation(lang);
   const [subTab, setSubTab] = useState(initialSubTab);
+  const [stressContext, setStressContext] = useState(null);
 
   useEffect(() => {
     if (initialSubTab) setSubTab(initialSubTab);
@@ -127,10 +128,12 @@ export function FarmPlanningView({
           user={user}
           lang={lang}
           request={request}
+          stressContext={stressContext}
           onNavigateTab={(t, extra) => {
             if (t === 'milp') {
               setSubTab('milp');
             } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
+              if (t === 'replan' && extra) setStressContext(extra);
               setSubTab(t);
             } else if (onNavigate) {
               onNavigate(t, extra);
@@ -155,6 +158,9 @@ export function FarmPlanningView({
             } else if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
               if (extra?.strategy && activeField?.id) {
                 setFieldSelectedStrategy(activeField.id, extra.strategy);
+              }
+              if (t === 'replan') {
+                setStressContext(extra || null);
               }
               setSubTab(t);
             } else if (onNavigate) {
