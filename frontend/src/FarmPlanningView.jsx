@@ -6,7 +6,6 @@ import React, { useState, useEffect } from 'react';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { ClimateStressTestView } from './ClimateStressTestView.jsx';
-import { ComparisonLabView } from './ComparisonLabView.jsx';
 import { YourFarmingVsPlanView } from './YourFarmingVsPlanView.jsx';
 import { ExperimentSimulator3DView } from './ExperimentSimulator3DView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';

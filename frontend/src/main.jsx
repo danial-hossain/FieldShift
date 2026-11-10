@@ -6,7 +6,6 @@ import { AdaptiveRlExperiment } from './AdaptiveRlExperiment.jsx';
 import { NasaWeatherStation3D } from './NasaWeatherStation3D.jsx';
 import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
 import AiAssistantView from './AiAssistantView.jsx';
-import { ComparisonLabView } from './ComparisonLabView.jsx';
 import { CropFailureRecoveryView } from './CropFailureRecoveryView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { WeatherUncertaintyView } from './WeatherUncertaintyView.jsx';
