@@ -583,8 +583,9 @@ export function OrbitToFieldStory({
                     onClick={() => onNavigate(scene.cta.dest)}
                     style={{
                       marginTop: 16,
-                      background: 'var(--lime, #C8F169)',
-                      color: '#10200a',
+                      background: 'var(--accent, #C8F169)',
+                      color: 'var(--accent-ink, #10200a)',
+                      fontFamily: 'var(--display, "Space Grotesk", sans-serif)',
                       fontWeight: 700,
                       border: 'none',
                       borderRadius: 14,

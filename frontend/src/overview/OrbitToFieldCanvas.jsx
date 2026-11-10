@@ -474,6 +474,12 @@ export function OrbitToFieldCanvas({
 
       const p = Math.max(0, Math.min(6, progressRef.current));
 
+      // Background and fog color fade from space navy (#05080F) to app dark green (#0c1a12) by scene 3
+      const fogT = Math.min(1, p / 2);
+      const colNavy = new THREE.Color(0x05080F);
+      const colGreen = new THREE.Color(0x0c1a12);
+      scene.fog.color.copy(colNavy).lerp(colGreen, fogT);
+
       // Slow idle rotations
       earthMesh.rotation.y += 0.003;
       contMesh.rotation.y += 0.003;
