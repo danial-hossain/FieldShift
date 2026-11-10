@@ -4,8 +4,6 @@ import { request } from './apiClient.js';
 import sampleSeries from './nasa_30day_series.json';
 
 export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, onBack, lang = 'bn' }) {
-  const [viewMode, setViewMode] = useState('globe'); // 'globe' | 'column' | 'satellite'
-  const [rotationAngle, setRotationAngle] = useState(24);
   const [activeChartMetric, setActiveChartMetric] = useState('temp'); // 'temp' | 'rain' | 'humidity' | 'solar'
   const [timeHorizon, setTimeHorizon] = useState(30); // 7 | 14 | 30
   const [hoveredDataPoint, setHoveredDataPoint] = useState(null);
@@ -94,30 +92,6 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
   const et0 = ((0.0023 * (tempVal + 17.8) * Math.sqrt(Math.max(1, tempMax - tempMin)) * 14.2) / 2.45).toFixed(1); // Hargreaves approximation
   const gdd = Math.max(0, ((tempMax + tempMin) / 2) - 10).toFixed(1); // Base 10C for maize/rice
 
-  // CSV download handler
-  const handleDownloadCsv = () => {
-    if (!chartData.length) return;
-    const headers = ['date', 'temperature_c', 'temp_max_c', 'temp_min_c', 'rainfall_mm', 'humidity_percent', 'wind_speed_ms', 'solar_radiation_mj_m2'];
-    const rows = chartData.map(d => [
-      d.date,
-      d.temperature,
-      d.temp_max,
-      d.temp_min,
-      d.rainfall,
-      d.humidity,
-      d.wind_speed,
-      d.solar_radiation
-    ]);
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', isObserved ? `NASA_POWER_${latitude}_${longitude}_30days.csv` : `NASA_POWER_DEMO_BENCHMARK_${latitude}_${longitude}_30days.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="nasa-weather-container">
       {/* Top Header Command Bar */}
@@ -140,14 +114,6 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
           </p>
         </div>
         <div className="nasa-header-actions">
-          <button type="button" className="nasa-action-btn" onClick={handleDownloadCsv} title="Download verified NASA CSV">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            <span>Export CSV</span>
-          </button>
           <button type="button" className="back-btn" onClick={onBack}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="19" y1="12" x2="5" y2="12" />
@@ -188,278 +154,8 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
         </div>
       </div>
 
-      {/* Main Grid: 3D Visualization Section (Left 7) + Primary Instruments (Right 5) */}
-      <div className="nasa-main-grid">
-        {/* Realistic 3D Atmosphere & Climate Stage */}
-        <div className="nasa-stage-card">
-          <div className="stage-top-bar">
-            <div className="stage-tabs">
-              <button
-                type="button"
-                className={`stage-tab-btn ${viewMode === 'globe' ? 'active' : ''}`}
-                onClick={() => setViewMode('globe')}
-              >
-                🌐 3D Climate Globe
-              </button>
-              <button
-                type="button"
-                className={`stage-tab-btn ${viewMode === 'column' ? 'active' : ''}`}
-                onClick={() => setViewMode('column')}
-              >
-                🌦️ 3D Atmospheric Profile
-              </button>
-              <button
-                type="button"
-                className={`stage-tab-btn ${viewMode === 'satellite' ? 'active' : ''}`}
-                onClick={() => setViewMode('satellite')}
-              >
-                🛰️ Satellite Orbit Swath
-              </button>
-            </div>
-            <div className="stage-controls">
-              <button
-                type="button"
-                className="stage-ctrl-btn"
-                onClick={() => setRotationAngle(prev => (prev - 15 + 360) % 360)}
-                title="Rotate Left"
-              >
-                ↺
-              </button>
-              <button
-                type="button"
-                className="stage-ctrl-btn"
-                onClick={() => setRotationAngle(24)}
-                title="Reset View Angle"
-              >
-                ⟲
-              </button>
-              <button
-                type="button"
-                className="stage-ctrl-btn"
-                onClick={() => setRotationAngle(prev => (prev + 15) % 360)}
-                title="Rotate Right"
-              >
-                ↻
-              </button>
-            </div>
-          </div>
-
-          <div className="stage-viewport">
-            {viewMode === 'globe' && (
-              <div className="globe-3d-wrapper">
-                <svg className="globe-svg" viewBox="0 0 540 380" preserveAspectRatio="xMidYMid meet">
-                  <defs>
-                    <radialGradient id="globeGlow" cx="40%" cy="40%" r="60%">
-                      <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.9" />
-                      <stop offset="65%" stopColor="#050b10" stopOpacity="0.95" />
-                      <stop offset="100%" stopColor="#050b10" stopOpacity="1" />
-                    </radialGradient>
-                    <radialGradient id="atmoGlow" cx="50%" cy="50%" r="50%">
-                      <stop offset="70%" stopColor="rgba(56, 189, 248, 0)" />
-                      <stop offset="95%" stopColor="rgba(56, 189, 248, 0.45)" />
-                      <stop offset="100%" stopColor="rgba(56, 189, 248, 0.85)" />
-                    </radialGradient>
-                    <linearGradient id="sunbeam" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#facc15" stopOpacity="0.8" />
-                      <stop offset="100%" stopColor="#facc15" stopOpacity="0" />
-                    </linearGradient>
-                    <filter id="neonBlur">
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                      <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-
-                  {/* Deep Space Background Stars */}
-                  <rect width="540" height="380" fill="#050b10" rx="16" />
-                  <g opacity="0.6">
-                    <circle cx="45" cy="40" r="1" fill="#fff" />
-                    <circle cx="120" cy="85" r="1.5" fill="#38bdf8" />
-                    <circle cx="210" cy="30" r="0.8" fill="#fff" />
-                    <circle cx="480" cy="65" r="1.2" fill="#fff" />
-                    <circle cx="510" cy="190" r="1" fill="#facc15" />
-                    <circle cx="80" cy="310" r="1.2" fill="#fff" />
-                    <circle cx="450" cy="330" r="0.9" fill="#38bdf8" />
-                  </g>
-
-                  {/* Atmospheric Glow Ring */}
-                  <circle cx="270" cy="190" r="152" fill="url(#atmoGlow)" />
-
-                  {/* Planetary Sphere Body */}
-                  <circle cx="270" cy="190" r="140" fill="url(#globeGlow)" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.4" />
-
-                  {/* 3D Latitude Rings */}
-                  <g opacity="0.35" stroke="#38bdf8" strokeWidth="0.75" fill="none">
-                    <ellipse cx="270" cy="190" rx="140" ry="140" />
-                    <ellipse cx="270" cy="140" rx="120" ry="24" />
-                    <ellipse cx="270" cy="190" rx="140" ry="32" strokeDasharray="3 3" />
-                    <ellipse cx="270" cy="240" rx="120" ry="24" />
-                    <line x1="270" y1="50" x2="270" y2="330" stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 2" />
-                  </g>
-
-                  {/* 3D Longitude Meridians (Rotating according to rotationAngle) */}
-                  <g opacity="0.3" stroke="#38bdf8" strokeWidth="0.8" fill="none">
-                    <ellipse cx="270" cy="190" rx={Math.abs(Math.sin((rotationAngle * Math.PI) / 180) * 140)} ry="140" />
-                    <ellipse cx="270" cy="190" rx={Math.abs(Math.sin(((rotationAngle + 45) * Math.PI) / 180) * 140)} ry="140" />
-                    <ellipse cx="270" cy="190" rx={Math.abs(Math.sin(((rotationAngle + 90) * Math.PI) / 180) * 140)} ry="140" />
-                  </g>
-
-                  {/* Dynamic Continents / Landmass Shading (Isometric Bangladesh / South Asia placement) */}
-                  <g fill="#00df81" opacity="0.85" filter="url(#neonBlur)">
-                    <path d="M250,150 Q280,140 310,155 Q330,175 320,195 Q290,210 265,190 Q240,170 250,150 Z" fill="#00df81" />
-                    <path d="M220,130 Q250,115 280,125 Q270,145 240,145 Z" fill="#00df81" opacity="0.6" />
-                    <path d="M290,165 Q315,160 325,180 Q305,190 285,175 Z" fill="#00df81" />
-                  </g>
-
-                  {/* Atmospheric Cloud Swirls */}
-                  <g fill="#eef3ee" opacity="0.35">
-                    <path d="M200,160 Q240,145 290,165 Q330,155 370,170 Q320,185 270,175 Z" />
-                    <path d="M180,210 Q230,195 280,215 Q340,205 380,225 Q320,235 250,225 Z" />
-                  </g>
-
-                  {/* Active Coordinate Radar Beacon (Targeting Lat/Lon) */}
-                  <g transform="translate(295, 172)">
-                    <circle cx="0" cy="0" r="24" fill="none" stroke="#00df81" strokeWidth="1" opacity="0.4">
-                      <animate attributeName="r" values="8;32" dur="2.5s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.8;0" dur="2.5s" repeatCount="indefinite" />
-                    </circle>
-                    <circle cx="0" cy="0" r="14" fill="none" stroke="#00df81" strokeWidth="1.5" opacity="0.7">
-                      <animate attributeName="r" values="4;20" dur="2.5s" begin="0.8s" repeatCount="indefinite" />
-                      <animate attributeName="opacity" values="0.9;0" dur="2.5s" begin="0.8s" repeatCount="indefinite" />
-                    </circle>
-                    <circle cx="0" cy="0" r="5" fill="#00df81" />
-                    <circle cx="0" cy="0" r="2.5" fill="#eef3ee" />
-
-                    {/* Laser Target Reticle */}
-                    <line x1="-12" y1="0" x2="-6" y2="0" stroke="#00df81" strokeWidth="2" />
-                    <line x1="6" y1="0" x2="12" y2="0" stroke="#00df81" strokeWidth="2" />
-                    <line x1="0" y1="-12" x2="0" y2="-6" stroke="#00df81" strokeWidth="2" />
-                    <line x1="0" y1="6" x2="0" y2="12" stroke="#00df81" strokeWidth="2" />
-
-                    {/* Target Callout Box */}
-                    <g transform="translate(20, -22)">
-                      <rect x="0" y="0" width="145" height="42" rx="6" fill="rgba(15, 23, 42, 0.92)" stroke="#38bdf8" strokeWidth="1" />
-                      <text x="8" y="15" fill="#38bdf8" fontSize="9.5" fontWeight="800" fontFamily="monospace">NASA POINT TELEMETRY</text>
-                      <text x="8" y="27" fill="#eef3ee" fontSize="10.5" fontWeight="700">{locationName.slice(0, 18)}</text>
-                      <text x="8" y="37" fill="#00df81" fontSize="9" fontWeight="600">{tempVal}°C • {humidVal}% RH • {rainVal} mm</text>
-                    </g>
-                  </g>
-
-                  {/* Satellite In Orbit passing overhead */}
-                  <g transform="translate(420, 90)">
-                    <line x1="-150" y1="40" x2="30" y2="-10" stroke="#38bdf8" strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />
-                    <rect x="-8" y="-4" width="16" height="8" rx="2" fill="#eef3ee" stroke="rgba(238, 243, 238, 0.42)" strokeWidth="1" />
-                    <rect x="-24" y="-2" width="12" height="4" fill="#38bdf8" />
-                    <rect x="12" y="-2" width="12" height="4" fill="#38bdf8" />
-                    <circle cx="0" cy="0" r="2" fill="#f43f5e" />
-                    <text x="-20" y="-10" fill="var(--text-muted, #94a3b8)" fontSize="8.5" fontWeight="700">CERES SAT-2</text>
-                  </g>
-
-                  {/* Solar Irradiance Angle Vector */}
-                  <path d="M70,70 L200,140" stroke="url(#sunbeam)" strokeWidth="3" opacity="0.8" />
-                  <circle cx="60" cy="60" r="14" fill="#facc15" filter="url(#neonBlur)" />
-                  <circle cx="60" cy="60" r="10" fill="#facc15" />
-                  <text x="84" y="58" fill="#facc15" fontSize="9.5" fontWeight="800">{latestSolar != null ? `SOLAR FLUX: ${latestSolar} MJ/m²` : "SOLAR FLUX: তথ্য নেই"}</text>
-                </svg>
-              </div>
-            )}
-
-            {viewMode === 'column' && (
-              <div className="column-3d-wrapper">
-                <svg className="column-svg" viewBox="0 0 540 380" preserveAspectRatio="xMidYMid meet">
-                  <rect width="540" height="380" fill="#050b10" rx="16" />
-
-                  {/* Layer 4: Upper Stratosphere / Solar Boundary (12km) */}
-                  <g transform="translate(40, 35)">
-                    <polygon points="40,20 420,20 460,70 80,70" fill="rgba(30, 58, 138, 0.35)" stroke="#38bdf8" strokeWidth="1" />
-                    <text x="90" y="48" fill="#38bdf8" fontSize="11" fontWeight="800">LAYER 4: STRATOSPHERE / SOLAR BOUNDARY (10–15 KM)</text>
-                    <text x="90" y="62" fill="#38bdf8" fontSize="9.5">Direct Solar Irradiance: {latestSolar != null ? `${latestSolar} MJ/m²/day` : "তথ্য নেই"} • Top-of-Atmosphere Radiance</text>
-                  </g>
-
-                  {/* Layer 3: Tropospheric Cloud Condensation Deck (2-4km) */}
-                  <g transform="translate(40, 110)">
-                    <polygon points="40,20 420,20 460,70 80,70" fill="rgba(14, 116, 144, 0.3)" stroke="#38bdf8" strokeWidth="1" />
-                    <text x="90" y="48" fill="#38bdf8" fontSize="11" fontWeight="800">LAYER 3: CLOUD &amp; HUMIDITY DECK (2–4 KM)</text>
-                    <text x="90" y="62" fill="#38bdf8" fontSize="9.5">Relative Humidity: {humidVal}% • Condensation Level: ~1,200m • Dew Point: {dewPoint}°C</text>
-                  </g>
-
-                  {/* Layer 2: Planetary Boundary Layer & Wind Velocity (0-1km) */}
-                  <g transform="translate(40, 185)">
-                    <polygon points="40,20 420,20 460,70 80,70" fill="rgba(15, 118, 110, 0.35)" stroke="#38bdf8" strokeWidth="1" />
-                    <text x="90" y="48" fill="#38bdf8" fontSize="11" fontWeight="800">LAYER 2: BOUNDARY LAYER &amp; WIND FIELD (0–1,000 M)</text>
-                    <text x="90" y="62" fill="#38bdf8" fontSize="9.5">Wind Speed: {windVal} m/s ({((windVal * 3.6)).toFixed(1)} km/h) • Turbulent Momentum Flux: Low Drift</text>
-                  </g>
-
-                  {/* Layer 1: Canopy & Ground Surface Interaction (0m) */}
-                  <g transform="translate(40, 260)">
-                    <polygon points="40,20 420,20 460,85 80,85" fill="rgba(22, 101, 52, 0.45)" stroke="#00df81" strokeWidth="1.5" />
-                    <text x="90" y="48" fill="#00df81" fontSize="11.5" fontWeight="800">LAYER 1: CROP CANOPY &amp; SOIL HORIZON (SURFACE)</text>
-                    <text x="90" y="62" fill="#00df81" fontSize="9.5">Surface Temp: {tempVal}°C ({tempMin}°C to {tempMax}°C) • Rainfall Flux: {rainVal} mm/day</text>
-                    <text x="90" y="76" fill="#00df81" fontSize="9">Reference Evapotranspiration ET₀: {et0} mm/day • Diurnal Range: {diurnalRange}°C</text>
-                  </g>
-
-                  {/* Vertical Elevation Altitude Axis */}
-                  <line x1="60" y1="50" x2="60" y2="340" stroke="rgba(238, 243, 238, 0.42)" strokeWidth="1.5" strokeDasharray="4 4" />
-                  <text x="18" y="60" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">15 KM</text>
-                  <text x="22" y="135" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">4 KM</text>
-                  <text x="22" y="210" fill="var(--text-muted, #94a3b8)" fontSize="9" fontWeight="700">1 KM</text>
-                  <text x="26" y="295" fill="#00df81" fontSize="9" fontWeight="800">0 M</text>
-                </svg>
-              </div>
-            )}
-
-            {viewMode === 'satellite' && (
-              <div className="satellite-3d-wrapper">
-                <svg className="satellite-svg" viewBox="0 0 540 380" preserveAspectRatio="xMidYMid meet">
-                  <rect width="540" height="380" fill="#050b10" rx="16" />
-
-                  {/* Earth Curvature Arc */}
-                  <path d="M-40,360 Q270,220 580,360" fill="#050b10" stroke="#38bdf8" strokeWidth="2" />
-                  <path d="M-40,360 Q270,220 580,360 L580,420 L-40,420 Z" fill="#050b10" opacity="0.6" />
-
-                  {/* Grid Footprint Cells (0.5 deg resolution) */}
-                  <g stroke="#38bdf8" strokeWidth="1" strokeDasharray="3 3" fill="rgba(56, 189, 248, 0.08)">
-                    <polygon points="170,270 270,240 370,270 270,305" />
-                    <polygon points="270,240 370,215 460,240 370,270" />
-                    <polygon points="80,300 170,270 270,305 180,340" />
-                  </g>
-
-                  {/* Active Target Ground Pin */}
-                  <circle cx="270" cy="275" r="7" fill="#f43f5e" />
-                  <circle cx="270" cy="275" r="18" fill="none" stroke="#f43f5e" strokeWidth="1.5" opacity="0.5" />
-                  <text x="282" y="278" fill="#eef3ee" fontSize="11" fontWeight="800">{locationName}</text>
-                  <text x="282" y="292" fill="#38bdf8" fontSize="9.5" fontWeight="600">{latitude.toFixed(2)}° N, {longitude.toFixed(2)}° E</text>
-
-                  {/* Sensor Swath Field of View cone */}
-                  <polygon points="270,60 170,270 370,270" fill="rgba(14, 165, 233, 0.12)" stroke="#38bdf8" strokeWidth="1" strokeDasharray="4 2" />
-
-                  {/* Detailed 3D Satellite Rendering */}
-                  <g transform="translate(270, 60)">
-                    <rect x="-16" y="-10" width="32" height="20" rx="3" fill="var(--text-muted, #94a3b8)" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1.5" />
-                    <line x1="0" y1="10" x2="0" y2="24" stroke="rgba(148, 163, 184, 0.3)" strokeWidth="2" />
-                    <circle cx="0" cy="26" r="4" fill="#38bdf8" />
-                    {/* Left Solar Panel */}
-                    <rect x="-56" y="-6" width="38" height="12" fill="#38bdf8" stroke="#38bdf8" strokeWidth="1" />
-                    <line x1="-37" y1="-6" x2="-37" y2="6" stroke="#38bdf8" strokeWidth="1" />
-                    {/* Right Solar Panel */}
-                    <rect x="18" y="-6" width="38" height="12" fill="#38bdf8" stroke="#38bdf8" strokeWidth="1" />
-                    <line x1="37" y1="-6" x2="37" y2="6" stroke="#38bdf8" strokeWidth="1" />
-                    <text x="-48" y="-16" fill="#eef3ee" fontSize="10" fontWeight="800">NASA TERRA / AQUA AGROCLIMATOLOGY SWATH</text>
-                  </g>
-                </svg>
-              </div>
-            )}
-          </div>
-
-          <div className="stage-footer-bar">
-            <span>📡 Telemetry Feed: Point Assimilation Series</span>
-            <span>Elevation: Ground Datum</span>
-            <span className="green-sync">● Sensor Synchronized</span>
-          </div>
-        </div>
-
+      {/* Main Grid: Primary Instruments & Telemetry */}
+      <div className="nasa-main-grid" style={{ gridTemplateColumns: '1fr' }}>
         {/* 3D Physical Weather Instrument Deck (5 Interactive 3D Instruments) */}
         <div className="nasa-instruments-deck">
           {/* Gauge 1: 3D Temperature & Thermal Envelope */}
@@ -887,28 +583,6 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
             <p>Growing degree days (Base 10°C). Favorable for vegetative biomass acceleration in Rabi/Kharif pulses.</p>
           </div>
         </div>
-
-        <div className="agro-card">
-          <div className="agro-icon-wrap" style={{ background: 'rgba(95, 191, 119, 0.15)', color: '#00df81' }}>
-            🚜
-          </div>
-          <div className="agro-content">
-            <h4>Field Machinery Trafficability</h4>
-            <div className="agro-val text-green">Favorable</div>
-            <p>Dry soil surface traction permits tractor implement passage and mechanized seed drilling.</p>
-          </div>
-        </div>
-
-        <div className="agro-card">
-          <div className="agro-icon-wrap" style={{ background: 'rgba(239, 122, 90, 0.15)', color: '#f43f5e' }}>
-            🛡️
-          </div>
-          <div className="agro-content">
-            <h4>Foliar Fungal Risk Index</h4>
-            <div className="agro-val text-amber">{humidVal > 80 ? 'Elevated' : 'Low'}</div>
-            <p>Prolonged relative humidity &gt; 80% with warm temperatures presents blight risk. Monitor dense canopy.</p>
-          </div>
-        </div>
       </div>
 
       {/* Scientific Provenance, Safety Boundaries & Mission Notice */}
@@ -920,7 +594,6 @@ export function NasaWeatherStation3D({ nasa = {}, env = {}, activeField = null, 
             </svg>
             <h3>Scientific Safety Boundaries &amp; NASA POWER Provenance</h3>
           </div>
-          <span className="safety-badge">ISO DATA QUALITY COMPLIANT</span>
         </div>
         <div className="safety-body">
           <p>

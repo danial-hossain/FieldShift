@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Field Climate Risk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<style>
+/* Layout: header → "what changed" (4 charts + GRACE) → plan risk calendar → recent weather. App palette: dark green surfaces, lime accent. */
+:root{
+  --bg:#0c120e; --surface:#131b16; --surface-2:#18221c; --line:#243029; --fg:#e7efe8; --muted:#93a597; --faint:#5f7064;
+  --accent:#c8e46a; --accent-ink:#0f1a07; --green:#3ecf8e; --amber:#f2b24c; --red:#f07a6a; --blue:#5fb0ef; --grid:#223028;
+  --display:"Outfit","Hind Siliguri",system-ui,sans-serif; --body:"Hind Siliguri","Outfit",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --bg:#f1f4ee; --surface:#ffffff; --surface-2:#f4f7f1; --line:#dde5da; --fg:#18231b; --muted:#5b6a5e; --faint:#8a988d;
+  --accent:#2f8a4d; --accent-ink:#ffffff; --green:#24834f; --amber:#b5761a; --red:#b9472f; --blue:#2d78b5; --grid:#e3e9e0; color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f1f4ee; --surface:#ffffff; --surface-2:#f4f7f1; --line:#dde5da; --fg:#18231b; --muted:#5b6a5e; --faint:#8a988d;
+  --accent:#2f8a4d; --accent-ink:#ffffff; --green:#24834f; --amber:#b5761a; --red:#b9472f; --blue:#2d78b5; --grid:#e3e9e0; color-scheme:light}
+:root{color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:14px;padding-block:18px 40px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--display);font-size:23px;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:18px;margin:0 0 4px}
+h3{font-size:14.5px;margin:0}
+.sub,.muted{color:var(--muted);font-size:13px}
+.head{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;justify-content:space-between}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-size:12px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;color:var(--muted)}
+.pill b{color:var(--fg);font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.sec-h{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;align-items:baseline;margin-bottom:12px}
+.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.verdict{display:flex;flex-direction:column;gap:10px}
+.vrow{display:flex;gap:10px;align-items:flex-start;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.vrow .ic{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-size:14px;background:var(--surface);border:1px solid var(--line)}
+.vrow p{margin:0;font-size:13.5px}
+.vrow small{display:block;color:var(--muted);font-size:12px}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;border-radius:99px;padding:1px 8px;margin-left:4px;vertical-align:1px}
+.tag.ok{color:var(--red);background:color-mix(in srgb,var(--red) 14%,transparent)}
+.tag.no{color:var(--muted);background:var(--surface);border:1px solid var(--line)}
+.tag.hint{color:var(--amber);background:color-mix(in srgb,var(--amber) 14%,transparent)}
+.grace{display:flex;flex-direction:column;gap:10px;background:linear-gradient(160deg,color-mix(in srgb,var(--blue) 14%,var(--surface)),var(--surface));}
+.big{font-family:var(--display);font-size:40px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.big small{font-size:15px;font-weight:600;color:var(--muted)}
+.cmp{display:flex;flex-direction:column;gap:6px}
+.cmp div{display:grid;grid-template-columns:110px minmax(0,1fr) 72px;gap:8px;align-items:center;font-size:12.5px}
+.cmp i{display:block;height:12px;border-radius:0 4px 4px 0}
+.cmp span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.btn{font:600 13.5px var(--body);border:0;border-radius:10px;padding:9px 14px;cursor:pointer;background:var(--accent);color:var(--accent-ink);align-self:flex-start}
+.btn.ghost{background:var(--surface-2);color:var(--fg);border:1px solid var(--line)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.ch{display:flex;flex-direction:column;gap:6px;position:relative}
+.ch .say{font-size:13.5px;margin:0}
+.ch .src{font-size:11.5px;color:var(--faint)}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--body);fill:var(--muted);font-size:11px}
+.tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font-size:12px;padding:4px 8px;border-radius:7px;white-space:nowrap;transform:translate(-50%,-110%);opacity:0;transition:opacity .1s;font-variant-numeric:tabular-nums}
+/* calendar */
+.cal{overflow-x:auto}
+.cg{display:grid;grid-template-columns:150px repeat(12,minmax(44px,1fr));gap:3px;min-width:720px;font-size:12px}
+.cg .h{color:var(--muted);text-align:center;padding:2px 0}
+.cg .lab{display:flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;padding-right:6px}
+.cg .lab small{font-weight:400;color:var(--muted)}
+.cell{height:30px;border-radius:5px;background:var(--surface-2);position:relative;display:grid;place-items:center;font-size:11px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.crop{border-radius:6px;display:flex;align-items:center;padding:0 8px;font-weight:600;font-size:12px;color:#10170f;height:30px;overflow:hidden;white-space:nowrap}
+.crop .fl{margin-left:auto;font-size:11px;background:rgba(255,255,255,.55);border-radius:99px;padding:0 6px}
+.sep{grid-column:1/-1;height:6px}
+.warns{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.warn{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--surface-2);font-size:13.5px}
+.warn b.lv{flex:none;font-size:11.5px;border-radius:99px;padding:1px 8px}
+.lv.hi{color:var(--red);background:color-mix(in srgb,var(--red) 15%,transparent)}
+.lv.md{color:var(--amber);background:color-mix(in srgb,var(--amber) 15%,transparent)}
+.lv.lo{color:var(--green);background:color-mix(in srgb,var(--green) 15%,transparent)}
+.warn .act{margin-left:auto;flex:none}
+.seg{display:inline-flex;gap:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button{font:600 12.5px var(--body);border:0;background:transparent;color:var(--fg);padding:5px 10px;border-radius:8px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:8px;align-items:center}
+.sw{display:inline-flex;gap:2px;vertical-align:middle;margin-right:4px}.sw i{width:14px;height:10px;border-radius:2px;display:inline-block}
+/* recent */
+.recent{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.rv{background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.rv span{display:block;font-size:12px;color:var(--muted)}
+.rv strong{font-size:20px;font-family:var(--display);font-variant-numeric:tabular-nums}
+.rv em{font-style:normal;font-size:12px;display:block}
+.stale{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--amber);background:color-mix(in srgb,var(--amber) 10%,transparent);border-radius:10px;padding:8px 12px;margin-bottom:10px}
+.note{font-size:12px;color:var(--faint)}
+@media (max-width:900px){.hero,.charts{grid-template-columns:minmax(0,1fr)}.recent{grid-template-columns:repeat(2,minmax(0,1fr))}.big{font-size:34px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>আবহাওয়া ও ঝুঁকি · রহিম মিয়ার জমি</h1>
+      <div class="sub">চাঁপাইনবাবগঞ্জ (বরেন্দ্র) · ২৪.৬২° উ, ৮৮.৫৫° পূ · আপনার জমির NASA তথ্য</div>
+    </div>
+    <div class="pills">
+      <span class="pill"><b>NASA POWER</b> ২০০১–২০২৫</span><span class="pill"><b>GPM IMERG</b> ২০০১–২০২৪</span><span class="pill"><b>GRACE-FO</b> ২০০২–২০২৬</span>
+    </div>
+  </div>
+
+  <!-- 1. what changed -->
+  <section class="card">
+    <div class="sec-h"><div><h2>১. আপনার জমির জলবায়ু কীভাবে বদলেছে</h2><div class="muted">২৪ বছরের তথ্য। "নিশ্চিত" মানে পরিসংখ্যানে প্রমাণিত (p &lt; ০.০৫)।</div></div></div>
+    <div class="hero">
+      <div class="verdict" id="verdict"></div>
+      <div class="card grace">
+        <h3>💧 মাটির নিচের পানি কমছে <span class="tag ok">সবচেয়ে বড় সংকেত</span></h3>
+        <div class="big">−১.০৭ <small>সেমি / বছর</small></div>
+        <p class="muted" style="margin:0">বরেন্দ্র অঞ্চলে মোট পানি সঞ্চয় (ভূগর্ভস্থ + ভূপৃষ্ঠ + মাটির পানি), ২০০২–২০২৬। শুকনো মৌসুমে গভীর নলকূপে বোরোর সেচ এর মূল কারণ।</p>
+        <div class="cmp" id="gcmp"></div>
+        <button class="btn" type="button" onclick="this.textContent='নমুনা: আবর্তন পরিকল্পনা খুলবে'">বোরোর বদলে কী লাগাবেন? → আবর্তন পরিকল্পনা</button>
+        <span class="note">উৎস: NASA GRACE/GRACE-FO JPL RL06.3M mascon</span>
+      </div>
+    </div>
+    <div class="charts" style="margin-top:14px">
+      <div class="ch" id="c1"></div><div class="ch" id="c2"></div><div class="ch" id="c3"></div><div class="ch" id="c4"></div>
+    </div>
+  </section>
+
+  <!-- 2. risk calendar -->
+  <section class="card">
+    <div class="sec-h"><div><h2>২. আপনার পরিকল্পনার ঝুঁকি ক্যালেন্ডার</h2><div class="muted">ফসল কোন মাসে মাঠে, আর সেই মাসে ২৪ বছরে কত বছর ঝুঁকি এসেছে।</div></div>
+      <div class="seg" role="group" aria-label="বছর"><button data-y="0" aria-pressed="true">সুষম · ১ম বছর</button><button data-y="1" aria-pressed="false">২য় বছর</button></div></div>
+    <div class="cal"><div class="cg" id="cal"></div></div>
+    <div class="legend"><span><span class="sw"><i style="background:var(--surface-2)"></i><i id="lg1"></i><i id="lg2"></i><i id="lg3"></i></span>২৪ বছরের মধ্যে কত বছর (০% → ১০০%)</span><span>🌸 = ফুল আসার সময় (সবচেয়ে নাজুক)</span></div>
+    <div class="warns" id="warns"></div>
+  </section>
+
+  <!-- 3. recent -->
+  <section class="card">
+    <div class="sec-h"><div><h2>৩. সাম্প্রতিক আবহাওয়া</h2><div class="muted">শেষ ৩০ দিন বনাম একই সময়ের ২৪ বছরের গড়</div></div></div>
+    <div class="stale">⚠ সর্বশেষ তথ্য: ৩১ ডিসেম্বর ২০২৫। এরপরের NASA POWER তথ্য এখনো এই জমির জন্য নামানো হয়নি (অফলাইন ক্যাশ)।</div>
+    <div class="recent" id="recent"></div>
+    <p class="note" style="margin:10px 0 0">উৎস: NASA POWER দৈনিক, ১–৩১ ডিসেম্বর ২০২৫। ET০ (FAO-56) অ্যাপে দেখাবে।</p>
+  </section>
+  <p class="note">ডিজাইন নমুনা। সংখ্যাগুলো FieldShift repo-র আসল তথ্য থেকে হিসাব করা (চাঁপাইনবাবগঞ্জ জেলার NASA POWER ও IMERG ফাইল, GRACE-এর বরেন্দ্র প্রবণতা, onset বিশ্লেষণ)। ঝুঁকি ক্যালেন্ডারের ফসলের মাস আর ফুল আসার সময় আনুমানিক।</p>
+</div>
+<script>
+const D={"years": [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024], "tmax": [31.4, 31.41, 31.46, 31.27, 31.62, 31.3, 30.97, 30.96, 31.96, 32.38, 31.19, 31.98, 31.29, 31.96, 32.11, 32.51, 31.54, 31.36, 31.84, 30.23, 31.04, 31.81, 32.33, 31.59], "tmin": [20.63, 20.71, 20.7, 20.74, 21.08, 20.88, 20.65, 20.65, 20.81, 21.11, 20.68, 20.28, 20.55, 20.76, 21.38, 21.56, 21.14, 20.54, 21.12, 20.59, 21.07, 20.85, 21.51, 21.23], "heat": [78, 83, 85, 94, 107, 77, 81, 74, 113, 101, 90, 101, 79, 88, 90, 113, 80, 72, 104, 54, 76, 113, 110, 98], "am_rain": [233, 257, 132, 177, 120, 254, 216, 166, 123, 117, 219, 90, 180, 161, 330, 186, 208, 254, 221, 265, 236, 193, 114, 125], "dryspell": [12, 12, 14, 15, 14, 15, 17, 14, 29, 14, 12, 23, 18, 15, 7, 27, 11, 11, 8, 10, 16, 18, 25, 36], "heavy": [1, 3, 0, 2, 4, 3, 5, 2, 2, 1, 1, 0, 0, 2, 4, 1, 3, 0, 1, 2, 1, 0, 4, 4], "annual": [1491, 1575, 1455, 1774, 1617, 1237, 1862, 1455, 1198, 991, 1513, 1076, 1188, 1263, 1550, 1331, 1452, 1041, 1300, 1464, 1331, 999, 1327, 1352], "tmax_trend": [0.159, 0.359], "tmin_trend": [0.184, 0.078], "heat_trend": [3.431, 0.534], "am_rain_trend": [2.0, 0.901], "dryspell_trend": [1.742, 0.343], "heavy_trend": [-0.0, 0.722], "annual_trend": [-112.381, 0.074], "month_heat5": [0.0, 0.0, 1.0, 1.0, 1.0, 0.92, 0.17, 0.0, 0.0, 0.0, 0.0, 0.0], "month_heatdays": [0.0, 0.5, 17.8, 27.3, 26.9, 15.2, 2.0, 0.3, 0.0, 0.0, 0.0, 0.0], "month_dry10": [1.0, 0.92, 0.92, 0.92, 0.25, 0.08, 0.12, 0.0, 0.04, 0.83, 1.0, 1.0], "month_heavy": [0.0, 0.0, 0.04, 0.04, 0.25, 0.42, 0.58, 0.33, 0.42, 0.33, 0.0, 0.0], "norm_rain": [8, 11, 25, 53, 138, 224, 299, 246, 231, 124, 4, 4], "recent": {"end": "2025-12-31", "tmax": 22.2, "tmin": 10.1, "rain": 0.0, "norm_tmax": 24.3, "norm_tmin": 11.8, "norm_rain": 6.3}};
+const bn=(n,d=0)=>Number(n).toLocaleString('bn-BD',{minimumFractionDigits:d,maximumFractionDigits:d});
+const by=n=>Number(n).toLocaleString('bn-BD',{useGrouping:false});
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* verdicts */
+const p=v=>v<0.05;
+const V=[
+  ['🌡️',`সর্বোচ্চ তাপমাত্রা দশকে <b>${bn(D.tmax_trend[0],2)}°C</b> বেড়েছে`,D.tmax_trend[1]],
+  ['🌙',`রাতের তাপমাত্রা দশকে <b>${bn(D.tmin_trend[0],2)}°C</b> বেড়েছে`,D.tmin_trend[1]],
+  ['🔥',`৩৫°C-এর বেশি গরম দিন দশকে <b>${bn(D.heat_trend[0],1)}টা</b> বেড়েছে`,D.heat_trend[1]],
+  ['🌧️',`বছরের মোট বৃষ্টি দশকে <b>${bn(Math.abs(D.annual_trend[0]))} মিমি</b> কমেছে`,D.annual_trend[1]],
+  ['📅','আমন রোপণের বৃষ্টি শুরুর তারিখ: দুই NASA dataset একমত নয় (IMERG +২.৫ দিন, POWER +১৩ দিন)',0.73]
+];
+document.getElementById('verdict').innerHTML=V.map(([ic,t,pv])=>`<div class="vrow"><span class="ic">${ic}</span><p>${t} ${p(pv)?'<span class="tag ok">নিশ্চিত</span>':pv<0.1?'<span class="tag hint">ইঙ্গিত, নিশ্চিত নয়</span>':'<span class="tag no">নিশ্চিত নয়</span>'}<small>p = ${bn(pv,2)} · ২০০১–২০২৪</small></p></div>`).join('')+
+ `<p class="muted" style="margin:2px 0 0;font-size:12.5px">মানে: তাপমাত্রা আর বৃষ্টিতে বদলের ইঙ্গিত আছে, কিন্তু ২৪ বছরে তা নিশ্চিত নয়। সবচেয়ে পরিষ্কার পরিবর্তন মাটির নিচের পানিতে।</p>`;
+document.getElementById('gcmp').innerHTML=[['বরেন্দ্র',-1.07],['সারা দেশ',-0.35],['উপকূল',-0.15],['হাওর',0.44]].map(([n,v])=>`<div><span>${n}</span><i style="width:${Math.abs(v)/1.07*100}%;background:${v<0?css('--red'):css('--green')};${v<0?'':'opacity:.8'}"></i><span>${v<0?'−':'+'}${bn(Math.abs(v),2)}</span></div>`).join('');
+
+/* charts */
+function chart(id,{title,say,src,vals,kind,color,unit,trend,dec=0,ymin}){
+  const el=document.getElementById(id),W=520,H=170,L=34,R=8,T=10,B=22,yrs=D.years,n=vals.length;
+  const lo=ymin??Math.min(...vals),hi=Math.max(...vals),pad=(hi-lo)*0.12||1,y0=kind==='bar'?0:lo-pad,y1=hi+pad;
+  const X=i=>L+(i+0.5)*(W-L-R)/n,Y=v=>T+(1-(v-y0)/(y1-y0))*(H-T-B),bw=(W-L-R)/n-2;
+  const ticks=[y0,(y0+y1)/2,y1].map(v=>Math.round(v*(dec?10:1))/(dec?10:1));
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${title}">`;
+  ticks.forEach(t=>s+=`<line x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="${css('--grid')}" stroke-width="1"/><text x="${L-6}" y="${Y(t)+4}" text-anchor="end">${bn(t,dec)}</text>`);
+  [0,5,10,15,20,23].forEach(i=>s+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${by(yrs[i])}</text>`);
+  if(kind==='bar')vals.forEach((v,i)=>{const h=Y(0)-Y(v);s+=`<path d="M${X(i)-bw/2},${Y(0)} v${-(h-4)} q0,-4 4,-4 h${bw-8} q4,0 4,4 v${h-4} z" fill="${color}" opacity=".85"/>`});
+  else{s+=`<polyline points="${vals.map((v,i)=>X(i)+','+Y(v)).join(' ')}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/>`;}
+  if(trend){const m=trend/10,mean=vals.reduce((a,b)=>a+b,0)/n,xm=(n-1)/2;const a=mean-m*xm;s+=`<line x1="${X(0)}" y1="${Y(a)}" x2="${X(n-1)}" y2="${Y(a+m*(n-1))}" stroke="${css('--fg')}" stroke-width="1.5" stroke-dasharray="5 4" opacity=".6"/>`}
+  vals.forEach((v,i)=>s+=`<rect class="hit" data-i="${i}" x="${X(i)-(W-L-R)/n/2}" y="${T}" width="${(W-L-R)/n}" height="${H-T-B}" fill="transparent"/>`);
+  s+='<circle class="hov" r="4" fill="'+color+'" stroke="'+css('--surface')+'" stroke-width="2" opacity="0"/></svg>';
+  el.innerHTML=`<h3>${title}</h3><p class="say">${say}</p>${s}<div class="tip"></div><span class="src">${src}</span>`;
+  const tip=el.querySelector('.tip'),hov=el.querySelector('.hov'),svg=el.querySelector('svg');
+  el.querySelectorAll('.hit').forEach(r=>{r.addEventListener('pointerenter',()=>{const i=+r.dataset.i,b=svg.getBoundingClientRect(),eb=el.getBoundingClientRect(),sc=b.width/W;
+      tip.textContent=`${by(yrs[i])}: ${bn(vals[i],dec)} ${unit}`;tip.style.left=(b.left-eb.left+X(i)*sc)+'px';tip.style.top=(b.top-eb.top+Y(vals[i])*sc)+'px';tip.style.opacity=1;
+      hov.setAttribute('cx',X(i));hov.setAttribute('cy',Y(vals[i]));hov.setAttribute('opacity',1)});
+    r.addEventListener('pointerleave',()=>{tip.style.opacity=0;hov.setAttribute('opacity',0)})});
+}
+function draw(){
+  chart('c1',{title:'🌡️ গড় সর্বোচ্চ তাপমাত্রা (বছরে)',say:`দশকে +${bn(D.tmax_trend[0],2)}°C, কিন্তু ওঠানামা বেশি — নিশ্চিত নয়।`,src:'NASA POWER T2M_MAX · ড্যাশ লাইন = প্রবণতা',vals:D.tmax,kind:'line',color:css('--amber'),unit:'°C',trend:D.tmax_trend[0],dec:1});
+  chart('c2',{title:'🔥 ৩৫°C-এর বেশি গরম দিন (বছরে)',say:`গড়ে বছরে ${bn(Math.round(D.heat.reduce((a,b)=>a+b)/24))} দিন, বেশিরভাগ মার্চ–জুনে। ২০২২–২৩-এ ১১০+ দিন।`,src:'NASA POWER দৈনিক T2M_MAX',vals:D.heat,kind:'bar',color:css('--red'),unit:'দিন'});
+  chart('c3',{title:'🌦️ এপ্রিল–মে-র বৃষ্টি (খরিফ-১)',say:`ওঠানামা অনেক (${bn(Math.min(...D.am_rain))}–${bn(Math.max(...D.am_rain))} মিমি)। ২০২৪-এ টানা ${bn(D.dryspell[23])} দিন প্রায় শুকনো।`,src:'GPM IMERG দৈনিক বৃষ্টি',vals:D.am_rain,kind:'bar',color:css('--blue'),unit:'মিমি'});
+  chart('c4',{title:'🌧️ বছরের মোট বৃষ্টি',say:`দশকে ${bn(Math.abs(D.annual_trend[0]))} মিমি কমার ইঙ্গিত (p = ${bn(D.annual_trend[1],2)}) — নিশ্চিত নয়।`,src:'GPM IMERG · ড্যাশ লাইন = প্রবণতা',vals:D.annual,kind:'line',color:css('--blue'),unit:'মিমি',trend:D.annual_trend[0]});
+}
+
+/* risk calendar (Nov..Oct) */
+const MON=['নভে','ডিসে','জানু','ফেব্রু','মার্চ','এপ্রি','মে','জুন','জুলা','আগ','সেপ্টে','অক্টো'],MI=[11,12,1,2,3,4,5,6,7,8,9,10];
+const PLAN=[
+  [{n:'সরিষা',c:'#f2c94c',from:0,to:3,fl:[1,2]},{n:'মুগ ডাল',c:'#9fd36a',from:5,to:7,fl:[6]},{n:'আমন ধান',c:'#5fbf6a',from:8,to:11,fl:[10]}],
+  [{n:'ছোলা',c:'#c9d88a',from:0,to:4,fl:[3]},{n:'তিল',c:'#e8e2cf',from:5,to:7,fl:[6,7]},{n:'আমন ধান',c:'#5fbf6a',from:8,to:11,fl:[10]}]
+];
+const HZ=[['🔥 গরম','৫+ দিন ৩৫°C+',D.month_heat5,'--red'],['🌵 শুকনো টান','১০+ দিন প্রায় বৃষ্টি নেই',D.month_dry10,'--amber'],['🌊 অতিবৃষ্টি','১ দিনে ৫০+ মিমি',D.month_heavy,'--blue']];
+let yr=0;
+function shade(v,c){return v<=0?css('--surface-2'):`color-mix(in srgb,${css(c)} ${Math.round(18+v*72)}%,${css('--surface-2')})`}
+function cal(){
+  const g=document.getElementById('cal');let h='<div></div>'+MON.map(m=>`<div class="h">${m}</div>`).join('');
+  h+=`<div class="lab">🌱 ফসল <small>সুষম</small></div>`;
+  let col=0;const crops=PLAN[yr];
+  crops.forEach(c=>{if(c.from>col)h+=`<div style="grid-column:span ${c.from-col}"></div>`;
+    h+=`<div class="crop" style="grid-column:span ${c.to-c.from+1};background:${c.c}">${c.n}<span class="fl">🌸 ${c.fl.map(i=>MON[i]).join('–')}</span></div>`;col=c.to+1});
+  if(col<12)h+=`<div style="grid-column:span ${12-col}"></div>`;
+  h+='<div class="sep"></div>';
+  HZ.forEach(([n,sub,arr,c])=>{h+=`<div class="lab">${n}<small>${sub}</small></div>`+MI.map(m=>{const v=arr[m-1];return `<div class="cell" style="background:${shade(v,c)}" title="${n}: ${MON[MI.indexOf(m)]} — ২৪ বছরে ${bn(Math.round(v*24))} বছর">${v>0?bn(Math.round(v*100))+'%':''}</div>`}).join('')});
+  g.innerHTML=h;
+  ['lg1','lg2','lg3'].forEach((id,i)=>document.getElementById(id).style.background=shade([0.25,0.6,1][i],'--red'));
+  // warnings: flowering month x hazard
+  const MLOC=['নভেম্বরে','ডিসেম্বরে','জানুয়ারিতে','ফেব্রুয়ারিতে','মার্চে','এপ্রিলে','মে মাসে','জুনে','জুলাইয়ে','আগস্টে','সেপ্টেম্বরে','অক্টোবরে'];
+  const poss=n=>n+(/[\u09BE-\u09CC]$/.test(n)?'র':'ের');
+  const W=[];crops.forEach(c=>c.fl.forEach(i=>{const m=MI[i];HZ.forEach(([n,sub,arr])=>{const v=arr[m-1];if(v>=0.35)W.push({c,i,n,sub,v})})}));
+  const uniq={};W.forEach(w=>{const k=w.c.n+w.n;if(!uniq[k]||uniq[k].v<w.v)uniq[k]=w});
+  const txt=w=>{const lv=w.v>=0.6?'hi':w.v>=0.35?'md':'lo';const what=w.n.includes('গরম')?'ফুল ঝরে, দানা কম হয় — বীজ বোনার তারিখ এগিয়ে আনুন বা তাপ-সহনশীল জাত':w.n.includes('শুকনো')?(w.c.n==='ছোলা'?'ছোলা মাটির রসে হয়, তবে ফুলের সময় একটা হালকা সেচ ফলন বাঁচায়':'এই সময় বৃষ্টি প্রায় হয় না, তাই ফুলের সময় সেচ দিতেই হবে'):(w.c.n.includes('ধান')?'ভারী বৃষ্টি-বাতাসে গাছ হেলে পড়তে পারে, পরাগ ধুয়ে যায় — হেলে-পড়া-সহনশীল জাত ভালো':'জমিতে পানি জমলে শিকড় নষ্ট — নালা পরিষ্কার রাখুন');
+    return `<div class="warn"><b class="lv ${lv}">${lv==='hi'?'বেশি':lv==='md'?'মাঝারি':'কম'}</b><div>⚠ <b>${poss(w.c.n)}</b> ফুল আসে ${MLOC[w.i]} — ${w.n.replace(/^\S+ /,'')} (${w.sub}) ${w.v>=0.99?'<b>প্রায় প্রতি বছর</b>':'২৪ বছরে <b>'+bn(Math.round(w.v*24))+' বছর</b>'}। ${what}।</div><button class="btn ghost act" type="button" onclick="this.textContent='নমুনা: চাপ পরীক্ষা খুলবে'">চাপ পরীক্ষা →</button></div>`};
+  document.getElementById('warns').innerHTML=Object.values(uniq).sort((a,b)=>b.v-a.v).map(txt).join('')||'<p class="muted">ফুলের সময় বড় ঝুঁকি নেই।</p>';
+}
+document.querySelectorAll('[data-y]').forEach(b=>b.onclick=()=>{yr=+b.dataset.y;document.querySelectorAll('[data-y]').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));cal()});
+
+/* recent */
+const r=D.recent;
+const rv=(lab,v,n,u,d=1)=>{const df=v-n;return `<div class="rv"><span>${lab}</span><strong>${bn(v,d)}${u}</strong><em style="color:${Math.abs(df)<0.5?css('--muted'):df>0?css('--amber'):css('--blue')}">স্বাভাবিক ${bn(n,d)}${u} (${df>0?'+':'−'}${bn(Math.abs(df),d)})</em></div>`};
+document.getElementById('recent').innerHTML=rv('দিনের গড় সর্বোচ্চ',r.tmax,r.norm_tmax,'°C')+rv('রাতের গড় সর্বনিম্ন',r.tmin,r.norm_tmin,'°C')+rv('৩০ দিনের বৃষ্টি',r.rain,r.norm_rain,' মিমি')+
+  `<div class="rv"><span>মানে</span><strong style="font-size:15px">স্বাভাবিকের চেয়ে ঠান্ডা ও শুকনো</strong><em class="muted">রবি ফসলে সেচ লাগবে</em></div>`;
+
+draw();cal();
+matchMedia('(prefers-color-scheme: light)').addEventListener('change',()=>{draw();cal()});
+</script>
+</body>
+</html>

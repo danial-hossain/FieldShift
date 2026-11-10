@@ -8,10 +8,8 @@ import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
 import AiAssistantView from './AiAssistantView.jsx';
 import { CropFailureRecoveryView } from './CropFailureRecoveryView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
-import { WeatherUncertaintyView } from './WeatherUncertaintyView.jsx';
 import { SustainabilityTrackerView } from './SustainabilityTrackerView.jsx';
 import { CropCatalogView } from './CropCatalogView.jsx';
-import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
 import { ActualOutcomesView } from './ActualOutcomesView.jsx';
 import { MarketIntelligenceView } from './MarketIntelligenceView.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
@@ -519,7 +517,6 @@ export function App() {
 
   // Sub-navigation state for 12 unified destinations
   const [cropSubTab, setCropSubTab] = useState('advisory'); // 'advisory' | 'advice' | 'catalog'
-  const [weatherSubTab, setWeatherSubTab] = useState('station_3d'); // 'station_3d' | 'uncertainty' | 'satellites'
   const [harvestSubTab, setHarvestSubTab] = useState('calculator'); // 'calculator' | 'market' | 'outcomes' | 'sustainability'
   const [assistantParams, setAssistantParams] = useState(null); // { question, context, fromPage }
   const [farmPlanningSubTab, setFarmPlanningSubTab] = useState('milp'); // 'milp' | 'replan' | 'comparison'
@@ -606,7 +603,11 @@ export function App() {
       }
       if (tab === 'weather' || tab === 'uncertainty') {
         setActiveNav('weather');
-        setWeatherSubTab('uncertainty');
+        return;
+      }
+      if (tab === 'satellites') {
+        setActiveNav('data_evidence');
+        setDataEvidenceSubTab('satellites');
         return;
       }
       if (tab === 'field' || tab === 'field_map') {
@@ -656,7 +657,6 @@ export function App() {
     // Direct routing for the 12 primary keys with sub-tab support
     if (tab) {
       if (nav === 'crop_advice') setCropSubTab(tab);
-      else if (nav === 'weather') setWeatherSubTab(tab);
       else if (nav === 'harvest_profit') setHarvestSubTab(tab);
       else if (nav === 'farm_planning') setFarmPlanningSubTab(tab);
       else if (nav === 'water_irrigation') setWaterSubTab(tab);
@@ -3764,54 +3764,13 @@ export function App() {
 
         {/* -------------------- VIEW 4: NASA POWER WEATHER & CLIMATE -------------------- */}
         {activeNav === 'weather' && (
-          <div>
-            <div className="subnav-pills-bar" style={{ display: 'flex', gap: 8, padding: '10px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-medium)', marginBottom: 16, overflowX: 'auto' }}>
-              <button
-                type="button"
-                className={`btn ${weatherSubTab === 'station_3d' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setWeatherSubTab('station_3d')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                🛰️ {lang === 'bn' ? '৩ডি আবহাওয়া স্টেশন' : '3D Weather Station'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${weatherSubTab === 'uncertainty' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setWeatherSubTab('uncertainty')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                📊 {lang === 'bn' ? 'আবহাওয়া ঝুঁকি ও অনিশ্চয়তা' : 'Weather Uncertainty'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${weatherSubTab === 'satellites' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setWeatherSubTab('satellites')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                🛰️ {lang === 'bn' ? 'স্যাটেলাইট প্রস্তুতি' : 'Satellite Telemetry & Readiness'}
-              </button>
-            </div>
-            {weatherSubTab === 'station_3d' && (
-              <NasaWeatherStation3D
-                nasa={nasa}
-                env={env}
-                activeField={activeField}
-                onBack={() => handleNavigate('dashboard')}
-              />
-            )}
-            {weatherSubTab === 'uncertainty' && (
-              <WeatherUncertaintyView
-                activeField={activeField}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-              />
-            )}
-            {weatherSubTab === 'satellites' && (
-              <SatelliteReadinessView
-                activeField={activeField}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-              />
-            )}
-          </div>
+          <NasaWeatherStation3D
+            nasa={nasa}
+            env={env}
+            activeField={activeField}
+            onBack={() => handleNavigate('dashboard')}
+            lang={lang}
+          />
         )}
 
         {/* -------------------- VIEW 6: AI ASSISTANT & DECISION SUPPORT -------------------- */}

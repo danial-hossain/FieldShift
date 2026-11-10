@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
+import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
 import cropStressData from './cropStressData.js';
@@ -41,6 +42,7 @@ export function DataEvidenceView({
     { id: 'methodology', labelBn: 'বৈজ্ঞানিক পদ্ধতি ও নিয়ম', labelEn: '5. Scientific Methodology', icon: '🔬' },
     { id: 'stress_models', labelBn: 'চাপ পরীক্ষার মডেল (Stress Models)', labelEn: '6. Stress Testing Models', icon: '🌪️' },
     { id: 'limitations', labelBn: 'সীমাবদ্ধতা ও পরিধি (Limitations)', labelEn: '7. Limitations & Boundaries', icon: '⚠️' },
+    { id: 'satellites', labelBn: 'স্যাটেলাইট প্রস্তুতি ও টেলিমেট্রি (Readiness)', labelEn: '8. Satellite Telemetry & Readiness', icon: '🛰️' },
   ];
 
   const DATASET_REGISTRY = [
@@ -764,6 +766,15 @@ export function DataEvidenceView({
             </div>
           </div>
         </div>
+      )}
+
+      {/* SUB-TAB 8: Satellite Telemetry & Readiness */}
+      {subTab === 'satellites' && (
+        <SatelliteReadinessView
+          activeField={activeField}
+          lang={lang}
+          onNavigateTab={onNavigate}
+        />
       )}
 
     </div>

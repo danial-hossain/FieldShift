@@ -39,7 +39,8 @@ test('Backward Compatibility: Legacy analytics sub-tab mappings route determinis
       if (tab === 'outcomes') return { targetNav: 'harvest_profit', subTab: 'outcomes' };
       if (tab === 'sustainability') return { targetNav: 'harvest_profit', subTab: 'sustainability' };
       if (tab === 'crops' || tab === 'crop_catalog') return { targetNav: 'crop_advice', subTab: 'catalog' };
-      if (tab === 'weather' || tab === 'uncertainty') return { targetNav: 'weather', subTab: 'uncertainty' };
+      if (tab === 'weather' || tab === 'uncertainty') return { targetNav: 'weather', subTab: null };
+      if (tab === 'satellites') return { targetNav: 'data_evidence', subTab: 'satellites' };
       return { targetNav: 'research', subTab: tab || 'six_seasons_milp' };
     }
     if (nav === 'market') return { targetNav: 'harvest_profit', subTab: 'market' };
@@ -80,23 +81,23 @@ test('Data Provenance: 4-Tier Hierarchy is strictly defined and verifiable', () 
 test('Sub-Navigation Architecture: Each of the multi-tab views has distinct sub-tabs', () => {
   const SUBNAV_STRUCTURE = {
     crop_advice: ['advisory', 'advice', 'catalog'],
-    weather: ['station_3d', 'uncertainty', 'satellites'],
+    weather: ['station_3d'],
     farm_planning: ['milp', 'replan', 'comparison'],
     water_irrigation: ['balance', 'optimization', 'profile', 'stress'],
     digital_twin: ['farm', 'growth', 'hydrology', 'climate', 'compare'],
     harvest_profit: ['calculator', 'market', 'outcomes', 'sustainability'],
     assistant: ['chat', 'voice'],
-    data_evidence: ['sources', 'provenance', 'reports', 'methodology'],
+    data_evidence: ['sources', 'provenance', 'reports', 'methodology', 'satellites'],
     field: ['overview', 'parcels', 'map', 'soil', 'history'],
   };
 
   assert.equal(SUBNAV_STRUCTURE.crop_advice.length, 3);
-  assert.equal(SUBNAV_STRUCTURE.weather.length, 3);
+  assert.equal(SUBNAV_STRUCTURE.weather.length, 1);
   assert.equal(SUBNAV_STRUCTURE.farm_planning.length, 3);
   assert.equal(SUBNAV_STRUCTURE.water_irrigation.length, 4);
   assert.equal(SUBNAV_STRUCTURE.digital_twin.length, 5);
   assert.equal(SUBNAV_STRUCTURE.harvest_profit.length, 4);
   assert.equal(SUBNAV_STRUCTURE.assistant.length, 2);
-  assert.equal(SUBNAV_STRUCTURE.data_evidence.length, 4);
+  assert.equal(SUBNAV_STRUCTURE.data_evidence.length, 5);
   assert.equal(SUBNAV_STRUCTURE.field.length, 5);
 });
