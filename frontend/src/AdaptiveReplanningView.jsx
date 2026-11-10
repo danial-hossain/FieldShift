@@ -964,10 +964,6 @@ export function AdaptiveReplanningView({
               );
             })}
           </div>
-                {lang === 'bn' ? ir.labelBn : ir.labelEn}
-              </button>
-            ))}
-          </div>
           <span style={{ fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
             {lang === 'bn' ? `জমির ডিফল্ট: ${defaultIrrigClass === 'full' ? 'পর্যাপ্ত' : defaultIrrigClass === 'limited' ? 'সীমিত' : 'নেই'}` : `Field default: ${defaultIrrigClass === 'full' ? 'Ample' : defaultIrrigClass === 'limited' ? 'Limited' : 'None'}`}
           </span>
