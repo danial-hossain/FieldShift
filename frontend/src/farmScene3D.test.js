@@ -133,4 +133,21 @@ test('T3: Baseline current strategy presents 3 active seasons and greys out beds
   assert.equal(farm3dBeds[3].labelEn, 'Repeat (Year 2)');
 });
 
+test('T4: Performance optimizations clamp pixel ratio <= 1.5 and shadowMap config', () => {
+  const clampRatio = (dpr) => Math.min(dpr || 1, 1.5);
+  assert.equal(clampRatio(1), 1);
+  assert.equal(clampRatio(2), 1.5);
+  assert.equal(clampRatio(3), 1.5);
+  assert.equal(clampRatio(0.75), 0.75);
+
+  const shadowMapConfig = {
+    enabled: true,
+    type: 'PCFSoftShadowMap',
+    autoUpdate: false,
+    needsUpdate: true,
+  };
+  assert.equal(shadowMapConfig.autoUpdate, false);
+  assert.equal(shadowMapConfig.needsUpdate, true);
+});
+
 

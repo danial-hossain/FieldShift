@@ -546,8 +546,8 @@ export function FarmScene3D({
     // 1. Scene & Atmosphere (True daylight aesthetic in both themes)
     const scene = new THREE.Scene();
     const SKY_TOP = new THREE.Color('#7fb2e5');
-    const SKY_HOR = new THREE.Color('#e9e4d2');
-    scene.fog = new THREE.Fog('#dfe3d6', 120, 320);
+    const SKY_HOR = new THREE.Color('#d7e3dc');
+    scene.fog = new THREE.Fog('#d7e3dc', 90, 280);
 
     // Sky Dome
     const skyMat = new THREE.ShaderMaterial({
@@ -582,9 +582,11 @@ export function FarmScene3D({
     renderer.setSize(width, sceneHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.0;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.shadowMap.needsUpdate = true;
     container.appendChild(renderer.domElement);
 
     // Environment map from sky for soft PBR reflections
@@ -601,21 +603,22 @@ export function FarmScene3D({
     scene.environment = envTexture;
     disposables.push(pm, envTexture);
 
-    // 3. Lighting
-    const hemi = new THREE.HemisphereLight('#cfe3ff', '#5b4a32', 0.55);
+    // 3. Lighting (Warm low sun ~24° elevation + soft sky/ground hemisphere)
+    const hemi = new THREE.HemisphereLight('#a8d5ff', '#594833', 0.65);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight('#fff1d6', 2.6);
-    sun.position.set(55, 70, 35);
+    const sun = new THREE.DirectionalLight('#fff3d1', 1.4);
+    sun.position.set(58, 32.5, 42);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 10, far: 220 });
     sun.shadow.camera.updateProjectionMatrix();
-    sun.shadow.bias = -0.0004;
-    sun.shadow.normalBias = 0.03;
+    sun.shadow.bias = -0.0003;
+    sun.shadow.normalBias = 0.025;
     scene.add(sun);
 
     // 4. Camera & OrbitControls
+    const prefersReducedMotion = typeof window !== 'undefined' && Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     const camera = new THREE.PerspectiveCamera(38, width / sceneHeight, 0.5, 1500);
     camera.position.set(62, 48, 72);
 
@@ -626,8 +629,7 @@ export function FarmScene3D({
     controls.maxPolarAngle = Math.PI * 0.46; // polar limit prevents going under ground
     controls.minDistance = 28;
     controls.maxDistance = 190;
-    const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    controls.autoRotate = !prefersReducedMotion;
+    controls.autoRotate = false;
     controls.autoRotateSpeed = 0.35;
 
     const stopAutoRotate = () => {
@@ -668,6 +670,15 @@ export function FarmScene3D({
     scene.add(groundMesh);
     disposables.push(groundGeo, groundMat);
 
+    // 6. 6 Beds Coordinates Setup (2 rows x 3 columns)
+    const BED = { w: 18, d: 15 };
+    const bedCenters = [];
+    for (let r = 0; r < 2; r++) {
+      for (let c = 0; c < 3; c++) {
+        bedCenters.push(new THREE.Vector3((c - 1) * (BED.w + 3), 0, r === 0 ? -4 : 15));
+      }
+    }
+
     // Pond with reflection
     const waterMat = new THREE.MeshStandardMaterial({
       color: '#3f6f7c',
@@ -682,31 +693,17 @@ export function FarmScene3D({
     pond.position.set(-44, 0.06, -14);
     pond.receiveShadow = true;
     scene.add(pond);
+    disposables.push(waterMat, pond.geometry);
 
-    const bankGeo = new THREE.RingGeometry(9, 10.4, 48);
-    const bankMat = new THREE.MeshStandardMaterial({ color: '#7a6142', roughness: 1 });
-    const bank = new THREE.Mesh(bankGeo, bankMat);
-    bank.rotation.x = -Math.PI / 2;
-    bank.scale.set(1.5, 1, 1);
-    bank.position.set(-44, 0.04, -14);
-    scene.add(bank);
-    disposables.push(waterMat, pond.geometry, bankGeo, bankMat);
+    // 5. Unified Static Scenery BufferGeometry (Village House, Veranda, Tubewell, Straw Stack, Pond Bank, Bed Bunds)
+    const sceneryGeos = [];
 
-    // Village Tin-Roof House with Veranda
-    const houseGrp = new THREE.Group();
-    const wallMat = new THREE.MeshStandardMaterial({ color: '#e9dcc6', roughness: 0.92 });
-    const plinthMat = new THREE.MeshStandardMaterial({ color: '#9b8b77', roughness: 1 });
-    const tinMat = new THREE.MeshStandardMaterial({ color: '#8a9499', roughness: 0.38, metalness: 0.75 });
-    const woodMat = new THREE.MeshStandardMaterial({ color: '#6b4a2f', roughness: 0.85 });
+    // House Base
+    sceneryGeos.push(prep(new THREE.BoxGeometry(16, 0.8, 11).translate(0, 0.4, -26), '#9b8b77'));
+    // House Body
+    sceneryGeos.push(prep(new THREE.BoxGeometry(14, 5.2, 8).translate(0, 3.4, -26.8), '#e9dcc6'));
 
-    const base = new THREE.Mesh(new THREE.BoxGeometry(16, 0.8, 11), plinthMat);
-    base.position.y = 0.4;
-    houseGrp.add(base);
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(14, 5.2, 8), wallMat);
-    body.position.set(0, 3.4, -0.8);
-    houseGrp.add(body);
-
+    // Corrugated Roof Slopes & Ribs
     const ribGeo = [];
     for (let i = 0; i < 34; i++) {
       const b = new THREE.BoxGeometry(0.16, 0.12, 6.6);
@@ -715,105 +712,109 @@ export function FarmScene3D({
     }
     const ribs = mergeGeometries(ribGeo);
     [-1, 1].forEach((side) => {
-      const slope = new THREE.Group();
-      const sheet = new THREE.Mesh(new THREE.BoxGeometry(16.6, 0.12, 6.6), tinMat);
-      slope.add(sheet);
-      const r = new THREE.Mesh(ribs, tinMat);
-      r.position.y = 0.1;
-      slope.add(r);
-      slope.position.set(0, 7.3, -0.8 + side * 2.9);
-      slope.rotation.x = side * 0.52;
-      houseGrp.add(slope);
+      const sheet = new THREE.BoxGeometry(16.6, 0.12, 6.6);
+      sheet.rotateX(side * 0.52);
+      sheet.translate(0, 7.3, -26.8 + side * 2.9);
+      sceneryGeos.push(prep(sheet, '#8a9499'));
+
+      const r = ribs.clone();
+      r.translate(0, 0.1, 0);
+      r.rotateX(side * 0.52);
+      r.translate(0, 7.3, -26.8 + side * 2.9);
+      sceneryGeos.push(prep(r, '#8a9499'));
     });
 
+    // Gable ends
     const tri = new THREE.Shape();
     tri.moveTo(-4, 0);
     tri.lineTo(4, 0);
     tri.lineTo(0, 2.6);
     tri.lineTo(-4, 0);
     [-7, 7].forEach((x) => {
-      const g = new THREE.Mesh(new THREE.ShapeGeometry(tri), wallMat);
-      g.rotation.y = Math.PI / 2;
-      g.position.set(x, 6, -0.8);
-      houseGrp.add(g);
-      const g2 = g.clone();
-      g2.rotation.y = -Math.PI / 2;
-      houseGrp.add(g2);
+      const g = new THREE.ShapeGeometry(tri);
+      g.rotateY(Math.PI / 2);
+      g.translate(x, 6, -26.8);
+      sceneryGeos.push(prep(g, '#e9dcc6'));
     });
 
-    const ver = new THREE.Mesh(new THREE.BoxGeometry(15, 0.12, 3.4), tinMat);
-    ver.position.set(0, 5.1, 4.6);
-    ver.rotation.x = 0.18;
-    houseGrp.add(ver);
+    // Veranda roof & posts
+    const ver = new THREE.BoxGeometry(15, 0.12, 3.4);
+    ver.rotateX(0.18);
+    ver.translate(0, 5.1, -26 + 4.6);
+    sceneryGeos.push(prep(ver, '#8a9499'));
 
     for (let i = 0; i < 5; i++) {
-      const pPost = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 4.4, 8), woodMat);
-      pPost.position.set(-6.8 + i * 3.4, 2.9, 6.0);
-      houseGrp.add(pPost);
+      const pPost = new THREE.CylinderGeometry(0.16, 0.18, 4.4, 8);
+      pPost.translate(-6.8 + i * 3.4, 2.9, -26 + 6.0);
+      sceneryGeos.push(prep(pPost, '#6b4a2f'));
     }
 
-    const door = new THREE.Mesh(new THREE.BoxGeometry(2, 3.4, 0.2), woodMat);
-    door.position.set(0, 2.5, 3.25);
-    houseGrp.add(door);
+    // Door & Windows
+    const door = new THREE.BoxGeometry(2, 3.4, 0.2);
+    door.translate(0, 2.5, -26 + 3.25);
+    sceneryGeos.push(prep(door, '#6b4a2f'));
 
     [-4.4, 4.4].forEach((x) => {
-      const w = new THREE.Mesh(
-        new THREE.BoxGeometry(2, 1.6, 0.2),
-        new THREE.MeshStandardMaterial({ color: '#2e3b40', roughness: 0.25, metalness: 0.2 })
-      );
-      w.position.set(x, 3.6, 3.25);
-      houseGrp.add(w);
-      const fr = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.9, 0.12), woodMat);
-      fr.position.set(x, 3.6, 3.18);
-      houseGrp.add(fr);
+      const w = new THREE.BoxGeometry(2, 1.6, 0.2);
+      w.translate(x, 3.6, -26 + 3.25);
+      sceneryGeos.push(prep(w, '#2e3b40'));
+
+      const fr = new THREE.BoxGeometry(2.3, 1.9, 0.12);
+      fr.translate(x, 3.6, -26 + 3.18);
+      sceneryGeos.push(prep(fr, '#6b4a2f'));
     });
 
-    houseGrp.traverse((o) => {
-      if (o.isMesh) {
-        o.castShadow = true;
-        o.receiveShadow = true;
-      }
+    // Straw stack & pole
+    const stack = new THREE.CylinderGeometry(0.4, 2.4, 4.6, 18);
+    stack.translate(15, 2.3, -24);
+    sceneryGeos.push(prep(stack, '#d1a85a'));
+
+    const pole = new THREE.CylinderGeometry(0.08, 0.08, 6, 6);
+    pole.translate(15, 3, -24);
+    sceneryGeos.push(prep(pole, '#5b4630'));
+
+    // Tubewell
+    const pipe = new THREE.CylinderGeometry(0.22, 0.22, 2.2, 12);
+    pipe.translate(-6, 1.1, -15);
+    sceneryGeos.push(prep(pipe, '#2f6b4f'));
+
+    const head = new THREE.BoxGeometry(0.6, 0.5, 1.2);
+    head.translate(-6, 2.2, -14.7);
+    sceneryGeos.push(prep(head, '#2f6b4f'));
+
+    const pad = new THREE.CylinderGeometry(1.1, 1.1, 0.2, 20);
+    pad.translate(-6, 0.1, -15);
+    sceneryGeos.push(prep(pad, '#a9a39a'));
+
+    // Pond bank ring
+    const bankGeo = new THREE.RingGeometry(9, 10.4, 48);
+    bankGeo.rotateX(-Math.PI / 2);
+    bankGeo.scale(1.5, 1, 1);
+    bankGeo.translate(-44, 0.04, -14);
+    sceneryGeos.push(prep(bankGeo, '#7a6142'));
+
+    // Raised earthen bunds (আইল) across all 6 beds
+    const bw = 0.7;
+    const bh = 0.55;
+    bedCenters.forEach((c) => {
+      [
+        [0, -BED.d / 2, BED.w + bw, bw],
+        [0, BED.d / 2, BED.w + bw, bw],
+        [-BED.w / 2, 0, bw, BED.d],
+        [BED.w / 2, 0, bw, BED.d],
+      ].forEach((bConfig) => {
+        const bGeo = new THREE.BoxGeometry(bConfig[2], bh, bConfig[3]);
+        bGeo.translate(c.x + bConfig[0], bh / 2, c.z + bConfig[1]);
+        sceneryGeos.push(prep(bGeo, '#7d6143'));
+      });
     });
-    houseGrp.position.set(0, 0, -26);
-    scene.add(houseGrp);
-    disposables.push(wallMat, plinthMat, tinMat, woodMat, ribs);
 
-    // Straw stack & tubewell
-    const strawMat = new THREE.MeshStandardMaterial({ color: '#d1a85a', roughness: 1 });
-    const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 2.4, 4.6, 18), strawMat);
-    stack.position.set(15, 2.3, -24);
-    stack.castShadow = true;
-    scene.add(stack);
-
-    const pole = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 6, 6),
-      new THREE.MeshStandardMaterial({ color: '#5b4630' })
-    );
-    pole.position.set(15, 3, -24);
-    scene.add(pole);
-
-    const twGrp = new THREE.Group();
-    const metalMat = new THREE.MeshStandardMaterial({ color: '#2f6b4f', roughness: 0.4, metalness: 0.6 });
-    const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 2.2, 12), metalMat);
-    pipe.position.y = 1.1;
-    twGrp.add(pipe);
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 1.2), metalMat);
-    head.position.set(0, 2.2, 0.3);
-    twGrp.add(head);
-
-    const pad = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.1, 1.1, 0.2, 20),
-      new THREE.MeshStandardMaterial({ color: '#a9a39a', roughness: 1 })
-    );
-    pad.position.y = 0.1;
-    twGrp.add(pad);
-    twGrp.position.set(-6, 0, -15);
-    twGrp.traverse((o) => {
-      if (o.isMesh) o.castShadow = true;
-    });
-    scene.add(twGrp);
-    disposables.push(strawMat, metalMat);
+    const mergedSceneryGeo = mergeGeometries(sceneryGeos);
+    const mergedSceneryMesh = new THREE.Mesh(mergedSceneryGeo, vcMat(0.85));
+    mergedSceneryMesh.castShadow = true;
+    mergedSceneryMesh.receiveShadow = true;
+    scene.add(mergedSceneryMesh);
+    disposables.push(mergedSceneryGeo, mergedSceneryMesh.material, ribs);
 
     // Trees (Round trees + Coconut palms, instanced)
     const crownParts = [];
@@ -955,21 +956,12 @@ export function FarmScene3D({
     scene.add(pathLane);
     disposables.push(pathMat);
 
-    // 6. 6 Beds (2 rows x 3 columns) with Raised Bunds (আইল) & Water
-    const BED = { w: 18, d: 15 };
-    const bedCenters = [];
-    for (let r = 0; r < 2; r++) {
-      for (let c = 0; c < 3; c++) {
-        bedCenters.push(new THREE.Vector3((c - 1) * (BED.w + 3), 0, r === 0 ? -4 : 15));
-      }
-    }
-
+    // 6. 6 Beds (2 rows x 3 columns) Soil, Crop Meshes & Water
     const soilMat = new THREE.MeshStandardMaterial({ color: '#6b4f36', roughness: 1 });
     const wetSoilMat = new THREE.MeshStandardMaterial({ color: '#4a3626', roughness: 0.7 });
     const greySoilMat = new THREE.MeshStandardMaterial({ color: '#323a35', roughness: 0.95 });
-    const bundMat = new THREE.MeshStandardMaterial({ color: '#7d6143', roughness: 1 });
     const cropMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, side: THREE.DoubleSide });
-    disposables.push(soilMat, wetSoilMat, greySoilMat, bundMat, cropMat);
+    disposables.push(soilMat, wetSoilMat, greySoilMat, cropMat);
 
     // Compile crop geometries
     const G = buildCropGeometries();
@@ -1006,23 +998,6 @@ export function FarmScene3D({
       const soil = new THREE.Mesh(sg, soilMat);
       soil.receiveShadow = true;
       g.add(soil);
-
-      // Raised earthen bunds (আইল)
-      const bw = 0.7;
-      const bh = 0.55;
-      [
-        [0, -BED.d / 2, BED.w + bw, bw],
-        [0, BED.d / 2, BED.w + bw, bw],
-        [-BED.w / 2, 0, bw, BED.d],
-        [BED.w / 2, 0, bw, BED.d],
-      ].forEach((bConfig) => {
-        const bGeo = new THREE.BoxGeometry(bConfig[2], bh, bConfig[3]);
-        const bMesh = new THREE.Mesh(bGeo, bundMat);
-        bMesh.position.set(bConfig[0], bh / 2, bConfig[1]);
-        bMesh.castShadow = true;
-        bMesh.receiveShadow = true;
-        g.add(bMesh);
-      });
 
       // Standing water layer (for rice paddies)
       const waterLayer = new THREE.Mesh(new THREE.PlaneGeometry(BED.w - 0.2, BED.d - 0.2), waterMat);
@@ -1322,11 +1297,12 @@ export function FarmScene3D({
       });
     };
 
-    // 11. Render Loop & Idle Throttling (On-demand rendering for >=30 FPS target)
+    // 11. Render Loop & Idle Throttling (On-demand rendering for >=40 FPS target)
     let animationFrameId = null;
     let isLoopRunning = false;
     let needsRender = true;
     let idleFrames = 0;
+    let lowFpsConsecutiveSeconds = 0;
     const clock = new THREE.Clock();
     let lastRenderStatsTime = performance.now();
     let frameCount = 0;
@@ -1355,7 +1331,6 @@ export function FarmScene3D({
 
       controls.update();
       renderer.render(scene, camera);
-      updateLabels();
 
       frameCount++;
       const now = performance.now();
@@ -1367,9 +1342,17 @@ export function FarmScene3D({
         if (onRendererInfo) {
           onRendererInfo({ calls, triangles, fps: measuredFps });
         }
-        if (measuredFps < 30 && !isLowLodRef.current) {
-          isLowLodRef.current = true;
-          setIsLowLod(true);
+        if (measuredFps < 40) {
+          lowFpsConsecutiveSeconds++;
+          if (lowFpsConsecutiveSeconds >= 2 && !isLowLodRef.current) {
+            isLowLodRef.current = true;
+            setIsLowLod(true);
+            if (treeInstanced) treeInstanced.castShadow = false;
+            renderer.shadowMap.needsUpdate = true;
+            console.log('[FarmScene3D] Auto low-detail triggered: FPS < 40 for 2s');
+          }
+        } else {
+          lowFpsConsecutiveSeconds = 0;
         }
         frameCount = 0;
         lastRenderStatsTime = now;
@@ -1381,7 +1364,7 @@ export function FarmScene3D({
         animationFrameId = requestAnimationFrame(render);
       } else {
         idleFrames++;
-        if (idleFrames < 15) {
+        if (idleFrames < 3) {
           animationFrameId = requestAnimationFrame(render);
         } else {
           isLoopRunning = false;
@@ -1390,7 +1373,10 @@ export function FarmScene3D({
       }
     };
 
-    controls.addEventListener('change', requestRender);
+    controls.addEventListener('change', () => {
+      updateLabels();
+      requestRender();
+    });
     container.addEventListener('pointermove', requestRender);
     container.addEventListener('pointerdown', requestRender);
     requestRender();
@@ -1413,16 +1399,22 @@ export function FarmScene3D({
       bedObjects,
       plantBed: (idx, crop) => {
         plantBed(idx, crop);
+        renderer.shadowMap.needsUpdate = true;
         requestRender();
       },
       applyCameraPreset: (preset, idx) => {
         applyCameraPreset(preset, idx);
+        renderer.shadowMap.needsUpdate = true;
         requestRender();
       },
       controls,
       renderer,
       requestRender,
       updateLabels,
+      getPerfStats: () => ({
+        calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+      }),
     };
     if (typeof window !== 'undefined') {
       window.__farm3dRenderer = renderer;
@@ -1511,6 +1503,9 @@ export function FarmScene3D({
 
     if (updateLabels) {
       updateLabels();
+    }
+    if (containerRef.current.__farm3d.renderer) {
+      containerRef.current.__farm3d.renderer.shadowMap.needsUpdate = true;
     }
     if (containerRef.current.__farm3d.requestRender) {
       containerRef.current.__farm3d.requestRender();
