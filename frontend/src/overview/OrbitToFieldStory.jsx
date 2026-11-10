@@ -15,6 +15,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { OrbitToFieldCanvas } from './OrbitToFieldCanvas.jsx';
 import { isWebGLAvailable, haToBigha } from '../three/farmSceneHelpers.js';
+import { REGIONAL_ROTATIONS } from './regionalRotationsConfig.js';
 import graceTrendsData from '../../../data/grace/grace_bangladesh_trends.json';
 
 const SCENE_COUNT = 7;
@@ -165,9 +166,9 @@ export function OrbitToFieldStory({
       chips: { label: isBn ? 'আমার জমি দেখুন →' : 'See My Fields →', dest: 'field' },
       cta: null,
       nums: [
-        { label: 'Barind', val: 'Boro → Fallow → Aman', color: '#C8F169' },
-        { label: 'Haor', val: 'Boro → Flood → Flood', color: '#38D9F5' },
-        { label: 'Coast', val: 'Fallow → Fallow → Aman', color: '#F5B04C' },
+        { label: REGIONAL_ROTATIONS.barind.regionEn, val: REGIONAL_ROTATIONS.barind.rotationEn, color: REGIONAL_ROTATIONS.barind.color },
+        { label: REGIONAL_ROTATIONS.haor.regionEn, val: REGIONAL_ROTATIONS.haor.rotationEn, color: REGIONAL_ROTATIONS.haor.color },
+        { label: REGIONAL_ROTATIONS.coast.regionEn, val: REGIONAL_ROTATIONS.coast.rotationEn, color: REGIONAL_ROTATIONS.coast.color },
       ],
     },
     {
