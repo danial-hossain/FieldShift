@@ -50,6 +50,8 @@ import {
 const API = import.meta.env.VITE_API_URL || '';
 
 async function request(path, options = {}) {
+  const isPlainObject = options.body && typeof options.body === 'object' && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams) && !(options.body instanceof Blob);
+  const bodyToSend = isPlainObject ? JSON.stringify(options.body) : options.body;
   let response;
   try {
     response = await fetch(`${API}${path}`, {
@@ -59,7 +61,8 @@ async function request(path, options = {}) {
         'Content-Type': 'application/json',
         ...(options.headers || {})
       },
-      ...options
+      ...options,
+      body: bodyToSend
     });
   } catch (err) {
     if (err?.name === 'AbortError') throw err;

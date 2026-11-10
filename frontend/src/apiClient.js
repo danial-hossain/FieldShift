@@ -16,6 +16,8 @@ export const API_BASE = formatApiBase(import.meta.env?.VITE_API_URL || '');
 export async function request(path, options = {}) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = API_BASE ? `${API_BASE}${normalizedPath}` : normalizedPath;
+  const isPlainObject = options.body && typeof options.body === 'object' && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams) && !(options.body instanceof Blob);
+  const bodyToSend = isPlainObject ? JSON.stringify(options.body) : options.body;
   let response;
   try {
     response = await fetch(url, {
@@ -25,7 +27,8 @@ export async function request(path, options = {}) {
         'Content-Type': 'application/json',
         ...(options.headers || {})
       },
-      ...options
+      ...options,
+      body: bodyToSend
     });
   } catch (err) {
     if (err?.name === 'AbortError') throw err;

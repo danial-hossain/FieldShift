@@ -104,13 +104,31 @@ const INTENSITIES = [
 ];
 
 const PERIOD_LABELS = {
-  Y1_S1: { bn: '১ম রবি', en: 'Y1 Rabi' },
-  Y1_S2: { bn: '১ম খরিপ-১', en: 'Y1 Kharif-1' },
-  Y1_S3: { bn: '১ম খরিপ-২', en: 'Y1 Kharif-2' },
-  Y2_S1: { bn: '২য় রবি', en: 'Y2 Rabi' },
-  Y2_S2: { bn: '২য় খরিপ-১', en: 'Y2 Kharif-1' },
-  Y2_S3: { bn: '২য় খরিপ-২', en: 'Y2 Kharif-2' },
+  Y1_S1: { bn: '১ম বছর · রবি', en: 'Year 1 · Rabi' },
+  Y1_S2: { bn: '১ম বছর · খরিপ-১', en: 'Year 1 · Kharif-1' },
+  Y1_S3: { bn: '১ম বছর · খরিপ-২', en: 'Year 1 · Kharif-2' },
+  Y2_S1: { bn: '২য় বছর · রবি', en: 'Year 2 · Rabi' },
+  Y2_S2: { bn: '২য় বছর · খরিপ-১', en: 'Year 2 · Kharif-1' },
+  Y2_S3: { bn: '২য় বছর · খরিপ-২', en: 'Year 2 · Kharif-2' },
 };
+
+function formatSpecificCropName(crop, periodKey, lang) {
+  if (!crop) return lang === 'bn' ? 'পতিত' : 'Fallow';
+  const cLower = String(crop).trim().toLowerCase();
+  if (cLower === 'rice' || cLower === 'dhan' || cLower === 'ধান') {
+    if (!periodKey || periodKey.includes('S3') || periodKey.includes('kharif2') || periodKey.includes('kharif-2')) {
+      return lang === 'bn' ? 'আমন ধান' : 'Aman rice';
+    }
+    if (periodKey.includes('S1') || periodKey.includes('rabi')) {
+      return lang === 'bn' ? 'বোরো ধান' : 'Boro rice';
+    }
+    if (periodKey.includes('S2') || periodKey.includes('kharif1') || periodKey.includes('kharif-1')) {
+      return lang === 'bn' ? 'আউশ ধান' : 'Aus rice';
+    }
+    return lang === 'bn' ? 'আমন ধান' : 'Aman rice';
+  }
+  return translateCropName(crop, lang, periodKey);
+}
 
 export function ClimateStressTestView({
   activeField,
@@ -202,7 +220,8 @@ export function ClimateStressTestView({
       };
       const res = await request('/api/planning/stress', {
         method: 'POST',
-        body: payload,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       if (res && res.status === 'ok') {
         setStressResult(res);
@@ -218,7 +237,10 @@ export function ClimateStressTestView({
   }, [activeField, activeStrategy, activeScenarioId, activeIntensity, seasonsHit, planCrops, request]);
 
   useEffect(() => {
-    fetchStressSimulation();
+    const timer = setTimeout(() => {
+      fetchStressSimulation();
+    }, 300);
+    return () => clearTimeout(timer);
   }, [fetchStressSimulation]);
 
   // Prepare 3D Farm Props
@@ -238,13 +260,13 @@ export function ClimateStressTestView({
         id: pKey,
         name: crop,
         crop: crop,
-        cropLabel: translateCropName(crop, lang, pKey),
+        cropLabel: formatSpecificCropName(crop, pKey, lang),
         season: PERIOD_LABELS[pKey][lang === 'bn' ? 'bn' : 'en'],
         periodKey: pKey,
         lossPct: loss,
         isHit: seasonsHit.has(pKey),
-        yieldBeforeMon: sData?.yield_before_mon,
-        yieldAfterMon: sData?.yield_after_mon,
+        yieldBeforeMon: sData?.yield_before_mon ?? sData?.yield_before_maund,
+        yieldAfterMon: sData?.yield_after_mon ?? sData?.yield_after_maund,
       };
     });
   }, [planCrops, bedLossPcts, stressResult, seasonsHit, lang]);
@@ -361,7 +383,7 @@ export function ClimateStressTestView({
                   {PERIOD_LABELS[pKey][lang === 'bn' ? 'bn' : 'en']}
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {translateCropName(crop, lang, pKey)}
+                  {formatSpecificCropName(crop, pKey, lang)}
                 </div>
 
                 {/* Loss indicator if post stress */}
@@ -564,200 +586,462 @@ export function ClimateStressTestView({
         </div>
       </Card>
 
-      {/* 5. Summary KPI Cards */}
-      {summaryData && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
-          {/* Total Profit Loss */}
-          <Card variant="glass" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-              {lang === 'bn' ? '২-বছরের মোট আর্থিক ক্ষতি' : '2-Year Total Profit Loss'}
+      {/* Inline Error Card with Retry */}
+      {simError && (
+        <Card variant="glass" style={{ marginBottom: 20, padding: '16px 20px', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 24 }}>⚠️</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
+                  {lang === 'bn' ? 'সিমুলেশন চালাতে সমস্যা হয়েছে' : 'Failed to simulate climate stress'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {simError}
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#ef4444' }}>
-              −{formatCurrency(summaryData.total_profit_loss_bdt, lang)}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-              {lang === 'bn' ? `মূল মুনাফার ${formatDigits(summaryData.total_profit_loss_pct, lang)}% হ্রাস` : `${summaryData.total_profit_loss_pct}% loss of original profit`}
-            </div>
-          </Card>
-
-          {/* Most Vulnerable Season */}
-          <Card variant="glass" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-              {lang === 'bn' ? 'সর্বাধিক ক্ষতিগ্রস্ত মৌসুম' : 'Most Vulnerable Period'}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-              {summaryData.most_vulnerable_season ? (
-                <>
-                  <span>{translateCropName(summaryData.most_vulnerable_season.crop, lang)}</span>
-                  <span style={{ fontSize: 13, color: 'var(--text-muted)', marginLeft: 6 }}>
-                    ({summaryData.most_vulnerable_season[lang === 'bn' ? 'period_label_bn' : 'period_label_en']})
-                  </span>
-                </>
-              ) : '—'}
-            </div>
-            <div style={{ fontSize: 12, color: '#ef4444', marginTop: 2 }}>
-              {summaryData.most_vulnerable_season ? (
-                `−${formatCurrency(summaryData.most_vulnerable_season.profit_loss_bdt, lang)} (${formatDigits(summaryData.most_vulnerable_season.loss_pct, lang)}% ক্ষতি)`
-              ) : '—'}
-            </div>
-          </Card>
-
-          {/* Baseline Comparison */}
-          <Card variant="glass" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-              {lang === 'bn' ? 'বর্তমান আবর্তনের সাথে তুলনা' : 'Baseline Rotation Loss'}
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>
-              {formatCurrency(summaryData.baseline_total_loss_bdt, lang)}
-            </div>
-            <div style={{ fontSize: 11, color: summaryData.comparison_diff_loss_bdt >= 0 ? 'var(--primary)' : '#f59e0b', marginTop: 4, lineHeight: 1.3 }}>
-              {lang === 'bn' ? summaryData.comparison_note_bn : summaryData.comparison_note_en}
-            </div>
-          </Card>
-
-          {/* Historical Frequency */}
-          <Card variant="glass" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>
-              {lang === 'bn' ? 'ঐতিহাসিক পুনরাবৃত্তি (২০০১-২০২৪)' : 'Historical Record (2001-2024)'}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600, lineHeight: 1.45 }}>
-              {lang === 'bn' ? summaryData.history?.frequency_text_bn : summaryData.history?.frequency_text_en}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>
-              {lang === 'bn' ? 'উৎস: NASA POWER ও GPM IMERG' : 'Source: NASA POWER & GPM IMERG'}
-            </div>
-          </Card>
-        </div>
+            <Button variant="primary" size="sm" onClick={fetchStressSimulation}>
+              {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+            </Button>
+          </div>
+        </Card>
       )}
+
+      {/* SF2: 3 Big Numbers Summary Strip */}
+      {simLoading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 }}>
+          <Skeleton height={90} style={{ borderRadius: 14 }} />
+          <Skeleton height={90} style={{ borderRadius: 14 }} />
+          <Skeleton height={90} style={{ borderRadius: 14 }} />
+        </div>
+      ) : stressResult ? (() => {
+        const totals = stressResult.totals || {};
+        const totalYieldLoss = Number(totals.total_yield_loss_pct ?? 0);
+        const totalProfitLoss = Number(totals.total_profit_loss_bdt ?? 0);
+        const worstSeasonRaw = totals.worst_season || '';
+
+        // Severity Color: >30% red, >10% amber, <=10% green
+        const sevColor = totalYieldLoss > 30 ? '#ef4444' : totalYieldLoss > 10 ? '#f59e0b' : '#22c55e';
+        const sevBg = totalYieldLoss > 30 ? 'rgba(239, 68, 68, 0.12)' : totalYieldLoss > 10 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(34, 197, 94, 0.12)';
+        const sevBorder = totalYieldLoss > 30 ? 'rgba(239, 68, 68, 0.35)' : totalYieldLoss > 10 ? 'rgba(245, 158, 11, 0.35)' : 'rgba(34, 197, 94, 0.35)';
+
+        let worstSeasonDisplay = worstSeasonRaw || (lang === 'bn' ? 'কোনো ক্ষতি নেই' : 'None');
+        if (lang === 'bn' && worstSeasonRaw) {
+          // Translate common period terms in worst season
+          worstSeasonDisplay = worstSeasonRaw
+            .replace('Year 1', '১ম বছর')
+            .replace('Year 2', '২য় বছর')
+            .replace('Rabi', 'রবি')
+            .replace('Kharif-1', 'খরিপ-১')
+            .replace('Kharif-2', 'খরিপ-২')
+            .replace('(Winter)', '(শীতকাল)')
+            .replace('(Summer)', '(গ্রীষ্ম)')
+            .replace('(Monsoon)', '(বর্ষা)')
+            .replace('Mustard', 'সরিষা')
+            .replace('Soybean', 'সয়াবিন')
+            .replace('Chickpea', 'ছোলা')
+            .replace('Rice', 'ধান')
+            .replace('Sesame', 'তিল')
+            .replace('Wheat', 'গম')
+            .replace('Potato', 'আলু')
+            .replace('Maize', 'ভুট্টা')
+            .replace('Lentil', 'মসুর')
+            .replace('Mungbean', 'মুগডাল');
+        }
+
+        return (
+          <div
+            className="stress-summary-strip"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 14,
+              marginBottom: 20,
+            }}
+          >
+            {/* 1. Yield Loss */}
+            <div
+              style={{
+                background: sevBg,
+                border: `1.5px solid ${sevBorder}`,
+                borderRadius: 14,
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {lang === 'bn' ? 'ফলন ক্ষতি' : 'Yield Loss'}
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: sevColor, marginTop: 4 }}>
+                {totalYieldLoss > 0 ? `−${formatDigits(totalYieldLoss.toFixed(1), lang)}%` : (lang === 'bn' ? '০%' : '0%')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                {lang === 'bn' ? 'গড় ফলন হ্রাস' : 'Across planned rotation'}
+              </div>
+            </div>
+
+            {/* 2. Profit Loss */}
+            <div
+              style={{
+                background: sevBg,
+                border: `1.5px solid ${sevBorder}`,
+                borderRadius: 14,
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {lang === 'bn' ? 'আর্থিক ক্ষতি' : 'Profit Loss'}
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: sevColor, marginTop: 4 }}>
+                {totalProfitLoss > 0 ? `−৳${formatCurrency(totalProfitLoss, lang)}` : (lang === 'bn' ? '৳০' : '৳0')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                {lang === 'bn' ? 'নিট মুনাফার মোট ক্ষতি' : 'Total 2-year margin drop'}
+              </div>
+            </div>
+
+            {/* 3. Worst Season */}
+            <div
+              style={{
+                background: sevBg,
+                border: `1.5px solid ${sevBorder}`,
+                borderRadius: 14,
+                padding: '16px 20px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {lang === 'bn' ? 'সর্বাধিক ক্ষতিগ্রস্ত মৌসুম' : 'Worst Season'}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginTop: 6, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={worstSeasonDisplay}>
+                {worstSeasonDisplay}
+              </div>
+              <div style={{ fontSize: 11, color: sevColor, marginTop: 4, fontWeight: 600 }}>
+                {totals.hit_seasons_count != null ? (
+                  lang === 'bn' ? `${formatDigits(totals.hit_seasons_count, lang)}টি মৌসুম আঘাতপ্রাপ্ত` : `${totals.hit_seasons_count} season(s) hit by hazard`
+                ) : '—'}
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
 
       {/* 6. Impact Table by Season */}
       <Card variant="glass" style={{ marginBottom: 24, padding: '18px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
-            {lang === 'bn' ? 'মৌসুমভিত্তিক প্রভাব বিশ্লেষণ' : 'Season-by-Season Impact Breakdown'}
-          </h3>
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? 'সারির ওপর ক্লিক করলে ৩ডি বেড ফোকাস হবে' : 'Click any row to focus that bed in 3D'}
-          </span>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+              {lang === 'bn' ? 'মৌসুমভিত্তিক প্রভাব বিশ্লেষণ' : 'Season-by-Season Impact Breakdown'}
+            </h3>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+              {lang === 'bn' ? 'সারির ওপর ক্লিক করলে ৩ডি বেড ফোকাস হবে' : 'Click any row to focus that bed in 3D'}
+            </div>
+          </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase' }}>
-                <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'মৌসুম' : 'Season'}</th>
-                <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'ফসল' : 'Crop'}</th>
-                <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'ক্ষতির কারণ ও মডেল' : 'Mechanism & Model'}</th>
-                <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'ফলন (আগে → পরে)' : 'Yield (Before → After)'}</th>
-                <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'ক্ষতি %' : 'Loss %'}</th>
-                <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'লাভ (আগে → পরে)' : 'Profit (Before → After)'}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stressResult?.seasons?.map((s, idx) => {
-                const loss = Number(s.loss_pct || 0);
-                const isSelected = selectedBedIndex === idx;
-                
-                // Color code: 0-10% green, 10-30% amber, >30% red
-                const rowBg = isSelected
-                  ? 'rgba(56, 189, 248, 0.12)'
-                  : loss > 30
-                  ? 'rgba(239, 68, 68, 0.08)'
-                  : loss > 10
-                  ? 'rgba(245, 158, 11, 0.06)'
-                  : 'transparent';
+        {simLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+            <Skeleton height={40} />
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase' }}>
+                  <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'মৌসুম' : 'Season'}</th>
+                  <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'ফসল' : 'Crop'}</th>
+                  <th style={{ padding: '8px 10px' }}>{lang === 'bn' ? 'ক্ষতির কারণ ও মডেল' : 'Mechanism & Model'}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'ফলন (আগে → পরে)' : 'Yield (Before → After)'}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'ক্ষতি %' : 'Loss %'}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'লাভ (আগে → পরে)' : 'Profit (Before → After)'}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{lang === 'bn' ? 'সেচ চাহিদা' : 'Irrigation'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CANONICAL_PERIOD_KEYS.map((pKey, idx) => {
+                  const s = stressResult?.seasons?.[idx];
+                  const crop = s?.crop || planCrops[idx] || 'Fallow';
+                  const isHit = s ? Boolean(s.hit) : seasonsHit.has(pKey);
+                  const loss = Number(s?.loss_pct || 0);
+                  const isSelected = selectedBedIndex === idx;
 
-                const badgeBg = loss > 30 ? 'rgba(239, 68, 68, 0.2)' : loss > 10 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)';
-                const badgeColor = loss > 30 ? '#ef4444' : loss > 10 ? '#f59e0b' : '#22c55e';
+                  const seasonLabel = lang === 'bn'
+                    ? (s?.season_label_bn || PERIOD_LABELS[pKey]?.bn || pKey)
+                    : (s?.season_label || PERIOD_LABELS[pKey]?.en || pKey);
 
-                return (
-                  <tr
-                    key={s.period}
-                    onClick={() => setSelectedBedIndex(idx)}
-                    style={{
-                      background: rowBg,
-                      borderBottom: '1px solid var(--glass-border)',
-                      cursor: 'pointer',
-                      transition: 'background 0.15s ease',
-                    }}
-                  >
-                    <td style={{ padding: '10px', fontWeight: 600, color: 'var(--text)' }}>
-                      {s[lang === 'bn' ? 'period_label_bn' : 'period_label_en']}
-                    </td>
-                    <td style={{ padding: '10px', fontWeight: 700, color: 'var(--text)' }}>
-                      {translateCropName(s.crop, lang, s.period)}
-                    </td>
-                    <td style={{ padding: '10px' }}>
-                      <div style={{ color: 'var(--text)', fontSize: 12 }}>
-                        {lang === 'bn' ? s.mechanism_bn : s.mechanism_en}
-                      </div>
-                      <div style={{ marginTop: 2 }}>
-                        <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4, background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--glass-border)' }}>
-                          {s.model_basis}
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
-                      <span style={{ color: 'var(--text)' }}>{formatDigits(s.yield_before_mon, lang)}</span>
-                      <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>→</span>
-                      <span style={{ fontWeight: 700, color: loss > 0 ? badgeColor : 'var(--text)' }}>
-                        {formatDigits(s.yield_after_mon, lang)}
-                      </span>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 3 }}>
-                        {lang === 'bn' ? 'মণ/বিঘা' : 'mon/bigha'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '2px 8px',
-                        borderRadius: 6,
-                        fontWeight: 800,
-                        fontSize: 12,
-                        background: badgeBg,
-                        color: badgeColor,
-                      }}>
-                        {loss > 0 ? `−${formatDigits(Math.round(loss), lang)}%` : (lang === 'bn' ? '০%' : '0%')}
-                      </span>
-                    </td>
-                    <td style={{ padding: '10px', textAlign: 'right' }}>
-                      <span style={{ color: 'var(--text)' }}>{formatCurrency(s.profit_before_bdt, lang)}</span>
-                      <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>→</span>
-                      <span style={{ fontWeight: 700, color: s.profit_loss_bdt > 0 ? '#ef4444' : 'var(--text)' }}>
-                        {formatCurrency(s.profit_after_bdt, lang)}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  const cropDisplay = formatSpecificCropName(crop, pKey, lang);
+
+                  // Color code: >30% red, >10% amber, <=10% green
+                  const rowBg = isSelected
+                    ? 'rgba(56, 189, 248, 0.12)'
+                    : isHit && loss > 0
+                    ? loss > 30
+                      ? 'rgba(239, 68, 68, 0.08)'
+                      : 'rgba(245, 158, 11, 0.06)'
+                    : 'transparent';
+
+                  const badgeBg = loss > 30 ? 'rgba(239, 68, 68, 0.2)' : loss > 10 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(34, 197, 94, 0.2)';
+                  const badgeColor = loss > 30 ? '#ef4444' : loss > 10 ? '#f59e0b' : '#22c55e';
+
+                  return (
+                    <tr
+                      key={pKey}
+                      onClick={() => setSelectedBedIndex(idx)}
+                      style={{
+                        background: rowBg,
+                        borderBottom: '1px solid var(--glass-border)',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      {/* Season */}
+                      <td style={{ padding: '10px', fontWeight: 600, color: 'var(--text)' }}>
+                        {seasonLabel}
+                      </td>
+
+                      {/* Crop */}
+                      <td style={{ padding: '10px', fontWeight: 700, color: 'var(--text)' }}>
+                        {cropDisplay}
+                      </td>
+
+                      {/* Mechanism & Model */}
+                      <td style={{ padding: '10px' }}>
+                        {isHit ? (
+                          <>
+                            <div style={{ color: 'var(--text)', fontSize: 12 }}>
+                              {lang === 'bn' ? (s?.mechanism_bn || s?.mechanism) : (s?.mechanism_en || s?.mechanism)}
+                            </div>
+                            {s?.model_basis && (
+                              <div style={{ marginTop: 2 }}>
+                                <span style={{ fontSize: 10, padding: '1px 5px', borderRadius: 4, background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--glass-border)' }}>
+                                  {s.model_basis}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                            {lang === 'bn' ? 'প্রভাবিত নয়' : 'Not affected'}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Yield (Before -> After) */}
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        {s ? (
+                          <div>
+                            <div>
+                              <span style={{ color: 'var(--text)' }}>{formatDigits(s.yield_before_mon ?? s.yield_before_maund, lang)}</span>
+                              <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>→</span>
+                              <span style={{ fontWeight: 700, color: isHit && loss > 0 ? badgeColor : 'var(--text)' }}>
+                                {formatDigits(s.yield_after_mon ?? s.yield_after_maund, lang)}
+                              </span>
+                              <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 3 }}>
+                                {lang === 'bn' ? 'মণ/বিঘা' : 'mon/bigha'}
+                              </span>
+                            </div>
+                            {s.yield_before_ton != null && (
+                              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+                                {formatDigits(s.yield_before_ton, lang)} → {formatDigits(s.yield_after_ton, lang)} t/ha
+                              </div>
+                            )}
+                          </div>
+                        ) : '—'}
+                      </td>
+
+                      {/* Loss % */}
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        {isHit && loss > 0 ? (
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '2px 8px',
+                            borderRadius: 6,
+                            fontWeight: 800,
+                            fontSize: 12,
+                            background: badgeBg,
+                            color: badgeColor,
+                          }}>
+                            −{formatDigits(Math.round(loss), lang)}%
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            {lang === 'bn' ? '০% (স্বাভাবিক)' : '0% (OK)'}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Profit (Before -> After) */}
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        {s ? (
+                          <div>
+                            <div>
+                              <span style={{ color: 'var(--text)' }}>{formatCurrency(s.profit_before_bdt, lang)}</span>
+                              <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>→</span>
+                              <span style={{ fontWeight: 700, color: s.profit_loss_bdt > 0 ? '#ef4444' : 'var(--text)' }}>
+                                {formatCurrency(s.profit_after_bdt, lang)}
+                              </span>
+                            </div>
+                            {s.profit_loss_bdt > 0 && (
+                              <div style={{ fontSize: 10, color: '#ef4444', marginTop: 2 }}>
+                                −{formatCurrency(s.profit_loss_bdt, lang)}
+                              </div>
+                            )}
+                          </div>
+                        ) : '—'}
+                      </td>
+
+                      {/* Irrigation */}
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        {s?.irrigation_before_mm != null ? (
+                          <div>
+                            <span style={{ color: 'var(--text)' }}>{formatDigits(s.irrigation_before_mm, lang)}</span>
+                            {s.irrigation_after_mm !== s.irrigation_before_mm && (
+                              <>
+                                <span style={{ color: 'var(--text-muted)', margin: '0 4px' }}>→</span>
+                                <span style={{ fontWeight: 700, color: s.irrigation_after_mm > s.irrigation_before_mm ? '#f59e0b' : 'var(--text)' }}>
+                                  {formatDigits(s.irrigation_after_mm, lang)}
+                                </span>
+                              </>
+                            )}
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', marginLeft: 3 }}>
+                              {lang === 'bn' ? 'মিমি' : 'mm'}
+                            </span>
+                          </div>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
 
-      {/* 7. "কী করতে পারেন" (Agronomic Action Plan) & Bridge Button */}
+      {/* 7. SF2: Mitigations Grouped by Hit Season & Bridge Button */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
         {/* Mitigation Steps */}
         <Card variant="glass" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <span style={{ fontSize: 18 }}>💡</span>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
-              {lang === 'bn' ? 'কী করতে পারেন (প্রমাণিত কৌশল):' : 'What You Can Do (Field-Tested Mitigations):'}
+              {lang === 'bn' ? 'কী করতে পারেন (মাঠ-প্রমাণিত কৌশল):' : 'What You Can Do (Field-Tested Mitigations):'}
             </h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {stressResult?.mitigation_steps?.map((step, sIdx) => (
-              <div key={sIdx} style={{ background: 'var(--surface-2)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--glass-border)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>
-                  {lang === 'bn' ? step.title_bn : step.title_en}
+          {simLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Skeleton height={60} />
+              <Skeleton height={60} />
+            </div>
+          ) : stressResult?.mitigations && stressResult.mitigations.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {stressResult.mitigations.map((mGroup, gIdx) => (
+                <div
+                  key={mGroup.period || gIdx}
+                  style={{
+                    background: 'var(--surface-2)',
+                    padding: '12px 14px',
+                    borderRadius: 12,
+                    border: '1px solid var(--glass-border)',
+                  }}
+                >
+                  {/* Season & Crop Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)' }}>
+                        {lang === 'bn' ? (mGroup.season_label_bn || mGroup.season_label) : (mGroup.season_label || mGroup.season_label_bn)}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)' }}>·</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
+                        {formatSpecificCropName(mGroup.crop, mGroup.period, lang)}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 700, border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      {lang === 'bn' ? 'ক্ষতিগ্রস্ত' : 'Stressed'}
+                    </span>
+                  </div>
+
+                  {/* Bullet Steps */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {mGroup.steps?.map((step, sIdx) => (
+                      <div
+                        key={sIdx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          justifyContent: 'space-between',
+                          gap: 10,
+                          fontSize: 12,
+                          lineHeight: 1.4,
+                          padding: '4px 0',
+                          borderTop: sIdx > 0 ? '1px solid var(--glass-border)' : 'none',
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <span style={{ fontWeight: 700, color: 'var(--text)' }}>
+                            {lang === 'bn' ? step.title_bn : step.title_en}:{' '}
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>
+                            {lang === 'bn' ? step.action_bn : step.action_en}
+                          </span>
+                        </div>
+                        {step.source && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              padding: '2px 6px',
+                              borderRadius: 4,
+                              background: 'var(--surface)',
+                              color: 'var(--cyan)',
+                              border: '1px solid rgba(56, 189, 248, 0.25)',
+                              whiteSpace: 'nowrap',
+                              flexShrink: 0,
+                            }}
+                          >
+                            {step.source}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>
-                  {lang === 'bn' ? step.text_bn : step.text_en}
+              ))}
+            </div>
+          ) : stressResult?.mitigation_steps && stressResult.mitigation_steps.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {stressResult.mitigation_steps.map((step, sIdx) => (
+                <div key={sIdx} style={{ background: 'var(--surface-2)', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--glass-border)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', marginBottom: 2 }}>
+                    {lang === 'bn' ? step.title_bn : step.title_en}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.4 }}>
+                    {lang === 'bn' ? step.text_bn : step.text_en}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, background: 'var(--surface-2)', borderRadius: 12 }}>
+              {lang === 'bn'
+                ? 'কোনো মৌসুমে জলবায়ু চাপ নেই — স্বাভাবিক ফসল ব্যবস্থাপনা প্রযোজ্য।'
+                : 'No seasons affected under this scenario — standard agronomic practices apply.'}
+            </div>
+          )}
         </Card>
 
         {/* Bridge Action to Adaptive Replan */}
@@ -778,7 +1062,11 @@ export function ClimateStressTestView({
               if (onNavigateTab) {
                 onNavigateTab('replan', {
                   strategy: activeStrategy,
-                  note: activeScenario.id,
+                  hazard: lang === 'bn' ? activeScenario.nameBn : activeScenario.nameEn,
+                  hazardId: activeScenario.id,
+                  intensity: activeIntensity,
+                  intensityLabel: activeScenario.intensitySpecs[activeIntensity][lang === 'bn' ? 'bn' : 'en'],
+                  stressResult,
                 });
               }
             }}
