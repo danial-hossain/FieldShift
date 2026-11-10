@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FieldShift — প্রমাণ ও পদ্ধতি (Evidence & Method) Reference Layout</title>
+  <style>
+    :root {
+      --bg: #060b13;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --used: #a3e635;
+      --partial: #f59e0b;
+      --exp: #c084fc;
+      --planned: #64748b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --grid: rgba(6, 182, 212, 0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+    .header-bar {
+      margin-bottom: 24px;
+    }
+    .header-bar h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .header-bar p {
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+    .map-wrapper {
+      position: relative;
+      height: 640px;
+      background: radial-gradient(circle at 18% 60%, rgba(14, 165, 233, 0.12) 0%, rgba(6, 11, 19, 0.98) 70%);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 32px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    }
+    .controls-bar {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+    .btn-follow {
+      background: var(--used);
+      color: #052e16;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 20px rgba(163, 230, 53, 0.35);
+      transition: all 0.2s;
+    }
+    .btn-follow:hover { transform: scale(1.03); }
+    .btn-show-all {
+      background: rgba(15, 23, 42, 0.75);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .floor-grid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 240px;
+      background:
+        linear-gradient(to bottom, transparent, rgba(6, 11, 19, 0.9)),
+        repeating-linear-gradient(90deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(0deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 40px);
+      transform: perspective(400px) rotateX(60deg) translateY(60px);
+      transform-origin: bottom center;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+    .node-box {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.88);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.25s ease;
+      z-index: 5;
+    }
+    .node-box:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 20px rgba(163, 230, 53, 0.4);
+    }
+    .node-box .title { font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
+    .node-box .sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+    .status-used { border: 1.5px solid var(--used); box-shadow: 0 0 10px rgba(163, 230, 53, 0.15); }
+    .status-partial { border: 1.5px solid var(--partial); box-shadow: 0 0 10px rgba(245, 158, 11, 0.15); }
+    .status-exp { border: 1.5px dashed var(--exp); box-shadow: 0 0 10px rgba(192, 132, 252, 0.2); }
+    .status-planned { border: 1.5px dashed var(--planned); opacity: 0.65; }
+    .column-labels {
+      position: absolute;
+      bottom: 12px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      font-weight: 700;
+      text-transform: uppercase;
+      z-index: 10;
+      pointer-events: none;
+    }
+    .legend-bar {
+      position: absolute;
+      bottom: 34px;
+      left: 20px;
+      display: flex;
+      gap: 16px;
+      font-size: 11.5px;
+      z-index: 10;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-bar">
+      <h1>FieldShift কীভাবে কাজ করে</h1>
+      <p>মহাকাশ থেকে মাঠ পর্যন্ত — কোনো স্যাটেলাইট বা বাক্সে মাউস রাখুন বা click করুন</p>
+    </div>
+
+    <div class="map-wrapper">
+      <div class="controls-bar">
+        <button class="btn-follow">▶ একটা সংখ্যা অনুসরণ করুন: ৭১৮ মিমি</button>
+        <button class="btn-show-all">সব দেখান</button>
+      </div>
+
+      <div class="floor-grid"></div>
+
+      <!-- SPACE · NASA -->
+      <div class="node-box status-used" style="left: 14%; top: 40%;">
+        <div class="title">GPM</div>
+        <div class="sub">বৃষ্টি</div>
+      </div>
+      <div class="node-box status-used" style="left: 24%; top: 49%;">
+        <div class="title">Terra/Aqua · CERES</div>
+        <div class="sub">রোদ (POWER-এ)</div>
+      </div>
+      <div class="node-box status-used" style="left: 4%; top: 56%;">
+        <div class="title">GRACE-FO</div>
+        <div class="sub">মাটির নিচের পানি</div>
+      </div>
+      <div class="node-box status-partial" style="left: 4%; top: 74%;">
+        <div class="title">SRTM</div>
+        <div class="sub">উচ্চতা</div>
+      </div>
+      <div class="node-box status-planned" style="left: 9%; top: 88%;">
+        <div class="title">SMAP</div>
+        <div class="sub">মাটির আর্দ্রতা</div>
+      </div>
+      <div class="node-box status-planned" style="left: 20%; top: 86%;">
+        <div class="title">MODIS</div>
+        <div class="sub">গাছের সবুজভাব (NDVI)</div>
+      </div>
+
+      <!-- DATA INPUTS -->
+      <div class="node-box status-used" style="left: 31%; top: 58%;">
+        <div class="title">NASA POWER</div>
+        <div class="sub">তাপ · আর্দ্রতা · বাতাস · রোদ</div>
+      </div>
+      <div class="node-box status-used" style="left: 31%; top: 72%;">
+        <div class="title">ISRIC SoilGrids</div>
+        <div class="sub">মাটি (২৫০ মি)</div>
+      </div>
+      <div class="node-box status-used" style="left: 31%; top: 83%;">
+        <div class="title">দাম</div>
+        <div class="sub">DAM · TCB · BBS</div>
+      </div>
+
+      <!-- ENGINE: DATA -->
+      <div class="node-box status-used" style="left: 45%; top: 62%;">
+        <div class="title">FieldShift API</div>
+        <div class="sub">FastAPI + cache</div>
+      </div>
+
+      <!-- ENGINE: SCIENCE -->
+      <div class="node-box status-used" style="left: 58%; top: 48%;">
+        <div class="title">পানির হিসাব</div>
+        <div class="sub">FAO-56 Penman-Monteith</div>
+      </div>
+      <div class="node-box status-used" style="left: 58%; top: 62%;">
+        <div class="title">ফসলের চাপ</div>
+        <div class="sub">Ky · তাপ · খরা · লবণ</div>
+      </div>
+      <div class="node-box status-used" style="left: 58%; top: 76%;">
+        <div class="title">জলবায়ুর প্রবণতা</div>
+        <div class="sub">Mann-Kendall · বর্ষা শুরু</div>
+      </div>
+
+      <!-- ENGINE: DECISION -->
+      <div class="node-box status-used" style="left: 72%; top: 41%;">
+        <div class="title">AI সহকারী</div>
+        <div class="sub">Gemini + পর্যবেক্ষণ ডেটা</div>
+      </div>
+      <div class="node-box status-used" style="left: 71%; top: 55%; padding: 12px 16px; border-width: 2px;">
+        <div class="title" style="font-size: 14px;">MILP অপ্টিমাইজার</div>
+        <div class="sub">PuLP - ৬ মৌসুম - ৪ কৌশল</div>
+      </div>
+      <div class="node-box status-used" style="left: 72%; top: 71%;">
+        <div class="title">মাঠ থেকে শেখা</div>
+        <div class="sub">অমল -> ফলন -> অর্থনীতি</div>
+      </div>
+      <div class="node-box status-exp" style="left: 72%; top: 84%;">
+        <div class="title">Q-learning</div>
+        <div class="sub">পরীক্ষামূলক</div>
+      </div>
+
+      <!-- FARMER APP -->
+      <div class="node-box status-used" style="right: 3%; top: 39%; width: 140px;">
+        <div class="title">আবর্তন পরিকল্পনা</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 46%; width: 140px;">
+        <div class="title">পানি ও সেচ</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 54%; width: 140px;">
+        <div class="title">আবহাওয়া ও ঝুঁকি</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 62%; width: 140px;">
+        <div class="title">চাপ পরীক্ষা</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 69%; width: 140px;">
+        <div class="title">অভিযোজিত</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 77%; width: 140px;">
+        <div class="title">বাজার ও লাভ</div>
+      </div>
+      <div class="node-box status-used" style="right: 3%; top: 84%; width: 140px;">
+        <div class="title">AI সহকারী</div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="legend-bar">
+        <div class="legend-item"><span class="legend-dot" style="background: var(--used);"></span> ব্যবহৃত</div>
+        <div class="legend-item"><span class="legend-dot" style="background: var(--partial);"></span> আংশিক / নির্মাণাধীন</div>
+        <div class="legend-item"><span class="legend-dot" style="background: var(--exp);"></span> পরীক্ষামূলক</div>
+        <div class="legend-item"><span class="legend-dot" style="background: var(--planned);"></span> পরিকল্পিত</div>
+      </div>
+
+      <!-- COLUMNS -->
+      <div class="column-labels">
+        <span>SPACE · NASA</span>
+        <span>ENGINE · SCIENCE · DECISION</span>
+        <span>FARMER · APP</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
