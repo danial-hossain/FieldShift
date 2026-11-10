@@ -1326,7 +1326,7 @@ def planning_stress(
         area_ha = 0.133
 
     strategy = str(data.get("strategy") or "balanced").strip().lower()
-    scenario = str(data.get("scenario") or "heatwave").strip().lower()
+    scenario = str(data.get("hazard") or data.get("scenario") or "heatwave").strip().lower()
     intensity = str(data.get("intensity") or "moderate").strip().lower()
     seasons_hit = data.get("seasons_hit") or data.get("seasons")
 
@@ -1370,6 +1370,7 @@ def planning_stress(
         district=dist_key,
         strategy=strategy,
         scenario=scenario,
+        hazard=scenario,
         intensity=intensity,
         seasons_hit=seasons_hit,
         plan_crops=plan_crops,

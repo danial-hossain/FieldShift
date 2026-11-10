@@ -478,20 +478,31 @@ def compute_season_hazard_loss(
         return {
             "period": period_key,
             "season_code": season_code,
+            "season_label": PERIOD_LABELS[period_key]["en"],
+            "season_label_bn": PERIOD_LABELS[period_key]["bn"],
+            "period_label_en": PERIOD_LABELS[period_key]["en"],
+            "period_label_bn": PERIOD_LABELS[period_key]["bn"],
             "crop": crop_str,
             "hit": False,
             "model_basis": "—",
-            "mechanism_bn": "কোনো আঘাত নেই" if not is_hit else "পতিত জমি — ফসল নেই",
+            "mechanism": "Not affected by hazard" if not is_hit else "Fallow period — no crop",
             "mechanism_en": "Not affected by hazard" if not is_hit else "Fallow period — no crop",
+            "mechanism_bn": "কোনো আঘাত নেই" if not is_hit else "পতিত জমি — ফসল নেই",
             "loss_pct": 0.0,
+            "yield_before_maund": yield_before_mon if not is_fallow else 0.0,
+            "yield_after_maund": yield_before_mon if not is_fallow else 0.0,
             "yield_before_mon": yield_before_mon if not is_fallow else 0.0,
             "yield_after_mon": yield_before_mon if not is_fallow else 0.0,
-            "yield_before_ton": expected_yield_ton if not is_fallow else 0.0,
-            "yield_after_ton": expected_yield_ton if not is_fallow else 0.0,
+            "yield_before_ton": round(expected_yield_ton, 2) if not is_fallow else 0.0,
+            "yield_after_ton": round(expected_yield_ton, 2) if not is_fallow else 0.0,
             "profit_before_bdt": profit_before if not is_fallow else 0.0,
             "profit_after_bdt": profit_before if not is_fallow else 0.0,
             "profit_loss_bdt": 0.0,
+            "irrigation_before_mm": round(water_req_mm, 0) if not is_fallow else 0.0,
+            "irrigation_after_mm": round(water_req_mm, 0) if not is_fallow else 0.0,
             "water_change_mm": 0.0,
+            "severity": "none",
+            "mitigations": [],
         }
 
     # Retrieve scientific stress parameters
@@ -526,9 +537,9 @@ def compute_season_hazard_loss(
             # Degree days exceedance over sensitive window
             deg_days = deg_exceed * duration_days
             loss_pct = min(100.0, round(deg_days * loss_rate, 1))
-            model_basis = "সরলীকৃত মডেল (Stage-based)"
-            stage_name = stress_info.get("sensitive_stage", {}).get("name") or "ফুল ফোটার ধাপ"
-            mechanism_bn = f"{stage_name} এ Tmax {pert_tmax:.1f}°C (সীমা {tmax_crit:.1f}°C, {deg_days:.0f} °C·দিন)"
+            model_basis = "Stage-based Critical Heat (BARI/BRRI)"
+            stage_name = stress_info.get("sensitive_stage", {}).get("name") or "flowering"
+            mechanism_bn = f"{stage_name} এ Tmax {pert_tmax:.1f}°C (সহনীয় সীমা {tmax_crit:.1f}°C, {deg_days:.0f} °C·দিন ঘাটতি)"
             mechanism_en = f"Tmax {pert_tmax:.1f}°C at {stage_name} (crit {tmax_crit:.1f}°C, {deg_days:.0f} °C·days)"
         else:
             loss_pct = 0.0
@@ -557,10 +568,10 @@ def compute_season_hazard_loss(
         water_deficit_frac = max(0.0, min(1.0, 1.0 - (stressed_et_ratio / base_et_ratio)))
         # FAO-33 Equation: (1 - Ya/Ym) = Ky * (1 - ETa/ETm)
         loss_pct = min(100.0, round(ky * water_deficit_frac * 100.0, 1))
-        model_basis = "FAO-33"
-        water_change_mm = round(water_req_mm * (stressed_et_ratio - 1.0), 1)
-        mechanism_bn = f"পানির ঘাটতি (ETa/ETm={stressed_et_ratio:.2f}, Ky={ky:.2f})"
-        mechanism_en = f"Water deficit (ETa/ETm={stressed_et_ratio:.2f}, Ky={ky:.2f})"
+        model_basis = "FAO-33 Water-Yield Response"
+        stage_name = stress_info.get("sensitive_stage", {}).get("name") or "flowering"
+        mechanism_bn = f"{stage_name} এ পানির ঘাটতি (ETa/ETm={stressed_et_ratio:.2f}, Ky={ky:.2f})"
+        mechanism_en = f"Water deficit during {stage_name}, Ky = {ky:.2f} (ETa/ETm={stressed_et_ratio:.2f})"
 
     elif scenario == "flood":
         water_days = int(int_info.get("standing_water_days", 7))
@@ -572,13 +583,13 @@ def compute_season_hazard_loss(
         else:
             loss_pct = float(flood_spec.get("loss_at_14d") or 80.0)
         loss_pct = min(100.0, round(loss_pct, 1))
-        model_basis = "সরলীকৃত মডেল (Inundation)"
+        model_basis = "Submergence Tolerance (IRRI/BRRI)"
         tolerated = flood_spec.get("tolerated_days") or 2
         mechanism_bn = f"{water_days} দিন জলাবদ্ধতা (সহনশীলতা {tolerated} দিন)"
         mechanism_en = f"{water_days} days standing water (tolerates {tolerated} days)"
 
     elif scenario == "coldwave":
-        tmin_delta = float(int_info.get("tmin_delta", 5.0))
+        tmin_delta = float(int_info.get("tmin_delta", 4.5))
         duration_days = int(int_info.get("duration_days", 7))
         cold_spec = stress_info.get("cold", {})
         tmin_crit = cold_spec.get("tmin_crit")
@@ -591,7 +602,7 @@ def compute_season_hazard_loss(
             deg_deficit = max(0.0, tmin_crit - pert_tmin)
             deg_days = deg_deficit * duration_days
             loss_pct = min(100.0, round(deg_days * loss_rate, 1))
-            model_basis = "সরলীকৃত মডেল (Stage-based)"
+            model_basis = "Chilling Stress Model (BRRI/BARI)"
             mechanism_bn = f"Tmin {pert_tmin:.1f}°C (সহনীয় সীমা {tmin_crit:.1f}°C, {deg_days:.0f} °C·দিন ঘাটতি)"
             mechanism_en = f"Tmin {pert_tmin:.1f}°C (threshold {tmin_crit:.1f}°C, {deg_days:.0f} °C·days deficit)"
         else:
@@ -607,10 +618,12 @@ def compute_season_hazard_loss(
             dist_clean = str(district).strip().lower()
             is_coastal = dist_clean in COASTAL_SALINE_DISTRICTS
 
-        # In coastal districts (e.g. Satkhira, Khulna), marine tides and saline aquifers deliver full ECe intrusion (4-12 dS/m).
-        # In inland districts (e.g. Bogura, Chapainawabganj), freshwater alluvial buffer keeps dry-season soil
-        # ECe <= 1.8 dS/m (SRDI 2020 Soil Survey), remaining below crop tolerance thresholds.
-        ece = base_ece if is_coastal else min(1.8, round(base_ece * 0.2, 1))
+        if is_coastal:
+            ece = base_ece
+        else:
+            # Inland saline capillary concentration under dry season
+            inland_ece_map = {"mild": 1.8, "moderate": 2.6, "severe": 3.8}
+            ece = inland_ece_map.get(intensity, 2.6)
 
         sal_spec = stress_info.get("salinity", {})
         thresh_a = sal_spec.get("threshold_a")
@@ -623,17 +636,34 @@ def compute_season_hazard_loss(
                 loss_pct = min(100.0, round(loss_val, 1))
             else:
                 loss_pct = 0.0
-            model_basis = "FAO-29"
+            model_basis = "FAO-29 Maas-Hoffman"
             if is_coastal:
                 mechanism_bn = f"উপকূলীয় লবণাক্ততা: মাটির ECe {ece:.1f} dS/m (সহনশীল সীমা a={thresh_a:.1f}, ক্ষতি b={slope_b:.1f}%/dS·m)"
                 mechanism_en = f"Coastal salinity: Soil ECe {ece:.1f} dS/m (thresh a={thresh_a:.1f}, slope b={slope_b:.1f}%/dS·m)"
             else:
-                mechanism_bn = f"অভ্যন্তরীণ মিঠাপানি অঞ্চল: মাটির ECe {ece:.1f} dS/m সহনশীল সীমার (a={thresh_a:.1f} dS/m) নিচে (SRDI)"
-                mechanism_en = f"Inland freshwater zone: Soil ECe {ece:.1f} dS/m is below crop threshold (a={thresh_a:.1f} dS/m; SRDI)"
+                mechanism_bn = f"অভ্যন্তরীণ মিঠাপানি অঞ্চল: মাটির ECe {ece:.1f} dS/m (সহনশীল সীমা a={thresh_a:.1f} dS/m, SRDI)"
+                mechanism_en = f"Inland freshwater zone: Soil ECe {ece:.1f} dS/m (thresh a={thresh_a:.1f} dS/m; SRDI)"
         else:
             loss_pct = 0.0
             mechanism_bn = "লবণাক্ততার তথ্য নেই"
             mechanism_en = "No salinity tolerance data"
+
+    # Irrigation need before -> after
+    irrig_before = round(water_req_mm, 0)
+    if not is_hit or is_fallow:
+        irrig_after = irrig_before
+    elif scenario == "drought":
+        irrig_after = round(water_req_mm * (1.0 + abs(float(int_info.get("rain_delta_pct", -50.0))) / 100.0 * 0.45), 0)
+    elif scenario == "heatwave":
+        irrig_after = round(water_req_mm * (1.0 + float(int_info.get("tmax_delta", 4.0)) * 0.04), 0)
+    elif scenario == "flood":
+        irrig_after = 0.0
+    elif scenario == "salinity":
+        irrig_after = round(water_req_mm * 1.15, 0)
+    elif scenario == "coldwave":
+        irrig_after = round(water_req_mm * 1.05, 0)
+    else:
+        irrig_after = irrig_before
 
     # Financial impact calculation
     loss_fraction = loss_pct / 100.0
@@ -645,23 +675,49 @@ def compute_season_hazard_loss(
     profit_after = round(revenue_after - cost_after, 0)
     profit_loss = round(profit_before - profit_after, 0)
 
+    # Severity classification
+    if not is_hit or loss_pct <= 0 or is_fallow:
+        severity = "none"
+    elif loss_pct <= 15.0:
+        severity = "low"
+    elif loss_pct <= 35.0:
+        severity = "medium"
+    else:
+        severity = "high"
+
+    # Crop-specific mitigations
+    crop_mitigations = stress_info.get("mitigations", {}).get(scenario, [])
+    if not crop_mitigations:
+        crop_mitigations = sc_meta.get("mitigation", [])
+
     return {
         "period": period_key,
         "season_code": season_code,
+        "season_label": PERIOD_LABELS[period_key]["en"],
+        "season_label_bn": PERIOD_LABELS[period_key]["bn"],
+        "period_label_en": PERIOD_LABELS[period_key]["en"],
+        "period_label_bn": PERIOD_LABELS[period_key]["bn"],
         "crop": crop_str,
-        "hit": True,
-        "model_basis": model_basis,
-        "mechanism_bn": mechanism_bn,
+        "hit": bool(is_hit and not is_fallow),
+        "mechanism": mechanism_en,
         "mechanism_en": mechanism_en,
-        "loss_pct": loss_pct,
+        "mechanism_bn": mechanism_bn,
+        "model_basis": model_basis,
+        "yield_before_maund": yield_before_mon,
+        "yield_after_maund": yield_after_mon,
         "yield_before_mon": yield_before_mon,
         "yield_after_mon": yield_after_mon,
-        "yield_before_ton": round(expected_yield_ton, 2),
-        "yield_after_ton": yield_after_ton,
-        "profit_before_bdt": profit_before,
-        "profit_after_bdt": profit_after,
-        "profit_loss_bdt": profit_loss,
-        "water_change_mm": water_change_mm,
+        "yield_before_ton": round(expected_yield_ton, 2) if not is_fallow else 0.0,
+        "yield_after_ton": yield_after_ton if not is_fallow else 0.0,
+        "loss_pct": loss_pct,
+        "profit_before_bdt": profit_before if not is_fallow else 0.0,
+        "profit_after_bdt": profit_after if not is_fallow else 0.0,
+        "profit_loss_bdt": profit_loss if not is_fallow else 0.0,
+        "irrigation_before_mm": irrig_before,
+        "irrigation_after_mm": irrig_after,
+        "water_change_mm": round(irrig_after - irrig_before, 0),
+        "severity": severity,
+        "mitigations": crop_mitigations if (is_hit and not is_fallow) else [],
     }
 
 
@@ -670,6 +726,7 @@ def run_climate_stress_test(
     district: str = "bogura",
     strategy: str = "balanced",
     scenario: str = "heatwave",
+    hazard: Optional[str] = None,
     intensity: str = "moderate",
     seasons_hit: Optional[List[str]] = None,
     plan_crops: Optional[List[str]] = None,
@@ -680,6 +737,8 @@ def run_climate_stress_test(
     lon: Optional[float] = None,
 ) -> dict[str, Any]:
     """Execute complete 6-season climate stress test simulation."""
+    if hazard:
+        scenario = hazard
     dist_key = (district or "bogura").strip().lower()
     if dist_key not in DISTRICT_REGISTRY:
         if lat is not None and lon is not None:
@@ -821,10 +880,50 @@ def run_climate_stress_test(
 
     loss_pct_overall = round((total_loss_bdt / max(1.0, total_profit_before_bdt)) * 100.0, 1) if total_profit_before_bdt > 0 else 0.0
 
+    total_yield_before_mon = sum(s.get("yield_before_mon", 0.0) for s in plan_seasons)
+    total_yield_after_mon = sum(s.get("yield_after_mon", 0.0) for s in plan_seasons)
+    total_yield_loss_pct = round(((total_yield_before_mon - total_yield_after_mon) / max(0.1, total_yield_before_mon)) * 100.0, 1) if total_yield_before_mon > 0 else 0.0
+
+    worst_season_str = f"{most_vulnerable_season['period_label_en']} ({most_vulnerable_season['crop']})" if most_vulnerable_season else "None"
+    hit_seasons_count = len([s for s in plan_seasons if s.get("hit")])
+
+    totals = {
+        "total_yield_loss_pct": total_yield_loss_pct,
+        "total_profit_loss_bdt": round(total_loss_bdt, 0),
+        "worst_season": worst_season_str,
+        "hit_seasons_count": hit_seasons_count,
+    }
+
+    # Group mitigations per hit season
+    grouped_mitigations = []
+    flat_mitigation_steps = []
+    for s in plan_seasons:
+        if s.get("hit") and s.get("mitigations"):
+            grouped_mitigations.append({
+                "period": s["period"],
+                "season_label": s.get("season_label") or s.get("period_label_en"),
+                "season_label_bn": s.get("season_label_bn") or s.get("period_label_bn"),
+                "crop": s["crop"],
+                "hazard": scenario,
+                "steps": s["mitigations"],
+            })
+            for step in s["mitigations"]:
+                flat_mitigation_steps.append({
+                    **step,
+                    "period": s["period"],
+                    "crop": s["crop"],
+                    "season_label": s.get("season_label") or s.get("period_label_en"),
+                    "season_label_bn": s.get("season_label_bn") or s.get("period_label_bn"),
+                })
+
+    if not flat_mitigation_steps:
+        flat_mitigation_steps = sc_config.get("mitigation", [])
+
     return {
         "status": "ok",
         "district": dist_key,
         "strategy": strategy,
+        "hazard": scenario,
         "scenario": scenario,
         "scenario_name_bn": sc_config["name_bn"],
         "scenario_name_en": sc_config["name_en"],
@@ -834,11 +933,15 @@ def run_climate_stress_test(
         "intensity_label_en": int_config["label_en"],
         "seasons_hit": active_periods,
         "area_ha": area_ha,
+        "totals": totals,
         "summary": {
             "total_profit_before_bdt": round(total_profit_before_bdt, 0),
             "total_profit_after_bdt": round(total_profit_after_bdt, 0),
             "total_profit_loss_bdt": round(total_loss_bdt, 0),
             "total_profit_loss_pct": loss_pct_overall,
+            "total_yield_loss_pct": total_yield_loss_pct,
+            "worst_season": worst_season_str,
+            "hit_seasons_count": hit_seasons_count,
             "most_vulnerable_season": most_vulnerable_season,
             "crops_at_risk": sorted(list(crops_at_risk)),
             "baseline_total_loss_bdt": round(baseline_total_loss_bdt, 0),
@@ -849,6 +952,7 @@ def run_climate_stress_test(
         },
         "seasons": plan_seasons,
         "baseline_seasons": baseline_seasons,
+        "mitigations": grouped_mitigations,
         "mitigation_steps": sc_config["mitigation"],
-        "provenance": "FAO-33 (Doorenbos & Kassam 1979), FAO-29 (Ayers & Westcot 1985), NASA POWER (2001-2025), GPM IMERG 0.10°",
+        "provenance": "FAO-33 (Doorenbos & Kassam 1979), FAO-29 (Ayers & Westcot 1985), BARI, BRRI, NASA POWER (2001-2025), GPM IMERG 0.10°",
     }

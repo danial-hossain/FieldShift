@@ -1,0 +1,603 @@
+import json
+from pathlib import Path
+
+path = Path("data/crops/crop_stress_params.json")
+with open(path, "r", encoding="utf-8") as f:
+    data = json.load(f)
+
+MITIGATIONS_BY_CROP = {
+    "Mustard": {
+        "drought": [
+            {
+                "title_en": "Critical Flowering Irrigation",
+                "title_bn": "ফুল ফোটার সময় জরুরি সেচ",
+                "action_en": "Apply 1 light irrigation at 50% flowering (30-35 DAS) to secure pod setting.",
+                "action_bn": "৫০% ফুল ফোটার সময় (৩০-৩৫ দিনে) ১টি জরুরি হালকা সেচ দিন যাতে দানা বাঁধে।",
+                "source": "BARI Oilseed Research Centre (2021)"
+            },
+            {
+                "title_en": "Straw Mulching",
+                "title_bn": "খড় মালচিং প্রয়োগ",
+                "action_en": "Apply rice straw mulch (3-4 t/ha) to conserve soil moisture and prevent cracking.",
+                "action_bn": "মাটির রস ধরে রাখতে ও ফাটল রোধে ৩-৪ টন/হেক্টর খড় মালচিং ব্যবহার করুন।",
+                "source": "BARI Agronomy Division (2019)"
+            },
+            {
+                "title_en": "Early Sowing Window",
+                "title_bn": "আগাম বপন সমন্বয়",
+                "action_en": "Sow by November 5-10 to utilize residual monsoon moisture before winter dryness.",
+                "action_bn": "বর্ষার অবশিষ্ট মাটির রস কাজে লাগাতে ৫-১০ নভেম্বরের মধ্যে বীজ বপন করুন।",
+                "source": "FAO-33 Oilseed Water Guidelines"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Heat-Tolerant Variety",
+                "title_bn": "উত্তাপ-সহনশীল জাত",
+                "action_en": "Cultivate heat-tolerant varieties like BARI Sarisha-14 or 17 (BARI).",
+                "action_bn": "তীব্র উত্তাপ এড়াতে বারি সরিষা-১৪ বা ১৭ এর মতো দ্রুত বর্ধনশীল জাত চাষ করুন।",
+                "source": "BARI Oilseed Bulletin (2020)"
+            },
+            {
+                "title_en": "Canopy Cooling Irrigation",
+                "title_bn": "মাইক্রোক্লাইমেট শীতলীকরণ সেচ",
+                "action_en": "Light evening irrigation cools canopy by 2-3°C during siliqua filling.",
+                "action_bn": "ফল ধরার সময় বিকেলে হালকা সেচ দিয়ে উদ্ভিদের তাপমাত্রা ২-৩°C কম রাখুন।",
+                "source": "BARI Weather Advisory (2021)"
+            },
+            {
+                "title_en": "Foliar Potassium Spray",
+                "title_bn": "পটাশিয়াম ফলিয়ার স্প্রে",
+                "action_en": "Spray 1% KNO3 during pod initiation to prevent premature seed shriveling.",
+                "action_bn": "দানা শুকিয়ে যাওয়া রোধে দানা পুষ্ট হওয়ার সময় ১% পটাশিয়াম নাইট্রেট স্প্রে করুন।",
+                "source": "BARI Plant Physiology Division"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Raised Bed Planting (BBF)",
+                "title_bn": "উঁচু বেড পদ্ধতি (বিবিএফ)",
+                "action_en": "Form 20 cm raised broad beds to keep root zone free from shallow waterlogging.",
+                "action_bn": "শিকড় জলাবদ্ধতা থেকে রক্ষা করতে ২০ সেমি উঁচু বেড তৈরি করে বপন করুন।",
+                "source": "BARI Soil Science Division"
+            },
+            {
+                "title_en": "Perimeter Drainage Furrows",
+                "title_bn": "সীমানা নিষ্কাশন নালা",
+                "action_en": "Excavate 30 cm deep peripheral drainage ditches for rapid runoff after heavy rains.",
+                "action_bn": "ভারী বৃষ্টির পর দ্রুত পানি সরানোর জন্য জমির চারপাশে ৩০ সেমি গভীর নিষ্কাশন নালা রাখুন।",
+                "source": "BARI Farm Machinery Division"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Smoky Smudging Buffer",
+                "title_bn": "ধোঁয়ার আবরণ সৃষ্টি",
+                "action_en": "Create light evening smoke buffer along north boundary to prevent frost settling.",
+                "action_bn": "ঘন কুয়াশা ও শৈত্যপ্রবাহের রাতে উত্তর সীমানায় হালকা ধোঁয়া দিয়ে তাপমাত্রা সুরক্ষা দিন।",
+                "source": "BARI Climate Resilience Guide"
+            },
+            {
+                "title_en": "MOP Fertilizer Balancing",
+                "title_bn": "পটাশ সার বৃদ্ধি",
+                "action_en": "Apply split Murate of Potash (MOP) to improve cell turgor against cold snaps.",
+                "action_bn": "গাছের শীত সহনশীলতা বৃদ্ধি করতে অতিরিক্ত সুষম পটাশ (এমওপি) নিশ্চিত করুন।",
+                "source": "BARI Oilseed Manual (2018)"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Salt-Tolerant Variety BARI-18",
+                "title_bn": "লবণ-সহনশীল বারি সরিষা-১৮",
+                "action_en": "Sow BARI Sarisha-18 which tolerates soil salinity up to 8.0 dS/m.",
+                "action_bn": "৮.০ dS/m পর্যন্ত লবণাক্ততা সহ্যকারী বারি সরিষা-১৮ জাত নির্বাচন করুন।",
+                "source": "SRDI & BARI Joint Release (2021)"
+            },
+            {
+                "title_en": "Gypsum Amendment",
+                "title_bn": "জিপসাম প্রয়োগ",
+                "action_en": "Incorporate 150 kg/ha gypsum during land preparation to displace sodium ions.",
+                "action_bn": "মাটিতে সোডিয়ামের ক্ষতিকর প্রভাব কমাতে জমি তৈরিতে ১৫০ কেজি/হেক্টর জিপসাম দিন।",
+                "source": "SRDI Salinity Management Manual (2020)"
+            }
+        ]
+    },
+    "Mungbean": {
+        "drought": [
+            {
+                "title_en": "Life-Saving Anthesis Irrigation",
+                "title_bn": "ফুল ফোটার সময় জীবনরক্ষাকারী সেচ",
+                "action_en": "Provide 1 life-saving irrigation (30-40 mm) at initial pod formation (40 DAS).",
+                "action_bn": "শুঁটি ধরার প্রাথমিক ধাপে (৪০ দিনে) ১টি জীবনরক্ষাকারী হালকা সেচ দিন।",
+                "source": "BARI Pulses Research Centre (PRC Ishurdi)"
+            },
+            {
+                "title_en": "Organic Residue Mulch",
+                "title_bn": "জৈব খড় মালচ",
+                "action_en": "Spread dry paddy stubble between rows to minimize evaporation losses.",
+                "action_bn": "মাটির আর্দ্রতা ধরে রাখতে লাইনের মাঝে শুকনো ধানের খড় বিছিয়ে দিন।",
+                "source": "BARI Agronomy Division"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Short-Duration Variety",
+                "title_bn": "স্বল্পমেয়াদী বারি মুগ-৬",
+                "action_en": "Plant BARI Mung-6 which matures in 55-60 days before intense summer heat peaks.",
+                "action_bn": "৫৫-৬০ দিনে পাকা বারি মুগ-৬ চাষ করুন যাতে তীব্র বৈশাখী তাপপ্রবাহ এড়ানো যায়।",
+                "source": "BARI Pulses Research Centre"
+            },
+            {
+                "title_en": "Micronutrient Zinc Spray",
+                "title_bn": "জিংক ও বোরন স্প্রে",
+                "action_en": "Foliar spray of 0.2% Solubor and Chelated Zinc to reduce heat-induced flower drops.",
+                "action_bn": "উত্তাপে ফুল ঝরে পড়া ঠেকাতে ০.২% সলুবোর বোরন ও জিংক স্প্রে করুন।",
+                "source": "BARI Plant Nutrition Bulletin"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Rapid Trench Drainage",
+                "title_bn": "জরুরি পানি নিষ্কাশন",
+                "action_en": "Drain standing rainwater within 24 hours to prevent root rot and collar rot.",
+                "action_bn": "শিকড় পচা ঠেকাতে বৃষ্টির জমে থাকা পানি ২৪ ঘণ্টার মধ্যে সম্পূর্ণ বের করে দিন।",
+                "source": "BARI Plant Pathology Division"
+            },
+            {
+                "title_en": "Fungicidal Drenching",
+                "title_bn": "ছত্রাকনাশক প্রয়োগ",
+                "action_en": "Apply Carbendazim (Autostin 1g/L) after water recession to arrest fungal damping-off.",
+                "action_bn": "পানি নামার পর ড্যাম্পিং-অফ রোগ ঠেকাতে ১ গ্রাম/লিটার অটোস্টিন স্প্রে করুন।",
+                "source": "BARI PRC Extension Guide"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Avoid Early Sowing in Winter",
+                "title_bn": "শীতের শেষার্ধে বপন",
+                "action_en": "Delay sowing until minimum air temperature stays stably above 15°C.",
+                "action_bn": "সর্বনিম্ন তাপমাত্রা ১৫°C-এর উপরে স্থির না হওয়া পর্যন্ত বীজ বপন থেকে বিরত থাকুন।",
+                "source": "BARI Climate Guidelines"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Salt Tolerant Variety",
+                "title_bn": "লবণাক্ততা প্রতিরোধী জাত",
+                "action_en": "Use BARI Mung-8 with moderate seedling salinity tolerance up to 4.5 dS/m.",
+                "action_bn": "চারার লবণাক্ততা সহনশীল বারি মুগ-৮ জাত নির্বাচন করুন।",
+                "source": "BARI & SRDI Coastal Station"
+            }
+        ]
+    },
+    "Rice": {
+        "drought": [
+            {
+                "title_en": "Alternate Wetting and Drying (AWD)",
+                "title_bn": "এডব্লিউডি (পর্যায়ক্রমে ভেজানো ও শুকানো)",
+                "action_en": "Install AWD perforated field tubes to save 25-30% irrigation water without yield loss.",
+                "action_bn": "এডব্লিউডি পাইপ স্থাপন করে ২৫-৩০% সেচের পানি সাশ্রয় করুন।",
+                "source": "BRRI / IRRI Water Management Division"
+            },
+            {
+                "title_en": "Drought-Resilient Aman Variety",
+                "title_bn": "খরা-সহনশীল আমন জাত",
+                "action_en": "Cultivate BRRI dhan56 or BRRI dhan71 which withstand 2-3 weeks dry spell.",
+                "action_bn": "২-৩ সপ্তাহের খরা সহ্যকারী ব্রি ধান৫৬ বা ব্রি ধান৭১ চাষ করুন।",
+                "source": "BRRI Varietal Release (2018)"
+            },
+            {
+                "title_en": "Supplementary Life Irrigation",
+                "title_bn": "সম্পূরক সেচ প্রয়োগ",
+                "action_en": "Prioritize 50 mm supplementary pumping during booting and heading stages.",
+                "action_bn": "ধানের থোড় ও শিষ বের হওয়ার সময় ৫০ মিমি সম্পূরক সেচ নিশ্চিত করুন।",
+                "source": "FAO-33 Rice Water Guidelines"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Standing Water Buffer",
+                "title_bn": "৫-৭ সেমি পানি ধরে রাখা",
+                "action_en": "Keep 5-7 cm standing water in paddy during anthesis to moderate canopy temperature.",
+                "action_bn": "ফুল ফোটার সময় জমিতে ৫-৭ সেমি পানি রাখলে উদ্ভিদের তাপমাত্রা সহনশীল থাকে।",
+                "source": "BRRI High Temp Bulletin"
+            },
+            {
+                "title_en": "Heat Tolerant Germplasm",
+                "title_bn": "তাপ-সহনশীল জাত",
+                "action_en": "Adopt BRRI dhan89 or BRRI dhan92 with higher spikelet fertility under high Tmax.",
+                "action_bn": "উচ্চ তাপমাত্রায় চিটা কম হওয়া ব্রি ধান৮৯ বা ব্রি ধান৯২ জাত নির্বাচন করুন।",
+                "source": "BRRI Agronomy Division (2021)"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Submergence-Tolerant Rice",
+                "title_bn": "জলমগ্নতা-সহনশীল জাত ব্রি ধান৫১/৫২",
+                "action_en": "Plant BRRI dhan51 or BRRI dhan52 with Sub1 gene surviving 14 days full submergence.",
+                "action_bn": "১৪ দিন পর্যন্ত সম্পূর্ণ পানির নিচে ডুবে থাকা সহ্যকারী ব্রি ধান৫১ বা ৫২ চাষ করুন।",
+                "source": "BRRI & IRRI Sub1 Gene Project"
+            },
+            {
+                "title_en": "Older Sturdy Seedlings",
+                "title_bn": "বয়স্ক চারা রোপণ",
+                "action_en": "Transplant 35-40 day old sturdy seedlings capable of fast revival after inundation.",
+                "action_bn": "বন্যার পানি নেমে গেলে দ্রুত ঘুরে দাঁড়াতে ৩৫-৪০ দিনের শক্ত চারা রোপণ করুন।",
+                "source": "BRRI Rice Production Handbook"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Polythene Seedbed Cover",
+                "title_bn": "পলিথিন ছাউনি দিয়ে চারা সুরক্ষা",
+                "action_en": "Cover boro nursery seedbeds with clear polythene sheets from sunset to sunrise.",
+                "action_bn": "শৈত্যপ্রবাহে চারার হলদে ভাব ঠেকাতে সূর্যাস্ত থেকে সূর্যোদয় পর্যন্ত পলিথিন ছাউনি দিন।",
+                "source": "BRRI Cold Injury Guidelines"
+            },
+            {
+                "title_en": "Cold-Tolerant Boro Varieties",
+                "title_bn": "ঠান্ডা-সহনশীল ব্রি ধান৩৬/৫৫",
+                "action_en": "Adopt BRRI dhan36 or BRRI dhan55 developed for northern cold-prone tracts.",
+                "action_bn": "উত্তরাঞ্চলের তীব্র শীতের জন্য ব্রি ধান৩৬ বা ব্রি ধান৫৫ জাত ব্যবহার করুন।",
+                "source": "BRRI Regional Station Rangpur"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Saline-Tolerant Rice BRRI dhan67",
+                "title_bn": "লবণ-সহনশীল ব্রি ধান৬৭/৭৩",
+                "action_en": "Grow BRRI dhan67 (Boro) or BRRI dhan73 (Aman) tolerating ECe 8-10 dS/m.",
+                "action_bn": "৮-১০ dS/m লবণাক্ততা সহ্য করতে সক্ষম ব্রি ধান৬৭ বা ব্রি ধান৭৩ রোপণ করুন।",
+                "source": "BRRI Coastal Agriculture Division"
+            },
+            {
+                "title_en": "Freshwater Canal Flushing",
+                "title_bn": "মিঠাপানি দিয়ে জমি ধৌতকরণ",
+                "action_en": "Flush root zone with trapped canal rainwater before transplanting.",
+                "action_bn": "চারা রোপণের পূর্বে সংরক্ষিত খালের মিঠাপানি দিয়ে জমি একবার ধুয়ে ফেলুন।",
+                "source": "SRDI Salinity Guide"
+            }
+        ]
+    },
+    "Chickpea": {
+        "drought": [
+            {
+                "title_en": "Single Pod-Initiation Irrigation",
+                "title_bn": "শুঁটি গঠনের শুরুতে ১টি সেচ",
+                "action_en": "Apply 1 light furrow irrigation at pod initiation (60 DAS) to avert 40% seed loss.",
+                "action_bn": "দানা গঠনের সময় (৬০ দিনে) ১টি হালকা নালা সেচ দিলে ফলন বিপর্যয় রক্ষা পায়।",
+                "source": "BARI Pulses Research Centre"
+            },
+            {
+                "title_en": "Foliar Urea / DAP Spray",
+                "title_bn": "২% ডিএপি বা ইউরিয়া স্প্রে",
+                "action_en": "Spray 2% DAP or Potassium solution at flowering to boost drought endurance.",
+                "action_bn": "ফুল ফোটার সময় ২% ডিএপি পানির দ্রবণ স্প্রে করে খরা সহনশীলতা বৃদ্ধি করুন।",
+                "source": "BARI Agronomy Division"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Heat-Tolerant BARI Chola-9",
+                "title_bn": "উত্তাপ-সহনশীল বারি ছোলা-৯",
+                "action_en": "Sow BARI Chola-9 which sets pods even at 32°C ambient temperatures.",
+                "action_bn": "৩২°C তাপমাত্রাতেও ফলন দিতে সক্ষম বারি ছোলা-৯ জাত চাষ করুন।",
+                "source": "BARI Pulses Research Centre"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Strict Water Discharge",
+                "title_bn": "দ্রুত নিষ্কাশন ব্যবস্থাপনা",
+                "action_en": "Chickpea cannot tolerate 48 hrs waterlogging; create deep cross-furrows.",
+                "action_bn": "ছোলা ৪৮ ঘণ্টা জলাবদ্ধতা সহ্য করে না; জমিতে আরারি নিষ্কাশন নালা তৈরি রাখুন।",
+                "source": "BARI Soil & Water Management"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Frost Buffer Irrigation",
+                "title_bn": "শৈত্যপ্রবাহে হালকা সেচ",
+                "action_en": "A light irrigation before anticipated cold wave raises nighttime soil temp by 1-2°C.",
+                "action_bn": "তীব্র ঠান্ডার পূর্বাভাসে জমিতে সামান্য সেচ দিলে মাটির তাপমাত্রা ১-২°C বৃদ্ধি পায়।",
+                "source": "BARI Climate Advisory"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Mulch and Ridge Sowing",
+                "title_bn": "রিজ ও খড় মালচিং",
+                "action_en": "Sow on ridges with straw mulch to prevent capillary salt upward movement.",
+                "action_bn": "মাটির লবণ উপরে ওঠা রোধ করতে উঁচু রিজে বপন ও খড় মালচিং ব্যবহার করুন।",
+                "source": "SRDI Salinity Technical Bulletin"
+            }
+        ]
+    },
+    "Soybean": {
+        "drought": [
+            {
+                "title_en": "Pod Filling Irrigation",
+                "title_bn": "দানা পুষ্ট হওয়ার সময় সেচ",
+                "action_en": "Irrigate at R3 pod formation stage to prevent seed size reduction.",
+                "action_bn": "শুঁটিতে দানা গঠনের সময় (R3 ধাপে) সেচ দিলে বীজের আকার স্বাভাবিক থাকে।",
+                "source": "BARI Oilseed Research Centre"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Heat Tolerant BARI Soybean-6",
+                "title_bn": "বারি সয়াবিন-৬ নির্বাচন",
+                "action_en": "Cultivate high temperature tolerant BARI Soybean-6 (BARI).",
+                "action_bn": "উচ্চ তাপমাত্রা সহনশীল বারি সয়াবিন-৬ জাত চাষ করুন।",
+                "source": "BARI (2020)"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Raised Bed Seeding",
+                "title_bn": "উঁচু বেড পদ্ধতি",
+                "action_en": "Prepare broad beds to protect young soybean taproots from water stagnation.",
+                "action_bn": "অতিরিক্ত বৃষ্টিতে শিকড় পচা ঠেকাতে উঁচু বেডে সয়াবিন চাষ করুন।",
+                "source": "BARI Agronomy Division"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Delayed Seeding Post-Cold",
+                "title_bn": "শীত কমার পর বপন",
+                "action_en": "Sow in mid-January when severe winter fog subsidies for uniform germination.",
+                "action_bn": "কুয়াশা ও তীব্র শীত কমার পর জানুয়ারির মাঝামাঝি সময়ে বীজ বপন করুন।",
+                "source": "BARI Extension Guidelines"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Salt Tolerant BARI Soybean-5",
+                "title_bn": "লবণাক্ততা প্রতিরোধী জাত",
+                "action_en": "Use BARI Soybean-5 possessing salinity tolerance up to 6.0 dS/m in coastal belt.",
+                "action_bn": "উপকূলীয় অঞ্চলে ৬.০ dS/m পর্যন্ত লবণাক্ততা সহ্যকারী বারি সয়াবিন-৫ ব্যবহার করুন।",
+                "source": "SRDI & BARI Coastal Centre"
+            }
+        ]
+    },
+    "Sesame": {
+        "drought": [
+            {
+                "title_en": "Single Pre-Flowering Irrigation",
+                "title_bn": "ফুল আসার পূর্বে ১টি সেচ",
+                "action_en": "Give 1 light irrigation at 25-30 DAS if summer rain is delayed.",
+                "action_bn": "গ্রীষ্মের বৃষ্টি দেরি হলে ২৫-৩০ দিনে ১টি হালকা সেচ দিন।",
+                "source": "BARI Oilseed Manual"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Early Morning Sowing Schedule",
+                "title_bn": "সময়মতো বপন",
+                "action_en": "Sow by late February to finish capsule filling before scorching May heat.",
+                "action_bn": "মে মাসের তীব্র খরতাপের পূর্বেই ফসল পাকা নিশ্চিত করতে ফেব্রুয়ারির শেষে বপন করুন।",
+                "source": "BARI Agronomy Guide"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Zero Waterlogging Tolerance Drainage",
+                "title_bn": "নিষ্কাশন নালা তৈরি",
+                "action_en": "Sesame plants wilt fatally in 12 hours of standing water; dig 25 cm drain trenches.",
+                "action_bn": "তিল গাছে ১২ ঘণ্টা পানি জমলেই মারা যায়; তাই জমির চারপাশে গভীর নালা রাখুন।",
+                "source": "BARI Plant Protection Division"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Warm Soil Temperature Seeding",
+                "title_bn": "উষ্ণ মাটিতে বপন",
+                "action_en": "Ensure soil temperature exceeds 20°C before seeding to prevent damping-off.",
+                "action_bn": "মাটির তাপমাত্রা ২০°C-এর উপরে না ওঠা পর্যন্ত বীজ বপন করবেন না।",
+                "source": "BARI (2019)"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Post-Monsoon Desalinated Sowing",
+                "title_bn": "লবণ ধৌত হওয়ার পর বপন",
+                "action_en": "Plant only after rain has flushed upper 15 cm soil layer below 4.0 dS/m.",
+                "action_bn": "বৃষ্টির পানিতে মাটির উপরিভাগের লবণ ধুয়ে ৪ dS/m-এর নিচে নামলে তবেই তিল বপন করুন।",
+                "source": "SRDI Salinity Manual"
+            }
+        ]
+    },
+    "Lentil": {
+        "drought": [
+            {
+                "title_en": "Single Critical Irrigation",
+                "title_bn": "১টি জরুরি সেচ",
+                "action_en": "Apply 1 light irrigation (30 mm) at 35 DAS to sustain branch formation.",
+                "action_bn": "শাখা-প্রশাখা গজানোর সময় (৩৫ দিনে) ১টি জরুরি ৩০ মিমি সেচ দিন।",
+                "source": "BARI Pulses Research Centre"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "BARI Masur-8 Variety",
+                "title_bn": "উত্তাপ-সহনশীল বারি মসুর-৮",
+                "action_en": "Adopt high temperature resilient BARI Masur-8 (BARI).",
+                "action_bn": "উচ্চ তাপমাত্রা সহনশীল বারি মসুর-৮ জাত নির্বাচন করুন।",
+                "source": "BARI PRC Ishurdi"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "Surface Water Discharge",
+                "title_bn": "জলাবদ্ধতা নিরসন",
+                "action_en": "Drain water immediately; apply Fungicide Mancozeb (2g/L) to prevent collar rot.",
+                "action_bn": "পানি দ্রুত সরিয়ে ২ গ্রাম/লিটার ম্যানকোজেব স্প্রে করে কলার রট রোগ প্রতিরোধ করুন।",
+                "source": "BARI Plant Pathology"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Potash and Boron Nutrition",
+                "title_bn": "পটাশ ও বোরন সার",
+                "action_en": "Maintain balanced Potash and Boron to sustain cell wall strength in chill snaps.",
+                "action_bn": "শৈত্যপ্রবাহে ফুল ফোটা সচল রাখতে জমিতে পরিমিত বোরন ও পটাশ সার ব্যবহার করুন।",
+                "source": "BARI (2018)"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Residue Mulching",
+                "title_bn": "খড় মালচিং",
+                "action_en": "Use thick straw mulch to cut evaporative capillary salt deposit on seedbed.",
+                "action_bn": "মাটির উপরের স্তরে লবণ জমা বন্ধ করতে পুরো জমিতে খড়ের মালচ দিন।",
+                "source": "SRDI Technical Guide"
+            }
+        ]
+    },
+    "Tomato": {
+        "drought": [
+            {
+                "title_en": "Drip Irrigation Regimen",
+                "title_bn": "ড্রিপ বা নিয়ন্ত্রিত সেচ",
+                "action_en": "Install perforated drip lines to deliver uniform root zone moisture and avoid blossom end rot.",
+                "action_bn": "ফল ফেটে যাওয়া ও ব্লোজম এন্ড রট এড়াতে ড্রিপ বা নিয়ন্ত্রিত সেচ নিশ্চিত করুন।",
+                "source": "BARI Horticulture Research Centre (HRC)"
+            }
+        ],
+        "heatwave": [
+            {
+                "title_en": "Heat-Tolerant Hybrid BARI Tomato-14",
+                "title_bn": "উত্তাপ-সহনশীল বারি টমেটো-১৪",
+                "action_en": "Cultivate summer variety BARI Tomato-14 capable of fruit setting at 34°C.",
+                "action_bn": "৩৪°C তাপমাত্রাতেও ফল ধরতে সক্ষম গ্রীষ্মকালীন বারি টমেটো-১৪ চাষ করুন।",
+                "source": "BARI Horticulture Centre"
+            }
+        ],
+        "flood": [
+            {
+                "title_en": "High Bed and Staking",
+                "title_bn": "উঁচু বেড ও মাচা/খুঁটি",
+                "action_en": "Raise bed height to 30 cm and stake vines to keep foliage dry.",
+                "action_bn": "৩০ সেমি উঁচু বেড তৈরি করুন এবং গাছ খুঁটির সাথে বেঁধে মাটি থেকে উঁচুতে রাখুন।",
+                "source": "BARI Olericulture Division"
+            }
+        ],
+        "coldwave": [
+            {
+                "title_en": "Plastic Tunnel Protection",
+                "title_bn": "প্লাস্টিক টানেল সুরক্ষা",
+                "action_en": "Cover young plants with clear polythene tunnels during peak cold waves.",
+                "action_bn": "তীব্র শৈত্যপ্রবাহ চলাকালে গাছের উপর পলিথিন টানেল দিয়ে কুয়াশা সুরক্ষা দিন।",
+                "source": "BARI HRC Bulletin"
+            }
+        ],
+        "salinity": [
+            {
+                "title_en": "Salinity Tolerant Grafting",
+                "title_bn": "লবণ-সহনশীল রুটের গ্রাফটিং",
+                "action_en": "Graft commercial scions onto wild Solanum torvum rootstock.",
+                "action_bn": "লবণাক্ত অঞ্চলে বুনো তিতবেগুন রুটের ওপর গ্রাফটিং করে চারা রোপণ করুন।",
+                "source": "BARI / SRDI Joint Research"
+            }
+        ]
+    }
+}
+
+# Generic fallback for other crops
+GENERIC_MITIGATIONS = {
+    "drought": [
+        {
+            "title_en": "Critical Stage Irrigation",
+            "title_bn": "সংবেদনশীল ধাপে জরুরি সেচ",
+            "action_en": "Prioritize available irrigation during flowering and fruit/grain setting.",
+            "action_bn": "ফুল ফোটা ও দানা বাঁধার সংবেদনশীল ধাপে সেচের পানি অগ্রাধিকার দিন।",
+            "source": "FAO-33 Irrigation & Drainage Paper"
+        },
+        {
+            "title_en": "Organic Mulch Layer",
+            "title_bn": "জৈব মালচিং স্তর",
+            "action_en": "Apply dry plant biomass or straw mulch to reduce evaporation loss.",
+            "action_bn": "মাটির আর্দ্রতা ধরে রাখতে শুকনা খড় বা লতাপাতার মালচিং ব্যবহার করুন।",
+            "source": "BARI Agronomy Division"
+        }
+    ],
+    "heatwave": [
+        {
+            "title_en": "Evening Canopy Cooling",
+            "title_bn": "বিকেলে হালকা সেচ",
+            "action_en": "Apply light irrigation in late afternoon to lower canopy microclimate temp.",
+            "action_bn": "বিকেলে হালকা সেচ দিলে উদ্ভিদের আশপাশের তাপমাত্রা ২-৩°C হ্রাস পায়।",
+            "source": "BARI Weather Advisory"
+        },
+        {
+            "title_en": "Potassium / Boron Spray",
+            "title_bn": "পটাশ ও বোরন স্প্রে",
+            "action_en": "Foliar spray of 1% Potash to enhance cellular water retention and membrane stability.",
+            "action_bn": "কোষের পানিশূন্যতা রোধে ১% পটাশ পানির সাথে মিশিয়ে স্প্রে করুন।",
+            "source": "BRRI / BARI Plant Physiology"
+        }
+    ],
+    "flood": [
+        {
+            "title_en": "Raised Bed & Deep Furrows",
+            "title_bn": "উঁচু বেড ও গভীর নালা",
+            "action_en": "Ensure field beds are elevated with continuous gravity drainage trenches.",
+            "action_bn": "জমির চারপাশে গভীর নালা তৈরি করে দ্রুত পানি নিষ্কাশনের ব্যবস্থা রাখুন।",
+            "source": "BARI Farm Machinery Division"
+        },
+        {
+            "title_en": "Preventive Fungicide Drench",
+            "title_bn": "ছত্রাকনাশক প্রয়োগ",
+            "action_en": "Spray Carbendazim / Mancozeb immediately after flood waters recede.",
+            "action_bn": "পানি নেমে যাওয়ার সাথে সাথে শিকড় পচা ঠেকাতে অনুমোদিত ছত্রাকনাশক স্প্রে করুন।",
+            "source": "BARI Plant Pathology Division"
+        }
+    ],
+    "coldwave": [
+        {
+            "title_en": "Nocturnal Furrow Irrigation",
+            "title_bn": "রাতে নালায় হালকা পানি রাখা",
+            "action_en": "Fill shallow furrows with water overnight to insulate against chilling temperatures.",
+            "action_bn": "রাতে জমিতে সামান্য পানি ধরে রাখলে মাটির তাপমাত্রা স্বাভাবিকের চেয়ে বেশি থাকে।",
+            "source": "BRRI / BARI Climate Resilience Bulletin"
+        },
+        {
+            "title_en": "Balanced Potash Nutrition",
+            "title_bn": "সুষম পটাশ সার প্রয়োগ",
+            "action_en": "Ensure adequate Muriate of Potash to enhance plant physiological cold tolerance.",
+            "action_bn": "গাছের শীত সহ্য করার ক্ষমতা বৃদ্ধি করতে সঠিক মাত্রায় পটাশ সার নিশ্চিত করুন।",
+            "source": "BARI (2018)"
+        }
+    ],
+    "salinity": [
+        {
+            "title_en": "Raised Ridge Planting",
+            "title_bn": "উঁচু রিজে চারা রোপণ",
+            "action_en": "Plant on raised ridges with straw mulching to suppress capillary salt crusting.",
+            "action_bn": "লবণাক্ততা ঠেকাতে উঁচু রিজে রোপণ ও মাটিতে খড়ের মালচ ব্যবহার করুন।",
+            "source": "SRDI Salinity Management Guidelines (2020)"
+        },
+        {
+            "title_en": "Gypsum Soil Conditioning",
+            "title_bn": "জিপসাম সার দিয়ে মাটি শোধন",
+            "action_en": "Apply gypsum to displace exchangeable sodium from root zone.",
+            "action_bn": "শিকড় থেকে ক্ষতিকর সোডিয়াম দূর করতে জিপসাম সার প্রয়োগ করুন।",
+            "source": "SRDI Technical Bulletin"
+        }
+    ]
+}
+
+for crop_name, crop_obj in data.items():
+    if crop_name in MITIGATIONS_BY_CROP:
+        crop_obj["mitigations"] = MITIGATIONS_BY_CROP[crop_name]
+    else:
+        crop_obj["mitigations"] = GENERIC_MITIGATIONS
+
+# Also ensure Rice aliases Boro Rice and Aus Rice have proper mitigations
+data["Boro Rice"]["mitigations"] = MITIGATIONS_BY_CROP["Rice"]
+data["Aus Rice"]["mitigations"] = MITIGATIONS_BY_CROP["Rice"]
+
+with open(path, "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2, ensure_ascii=False)
+
+print("Successfully enriched data/crops/crop_stress_params.json with crop-specific mitigations!")

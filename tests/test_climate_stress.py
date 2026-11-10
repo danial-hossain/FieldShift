@@ -191,3 +191,57 @@ def test_geo_climate_scenario_dynamic():
     assert "water_delta_mm" in data
     assert "existing_profit_delta_pct" in data
     assert "water_strat_profit_delta_pct" in data
+
+
+def test_monotonic_intensity_growth_all_hazards_and_strategies():
+    """Verify SF1: Loss must grow with intensity (Mild <= Moderate <= Severe and Mild < Severe) for all 5 hazards x 4 strategies."""
+    hazards = ["heatwave", "drought", "flood", "coldwave", "salinity"]
+    strategies = ["balanced", "profit", "water", "soil"]
+
+    for hz in hazards:
+        for st in strategies:
+            losses = []
+            for inten in ["mild", "moderate", "severe"]:
+                res = run_climate_stress_test(
+                    district="bogura",
+                    strategy=st,
+                    scenario=hz,
+                    intensity=inten,
+                    area_ha=0.67,
+                )
+                assert res["status"] == "ok"
+                assert len(res["seasons"]) == 6
+                # Verify complete SF1 fields
+                for s in res["seasons"]:
+                    assert "season_label" in s
+                    assert "crop" in s
+                    assert "hit" in s
+                    assert "mechanism" in s
+                    assert "yield_before_maund" in s
+                    assert "yield_after_maund" in s
+                    assert "loss_pct" in s
+                    assert "profit_before_bdt" in s
+                    assert "profit_after_bdt" in s
+                    assert "irrigation_before_mm" in s
+                    assert "irrigation_after_mm" in s
+                    assert "severity" in s
+                loss_val = res["summary"]["total_profit_loss_bdt"]
+                losses.append(loss_val)
+
+            mild, mod, sev = losses[0], losses[1], losses[2]
+            assert sev >= mod >= mild, f"Monotonicity failed for hazard={hz}, strategy={st}: mild={mild}, mod={mod}, sev={sev}"
+            assert sev > mild, f"Severe must exceed mild for hazard={hz}, strategy={st}: mild={mild}, sev={sev}"
+            # At least one season must be hit and have loss > 0
+            res_mod = run_climate_stress_test(
+                district="bogura",
+                strategy=st,
+                scenario=hz,
+                intensity="moderate",
+                area_ha=0.67,
+            )
+            hit_seasons = [s for s in res_mod["seasons"] if s["hit"]]
+            assert len(hit_seasons) > 0, f"No seasons hit for hazard={hz}, strategy={st}"
+            assert any(s["loss_pct"] > 0 for s in hit_seasons), f"No positive loss for hazard={hz}, strategy={st}"
+            # Verify mitigations
+            assert len(res_mod["mitigations"]) > 0, f"Mitigations empty for hazard={hz}, strategy={st}"
+
