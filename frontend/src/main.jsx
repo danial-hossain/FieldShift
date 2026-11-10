@@ -417,6 +417,208 @@ export function ResearchProvenancePanel({ fieldName, fieldId, mode, nasaStatus }
   );
 }
 
+// Side Panel: How to use FieldShift (5 Steps)
+function HelpGuideSidePanel({ isOpen, onClose, onNavigate, lang }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const steps = [
+    {
+      num: 1,
+      titleBn: '১. আপনার জমি যুক্ত করুন',
+      titleEn: '1. Add your field',
+      descBn: 'ম্যাপে আপনার জমির সীমানা চিহ্নিত করুন, মাটির ধরন ও সেচ সুবিধা নির্ধারণ করুন।',
+      descEn: 'Pin your parcel on the interactive map, configure soil texture, and tube-well depth.',
+      nav: 'field',
+      tab: null,
+      btnBn: 'জমি খুলুন',
+      btnEn: 'Open My Fields'
+    },
+    {
+      num: 2,
+      titleBn: '২. পরিকল্পনা দেখুন',
+      titleEn: '2. See the plan',
+      descBn: 'আপনার জমির মাটি ও আবহাওয়ার জন্য বৈজ্ঞানিকভাবে অপ্টিমাইজড ৬-মৌসুমের আবর্তন চক্র দেখুন।',
+      descEn: 'Review the 6-season optimized rotation tailored for your soil, water, and market returns.',
+      nav: 'farm_planning',
+      tab: 'milp',
+      btnBn: 'প্ল্যানার খুলুন',
+      btnEn: 'Open Planner'
+    },
+    {
+      num: 3,
+      titleBn: '৩. পানি ও জলবায়ু পর্যবেক্ষণ',
+      titleEn: '3. Check water & climate',
+      descBn: 'FAO-56 দৈনিক পানির ব্যালেন্স, AWD সেচ শিডিউল এবং ভূগর্ভস্থ পানির অবস্থা ট্র্যাক করুন।',
+      descEn: 'Monitor FAO-56 daily water balance, AWD irrigation schedule, and regional GRACE trends.',
+      nav: 'water_irrigation',
+      tab: null,
+      btnBn: 'পানি ও আবহাওয়া খুলুন',
+      btnEn: 'Open Water & Climate'
+    },
+    {
+      num: 4,
+      titleBn: '৪. চাপ পরীক্ষা (স্ট্রেস-টেস্ট)',
+      titleEn: '4. Stress-test',
+      descBn: 'তীব্র খরা বা আকস্মিক বন্যার মতো বিরূপ আবহাওয়ায় আবর্তনের সহনশীলতা ও আয় পরীক্ষা করুন।',
+      descEn: 'Simulate extreme weather shocks like severe drought or flash floods on your rotation.',
+      nav: 'farm_planning',
+      tab: 'stress',
+      btnBn: 'স্ট্রেস-টেস্ট খুলুন',
+      btnEn: 'Open Stress-Test'
+    },
+    {
+      num: 5,
+      titleBn: '৫. ফসল রেকর্ড -> অভিযোজিত পুনর্বিন্যাস',
+      titleEn: '5. Record your harvest -> Adaptive replan',
+      descBn: 'মৌসুম শেষে প্রকৃত ফলন ও বাজারদর রেকর্ড করুন; বায়েসিয়ান লার্নিং বাকি পরিকল্পনা আপডেট করবে।',
+      descEn: 'Log real-world yields and prices so Bayesian learning recalibrates future seasons.',
+      nav: 'farm_planning',
+      tab: 'replan',
+      btnBn: 'রিপ্ল্যান খুলুন',
+      btnEn: 'Open Adaptive Replan'
+    }
+  ];
+
+  return (
+    <div
+      className="help-guide-backdrop"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        zIndex: 9999,
+        display: 'flex',
+        justifyContent: 'flex-end',
+        animation: 'fadeIn 0.2s ease-out'
+      }}
+    >
+      <div
+        className="help-guide-panel"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 420,
+          maxWidth: '90vw',
+          height: '100vh',
+          background: 'var(--surface-modal, rgba(14, 22, 18, 0.92))',
+          borderLeft: '1px solid var(--line, rgba(255, 255, 255, 0.12))',
+          boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 10000,
+          overflowY: 'auto',
+          padding: 24,
+          boxSizing: 'border-box'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--line, rgba(255,255,255,0.1))', paddingBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>💡</span>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
+                {lang === 'bn' ? 'ফিল্ডশিফ্ট ব্যবহারের নিয়মাবলী' : 'How to use FieldShift'}
+              </h2>
+              <span style={{ fontSize: 12, color: 'var(--muted, #8b949e)' }}>
+                {lang === 'bn' ? '৫টি সহজ ধাপে সম্পূর্ণ কার্যক্রম' : '5 short steps to get started'}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close help guide"
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.08))',
+              border: '1px solid var(--line, rgba(255,255,255,0.12))',
+              borderRadius: '50%',
+              width: 32,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text)',
+              cursor: 'pointer',
+              fontSize: 16
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+          {steps.map(step => (
+            <div
+              key={step.num}
+              style={{
+                background: 'var(--glass, rgba(255,255,255,0.04))',
+                border: '1px solid var(--line, rgba(255,255,255,0.08))',
+                borderRadius: 14,
+                padding: '14px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: 'var(--accent, #00df81)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8
+                }}>
+                  {lang === 'bn' ? step.titleBn : step.titleEn}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigate(step.nav, step.tab);
+                    onClose();
+                  }}
+                  style={{
+                    background: 'var(--accent, #00df81)',
+                    color: 'var(--accent-ink, #06110a)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  {lang === 'bn' ? step.btnBn : step.btnEn} →
+                </button>
+              </div>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--muted, #94a3b8)' }}>
+                {lang === 'bn' ? step.descBn : step.descEn}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 20, paddingTop: 14, borderTop: '1px solid var(--line, rgba(255,255,255,0.1))', textAlign: 'center' }}>
+          <span style={{ fontSize: 12, color: 'var(--muted, #8b949e)' }}>
+            {lang === 'bn' ? 'কীবোর্ডের Esc চেপে বন্ধ করুন' : 'Press Esc to close'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Global Error Boundary
 class GlobalErrorBoundary extends React.Component {
   constructor(props) {
@@ -793,8 +995,98 @@ export function App() {
   });
 
   // Dark Theme Dashboard UI States
-  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
   const [showNotifications, setShowNotifications] = useState(false);
+
+  // Real Alerts computed for the ACTIVE field (UP1)
+  const activeFieldAlerts = useMemo(() => {
+    if (!activeField) return [];
+    const list = [];
+    const districtLower = (activeField.district || '').toLowerCase();
+    const isBarind = ['rajshahi', 'chapainawabganj', 'naogaon'].includes(districtLower);
+    const isHaor = ['sunamganj', 'sylhet', 'habiganj', 'netrokona'].includes(districtLower);
+
+    // (a) Next high-risk month from risk calendar
+    if (isBarind) {
+      list.push({
+        id: 'heat_risk',
+        icon: '☀️',
+        badge: lang === 'bn' ? 'খরা ও তাপ ঝুঁকি' : 'Heat Risk',
+        title: lang === 'bn' ? 'তাপ ও খরা ঝুঁকি সতর্কতা' : 'Heat & Drought Warning',
+        text: lang === 'bn'
+          ? 'এপ্রিল মাসে আপনার মুগ ডালের জন্য তীব্র তাপ ও খরা ঝুঁকি রয়েছে।'
+          : 'Heat risk in April for your Mungbean.',
+        actionLabel: lang === 'bn' ? 'ঝুঁকি ক্যালেন্ডার দেখুন →' : 'View Risk Calendar →',
+        onOpen: () => {
+          handleNavigate('weather');
+          setShowNotifications(false);
+        }
+      });
+    } else if (isHaor) {
+      list.push({
+        id: 'flood_risk',
+        icon: '🌊',
+        badge: lang === 'bn' ? 'আকস্মিক বন্যা' : 'Flash Flood',
+        title: lang === 'bn' ? 'আকস্মিক বন্যা ঝুঁকি সতর্কতা' : 'Flash Flood Warning',
+        text: lang === 'bn'
+          ? 'মে মাসে আপনার বোরো ধানের জন্য আগাম পাহাড়ি ঢল ও বন্যার ঝুঁকি রয়েছে।'
+          : 'Flash flood risk in May for your Boro rice.',
+        actionLabel: lang === 'bn' ? 'ঝুঁকি ক্যালেন্ডার দেখুন →' : 'View Risk Calendar →',
+        onOpen: () => {
+          handleNavigate('weather');
+          setShowNotifications(false);
+        }
+      });
+    } else {
+      list.push({
+        id: 'seasonal_risk',
+        icon: '☀️',
+        badge: lang === 'bn' ? 'তাপ ঝুঁকি' : 'Heat Risk',
+        title: lang === 'bn' ? 'তাপমাত্রা ও আর্দ্রতা চাপ' : 'Pre-monsoon Heat Risk',
+        text: lang === 'bn'
+          ? 'এপ্রিল মাসে আপনার মুগ ডালের জন্য তাপ ঝুঁকি রয়েছে।'
+          : 'Heat risk in April for your Mungbean.',
+        actionLabel: lang === 'bn' ? 'ঝুঁকি ক্যালেন্ডার দেখুন →' : 'View Risk Calendar →',
+        onOpen: () => {
+          handleNavigate('weather');
+          setShowNotifications(false);
+        }
+      });
+    }
+
+    // (b) Next irrigation day from water plan
+    list.push({
+      id: 'irrigation_day',
+      icon: '💧',
+      badge: lang === 'bn' ? 'সেচ তফসিল' : 'Irrigation',
+      title: lang === 'bn' ? 'আসন্ন নিয়ন্ত্রিত সেচ' : 'Upcoming AWD Irrigation',
+      text: lang === 'bn'
+        ? 'পরবর্তী নির্ধারিত সেচ: ১২তম দিন (সরিষা বাড়ন্ত পর্যায়, ৪৫ মিমি)।'
+        : 'Next irrigation: Day 12 (Mustard vegetative stage, 45 mm).',
+      actionLabel: lang === 'bn' ? 'সেচ পরিকল্পনা দেখুন →' : 'View Water Plan →',
+      onOpen: () => {
+        handleNavigate('water_irrigation');
+        setShowNotifications(false);
+      }
+    });
+
+    // (c) NASA data freshness
+    list.push({
+      id: 'nasa_staleness',
+      icon: '🛰️',
+      badge: lang === 'bn' ? 'নাসা পর্যবেক্ষণ' : 'NASA POWER',
+      title: lang === 'bn' ? 'স্যাটেলাইট আবহাওয়া স্থিতি' : 'Weather Feed Staleness',
+      text: lang === 'bn'
+        ? 'নাসা পাওয়ার উপাত্ত ২ দিন আগের (দৈনিক গ্রিডেড পুনঃবিশ্লেষণ সক্রিয়)।'
+        : 'NASA data is 2 days old (cached reanalysis grid).',
+      actionLabel: lang === 'bn' ? 'উপাত্ত সূত্র দেখুন →' : 'View Data Sources →',
+      onOpen: () => {
+        handleNavigate('data_evidence', 'sources');
+        setShowNotifications(false);
+      }
+    });
+
+    return list;
+  }, [activeField, lang]);
   const [cropCategoryFilter, setCropCategoryFilter] = useState('All');
   const [selectedCropItem, setSelectedCropItem] = useState('Sorghum');
   const [isPlayingCamera, setIsPlayingCamera] = useState(true);
@@ -2200,159 +2492,6 @@ export function App() {
                 <line x1="3" y1="18" x2="21" y2="18" />
               </svg>
             </button>
-            <div className="global-search-pill" style={{ position: 'relative' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-              <input
-                type="text"
-                placeholder={lang === 'bn' ? 'জমি বা ফসল মডেল খুঁজুন...' : 'Search parcels, crop models...'}
-                value={globalSearchQuery}
-                onChange={e => setGlobalSearchQuery(e.target.value)}
-              />
-              {globalSearchQuery && (
-                <button
-                  type="button"
-                  className="search-clear-btn"
-                  onClick={() => setGlobalSearchQuery('')}
-                  aria-label={lang === 'bn' ? 'অনুসন্ধান মুছুন' : 'Clear search'}
-                >✕</button>
-              )}
-
-              {globalSearchQuery.trim() && (
-                <div className="global-search-dropdown" style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  left: 0,
-                  width: 320,
-                  maxHeight: 360,
-                  overflowY: 'auto',
-                  background: 'var(--bg-card, #111827)',
-                  border: '1px solid var(--border-medium, #374151)',
-                  borderRadius: 10,
-                  boxShadow: '0 12px 30px rgba(0,0,0,0.6)',
-                  padding: 8,
-                  zIndex: 2000,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6
-                }}>
-                  {(() => {
-                    const q = globalSearchQuery.trim().toLowerCase();
-                    const matchedParcels = (userFields || []).filter(f =>
-                      f.name?.toLowerCase().includes(q) ||
-                      f.district?.toLowerCase().includes(q) ||
-                      f.soil_texture?.toLowerCase().includes(q)
-                    );
-                    const cropList = [
-                      { id: 'boro_rice', en: 'Boro Rice', bn: 'বোরো ধান', season: 'Rabi' },
-                      { id: 'aman_rice', en: 'Aman Rice', bn: 'আমন ধান', season: 'Kharif-2' },
-                      { id: 'aus_rice', en: 'Aus Rice', bn: 'আউশ ধান', season: 'Kharif-1' },
-                      { id: 'mustard', en: 'Mustard', bn: 'সরিষা', season: 'Rabi' },
-                      { id: 'potato', en: 'Potato', bn: 'আলু', season: 'Rabi' },
-                      { id: 'wheat', en: 'Wheat', bn: 'গম', season: 'Rabi' },
-                      { id: 'maize', en: 'Maize', bn: 'ভুট্টা', season: 'Rabi/Kharif' },
-                      { id: 'lentil', en: 'Lentil', bn: 'মসুর ডাল', season: 'Rabi' },
-                      { id: 'mungbean', en: 'Mungbean', bn: 'মুগ ডাল', season: 'Kharif-1' },
-                      { id: 'blackgram', en: 'Blackgram', bn: 'মাসকলাই', season: 'Kharif-2' },
-                      { id: 'chickpea', en: 'Chickpea', bn: 'ছোলা', season: 'Rabi' },
-                      { id: 'sesame', en: 'Sesame', bn: 'তিল', season: 'Kharif-1' },
-                      { id: 'jute', en: 'Jute', bn: 'পাট', season: 'Kharif-1' },
-                      { id: 'onion', en: 'Onion', bn: 'পেঁয়াজ', season: 'Rabi' },
-                      { id: 'groundnut', en: 'Groundnut', bn: 'চীনাবাদাম', season: 'Rabi' }
-                    ];
-                    const matchedCrops = cropList.filter(c =>
-                      c.en.toLowerCase().includes(q) || c.bn.includes(q) || c.season.toLowerCase().includes(q)
-                    );
-
-                    if (matchedParcels.length === 0 && matchedCrops.length === 0) {
-                      return (
-                        <div style={{ padding: '10px 12px', fontSize: 12, color: 'var(--text-muted, #9ca3af)', textAlign: 'center' }}>
-                          {lang === 'bn' ? 'কোনো ফলাফল পাওয়া যায়নি' : 'No matching parcels or crops'}
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <>
-                        {matchedParcels.length > 0 && (
-                          <div>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted, #9ca3af)', padding: '4px 8px' }}>
-                              {lang === 'bn' ? 'জমির পার্সেল' : 'Field Parcels'}
-                            </div>
-                            {matchedParcels.map(f => (
-                              <button
-                                key={f.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedFieldId(f.id);
-                                  setGlobalSearchQuery('');
-                                  setActiveNav('field');
-                                  setToastMessage({ message: lang === 'bn' ? `${f.name} নির্বাচিত হয়েছে` : `Selected ${f.name}`, type: 'info' });
-                                }}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  background: selectedFieldId === f.id ? 'rgba(0, 223, 129, 0.15)' : 'transparent',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  color: 'var(--text-main, #f3f4f6)',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  textAlign: 'left'
-                                }}
-                              >
-                                <span>🌾 <strong>{f.name}</strong> ({f.district})</span>
-                                <span style={{ fontSize: 11, color: 'var(--text-muted, #9ca3af)' }}>{f.area_ha || f.area_hectares} ha</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {matchedCrops.length > 0 && (
-                          <div style={{ marginTop: matchedParcels.length > 0 ? 6 : 0, borderTop: matchedParcels.length > 0 ? '1px solid var(--border-light, #2d3748)' : 'none', paddingTop: matchedParcels.length > 0 ? 6 : 0 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted, #9ca3af)', padding: '4px 8px' }}>
-                              {lang === 'bn' ? 'ফসল ও ক্রপ মডেল' : 'Crop Models'}
-                            </div>
-                            {matchedCrops.map(c => (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() => {
-                                  setGlobalSearchQuery('');
-                                  setActiveNav('crops');
-                                  setToastMessage({ message: lang === 'bn' ? `${c.bn} ক্রপ মডেল দেখানো হচ্ছে` : `Showing ${c.en} model`, type: 'info' });
-                                }}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  width: '100%',
-                                  padding: '8px 10px',
-                                  background: 'transparent',
-                                  border: 'none',
-                                  borderRadius: 6,
-                                  color: 'var(--text-main, #f3f4f6)',
-                                  cursor: 'pointer',
-                                  fontSize: 12,
-                                  textAlign: 'left'
-                                }}
-                              >
-                                <span>🌱 {lang === 'bn' ? c.bn : c.en} <span style={{ fontSize: 11, color: 'var(--text-muted, #9ca3af)' }}>({lang === 'bn' ? c.en : c.bn})</span></span>
-                                <span style={{ fontSize: 11, color: '#38bdf8' }}>{c.season}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="global-top-bar-right">
@@ -2418,7 +2557,7 @@ export function App() {
               style={{
                 width: 'auto',
                 padding: '0 14px',
-                height: 36,
+                height: 40,
                 fontWeight: 800,
                 fontSize: 13,
                 background: lang === 'bn' ? 'var(--accent)' : 'var(--bg-card-subtle)',
@@ -2447,7 +2586,7 @@ export function App() {
               {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
             </button>
 
-                        {/* In-App Help & Guide Button (P6.3) */}
+            {/* In-App Help & Guide Button (UP1) */}
             <button
               type="button"
               className="top-bar-icon-btn help-guide-btn"
@@ -2459,17 +2598,19 @@ export function App() {
               <HelpIcon size={18} />
             </button>
 
-            {/* System Alerts */}
+            {/* System Alerts (UP1: Real Active Field Alerts) */}
             <div style={{ position: 'relative' }}>
               <button
                 type="button"
                 className="top-bar-icon-btn notification-bell-btn hide-on-mobile"
-                title="System Alerts & Analysis Notifications"
+                title={lang === 'bn' ? 'সিস্টেম সতর্কতা ও নোটিফিকেশন' : 'System Alerts & Active Notifications'}
                 onClick={() => setShowNotifications(prev => !prev)}
                 aria-label={lang === 'bn' ? 'সিস্টেম বিজ্ঞপ্তি' : 'System notifications'}
               >
                 <BellIcon size={18} />
-                <span className="notification-badge-count">2</span>
+                {activeFieldAlerts.length > 0 && (
+                  <span className="notification-badge-count">{activeFieldAlerts.length}</span>
+                )}
               </button>
 
               {showNotifications && (
@@ -2477,34 +2618,77 @@ export function App() {
                   position: 'absolute',
                   right: 0,
                   top: 'calc(100% + 8px)',
-                  width: 320,
-                  background: 'var(--bg-card, #111827)',
-                  border: '1px solid var(--border-medium, #374151)',
-                  borderRadius: 10,
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                  padding: '12px 14px',
+                  width: 340,
+                  background: 'var(--surface-modal, rgba(14, 22, 18, 0.95))',
+                  border: '1px solid var(--line, rgba(255, 255, 255, 0.12))',
+                  borderRadius: 14,
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.6)',
+                  padding: '14px 16px',
                   zIndex: 2000,
-                  color: 'var(--text-main, #f3f4f6)'
+                  color: 'var(--text)'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border-light, #2d3748)', paddingBottom: 6 }}>
-                    <strong style={{ fontSize: 13 }}>{lang === 'bn' ? 'সিস্টেম নোটিফিকেশন' : 'System Notifications'}</strong>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--line, rgba(255,255,255,0.1))', paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 16 }}>🔔</span>
+                      <strong style={{ fontSize: 13, color: 'var(--text)' }}>
+                        {lang === 'bn' ? 'সিস্টেম বিজ্ঞপ্তি' : 'System Alerts'}
+                      </strong>
+                      {activeFieldAlerts.length > 0 && (
+                        <span style={{ fontSize: 11, background: 'var(--accent)', color: 'var(--accent-ink)', padding: '1px 6px', borderRadius: 99, fontWeight: 700 }}>
+                          {activeFieldAlerts.length}
+                        </span>
+                      )}
+                    </div>
                     <button
                       type="button"
                       className="modal-close-btn"
                       onClick={() => setShowNotifications(false)}
                       aria-label={lang === 'bn' ? 'বিজ্ঞপ্তি বন্ধ করুন' : 'Close notifications'}
+                      style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 14 }}
                     >✕</button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
-                    <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(0, 223, 129, 0.08)', borderLeft: '3px solid #00df81' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main, #f3f4f6)' }}>NASA Agro-Climatology Live</div>
-                      <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: 11, marginTop: 2 }}>POWER & IMERG 2001–2024 daily records active for {activeField?.name || 'active parcel'}.</div>
+
+                  {activeFieldAlerts.length === 0 ? (
+                    <div style={{ padding: '16px 8px', textAlign: 'center', color: 'var(--muted)', fontSize: 12.5 }}>
+                      {lang === 'bn' ? 'কোনো সক্রিয় সতর্কতা নেই।' : 'No active alerts for this field.'}
                     </div>
-                    <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(56, 189, 248, 0.08)', borderLeft: '3px solid #38bdf8' }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text-main, #f3f4f6)' }}>Agronomic Optimization Ready</div>
-                      <div style={{ color: 'var(--text-muted, #9ca3af)', fontSize: 11, marginTop: 2 }}>BRRI sowing calendar & FAO-56 moisture stress models active.</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {activeFieldAlerts.map(alert => (
+                        <div
+                          key={alert.id}
+                          onClick={alert.onOpen}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: 10,
+                            background: 'var(--surface-2, rgba(255, 255, 255, 0.04))',
+                            border: '1px solid var(--line, rgba(255, 255, 255, 0.08))',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                            transition: 'background 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>{alert.icon}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>{alert.title}</span>
+                            </div>
+                            <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, background: 'rgba(0,223,129,0.1)', padding: '2px 6px', borderRadius: 6 }}>
+                              {alert.badge}
+                            </span>
+                          </div>
+                          <p style={{ margin: 0, fontSize: 12, color: 'var(--muted)', lineHeight: 1.4 }}>
+                            {alert.text}
+                          </p>
+                          <span style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, marginTop: 2, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            {alert.actionLabel}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -4974,6 +5158,14 @@ export function App() {
         onToggle={setChatWidgetOpen}
         messages={chatMessages}
         setMessages={setChatMessages}
+      />
+
+      {/* UP1: Help & Guide Slide-Over Panel */}
+      <HelpGuideSidePanel
+        isOpen={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+        onNavigate={handleNavigate}
+        lang={lang}
       />
     </div>
   );
