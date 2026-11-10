@@ -71,15 +71,7 @@ export function OnsetScienceView({
           <button
             type="button"
             onClick={onBack}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
+            className="ui-btn ui-btn-secondary ui-btn-sm"
           >
             ← {lang === 'bn' ? 'ফিরে যান' : 'Back'}
           </button>

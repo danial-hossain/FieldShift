@@ -762,17 +762,16 @@ export function WaterIrrigationView({
             const seasonLabel = lang === 'bn' ? s.season_label_bn : s.season_label_en;
 
             return (
-              <button
-                key={s.period || idx}
-                type="button"
-                className="wp-sc"
-                style={{ '--c': s.crop_color || '#3ecf8e' }}
-                aria-pressed={isSel ? 'true' : 'false'}
-                onClick={() => {
-                  setSelectedSeasonIdx(idx);
-                  setSelectedDayIdx(0);
-                }}
-              >
+              <div key={s.period || idx} style={{ '--c': s.crop_color || '#3ecf8e', display: 'contents' }}>
+                <button
+                  type="button"
+                  className="wp-sc"
+                  aria-pressed={isSel ? 'true' : 'false'}
+                  onClick={() => {
+                    setSelectedSeasonIdx(idx);
+                    setSelectedDayIdx(0);
+                  }}
+                >
                 <small>{seasonLabel} · {dateStr}</small>
                 <b className="crop">{cropName}</b>
 
@@ -834,6 +833,7 @@ export function WaterIrrigationView({
                   </span>
                 )}
               </button>
+            </div>
             );
           })}
         </div>
@@ -1080,19 +1080,7 @@ export function WaterIrrigationView({
           {onNavigate && (
             <button
               type="button"
-              className="wp-muted"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                fontSize: 13,
-                fontWeight: 600,
-                color: 'var(--muted-wp)',
-                minHeight: 44,
-                display: 'inline-flex',
-                alignItems: 'center',
-              }}
+              className="ui-btn ui-btn-ghost ui-btn-sm"
               onClick={() => onNavigate('weather')}
               aria-label={lang === 'bn' ? 'আবহাওয়া ও ঝুঁকি পৃষ্ঠায় যান' : 'Navigate to Climate & Risk'}
             >

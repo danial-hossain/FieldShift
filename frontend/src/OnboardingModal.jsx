@@ -249,7 +249,7 @@ export function OnboardingModal({
           <button
             type="button"
             onClick={handleFinish}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: 4 }}
+            className="modal-close-btn"
             aria-label="Skip onboarding"
           >
             <CloseIcon size={20} />
@@ -280,16 +280,9 @@ export function OnboardingModal({
           <button
             type="button"
             onClick={handleFinish}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-dim, #7a8781)',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
+            className="ui-btn ui-btn-ghost ui-btn-sm"
           >
-            {lang === 'bn' ? 'বাদ দিন (Skip)' : 'Skip Tour'}
+            {lang === 'bn' ? 'বাদ দিন' : 'Skip Tour'}
           </button>
 
           <div style={{ display: 'flex', gap: 10 }}>
@@ -297,16 +290,7 @@ export function OnboardingModal({
               <button
                 type="button"
                 onClick={() => setCurrentStep(prev => prev - 1)}
-                style={{
-                  background: 'var(--bg-card-subtle, #1c242c)',
-                  border: '1px solid var(--border-medium, #2a3742)',
-                  color: 'var(--text-main, #e8ece9)',
-                  borderRadius: 8,
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                className="ui-btn ui-btn-secondary ui-btn-md"
               >
                 {lang === 'bn' ? 'পূর্ববর্তী' : 'Back'}
               </button>
@@ -316,19 +300,7 @@ export function OnboardingModal({
               <button
                 type="button"
                 onClick={() => setCurrentStep(prev => prev + 1)}
-                style={{
-                  background: 'var(--primary, #00df81)',
-                  border: 'none',
-                  color: '#0f172a',
-                  borderRadius: 8,
-                  padding: '8px 20px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6
-                }}
+                className="ui-btn ui-btn-primary ui-btn-md"
               >
                 <span>{lang === 'bn' ? 'পরবর্তী' : 'Next'}</span>
                 <ChevronRightIcon size={16} />
@@ -337,19 +309,7 @@ export function OnboardingModal({
               <button
                 type="button"
                 onClick={handleFinish}
-                style={{
-                  background: 'var(--primary, #00df81)',
-                  border: 'none',
-                  color: '#0f172a',
-                  borderRadius: 8,
-                  padding: '8px 22px',
-                  fontSize: '13px',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6
-                }}
+                className="ui-btn ui-btn-primary ui-btn-md"
               >
                 <CheckIcon size={16} />
                 <span>{lang === 'bn' ? 'শুরু করুন' : 'Get Started'}</span>

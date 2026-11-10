@@ -1025,23 +1025,7 @@ export function SystemMap3D({
           <button
             type="button"
             onClick={triggerFollowNumber}
-            style={{
-              background: isAnimatingPath
-                ? 'linear-gradient(135deg, #0ea5e9, #10b981)'
-                : 'rgba(15, 23, 42, 0.88)',
-              color: '#ffffff',
-              border: '1px solid rgba(56, 189, 248, 0.5)',
-              padding: '6px 14px',
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: isAnimatingPath ? '0 0 16px rgba(14, 165, 233, 0.6)' : 'none',
-              transition: 'all 0.2s ease',
-            }}
+            className={`ui-btn ${isAnimatingPath ? 'ui-btn-primary' : 'ui-btn-secondary'} ui-btn-sm`}
             title={isBn ? 'রহিমের জমির ৭১৮ মিমি/বছর সেচের সম্পূর্ণ প্রবাহ দেখুন' : 'Follow Rahim field 718 mm/yr pipeline'}
           >
             <span>✨</span>
@@ -1056,15 +1040,7 @@ export function SystemMap3D({
           <button
             type="button"
             onClick={handleResetCamera}
-            style={{
-              background: 'rgba(15, 23, 42, 0.85)',
-              color: '#cbd5e1',
-              border: '1px solid rgba(148, 163, 184, 0.3)',
-              padding: '6px 10px',
-              borderRadius: 8,
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             title={isBn ? 'ক্যামেরা পুনরায় সেট করুন' : 'Reset Camera Target'}
           >
             🎥 {isBn ? 'রিসেট' : 'Reset'}

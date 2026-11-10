@@ -377,19 +377,9 @@ export function AdaptiveReplanningView({
         <div>
           {onBack && (
             <button
+              type="button"
               onClick={onBack}
-              style={{
-                background: 'transparent',
-                border: 0,
-                color: 'var(--muted, #5e6b60)',
-                cursor: 'pointer',
-                padding: '2px 0 6px',
-                fontSize: 13,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
+              className="ui-btn ui-btn-ghost ui-btn-sm"
             >
               ← {lang === 'bn' ? 'ফিরে যান' : 'Back'}
             </button>
@@ -508,21 +498,15 @@ export function AdaptiveReplanningView({
           ) : plansError ? (
             <div style={{ gridColumn: 'span 6', padding: '8px 0', textAlign: 'center', color: 'var(--danger, #e11d48)' }}>
               <span>{plansError}</span>
-              <button
-                type="button"
-                onClick={refetchPlans}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--line, #dfe6dc)',
-                  borderRadius: 6,
-                  padding: '2px 8px',
-                  cursor: 'pointer',
-                  color: 'var(--text)',
-                  marginLeft: 8,
-                }}
-              >
-                {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
-              </button>
+              <span style={{ marginLeft: 8 }}>
+                <button
+                  type="button"
+                  onClick={refetchPlans}
+                  className="ui-btn ui-btn-secondary ui-btn-sm"
+                >
+                  {lang === 'bn' ? 'পুনরায় চেষ্টা করুন' : 'Retry'}
+                </button>
+              </span>
             </div>
           ) : (
             SEASONS_CONFIG.map((sc, i) => {
@@ -912,22 +896,10 @@ export function AdaptiveReplanningView({
         {/* Calculate Button & Dirty State Notice */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
           <button
+            type="button"
             onClick={handleRunReplan}
             disabled={loading}
-            style={{
-              background: 'var(--accent)',
-              color: 'var(--accent-ink)',
-              border: 0,
-              borderRadius: 10,
-              padding: '10px 18px',
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              boxShadow: '0 2px 8px rgba(44,138,75,0.25)',
-            }}
+            className="ui-btn ui-btn-primary ui-btn-md"
           >
             {loading ? '⏳ ...' : '🔄'} {lang === 'bn' ? 'বাকি মৌসুমের পরিকল্পনা আবার করুন' : 'Re-optimize Remaining Seasons'}
           </button>

@@ -451,14 +451,14 @@ class GlobalErrorBoundary extends React.Component {
             <button
               type="button"
               onClick={this.handleReset}
-              style={{ padding: '10px 20px', background: '#2e7d32', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 }}
+              className="ui-btn ui-btn-primary ui-btn-md"
             >
               Reload Application
             </button>
             <button
               type="button"
               onClick={() => this.setState({ hasError: false, error: null })}
-              style={{ padding: '10px 20px', background: '#edf2f7', color: '#2d3748', border: '1px solid #cbd5e0', borderRadius: 8, fontWeight: 600, cursor: 'pointer', fontSize: 13.5 }}
+              className="ui-btn ui-btn-secondary ui-btn-md"
             >
               Dismiss & Continue
             </button>
@@ -2780,7 +2780,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-text-link"
-                      style={{ fontSize: 12, fontWeight: 700, padding: 0, textAlign: 'left' }}
                       onClick={() => setActiveNav('account')}
                     >
                       Review Field  →
@@ -2806,7 +2805,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-text-link"
-                      style={{ fontSize: 12, fontWeight: 700, padding: 0, textAlign: 'left' }}
                       onClick={runAnalysis}
                       disabled={running}
                     >
@@ -2833,7 +2831,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-text-link"
-                      style={{ fontSize: 12, fontWeight: 700, padding: 0, textAlign: 'left' }}
                       onClick={() => {
                         setActiveNav('analytics');
                         setAnalysisTab('optimization');
@@ -2859,7 +2856,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-text-link"
-                      style={{ fontSize: 12, fontWeight: 700, padding: 0, textAlign: 'left' }}
                       onClick={researchInsight.action}
                     >
                       {researchInsight.ctaText}  →
@@ -2881,7 +2877,6 @@ export function App() {
                   <button
                     type="button"
                     className="dashboard-primary-run-btn"
-                    style={{ padding: '6px 14px', fontSize: 12 }}
                     onClick={researchInsight.action}
                   >
                     <span>{researchInsight.ctaText}</span>
@@ -2903,7 +2898,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={runAnalysis}
                       disabled={running}
                     >
@@ -2916,7 +2910,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('analytics', 'optimization')}
                     >
                       <span style={{ fontSize: 16 }}>🌱</span>
@@ -2928,7 +2921,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('analytics', 'comparison_lab')}
                     >
                       <span style={{ fontSize: 16 }}>🧪</span>
@@ -2940,7 +2932,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('analytics', 'recovery')}
                     >
                       <span style={{ fontSize: 16 }}>🛡️</span>
@@ -2952,7 +2943,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('analytics', 'outcomes')}
                     >
                       <span style={{ fontSize: 16 }}>⚖️</span>
@@ -2964,7 +2954,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('market')}
                     >
                       <span style={{ fontSize: 16 }}>💰</span>
@@ -2976,7 +2965,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('sensitivity')}
                     >
                       <span style={{ fontSize: 16 }}>📐</span>
@@ -2988,7 +2976,6 @@ export function App() {
                     <button
                       type="button"
                       className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'var(--bg-card-subtle)', border: '1px solid var(--border-light)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5 }}
                       onClick={() => handleNavigate('synthetic_lab')}
                     >
                       <span style={{ fontSize: 16 }}>🧪</span>
@@ -2999,8 +2986,7 @@ export function App() {
                     </button>
                     <button
                       type="button"
-                      className="btn-outline-action"
-                      style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 8, background: 'rgba(0, 223, 129, 0.08)', border: '1px solid rgba(0, 223, 129, 0.3)', cursor: 'pointer', textAlign: 'left', fontWeight: 700, fontSize: 12.5, color: 'var(--primary)' }}
+                      className="btn-outline-action btn-outline-action-accent"
                       onClick={() => handleNavigate('assistant')}
                     >
                       <span style={{ fontSize: 16 }}>🤖</span>
@@ -3845,9 +3831,8 @@ export function App() {
                   <>
                     <button
                       type="button"
-                      className="dashboard-primary-run-btn"
+                      className="ui-btn ui-btn-primary ui-btn-sm"
                       onClick={openEditProfile}
-                      style={{ padding: '8px 16px', fontSize: 12.5 }}
                       title="Edit agronomist profile"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -3858,10 +3843,9 @@ export function App() {
                     </button>
                     <button
                       type="button"
-                      className="top-bar-icon-btn"
+                      className="ui-btn ui-btn-secondary ui-btn-sm"
                       onClick={handleSignOut}
                       title="Sign Out"
-                      style={{ width: 'auto', padding: '0 14px', height: 36, gap: 6, fontSize: 12 }}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -3875,20 +3859,18 @@ export function App() {
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button
                       type="button"
-                      className="dashboard-primary-run-btn"
+                      className="ui-btn ui-btn-primary ui-btn-md"
                       onClick={() => {
                         setAuthMode('login');
                         setAuthModal(true);
                       }}
-                      style={{ padding: '8px 20px', fontSize: 13 }}
                     >
                       {lang === 'bn' ? 'লগইন / নিবন্ধন' : 'Sign In / Register'}
                     </button>
                     <button
                       type="button"
-                      className="btn-secondary"
+                      className="ui-btn ui-btn-secondary ui-btn-md"
                       onClick={handleQuickDemoLogin}
-                      style={{ padding: '8px 16px', fontSize: 12.5 }}
                     >
                       {lang === 'bn' ? 'ডেমো সেশন' : 'Demo Session'}
                     </button>
@@ -4615,7 +4597,6 @@ export function App() {
                       <button
                         type="submit"
                         className="run-cta-btn"
-                        style={{ padding: '8px 20px', fontSize: 13.5 }}
                         disabled={
                           fieldModalLoading ||
                           !fieldForm.name?.trim() ||
@@ -4808,7 +4789,6 @@ export function App() {
                       <button
                         type="submit"
                         className="run-cta-btn"
-                        style={{ padding: '8px 20px', fontSize: 13.5 }}
                         disabled={profileLoading}
                       >
                         {profileLoading ? 'Saving…' : 'Save Changes'}
@@ -4896,7 +4876,6 @@ export function App() {
                         type="button"
                         className="btn-secondary"
                         onClick={handleQuickDemoLogin}
-                        style={{ fontSize: 12 }}
                       >
                         Use Demo Session
                       </button>
@@ -4911,7 +4890,6 @@ export function App() {
                         <button
                           type="submit"
                           className="run-cta-btn"
-                          style={{ padding: '8px 18px', fontSize: 13 }}
                         >
                           {authMode === 'register' ? 'Register' : 'Sign In'}
                         </button>
@@ -4951,7 +4929,7 @@ export function App() {
                 </button>
                 <button
                   type="button"
-                  style={{ padding: '8px 16px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, cursor: 'pointer', fontSize: 13 }}
+                  className="ui-btn ui-btn-danger ui-btn-sm"
                   onClick={() => executeDeleteFields(deleteConfirmTarget)}
                 >
                   {lang === 'bn' ? 'মুছে ফেলুন' : 'Delete'}

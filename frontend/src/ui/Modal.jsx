@@ -82,17 +82,7 @@ export function Modal({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-dim, #7a8781)',
-              cursor: 'pointer',
-              padding: 4,
-              borderRadius: 6,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            className="modal-close-btn"
             aria-label="Close dialog"
           >
             <CloseIcon size={20} />

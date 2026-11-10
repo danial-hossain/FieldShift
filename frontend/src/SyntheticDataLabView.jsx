@@ -318,19 +318,17 @@ export function SyntheticDataLabView({
 
               <button
                 type="button"
-                className="btn btn-primary"
+                className="ui-btn ui-btn-primary ui-btn-md"
                 onClick={handleGenerate}
                 disabled={loading}
-                style={{ marginTop: 10, padding: '9px 16px', fontWeight: 600 }}
               >
                 {loading ? 'Generating...' : '🔄 Generate Scenarios'}
               </button>
 
               <button
                 type="button"
-                className="btn btn-outline"
+                className="ui-btn ui-btn-secondary ui-btn-md"
                 onClick={handleExportCSV}
-                style={{ padding: '8px 16px' }}
               >
                 📥 Export Scenarios (CSV)
               </button>

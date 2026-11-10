@@ -159,9 +159,8 @@ export function SustainabilityTrackerView({
           {onBack && (
             <button
               type="button"
-              className="btn btn-outline"
+              className="ui-btn ui-btn-secondary ui-btn-sm"
               onClick={onBack}
-              style={{ padding: '8px 14px', borderRadius: 8, fontSize: 13 }}
             >
               ← {lang === 'bn' ? 'পূর্ববর্তী পাতায় ফিরুন' : 'Back'}
             </button>

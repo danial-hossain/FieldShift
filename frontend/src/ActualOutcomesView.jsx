@@ -225,9 +225,8 @@ export function ActualOutcomesView({
             {onBack && (
               <button
                 type="button"
-                className="btn-secondary"
+                className="ui-btn ui-btn-secondary ui-btn-sm"
                 onClick={onBack}
-                style={{ padding: '8px 14px', fontSize: '12.5px' }}
               >
                 ← {lang === 'bn' ? 'ফিরে যান' : 'Back'}
               </button>

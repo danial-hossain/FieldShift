@@ -195,9 +195,8 @@ export function CropCatalogView({
           </div>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={fetchCatalog}
-            style={{ padding: '6px 14px', fontSize: 12, cursor: 'pointer', background: '#334155', color: '#fff', border: 'none', borderRadius: 6 }}
           >
             🔄 Retry Catalog
           </button>

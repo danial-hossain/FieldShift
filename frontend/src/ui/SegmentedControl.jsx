@@ -13,15 +13,7 @@ export function SegmentedControl({
   return (
     <div
       className={`ui-segmented-control ${className}`}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        padding: '3px',
-        background: 'var(--bg-card-subtle, #1c242c)',
-        borderRadius: 'var(--radius-sm, 8px)',
-        border: '1px solid var(--border-light, #222c36)',
-        ...style
-      }}
+      style={style}
       role="group"
     >
       {options.map((opt) => {
@@ -33,15 +25,15 @@ export function SegmentedControl({
             onClick={() => onChange(opt.value)}
             style={{
               padding: isSm ? '4px 10px' : '6px 14px',
-              fontSize: isSm ? '11.5px' : '13px',
+              fontSize: isSm ? '12px' : '13.5px',
               fontWeight: isSelected ? 700 : 500,
-              color: isSelected ? 'var(--primary, #00df81)' : 'var(--text-muted, #9aa5a0)',
-              background: isSelected ? 'var(--bg-card, #161d23)' : 'transparent',
+              color: isSelected ? 'var(--accent-ink)' : 'var(--text-muted)',
+              background: isSelected ? 'var(--accent)' : 'transparent',
               border: 'none',
-              borderRadius: '6px',
+              borderRadius: 'var(--r-sm, 8px)',
               cursor: 'pointer',
               transition: 'all 160ms ease',
-              boxShadow: isSelected ? '0 1px 4px rgba(0,0,0,0.2)' : 'none',
+              boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
               whiteSpace: 'nowrap'
             }}
           >

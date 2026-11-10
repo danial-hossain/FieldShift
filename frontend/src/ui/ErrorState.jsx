@@ -41,20 +41,7 @@ export function ErrorState({
         <button
           type="button"
           onClick={onRetry}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '8px 16px',
-            borderRadius: 'var(--radius-sm, 8px)',
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.4)',
-            color: '#f87171',
-            fontSize: '12.5px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            transition: 'background 160ms ease'
-          }}
+          className="ui-btn ui-btn-danger ui-btn-sm"
         >
           <RefreshIcon size={14} />
           <span>{retryLabel}</span>

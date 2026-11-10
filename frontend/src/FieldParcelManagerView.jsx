@@ -270,8 +270,7 @@ export function FieldParcelManagerView({
                 pinMode ? (
                   <button
                     type="button"
-                    className="stage-mode-btn"
-                    style={{ background: 'rgba(239, 122, 90, 0.15)', borderColor: 'var(--alert)', color: 'var(--alert)' }}
+                    className="stage-mode-btn stage-mode-btn-alert"
                     onClick={handleCancelPinning}
                   >
                     ✕ Cancel Pin
@@ -279,8 +278,7 @@ export function FieldParcelManagerView({
                 ) : (
                   <button
                     type="button"
-                    className="stage-mode-btn"
-                    style={{ background: 'rgba(108, 196, 224, 0.15)', borderColor: 'var(--water)', color: 'var(--water)' }}
+                    className="stage-mode-btn stage-mode-btn-water"
                     onClick={handleStartPinning}
                     title="Click anywhere on the map to pin a new location for a new field"
                   >
@@ -317,7 +315,6 @@ export function FieldParcelManagerView({
               <button
                 type="button"
                 className="btn-primary-sm"
-                style={{ whiteSpace: 'nowrap', padding: '6px 14px' }}
                 onClick={handleRegisterFromPin}
               >
                 + Register Field with these Coordinates
@@ -547,16 +544,7 @@ export function FieldParcelManagerView({
                   </button>
                   <button
                     type="button"
-                    style={{
-                      padding: '7px 16px',
-                      background: '#ef4444',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 8,
-                      fontWeight: 700,
-                      fontSize: 13,
-                      cursor: 'pointer'
-                    }}
+                    className="ui-btn ui-btn-danger ui-btn-sm"
                     onClick={() => {
                       const toDelete = userFields.filter(f => selectedFieldIds.includes(f.id));
                       if (onArchiveField) onArchiveField(toDelete);
@@ -766,7 +754,6 @@ export function FieldParcelManagerView({
             <button
               type="button"
               className="btn-add-field"
-              style={{ margin: '0 auto' }}
               onClick={() => onAddField && onAddField()}
             >
               {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add Your First Field'}

@@ -75,10 +75,9 @@ export function SensitivityAnalysisView({
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             type="button"
-            className="btn btn-primary"
+            className="ui-btn ui-btn-primary ui-btn-md"
             onClick={handleRunSensitivity}
             disabled={loading}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
             <span>🔄</span> {loading ? 'Running Sweeps...' : 'Re-Run Sensitivity Sweeps'}
           </button>
@@ -130,9 +129,8 @@ export function SensitivityAnalysisView({
           </div>
           <button
             type="button"
-            className="btn btn-primary"
+            className="ui-btn ui-btn-primary ui-btn-sm"
             onClick={handleRunSensitivity}
-            style={{ padding: '8px 16px', fontSize: 13, cursor: 'pointer' }}
           >
             🔄 Retry Sweeps
           </button>

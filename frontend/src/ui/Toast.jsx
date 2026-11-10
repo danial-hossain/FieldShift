@@ -74,8 +74,8 @@ export function Toast({
         <button
           type="button"
           onClick={onClose}
-          style={{ background: 'transparent', border: 'none', color: 'var(--text-dim, #7a8781)', cursor: 'pointer', padding: 2 }}
-          aria-label="Close"
+          className="modal-close-btn"
+          aria-label="Close notification"
         >
           <CloseIcon size={16} />
         </button>

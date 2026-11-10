@@ -180,7 +180,7 @@ export function HelpModal({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: 4 }}
+            className="modal-close-btn"
             aria-label="Close help"
           >
             <CloseIcon size={20} />
@@ -235,15 +235,7 @@ export function HelpModal({
             <button
               type="button"
               onClick={() => { onClose(); onOpenOnboarding(); }}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#38bdf8',
-                fontSize: '12.5px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                textDecoration: 'underline'
-              }}
+              className="ui-btn ui-btn-ghost ui-btn-sm"
             >
               {lang === 'bn' ? 'সম্পূর্ণ ৩-ধাপের নির্দেশিকা দেখুন' : 'Replay 3-Step Tour'}
             </button>
@@ -251,19 +243,9 @@ export function HelpModal({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: 'var(--primary, #00df81)',
-              border: 'none',
-              color: '#0f172a',
-              borderRadius: 8,
-              padding: '6px 18px',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              marginLeft: 'auto'
-            }}
+            className="ui-btn ui-btn-primary ui-btn-sm"
           >
-            {lang === 'bn' ? 'বুঝেছি (Close)' : 'Got it'}
+            {lang === 'bn' ? 'বুঝেছি' : 'Got it'}
           </button>
         </div>
       </div>

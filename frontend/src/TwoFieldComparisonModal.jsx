@@ -368,7 +368,8 @@ export function TwoFieldComparisonModal({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: 'var(--text-muted, #94a3b8)', fontSize: 22, cursor: 'pointer', padding: 4 }}
+            className="modal-close-btn"
+            aria-label="Close modal"
           >
             ✕
           </button>
@@ -509,16 +510,7 @@ export function TwoFieldComparisonModal({
           <button
             type="button"
             onClick={onClose}
-            style={{
-              background: '#10b981',
-              color: '#051208',
-              border: 'none',
-              padding: '10px 22px',
-              borderRadius: 10,
-              fontWeight: 700,
-              fontSize: 13.5,
-              cursor: 'pointer'
-            }}
+            className="ui-btn ui-btn-primary ui-btn-md"
           >
             {lang === 'bn' ? 'তুলনা সম্পন্ন করুন' : 'Close Comparison'}
           </button>

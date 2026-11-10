@@ -135,21 +135,17 @@ export function WeatherUncertaintyView({
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               type="button"
-              className="btn-outline-action"
+              className="ui-btn ui-btn-secondary ui-btn-sm"
               onClick={exportCsv}
               disabled={!uncertaintyData}
-              style={{ fontSize: '12.5px', padding: '8px 14px' }}
             >
               📥 Export CSV
             </button>
             <button
               type="button"
-              className="dashboard-primary-run-btn"
+              className="ui-btn ui-btn-primary ui-btn-md"
               onClick={fetchUncertaintyScenarios}
               disabled={loading}
-              style={{
-                background: loading ? '#475569' : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-              }}
             >
               {loading ? 'Evaluating Scenarios...' : '⚡ Re-run Stress Suite'}
             </button>
@@ -213,9 +209,8 @@ export function WeatherUncertaintyView({
           </div>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={fetchUncertaintyScenarios}
-            style={{ padding: '6px 14px', fontSize: 12, cursor: 'pointer', background: '#334155', color: '#fff', border: 'none', borderRadius: 6 }}
           >
             🔄 Retry Stress Suite
           </button>

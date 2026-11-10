@@ -179,7 +179,8 @@ export function GuidedDemoModal({
           <button
             type="button"
             onClick={onClose}
-            style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 22, cursor: 'pointer', padding: 4 }}
+            className="modal-close-btn"
+            aria-label="Close demo"
           >
             ✕
           </button>

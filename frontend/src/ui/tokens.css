@@ -56,6 +56,12 @@
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--glass-highlight);
   --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.5);
 
+  /* Glass Surface Specifications (U3) */
+  --glass-surface-bg: rgba(255, 255, 255, 0.06);
+  --glass-surface-blur: blur(14px) saturate(140%);
+  --glass-surface-border: 1px solid rgba(255, 255, 255, 0.12);
+  --glass-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.10), 0 8px 24px rgba(0, 0, 0, 0.25);
+
   /* Typography Scales */
   --font-heading: 'Space Grotesk', 'Hind Siliguri', sans-serif;
   --font-body: 'Inter', 'Hind Siliguri', sans-serif;
@@ -115,6 +121,12 @@ html[data-theme="light"],
   --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 var(--glass-highlight);
   --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.12);
 
+  /* Glass Surface Specifications in Light Theme */
+  --glass-surface-bg: rgba(255, 255, 255, 0.60);
+  --glass-surface-blur: blur(14px) saturate(140%);
+  --glass-surface-border: 1px solid rgba(16, 40, 26, 0.10);
+  --glass-surface-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 6px 18px rgba(16, 40, 26, 0.08);
+
   /* Backward Compatibility Aliases in Light Mode */
   --primary: var(--accent);
   --primary-hover: var(--accent-hover);
@@ -160,4 +172,229 @@ html[lang="bn"] h6 {
 .key-number,
 .price-tag {
   font-variant-numeric: tabular-nums;
+}
+
+/* Glass Component Base Classes (U3) */
+.ui-segmented-control {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px;
+  background: var(--glass-surface-bg);
+  border: var(--glass-surface-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-sm);
+  gap: 4px;
+}
+
+.glass-surface,
+.ui-card-glass {
+  background: var(--glass-surface-bg);
+  backdrop-filter: var(--glass-surface-blur);
+  -webkit-backdrop-filter: var(--glass-surface-blur);
+  border: var(--glass-surface-border);
+  box-shadow: var(--glass-surface-shadow);
+  border-radius: var(--r-lg);
+}
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 180ms ease-out;
+  user-select: none;
+  white-space: nowrap;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.ui-btn-xs {
+  height: 26px;
+  min-height: 26px;
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-micro);
+  border-radius: var(--r-sm);
+}
+
+.ui-btn-sm {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-label);
+}
+
+.ui-btn-md {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-body);
+}
+
+.ui-btn-lg {
+  height: 48px;
+  min-height: 48px;
+  padding: 0 var(--sp-6);
+  font-size: var(--fs-subhead);
+}
+
+.ui-icon-btn {
+  padding: 0 !important;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ui-icon-btn-sm {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 16px;
+}
+
+.ui-icon-btn-md {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 18px;
+}
+
+.ui-icon-btn-lg {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  font-size: 22px;
+}
+
+.ui-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.ui-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ui-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--bg);
+}
+
+.ui-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ui-btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  color: var(--accent-ink);
+  border: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.ui-btn-primary:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(200, 241, 105, 0.25);
+}
+
+.ui-btn-secondary {
+  background: var(--glass-surface-bg);
+  backdrop-filter: var(--glass-surface-blur);
+  -webkit-backdrop-filter: var(--glass-surface-blur);
+  border: var(--glass-surface-border);
+  color: var(--text);
+  box-shadow: var(--glass-surface-shadow);
+}
+
+.ui-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
+[data-theme="light"] .ui-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(16, 40, 26, 0.20);
+}
+
+.ui-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: transparent;
+}
+
+.ui-btn-ghost:hover:not(:disabled) {
+  background: var(--glass-surface-bg);
+  color: var(--text);
+}
+
+.ui-btn-danger {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #EF4444;
+}
+
+.ui-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+}
+
+/* Glass Inputs & Selects */
+.ui-input,
+.ui-select {
+  height: 40px;
+  padding: 0 var(--sp-3);
+  background: var(--glass-surface-bg);
+  backdrop-filter: var(--glass-surface-blur);
+  -webkit-backdrop-filter: var(--glass-surface-blur);
+  border: var(--glass-surface-border);
+  border-radius: var(--r-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: var(--fs-body);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-sizing: border-box;
+}
+
+.ui-input:focus,
+.ui-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(200, 241, 105, 0.3);
+}
+
+/* Accessibility & Performance Fallbacks */
+@supports not (backdrop-filter: blur(14px)) {
+  .glass-surface,
+  .ui-card-glass,
+  .ui-btn-secondary,
+  .ui-input,
+  .ui-select {
+    background: var(--surface) !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-surface,
+  .ui-card-glass,
+  .ui-btn-secondary,
+  .ui-input,
+  .ui-select {
+    background: var(--surface) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
 }

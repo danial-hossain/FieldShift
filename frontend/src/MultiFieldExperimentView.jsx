@@ -163,59 +163,23 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           {/* Quick Action Buttons */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button
+              type="button"
               onClick={handleDownloadCsv}
-              style={{
-                background: 'rgba(59, 130, 246, 0.2)',
-                color: '#60a5fa',
-                border: '1px solid rgba(59, 130, 246, 0.4)',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.85rem',
-                minHeight: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className="ui-btn ui-btn-secondary ui-btn-sm"
             >
               📥 CSV
             </button>
             <button
+              type="button"
               onClick={handleDownloadJson}
-              style={{
-                background: 'rgba(147, 51, 234, 0.2)',
-                color: '#c084fc',
-                border: '1px solid rgba(147, 51, 234, 0.4)',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.85rem',
-                minHeight: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className="ui-btn ui-btn-secondary ui-btn-sm"
             >
               📥 JSON
             </button>
             <button
+              type="button"
               onClick={() => setEditingParam(!editingParam)}
-              style={{
-                background: editingParam ? 'rgba(234, 179, 8, 0.3)' : 'rgba(255, 255, 255, 0.1)',
-                color: editingParam ? '#fde047' : '#cbd5e1',
-                border: '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '8px',
-                padding: '8px 14px',
-                cursor: 'pointer',
-                fontWeight: '600',
-                fontSize: '0.85rem',
-                minHeight: '44px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`ui-btn ${editingParam ? 'ui-btn-primary' : 'ui-btn-secondary'} ui-btn-sm`}
             >
               ⚙️ {editingParam ? (lang === 'bn' ? 'সম্পাদনা বন্ধ করুন' : 'Close Tuning') : (lang === 'bn' ? 'প্যারামিটার পরিবর্তন' : 'Tune Parameters')}
             </button>
@@ -287,8 +251,9 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                 ⚠️ {lang === 'bn' ? 'প্যারামিটার পরিবর্তন করা হয়েছে (অপ্রযুক্ত ফলাফল)।' : 'Inputs modified. Simulation results are unapplied.'}
               </div>
               <button
+                type="button"
                 onClick={handleRerunAnalysis}
-                style={{ background: '#eab308', color: '#0f172a', border: 'none', borderRadius: '6px', padding: '6px 14px', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer', minHeight: '38px' }}
+                className="ui-btn ui-btn-primary ui-btn-sm"
               >
                 🔄 {lang === 'bn' ? 'পুনরায় বিশ্লেষণ চালান' : 'Re-run Analysis Pipeline'}
               </button>
@@ -296,12 +261,13 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, color: '#fde047', fontSize: '0.95rem' }}>
+            <h4 style={{ margin: 0, color: 'var(--accent)', fontSize: '0.95rem' }}>
               ⚙️ {lang === 'bn' ? `${currentProfile.district} প্রোফাইল ইনপুট পরিবর্তন করুন` : `Tune Inputs: ${currentProfile.nameEn}`}
             </h4>
             <button
+              type="button"
               onClick={handleResetProfile}
-              style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}
+              className="ui-btn ui-btn-ghost ui-btn-sm"
             >
               {lang === 'bn' ? 'ডিফল্ট মান পুনরুদ্ধার' : 'Reset to Preset Defaults'}
             </button>
