@@ -398,3 +398,155 @@ html[lang="bn"] h6 {
     animation: none !important;
   }
 }
+
+/* ==============================================================================
+   Layout & Structure Standards (U5)
+   ============================================================================== */
+
+/* Max-width 1320px centered container with 24px gutters (16px on mobile) */
+.content-container,
+.main-content-container,
+.overview-scroll-container,
+.evidence-workspace-container {
+  max-width: 1320px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: var(--sp-6) !important;
+  padding-right: var(--sp-6) !important;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .content-container,
+  .main-content-container,
+  .overview-scroll-container,
+  .evidence-workspace-container {
+    padding-left: var(--sp-4) !important;
+    padding-right: var(--sp-4) !important;
+  }
+}
+
+/* Card grid gaps and section spacing with 8-pt rhythm */
+.card-grid-standard {
+  display: grid;
+  gap: var(--sp-4);
+}
+
+.section-standard {
+  margin-bottom: var(--sp-6);
+}
+
+/* Top Bar: 40px glass controls aligned */
+.global-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-6);
+}
+
+.global-top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.header-field-selector select,
+.top-bar-pill-badge,
+.top-bar-icon-btn,
+.lang-toggle-btn,
+.theme-toggle-btn,
+.help-guide-btn,
+.notification-bell-btn {
+  height: 40px !important;
+  min-height: 40px !important;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Sidebar active item: accent pill with accent-ink text */
+.sidebar .nav-item.active {
+  background: var(--accent) !important;
+  color: var(--accent-ink) !important;
+  border-radius: var(--r-md);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar .nav-item.active .nav-item-icon,
+.sidebar .nav-item.active .nav-item-label {
+  color: var(--accent-ink) !important;
+  font-weight: 700;
+}
+
+.sidebar .nav-item:hover:not(.active) {
+  background: var(--glass-surface-bg) !important;
+}
+
+/* Table standards: sticky header, zebra glass rows, right-aligned numbers */
+.data-table,
+.glass-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.glass-table th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--glass-surface-border);
+}
+
+.data-table th.numeric,
+.glass-table th.numeric {
+  text-align: right;
+}
+
+.data-table td,
+.glass-table td {
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.data-table tr:nth-child(even),
+.glass-table tr:nth-child(even) {
+  background: var(--glass-surface-bg);
+}
+
+.data-table td.numeric,
+.data-table td.num,
+.glass-table td.numeric,
+.glass-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mobile 390px protections */
+@media (max-width: 640px) {
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  .tabs-scrollable,
+  .segmented-scrollable,
+  .nav-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .tabs-scrollable::-webkit-scrollbar,
+  .segmented-scrollable::-webkit-scrollbar,
+  .nav-tabs::-webkit-scrollbar {
+    display: none;
+  }
+}
