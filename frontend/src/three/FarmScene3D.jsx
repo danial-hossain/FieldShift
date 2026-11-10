@@ -487,6 +487,8 @@ export function FarmScene3D({
     }
     return 0;
   }, [selectedBedIndex, selectedBedId, beds]);
+  const activeIndexRef = useRef(activeIndex);
+  activeIndexRef.current = activeIndex;
 
   // Check WebGL support on mount
   useEffect(() => {
@@ -506,10 +508,24 @@ export function FarmScene3D({
     return b ? `${b} ${lang === 'bn' ? 'বিঘা' : 'bigha'}` : '—';
   }, [fieldAreaHa, lang]);
 
-  // Sync internal preset state with prop
+  const handlePresetClick = useCallback((preset) => {
+    setCurrentPreset(preset);
+    if (containerRef.current && containerRef.current.__farm3d) {
+      containerRef.current.__farm3d.applyCameraPreset(preset, activeIndexRef.current);
+      if (containerRef.current.__farm3d.requestRender) {
+        containerRef.current.__farm3d.requestRender();
+      }
+    }
+  }, []);
+
+  // Sync internal preset state only when cameraPreset prop actually changes from parent
+  const prevCameraPresetProp = useRef(cameraPreset);
   useEffect(() => {
-    if (cameraPreset) setCurrentPreset(cameraPreset);
-  }, [cameraPreset]);
+    if (cameraPreset && cameraPreset !== prevCameraPresetProp.current) {
+      prevCameraPresetProp.current = cameraPreset;
+      handlePresetClick(cameraPreset);
+    }
+  }, [cameraPreset, handlePresetClick]);
 
   // -------------------------------------------------------------
   // Main Three.js Scene Setup & Lifecycle
@@ -1475,15 +1491,6 @@ export function FarmScene3D({
     }
   }, [beds, activeIndex, isLowLod, selectedStrategy, lang]);
 
-  // Apply Camera Presets when currentPreset changes
-  useEffect(() => {
-    if (!containerRef.current || !containerRef.current.__farm3d) return;
-    containerRef.current.__farm3d.applyCameraPreset(currentPreset, activeIndex);
-    if (containerRef.current.__farm3d.requestRender) {
-      containerRef.current.__farm3d.requestRender();
-    }
-  }, [currentPreset, activeIndex]);
-
   // -------------------------------------------------------------
   // WebGL Fallback (Graceful 2D Bed Matrix)
   // -------------------------------------------------------------
@@ -1617,7 +1624,7 @@ export function FarmScene3D({
         >
           <button
             type="button"
-            onClick={() => setCurrentPreset('iso')}
+            onClick={() => handlePresetClick('iso')}
             title={lang === 'bn' ? 'আইসোমেট্রিক সাধারণ ভিউ' : 'Isometric overview'}
             style={{
               background: currentPreset === 'iso' ? '#2f8f4e' : 'transparent',
@@ -1634,7 +1641,7 @@ export function FarmScene3D({
           </button>
           <button
             type="button"
-            onClick={() => setCurrentPreset('top')}
+            onClick={() => handlePresetClick('top')}
             title={lang === 'bn' ? 'উপর থেকে ফ্ল্যাট প্ল্যান ভিউ' : 'Top-down plan view'}
             style={{
               background: currentPreset === 'top' ? '#2f8f4e' : 'transparent',
@@ -1651,7 +1658,7 @@ export function FarmScene3D({
           </button>
           <button
             type="button"
-            onClick={() => setCurrentPreset('close')}
+            onClick={() => handlePresetClick('close')}
             title={lang === 'bn' ? 'নির্বাচিত ফসলের নিকটবর্তী ভিউ' : 'Close-up on selected crop'}
             style={{
               background: currentPreset === 'close' ? '#2f8f4e' : 'transparent',

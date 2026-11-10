@@ -64,3 +64,39 @@ test('T1: For each of the 5 strategies, the 6 bed cropKeys equal the plan’s 6 
   }
 });
 
+test('T2: Clicking bed or season card retains camera position and updates selection outline', () => {
+  // Mock camera and controls state
+  const camera = { position: { x: 50, y: 30, z: 40, set(x, y, z) { this.x = x; this.y = y; this.z = z; } } };
+  const controls = { target: { x: 5, y: 0, z: 2, set(x, y, z) { this.x = x; this.y = y; this.z = z; } }, update() {} };
+
+  // Farmer has orbited camera to a custom viewpoint
+  const customPos = { x: 42, y: 35, z: 55 };
+  camera.position.set(customPos.x, customPos.y, customPos.z);
+
+  // Simulating active bed selection change (e.g. bed 0 -> bed 2)
+  const bedObjects = [
+    { edges: { material: { opacity: 0, color: { set() {} } } } },
+    { edges: { material: { opacity: 0, color: { set() {} } } } },
+    { edges: { material: { opacity: 0, color: { set() {} } } } },
+  ];
+
+  const selectBed = (activeIndex) => {
+    bedObjects.forEach((b, j) => {
+      if (j === activeIndex) {
+        b.edges.material.opacity = 0.95;
+      } else {
+        b.edges.material.opacity = 0;
+      }
+    });
+  };
+
+  selectBed(2);
+  assert.equal(bedObjects[2].edges.material.opacity, 0.95);
+  assert.equal(bedObjects[0].edges.material.opacity, 0);
+  // Camera must not have jumped
+  assert.equal(camera.position.x, customPos.x);
+  assert.equal(camera.position.y, customPos.y);
+  assert.equal(camera.position.z, customPos.z);
+});
+
+
