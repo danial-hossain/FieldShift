@@ -605,7 +605,7 @@ export function SystemMap3D({
     const satelliteRefs = [];
     const createSatellite = (id, orbitRadius, inclination, speed, color, isPlanned = false) => {
       const satGroup = new THREE.Group();
-      
+
       // Satellite body
       const bodyGeo = new THREE.BoxGeometry(0.5, 0.35, 0.4);
       const bodyMat = new THREE.MeshStandardMaterial({
@@ -975,8 +975,7 @@ export function SystemMap3D({
         <div
           style={{
             pointerEvents: 'auto',
-            background: 'rgba(15, 23, 42, 0.85)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(15, 23, 42, 0.92)',
             border: '1px solid rgba(56, 189, 248, 0.3)',
             borderRadius: 10,
             padding: '8px 14px',
@@ -1081,15 +1080,15 @@ export function SystemMap3D({
           zIndex: 8,
         }}
       >
-        <div style={{ background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+        <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8' }}>🛰️ ১. মহাকাশ ও ডেটাহাব (Space)</span>
           <div style={{ fontSize: 10, color: '#94a3b8' }}>GPM, GRACE-FO, CERES, SRTM, POWER</div>
         </div>
-        <div style={{ background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+        <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(16, 185, 129, 0.2)' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399' }}>⚙️ ২. বৈজ্ঞানিক ইঞ্জিন ও অপ্টিমাইজার</span>
           <div style={{ fontSize: 10, color: '#94a3b8' }}>FAO-56 PM পানি ব্যালেন্স ➔ FAO-33 Ky ➔ PuLP MILP</div>
         </div>
-        <div style={{ background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(6px)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+        <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
           <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>🌾 ৩. কৃষকের ইন্টারফেস (Farmer UI)</span>
           <div style={{ fontSize: 10, color: '#94a3b8' }}>প্ল্যানার, সেচ শিডিউল, চাপ পরীক্ষা, বাজার</div>
         </div>
@@ -1106,8 +1105,7 @@ export function SystemMap3D({
             bottom: 14,
             width: 360,
             maxWidth: '90%',
-            background: 'rgba(15, 23, 42, 0.94)',
-            backdropFilter: 'blur(16px)',
+            background: 'rgba(15, 23, 42, 0.96)',
             border: `1px solid ${selectedNode.color || 'rgba(56, 189, 248, 0.4)'}`,
             borderRadius: 14,
             padding: 20,
@@ -1132,14 +1130,14 @@ export function SystemMap3D({
                     selectedNode.status === 'used'
                       ? 'rgba(16, 185, 129, 0.2)'
                       : selectedNode.status === 'partial'
-                      ? 'rgba(245, 158, 11, 0.2)'
-                      : 'rgba(148, 163, 184, 0.2)',
+                        ? 'rgba(245, 158, 11, 0.2)'
+                        : 'rgba(148, 163, 184, 0.2)',
                   color:
                     selectedNode.status === 'used'
                       ? '#34d399'
                       : selectedNode.status === 'partial'
-                      ? '#fbbf24'
-                      : '#94a3b8',
+                        ? '#fbbf24'
+                        : '#94a3b8',
                   border: `1px solid ${selectedNode.color}40`,
                 }}
               >

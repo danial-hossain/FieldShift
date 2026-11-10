@@ -139,12 +139,6 @@ export const TRANSLATIONS = {
     confirm_yes: 'হ্যাঁ, সংরক্ষণ করুন',
     confirm_no: 'না, বাতিল করুন',
 
-    // 3D Farm Visualizer
-    farm_3d_heading: 'আপনার জমির ৩ডি ভিজ্যুয়ালাইজেশন',
-    farm_3d_sub: 'জমির আকৃতি, মাটির গঠন ও বর্তমান ফসলের ইন্টারেক্টিভ দৃশ্য।',
-    farm_3d_note: 'এটি একটি সিমুলেশন প্রদর্শন, সরাসরি উপগ্রহের ড্রোন ফুটেজ নয়।',
-    farm_3d_toggle_btn: '৩ডি ভিউ রিফ্রেশ করুন',
-
     // Common
     loading: 'লোড হচ্ছে...',
     not_available: 'তথ্য পাওয়া যায়নি',
@@ -289,12 +283,6 @@ export const TRANSLATIONS = {
     confirm_save_desc: 'Are you sure you want to permanently save this harvest record?',
     confirm_yes: 'Yes, Save',
     confirm_no: 'Cancel',
-
-    // 3D Farm Visualizer
-    farm_3d_heading: '3D Farm Parcel Visualizer',
-    farm_3d_sub: 'Interactive visual representation of parcel topography and active crop.',
-    farm_3d_note: 'Simulation model for visualization; not raw satellite drone imagery.',
-    farm_3d_toggle_btn: 'Refresh 3D View',
 
     // Common
     loading: 'Loading...',

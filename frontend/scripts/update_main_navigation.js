@@ -20,7 +20,6 @@ const newImports = [
   "import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';",
   "import { FarmPlanningView } from './FarmPlanningView.jsx';",
   "import { WaterIrrigationView } from './WaterIrrigationView.jsx';",
-  "import { DigitalTwin3DView } from './DigitalTwin3DView.jsx';",
   "import { DataEvidenceView } from './DataEvidenceView.jsx';"
 ].join('\n');
 
@@ -576,19 +575,6 @@ if (fIdx !== -1 && wIdx !== -1) {
             lang={lang}
             onNavigate={handleNavigate}
             initialSubTab={waterSubTab}
-          />
-        )}
-
-        {/* -------------------- VIEW: 3D DIGITAL TWIN -------------------- */}
-        {activeNav === 'digital_twin' && (
-          <DigitalTwin3DView
-            activeField={activeField}
-            plan={plan}
-            summary={summary}
-            nasa={nasa}
-            lang={lang}
-            onNavigate={handleNavigate}
-            initialSubTab={twinSubTab}
           />
         )}
 

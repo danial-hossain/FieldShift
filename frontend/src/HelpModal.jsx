@@ -112,23 +112,6 @@ const HELP_SECTIONS = {
     ],
     sources: 'BBS Agricultural Statistics, FAOSTAT Bangladesh, DAM Market Rates'
   },
-  digital_twin: {
-    titleBn: '৩ডি খামার সহায়তা (3D Farm Diorama Guide)',
-    titleEn: '3D Farm Diorama Help & Guide',
-    descBn: 'বাস্তবসম্মত ত্রিমাত্রিক শস্য আবর্তন মডেল ও মাটির স্তর।',
-    descEn: 'Photorealistic stylized 3D farm diorama driven by field data and season slider.',
-    bulletsBn: [
-      'মৌসুম স্লাইডার: রবি থেকে খরিফ পর্যন্ত ৬টি মৌসুমে ফসলের বৃদ্ধি ও পানির পরিবর্তন দেখুন।',
-      'ক্যামেরা ভিউ: সার্বিক আইসোমেট্রিক, ক্লোজ-আপ, পার্শ্ব-ছেদ বা টপ-ডাউন ভিউ বেছে নিন।',
-      'আঞ্চলিক মাটি: রাজশাহীর লালচে বরেন্দ্র মাটি ও সুনামগঞ্জের হাওরের রূপ প্রত্যক্ষ করুন।'
-    ],
-    bulletsEn: [
-      'Season Slider: Step through all 6 planning periods to observe crop transitions.',
-      'Camera Presets: Switch between Overview, Close-Up, Side Cut, and Top-Down.',
-      'Regional Physics: Barind reddish terrace vs Haor alluvial flooded basin.'
-    ],
-    sources: 'FieldShift Procedural WebGL Engine, ISRIC SoilGrids, NASA POWER'
-  },
   data_evidence: {
     titleBn: 'প্রমাণ ও পদ্ধতি সহায়তা (Evidence & Method Guide)',
     titleEn: 'Evidence & Method Help & Guide',

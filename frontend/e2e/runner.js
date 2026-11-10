@@ -26,11 +26,10 @@ const PAGES = [
   { id: 'farm_planning', filename: 'page_05_farm_planning.png', title: 'Farm Planning & 6-Season MILP' },
   { id: 'water_irrigation', filename: 'page_06_water_irrigation.png', title: 'Water Scheduling & Irrigation' },
   { id: 'research', filename: 'page_07_research.png', title: 'Research Workspace & Labs' },
-  { id: 'digital_twin', filename: 'page_08_digital_twin.png', title: 'Digital Twin 3D Diorama' },
-  { id: 'harvest_profit', filename: 'page_09_harvest_profit.png', title: 'Market Intelligence & Profit' },
-  { id: 'assistant', filename: 'page_10_assistant.png', title: 'Agronomic AI Assistant' },
-  { id: 'data_evidence', filename: 'page_11_data_evidence.png', title: 'Data Provenance & Evidence' },
-  { id: 'account', filename: 'page_12_account.png', title: 'Operator Cockpit & Settings' }
+  { id: 'harvest_profit', filename: 'page_08_harvest_profit.png', title: 'Market Intelligence & Profit' },
+  { id: 'assistant', filename: 'page_09_assistant.png', title: 'Agronomic AI Assistant' },
+  { id: 'data_evidence', filename: 'page_10_data_evidence.png', title: 'Data Provenance & Evidence' },
+  { id: 'account', filename: 'page_11_account.png', title: 'Operator Cockpit & Settings' }
 ];
 
 async function findChrome() {
@@ -263,26 +262,8 @@ async function runE2E() {
     });
     await new Promise(r => setTimeout(r, 500));
 
-    // 6. Test Digital Twin Season Slider & 3D controls
-    console.log('[E3 5/8] Testing 3D Digital Twin Season Slider Controls...');
-    await cdp.send('Runtime.evaluate', {
-      expression: `
-        (function() {
-          const navBtn = document.querySelector('.sidebar-nav-item[data-nav="digital_twin"]');
-          if (navBtn) navBtn.click();
-          const slider = document.querySelector('input[type="range"]');
-          if (slider) {
-            slider.value = '3';
-            slider.dispatchEvent(new Event('input', { bubbles: true }));
-            slider.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-        })()
-      `
-    });
-    await new Promise(r => setTimeout(r, 500));
-
-    // 7. Test Market Intelligence Price Input Change
-    console.log('[E3 6/8] Testing Market Intelligence Dynamic Price Sensitivity...');
+    // 6. Test Market Intelligence Price Input Change
+    console.log('[E3 5/7] Testing Market Intelligence Dynamic Price Sensitivity...');
     await cdp.send('Runtime.evaluate', {
       expression: `
         (function() {

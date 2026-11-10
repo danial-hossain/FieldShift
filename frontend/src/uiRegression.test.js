@@ -165,10 +165,6 @@ test('FIX 10: ClayFarmScene exports bedAppearance returning { kind: "soil" } for
   assert.deepEqual(bedAppearance(null), { kind: 'soil' });
   assert.deepEqual(bedAppearance({ crop: null }), { kind: 'soil' });
   assert.equal(bedAppearance({ crop: 'Rice' }).kind, 'crop');
-
-  const twinSrc = fs.readFileSync(path.join(__dirname, 'DigitalTwin3DView.jsx'), 'utf-8');
-  assert.ok(twinSrc.includes('disabled={!ov.live}'), 'DigitalTwin3DView must disable overlays without live telemetry');
-  assert.ok(!twinSrc.includes('* খেতের ত্রিমাত্রিক রেন্ডারিং একটি বিজ্ঞানভিত্তিক সিমুলেশন'), 'DigitalTwin3DView must not render duplicate overlapping caption banner');
 });
 
 test('R1: Every .jsx file importing/calling React hooks must import each called hook from react or call React.hook', () => {

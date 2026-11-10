@@ -25,8 +25,7 @@ const PAGES = [
   { id: 'weather', label: 'NASA Weather Station 3D & Risk', filename: 'page_04_weather.png' },
   { id: 'water_irrigation', label: 'Water Scheduling & Soil Column', filename: 'page_05_water_irrigation.png' },
   { id: 'harvest_profit', label: 'Market Intelligence & Profit', filename: 'page_06_harvest_profit.png' },
-  { id: 'digital_twin', label: 'Digital Twin 3D Farm Diorama', filename: 'page_07_digital_twin.png' },
-  { id: 'data_evidence', label: 'Data Provenance & Evidence', filename: 'page_08_data_evidence.png' },
+  { id: 'data_evidence', label: 'Data Provenance & Evidence', filename: 'page_07_data_evidence.png' },
 ];
 
 test.describe('FieldShift 2026 End-to-End Application Audit', () => {

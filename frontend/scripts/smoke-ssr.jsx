@@ -73,7 +73,6 @@ import { ClimateStressTestView } from '../src/ClimateStressTestView.jsx';
 import { YourFarmingVsPlanView } from '../src/YourFarmingVsPlanView.jsx';
 import { WaterIrrigationView } from '../src/WaterIrrigationView.jsx';
 import { ResearchWorkspaceView } from '../src/ResearchWorkspaceView.jsx';
-import { DigitalTwin3DView } from '../src/DigitalTwin3DView.jsx';
 import { MarketIntelligenceView } from '../src/MarketIntelligenceView.jsx';
 import AiAssistantView from '../src/AiAssistantView.jsx';
 import { DataEvidenceView } from '../src/DataEvidenceView.jsx';
@@ -176,31 +175,25 @@ const destinations = [
     fixtureProps: { activeField: fixtureField, nasa: fixtureNasa, initialTab: 'six_seasons_milp', lang: 'bn' }
   },
   {
-    name: '08. DigitalTwin3DView (digital_twin)',
-    component: DigitalTwin3DView,
-    noDataProps: {},
-    fixtureProps: { activeField: fixtureField, nasa: fixtureNasa, lang: 'bn' }
-  },
-  {
-    name: '09. MarketIntelligenceView (harvest_profit)',
+    name: '08. MarketIntelligenceView (harvest_profit)',
     component: MarketIntelligenceView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, lang: 'bn' }
   },
   {
-    name: '10. AiAssistantView (assistant)',
+    name: '09. AiAssistantView (assistant)',
     component: AiAssistantView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, user: fixtureUser, lang: 'bn' }
   },
   {
-    name: '11. DataEvidenceView (data_evidence)',
+    name: '10. DataEvidenceView (data_evidence)',
     component: DataEvidenceView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, nasa: fixtureNasa, lang: 'bn' }
   },
   {
-    name: '12. AccountCockpitView (account)',
+    name: '11. AccountCockpitView (account)',
     component: AccountCockpitView,
     noDataProps: {},
     fixtureProps: { user: fixtureUser, lang: 'bn' }
@@ -209,7 +202,7 @@ const destinations = [
 
 let failures = 0;
 console.log('==============================================================');
-console.log('FIELDSHIFT SSR RENDER GUARD (12 Destinations + Research Sub-Lab)');
+console.log('FIELDSHIFT SSR RENDER GUARD (11 Destinations + Research Sub-Lab)');
 console.log('==============================================================');
 
 for (const dest of destinations) {
@@ -284,6 +277,6 @@ if (failures > 0) {
   console.error(`SMOKE TEST FAILED: ${failures} render failure(s) detected.`);
   process.exit(1);
 } else {
-  console.log('SMOKE TEST PASSED: All 12 destinations rendered cleanly in both states.');
+  console.log('SMOKE TEST PASSED: All 11 destinations rendered cleanly in both states.');
   process.exit(0);
 }

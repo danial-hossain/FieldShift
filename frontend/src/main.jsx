@@ -22,7 +22,6 @@ import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';
 import { FarmPlanningView } from './FarmPlanningView.jsx';
 import { WaterIrrigationView } from './WaterIrrigationView.jsx';
-import { DigitalTwin3DView } from './DigitalTwin3DView.jsx';
 import { DataEvidenceView } from './DataEvidenceView.jsx';
 import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber } from './i18n.js';
 import {
@@ -521,7 +520,6 @@ export function App() {
   const [assistantParams, setAssistantParams] = useState(null); // { question, context, fromPage }
   const [farmPlanningSubTab, setFarmPlanningSubTab] = useState('milp'); // 'milp' | 'replan' | 'comparison'
   const [waterSubTab, setWaterSubTab] = useState('balance'); // 'balance' | 'optimization' | 'profile' | 'stress'
-  const [twinSubTab, setTwinSubTab] = useState('farm'); // 'farm' | 'growth' | 'hydrology' | 'climate' | 'compare'
   const [dataEvidenceSubTab, setDataEvidenceSubTab] = useState('sources'); // 'sources' | 'provenance' | 'reports' | 'methodology'
   const [myFarmSubTab, setMyFarmSubTab] = useState('overview'); // 'overview' | 'parcels' | 'map' | 'soil' | 'history'
   const [backendHealth, setBackendHealth] = useState({ database: 'sqlite', status: 'connected' });
@@ -541,6 +539,21 @@ export function App() {
         setAssistantParams(null);
       }
       setActiveNav('assistant');
+      return;
+    }
+
+    // Redirect removed 3D Farm / Digital Twin routes to Rotation Planner
+    if (
+      nav === 'digital_twin' ||
+      nav === '3d_farm' ||
+      nav === 'farm_3d' ||
+      nav === 'plan_viewer' ||
+      nav === 'crop_growth' ||
+      nav === 'climate_stress' ||
+      nav === 'scenario_comparison'
+    ) {
+      setActiveNav('farm_planning');
+      setFarmPlanningSubTab('milp');
       return;
     }
 
@@ -566,9 +579,17 @@ export function App() {
         setWaterSubTab('optimization');
         return;
       }
-      if (tab === 'canvas_3d' || tab === '3d') {
-        setActiveNav('digital_twin');
-        setTwinSubTab('farm');
+      if (
+        tab === 'canvas_3d' ||
+        tab === '3d' ||
+        tab === 'digital_twin' ||
+        tab === 'plan_viewer' ||
+        tab === 'crop_growth' ||
+        tab === 'climate_stress' ||
+        tab === 'scenario_comparison'
+      ) {
+        setActiveNav('farm_planning');
+        setFarmPlanningSubTab('milp');
         return;
       }
       if (tab === 'sources' || tab === 'evidence') {
@@ -660,7 +681,6 @@ export function App() {
       else if (nav === 'harvest_profit') setHarvestSubTab(tab);
       else if (nav === 'farm_planning') setFarmPlanningSubTab(tab);
       else if (nav === 'water_irrigation') setWaterSubTab(tab);
-      else if (nav === 'digital_twin') setTwinSubTab(tab);
       else if (nav === 'data_evidence') setDataEvidenceSubTab(tab);
       else if (nav === 'field') setMyFarmSubTab(tab);
       else if (nav === 'research') setAnalysisTab(tab);
@@ -1943,7 +1963,7 @@ export function App() {
     };
   }, [fieldReadiness.isReady, nasa, analysisFreshness.status, scenarios]);
 
-  const isResearchMode = ['research', 'water_irrigation', 'digital_twin', 'data_evidence'].includes(activeNav);
+  const isResearchMode = ['research', 'water_irrigation', 'data_evidence'].includes(activeNav);
   const currentMode = isResearchMode ? 'research' : 'farmer';
 
   return (
@@ -2055,34 +2075,23 @@ export function App() {
             <span className="nav-item-label">{lang === 'bn' ? 'বাজার' : 'Market'}</span>
           </button>
 
-          {/* 7. 3D Farm Plan Viewer */}
-          <button
-            type="button"
-            className={`nav-item ${activeNav === 'digital_twin' ? 'active' : ''}`}
-            data-nav="digital_twin" onClick={() => handleNavigate('digital_twin')}
-            title={lang === 'bn' ? '৭. ৩ডি খামার - বাস্তবসম্মত ডায়োরামা প্ল্যান ভিউয়ার' : '7. 3D Farm - Plan Viewer Diorama'}
-          >
-            <span className="nav-item-icon">🌐</span>
-            <span className="nav-item-label">{lang === 'bn' ? '৩ডি খামার' : '3D Farm'}</span>
-          </button>
-
-          {/* 8. Evidence & Method */}
+          {/* 7. Evidence & Method */}
           <button
             type="button"
             className={`nav-item ${activeNav === 'data_evidence' || activeNav === 'research' ? 'active' : ''}`}
             data-nav="data_evidence" onClick={() => handleNavigate('data_evidence')}
-            title={lang === 'bn' ? '৮. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '8. Evidence & Method - Datasets, Methods & Research'}
+            title={lang === 'bn' ? '৭. প্রমাণ ও পদ্ধতি - নাসা উপাত্ত, পদ্ধতি ও ল্যাব আর্কাইভ' : '7. Evidence & Method - Datasets, Methods & Research'}
           >
             <span className="nav-item-icon">📊</span>
             <span className="nav-item-label">{lang === 'bn' ? 'প্রমাণ ও পদ্ধতি' : 'Evidence & Method'}</span>
           </button>
 
-          {/* 9. AI Assistant */}
+          {/* 8. AI Assistant */}
           <button
             type="button"
             className={`nav-item ${activeNav === 'assistant' ? 'active' : ''}`}
             data-nav="assistant" onClick={() => handleNavigate('assistant')}
-            title={lang === 'bn' ? '৯. AI সহকারী - শস্য আবর্তন ও কৃষি পরামর্শ' : '9. AI Assistant - Crop Rotation & Agricultural Advice'}
+            title={lang === 'bn' ? '৮. AI সহকারী - শস্য আবর্তন ও কৃষি পরামর্শ' : '8. AI Assistant - Crop Rotation & Agricultural Advice'}
           >
             <span className="nav-item-icon">🤖</span>
             <span className="nav-item-label">{lang === 'bn' ? 'AI সহকারী' : 'AI Assistant'}</span>
@@ -3736,21 +3745,6 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW: 3D DIGITAL TWIN -------------------- */}
-        {activeNav === 'digital_twin' && (
-          <DigitalTwin3DView
-            activeField={activeField}
-            userFields={userFields}
-            onSelectField={handleSelectActiveField}
-            plan={plan}
-            summary={summary}
-            nasa={nasa}
-            lang={lang}
-            onNavigate={handleNavigate}
-            initialSubTab={twinSubTab}
-          />
-        )}
-
         {/* -------------------- VIEW: DATA & EVIDENCE -------------------- */}
         {activeNav === 'data_evidence' && (
           <DataEvidenceView
@@ -5019,7 +5013,7 @@ export function App() {
           </button>
           <button
             type="button"
-            className={`mobile-bottom-nav-item ${activeNav === 'data_evidence' || activeNav === 'digital_twin' || activeNav === 'research' ? 'active' : ''}`}
+            className={`mobile-bottom-nav-item ${activeNav === 'data_evidence' || activeNav === 'research' ? 'active' : ''}`}
             onClick={() => handleNavigate('data_evidence')}
             title="Evidence"
           >

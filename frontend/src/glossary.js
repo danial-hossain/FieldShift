@@ -10,7 +10,6 @@ export const GLOSSARY = {
   climate_risk: { bn: 'আবহাওয়া ও ঝুঁকি', en: 'Climate & Risk', desc: 'নাসা বৃষ্টিপাত, অনসেট পরিবর্তন ও তাপপ্রবাহ' },
   water_irrigation: { bn: 'পানি ও সেচ', en: 'Water & Irrigation', desc: 'সেচ ক্যালেন্ডার ও মাটির পানির হিসাব' },
   market: { bn: 'বাজার ও লাভ', en: 'Market & Profit', desc: 'বাজারদর, মোট লাভ ও জাতীয় পুষ্টি চাহিদা' },
-  farm_3d: { bn: '৩ডি খামার', en: '3D Farm', desc: 'বাস্তবসম্মত ত্রিমাত্রিক শস্য আবর্তন মডেল' },
   evidence_method: { bn: 'প্রমাণ ও পদ্ধতি', en: 'Evidence & Method', desc: 'নাসা উপগ্রহ তথ্যসূত্র, হিসাবরীতি ও বৈজ্ঞানিক পদ্ধতি' },
 
   // Seasons (বাংলা ছয় ঋতু ও কৃষি মৌসুম)

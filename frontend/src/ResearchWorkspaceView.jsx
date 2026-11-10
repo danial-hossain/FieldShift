@@ -155,7 +155,7 @@ export function ResearchWorkspaceView({
       items: [
         { id: 'comparison_lab', label: lang === 'bn' ? 'তুলনামূলক ল্যাব (MILP বনাম RL বনাম Rule)' : 'Comparison Lab (MILP vs RL vs Rule)', icon: '🧪', badge: '3-WAY' },
         { id: 'replan', label: lang === 'bn' ? 'পরবর্তী মৌসুমের অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Next-Season Replanning', icon: '🔄', badge: 'ADAPTIVE' },
-        { id: 'experiment_simulator_3d', label: lang === 'bn' ? '৩ডি খামার সিমুলেটর ওয়ার্কবেঞ্চ' : 'Farm Experiment Simulator 3D', icon: '🔬', badge: '3D' },
+        { id: 'experiment_simulator_3d', label: lang === 'bn' ? 'গবেষণা সিমুলেটর ওয়ার্কবেঞ্চ' : 'Farm Experiment Simulator 3D', icon: '🔬', badge: '3D' },
         { id: 'crop_growth_3d', label: lang === 'bn' ? 'ফসলের বৃদ্ধি ও ফেনোলজি' : 'Crop Growth & Phenology', icon: '🌱', badge: 'FAO-33' },
         { id: 'climate_stress_3d', label: lang === 'bn' ? 'জলবায়ু ও তাপমাত্রা চাপ' : 'Climate Stress Scenarios', icon: '☀️', badge: 'NASA' },
         { id: 'nutrient_3d', label: lang === 'bn' ? 'পুষ্টি ও রাইজোস্ফিয়ার BNF' : 'Nutrient & Rhizosphere BNF', icon: '🧪', badge: 'BARI' },

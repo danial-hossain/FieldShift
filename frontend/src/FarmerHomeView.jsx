@@ -415,15 +415,15 @@ export function FarmerHomeView({
                 <span style={{ fontSize: 24 }}>🛰️🌾</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
-                    {lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনার ৩ডি ডিজিটাল টুইন দেখতে চান?' : 'Explore Full 6-Season 3D Digital Twin Plan Viewer'}
+                    {lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনা ও জমির দৃশ্য দেখতে চান?' : 'Explore Full 6-Season Rotation Plan & Field Preview'}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                    {lang === 'bn' ? 'প্রতি মৌসুমের ফসল রোটেশন, সেচ ও মাটির আর্দ্রতা ত্রিমাত্রিক মডেলিংয়ে দেখুন।' : 'Interactive season slider over all 6 seasonal periods with crop growth, moisture, and canal hydrology.'}
+                    {lang === 'bn' ? 'প্রতি মৌসুমের ফসল রোটেশন, সেচ ও মাটির আর্দ্রতা ইন্টারেক্টিভ মডেলে দেখুন।' : 'Interactive seasonal crop rotation with irrigation budgets and 3D diorama preview.'}
                   </div>
                 </div>
               </div>
-              <Button size="sm" variant="primary" onClick={() => onNavigate('digital_twin')}>
-                {lang === 'bn' ? 'ত্রিমাত্রিক ডিজিটাল টুইন খুলুন ➔' : 'Open 3D Digital Twin ➔'}
+              <Button size="sm" variant="primary" onClick={() => onNavigate('farm_planning')}>
+                {lang === 'bn' ? 'ফসল পরিকল্পনা দেখুন ➔' : 'View Rotation Plan ➔'}
               </Button>
             </div>
           </div>
@@ -858,7 +858,7 @@ export function FarmerHomeView({
                   {lang === 'bn' ? 'আবহাওয়া স্টেশন' : 'Weather Station'}
                 </span>
                 <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                  {lang === 'bn' ? '৩ডি ভিজ্যুয়ালাইজার' : '3D Farm Model'}
+                  {lang === 'bn' ? '৩ডি আবহাওয়া স্টেশন' : '3D Weather Station'}
                 </span>
               </button>
 
