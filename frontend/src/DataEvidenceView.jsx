@@ -89,16 +89,16 @@ export function DataEvidenceView({
       source: 'NASA FlashFlux / CERES Satellite',
       tier: 'Tier 1 (Observed / Assimilated)',
       coverage: '2001–2025 (25 Years Daily)',
-      missingRule: 'Solar radiation telemetry for Hargreaves reference evapotranspiration (ET0)',
+      missingRule: 'Solar radiation telemetry for FAO-56 Penman-Monteith reference evapotranspiration (ET0)',
     },
     {
       code: 'SMAP_L4_SM',
       name: 'Soil Moisture Active Passive (Root Zone SPL4SMGP)',
       units: 'm³/m³ (Volumetric fraction)',
       source: 'NASA SMAP Level-4 Global Assimilation (9 km)',
-      tier: 'Tier 1 (OPeNDAP Subsetting)',
-      coverage: 'Seasonal Telemetry (2023–2024) via NSIDC OPeNDAP',
-      missingRule: 'Root zone moisture (0–100 cm depth) subsetted across representative seasons; multi-decadal archive catalogued as planned limitation.',
+      tier: 'Planned (Root-zone simulated via FAO-56 daily water balance; direct 9 km SPL4SMGP assimilation planned)',
+      coverage: 'Simulated via FAO-56 daily soil moisture balance',
+      missingRule: 'Root zone moisture (0–100 cm depth) simulated dynamically via FAO-56 dual crop coefficient; direct SPL4SMGP ingestion catalogued as planned remote feature.',
     },
     {
       code: 'MOD13Q1_NDVI',
@@ -123,9 +123,9 @@ export function DataEvidenceView({
       name: 'SRTM 1 Arc-Second Global Elevation & Slope',
       units: 'meters / % slope',
       source: 'NASA SRTMGL1 (30 m DEM)',
-      tier: 'Tier 1 (Space Shuttle Radar Topography)',
+      tier: 'Partial (Space Shuttle Radar Topography 30 m; falls back to district metadata if tile absent)',
       coverage: 'Static Topography (30 m global grid)',
-      missingRule: 'Derived 3x3 Sobel window topographic slope and elevation from raw .hgt tiles for Hargreaves ET0 pressure correction and flood exposure.',
+      missingRule: 'Derived 3x3 Sobel window topographic slope and elevation from raw .hgt tiles for FAO-56 Penman-Monteith ET0 pressure correction and flood exposure.',
     },
   ];
 
