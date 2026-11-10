@@ -519,6 +519,23 @@ class ResultBoundary extends React.Component {
 export function App() {
   const [activeNav, setActiveNav] = useState('dashboard');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('fieldshift_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleSidebarCollapsed = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('fieldshift_sidebar_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
   const [selectedStress, setSelectedStress] = useState('normal');
   const [theme, setTheme] = useState(() => localStorage.getItem('fieldshift_theme') || 'dark');
   const [lang, setLang] = useState(() => localStorage.getItem('fieldshift_lang') || 'bn');
@@ -726,6 +743,15 @@ export function App() {
   });
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   const [authModal, setAuthModal] = useState(false);
+
+  // App shell main scroll ref & reset on page navigation
+  const mainWrapperRef = useRef(null);
+  useEffect(() => {
+    if (mainWrapperRef.current) {
+      mainWrapperRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }
+    window.scrollTo(0, 0);
+  }, [activeNav]);
   const [saveFieldMsg, setSaveFieldMsg] = useState('');
   const [profileTab, setProfileTab] = useState('parcels');
   const [analysisTab, setAnalysisTab] = useState('optimization');
@@ -2001,7 +2027,7 @@ export function App() {
   const currentMode = isResearchMode ? 'research' : 'farmer';
 
   return (
-    <div className="app-shell" data-mode={currentMode} data-nav={activeNav}>
+    <div className="app-shell" data-mode={currentMode} data-nav={activeNav} data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}>
       {/* Fixed NASA VIIRS Background Layer */}
       <div className="nasa-bg-layer" aria-hidden="true">
         <div className="nasa-bg-image" />
@@ -2017,7 +2043,7 @@ export function App() {
       )}
 
       {/* Left Vertical Navigation Rail (Mobile Drawer on phone screens) */}
-      <aside className={`sidebar ${mobileNavOpen ? 'mobile-open' : ''}`}>
+      <aside className={`sidebar ${mobileNavOpen ? 'mobile-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-logo" title="FieldShift Decision Support" data-nav="dashboard" onClick={() => handleNavigate('dashboard')} style={{ cursor: 'pointer' }}>
           <div className="sidebar-logo-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -2029,6 +2055,15 @@ export function App() {
             <span className="sidebar-logo-name">FieldShift</span>
             <span className="sidebar-logo-tagline">AI Decision Support</span>
           </div>
+          <button
+            type="button"
+            className="sidebar-collapse-toggle"
+            onClick={(e) => { e.stopPropagation(); toggleSidebarCollapsed(); }}
+            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={sidebarCollapsed ? (lang === 'bn' ? 'মেনু বড় করুন' : 'Expand sidebar') : (lang === 'bn' ? 'মেনু ছোট করুন' : 'Collapse sidebar')}
+          >
+            {sidebarCollapsed ? '›' : '‹'}
+          </button>
           <button
             type="button"
             className="sidebar-close-btn"
@@ -2147,7 +2182,7 @@ export function App() {
       </aside>
 
       {/* Main Workspace Content */}
-      <div className="main-wrapper">
+      <div className="main-wrapper" ref={mainWrapperRef}>
         {/* Global Persistent Top Bar */}
         <header className="global-top-bar">
           <div className="global-top-bar-left">
