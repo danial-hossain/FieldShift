@@ -47,16 +47,10 @@ def get_field_imerg_series(lat: float, lon: float) -> pd.DataFrame:
 
 
 def get_district_imerg_series(district_id: str) -> Optional[pd.DataFrame]:
-    """Retrieve daily IMERG time series (2001-2024) for a district.
-    
-    Checks per-district CSV cache first, then falls back to .npz slice.
-    """
+    """Retrieve daily IMERG time series (2001-2024) for a district from bd_imerg_daily.npz."""
     key = district_id.strip().lower()
-    csv_path = DATA_DIR / f"imerg_{key}_2001_2024.csv"
-    if csv_path.exists():
-        return pd.read_csv(csv_path)
 
-    # Fallback to district registry coordinates
+    # Resolve coordinates via manifest or district registry
     manifest_path = PROJECT_ROOT / "data" / "nasa_power" / "manifest_64.json"
     if manifest_path.exists():
         try:
@@ -67,5 +61,10 @@ def get_district_imerg_series(district_id: str) -> Optional[pd.DataFrame]:
                 return get_field_imerg_series(entry["lat"], entry["lon"])
         except Exception:
             pass
+
+    from src.compute.advisory_service import DISTRICT_REGISTRY
+    if key in DISTRICT_REGISTRY:
+        d = DISTRICT_REGISTRY[key]
+        return get_field_imerg_series(float(d.get("latitude") or d.get("lat")), float(d.get("longitude") or d.get("lon")))
 
     return None

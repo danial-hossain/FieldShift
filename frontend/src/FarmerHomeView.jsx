@@ -30,12 +30,15 @@ export function FarmerHomeView({
   const [reloadKey, setReloadKey] = useState(0);
 
   const district = activeField?.district || 'rajshahi';
+  const lat = activeField?.latitude;
+  const lon = activeField?.longitude;
 
   useEffect(() => {
     let isMounted = true;
     setAdvisoryLoading(true);
     setAdvisoryError(null);
-    fetch(`/api/advisory?district=${encodeURIComponent(district)}&crop=aman`)
+    const coordsQuery = (lat != null && lon != null) ? `&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}` : '';
+    fetch(`/api/advisory?district=${encodeURIComponent(district)}&crop=aman${coordsQuery}`)
       .then(res => {
         if (!res.ok) throw new Error('Advisory fetch failed');
         return res.json();
@@ -50,7 +53,7 @@ export function FarmerHomeView({
         if (isMounted) setAdvisoryLoading(false);
       });
     return () => { isMounted = false; };
-  }, [district, reloadKey]);
+  }, [district, lat, lon, reloadKey]);
 
   // Real NASA Metrics from verified datasets
   const climatologyYears = 25; // 2001-2025

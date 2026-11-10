@@ -16,7 +16,7 @@ import pandas as pd
 
 from src.compute.advisory_service import DISTRICT_REGISTRY, load_district_climate_data
 from src.compute.field_enrichment import fetch_isric_soilgrids
-from src.compute.imerg import get_district_imerg_series
+from src.climate.point_data import get_point_weather_dataframe, get_gpm_imerg, get_grace
 
 logger = logging.getLogger("water_service")
 
@@ -353,14 +353,10 @@ def compute_water_plan(
     else:
         raise ValueError(f"Unable to resolve longitude for district '{dist_key}'.")
 
-    # 1. Load daily weather and IMERG rainfall
-    power_df, _ = load_district_climate_data(dist_key, offline=True)
+    # 1. Load point-specific daily weather and IMERG rainfall via point_data
+    power_df, _ = get_point_weather_dataframe(lat, lon, offline=True)
     if "date" in power_df.columns:
         power_df["date"] = pd.to_datetime(power_df["date"])
-
-    imerg_df = get_district_imerg_series(dist_key)
-    if not imerg_df.empty and "date" in imerg_df.columns:
-        imerg_df["date"] = pd.to_datetime(imerg_df["date"])
 
     # 2. Derive soil hydraulic parameters from ISRIC SoilGrids
     soil_data = custom_soil or fetch_isric_soilgrids(lat, lon, allow_network=False)
@@ -423,10 +419,6 @@ def compute_water_plan(
         # Fallback to climatological day-of-year window
         sub_power = power_df.tail(duration_days).copy()
 
-    sub_imerg = pd.DataFrame()
-    if not imerg_df.empty:
-        sub_imerg = imerg_df[(imerg_df["date"] >= start_date) & (imerg_df["date"] <= end_date)].copy()
-
     kc_series, zr_series = generate_crop_kc_series(crop_name, len(sub_power))
 
     # 4. Daily simulation: ET0, ETc, P_eff, Root Zone Depletion, Irrigation Triggers
@@ -452,12 +444,8 @@ def compute_water_plan(
         u2 = float(row.get("wind_speed", 1.5))
         solar = float(row.get("solar_radiation", 16.0))
 
-        # IMERG precipitation if available, else POWER rainfall
-        if not sub_imerg.empty and day_idx < len(sub_imerg):
-            i_row = sub_imerg.iloc[day_idx]
-            rain = float(i_row.get("precipitation", row.get("rainfall", 0.0)))
-        else:
-            rain = float(row.get("rainfall", 0.0))
+        # IMERG precipitation (overlaid on point weather DataFrame)
+        rain = float(row.get("rainfall", 0.0))
 
         # FAO-56 Reference ET0
         et0 = fao56_penman_monteith_et0(t_m, t_min, t_max, rh, u2, solar, lat, doy)
@@ -706,20 +694,54 @@ def resolve_water_field(
             f_num = int(str(field_id).strip())
         except (ValueError, TypeError):
             pass
-    if f_num is not None and f_num in CANONICAL_FIELDS:
-        cf = CANONICAL_FIELDS[f_num]
-        return {
-            "field_id": str(f_num),
-            "name": cf["name"],
-            "name_en": cf["name"],
-            "district": cf["district"],
-            "latitude": cf["lat"],
-            "longitude": cf["lon"],
-            "area_ha": cf["area_ha"],
-            "area_bigha": round(cf["area_ha"] / 0.13378, 1),
-            "area_m2": int(round(cf["area_ha"] * 10000.0)),
-            "soil_texture": cf["soil"],
-        }
+    if f_num is not None:
+        if f_num in CANONICAL_FIELDS:
+            cf = CANONICAL_FIELDS[f_num]
+            return {
+                "field_id": str(f_num),
+                "name": cf["name"],
+                "name_en": cf["name"],
+                "district": cf["district"],
+                "latitude": cf["lat"],
+                "longitude": cf["lon"],
+                "area_ha": cf["area_ha"],
+                "area_bigha": round(cf["area_ha"] / 0.13378, 1),
+                "area_m2": int(round(cf["area_ha"] * 10000.0)),
+                "soil_texture": cf["soil"],
+            }
+        try:
+            from backend.app.database import SessionLocal
+            from backend.app.models import Field
+            db = SessionLocal()
+            try:
+                db_field = db.query(Field).filter(Field.id == f_num).first()
+                if db_field:
+                    lat_val = float(db_field.latitude) if db_field.latitude is not None else None
+                    lon_val = float(db_field.longitude) if db_field.longitude is not None else None
+                    area_val = float(db_field.area_ha) if db_field.area_ha is not None else 1.0
+                    dist_val = getattr(db_field, "district", None)
+                    if not dist_val and lat_val is not None and lon_val is not None:
+                        from src.compute.advisory_service import nearest_district
+                        dist_val = nearest_district(lat_val, lon_val)
+                    dist_val = dist_val or "bogura"
+                    name_val = getattr(db_field, "name", f"Field {f_num}")
+                    soil_val = getattr(db_field, "soil_texture", "clay loam") or "clay loam"
+                    return {
+                        "field_id": str(f_num),
+                        "name": name_val,
+                        "name_en": name_val,
+                        "district": dist_val,
+                        "latitude": lat_val,
+                        "longitude": lon_val,
+                        "area_ha": area_val,
+                        "area_bigha": round(area_val / 0.13378, 1),
+                        "area_m2": int(round(area_val * 10000.0)),
+                        "soil_texture": soil_val,
+                    }
+            finally:
+                db.close()
+        except Exception:
+            pass
 
     act_lat = latitude
     act_lon = longitude
@@ -770,7 +792,7 @@ def compute_season_water_plan(
     lon = f_info["longitude"]
     area = f_info["area_ha"]
 
-    power_df, _ = load_district_climate_data(dist_key, offline=True)
+    power_df, point_climate = get_point_weather_dataframe(lat, lon, offline=True)
     if "date" in power_df.columns:
         power_df["date"] = pd.to_datetime(power_df["date"])
     power_df["doy"] = power_df["date"].dt.dayofyear

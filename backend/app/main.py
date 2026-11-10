@@ -687,7 +687,9 @@ def climate_scenario_endpoint(payload: Payload, db: DbSession = Depends(get_db))
     temp_delta_c = max(0.0, min(4.0, temp_delta_c))
 
     is_offline = os.environ.get("OFFLINE", "1") == "1"
-    df, mode = load_district_climate_data(dist_key, offline=is_offline)
+    lat_f = float(lat_val) if lat_val is not None else None
+    lon_f = float(lon_val) if lon_val is not None else None
+    df, mode = load_district_climate_data(dist_key, offline=is_offline, lat=lat_f, lon=lon_f)
     n_years = max(1.0, len(df) / 365.25)
 
     base_heat_days = float((df["temp_max"] > 35.0).sum() / n_years)
@@ -858,8 +860,10 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
         if dist_key not in DISTRICT_REGISTRY:
             raise HTTPException(400, f"Unsupported district '{district}'. Supported districts: {list(DISTRICT_REGISTRY.keys())}")
         is_offline = os.environ.get("OFFLINE", "1") == "1"
+        lat_hint = float(lat_val) if lat_val is not None else None
+        lon_hint = float(lon_val) if lon_val is not None else None
         try:
-            climate_df, data_mode = load_district_climate_data(dist_key, offline=is_offline)
+            climate_df, data_mode = load_district_climate_data(dist_key, offline=is_offline, lat=lat_hint, lon=lon_hint)
         except ValueError as err:
             raise HTTPException(400, str(err)) from err
         if "date" in climate_df.columns:
@@ -1349,6 +1353,14 @@ def planning_stress(
             k2 = er.get("kharif2") or "Rice"
             baseline_crops = [rabi, k1, k2, rabi, k1, k2]
 
+    lat_val = data.get("latitude")
+    lon_val = data.get("longitude")
+    if (lat_val is None or lon_val is None) and field_record:
+        lat_val = getattr(field_record, "latitude", None)
+        lon_val = getattr(field_record, "longitude", None)
+    lat_f = float(lat_val) if lat_val is not None else None
+    lon_f = float(lon_val) if lon_val is not None else None
+
     from src.compute.climate_stress import run_climate_stress_test
     result = run_climate_stress_test(
         field_id=str(requested_field_id or "demo"),
@@ -1360,6 +1372,8 @@ def planning_stress(
         plan_crops=plan_crops,
         baseline_crops=baseline_crops,
         area_ha=area_ha,
+        lat=lat_f,
+        lon=lon_f,
     )
     return finite_json_value(jsonable_encoder(result))
 
@@ -1556,7 +1570,7 @@ def location_weather(payload: Payload):
             dist_key = nearest_district(lat, lon)
         else:
             dist_key = str(dist_key).strip().lower()
-        df, mode = load_district_climate_data(dist_key, offline=True)
+        df, mode = load_district_climate_data(dist_key, offline=True, lat=lat, lon=lon)
         tail_30 = df.tail(30).copy()
 
         def rounded_value(row: Any, key: str, digits: int) -> float | None:
@@ -1662,9 +1676,15 @@ def get_planting_advisory(
     dry_spell_max: int = 7,
     offline: bool = False,
     lang: str = "bn",
+    lat: float | None = None,
+    lon: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
 ):
     """Return mobile-first planting window advisory based on NASA observations."""
     from src.compute.advisory_service import build_planting_advisory
+    actual_lat = lat if lat is not None else latitude
+    actual_lon = lon if lon is not None else longitude
     try:
         result = build_planting_advisory(
             district=district,
@@ -1674,6 +1694,8 @@ def get_planting_advisory(
             dry_spell_max_consecutive_days=dry_spell_max,
             offline=offline,
             lang=lang,
+            lat=actual_lat,
+            lon=actual_lon,
         )
         return finite_json_value(jsonable_encoder(result))
     except ValueError as e:
@@ -1868,7 +1890,7 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
     dist_key = str(district).strip().lower()
     is_offline = os.environ.get("OFFLINE", "1") == "1"
     try:
-        power, data_mode = load_district_climate_data(dist_key, offline=is_offline)
+        power, data_mode = load_district_climate_data(dist_key, offline=is_offline, lat=lat_val, lon=lon_val)
     except (ValueError, FileNotFoundError, RuntimeError) as error:
         raise HTTPException(502, f"Could not load climate data for {dist_key}: {error}") from error
     if "date" in power.columns:
@@ -2134,7 +2156,7 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
     dist_key = str(district).strip().lower()
     is_offline = os.environ.get("OFFLINE", "1") == "1"
     try:
-        power, data_mode = load_district_climate_data(dist_key, offline=is_offline)
+        power, data_mode = load_district_climate_data(dist_key, offline=is_offline, lat=lat_val, lon=lon_val)
     except Exception:
         from src.experiments.integrated_research_demo import DEFAULT_NASA_PATH
         power = pd.read_csv(DEFAULT_NASA_PATH)

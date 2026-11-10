@@ -30,7 +30,6 @@ from src.compute.agro import (
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-CACHE_DIR = PROJECT_ROOT / "data" / "nasa_power" / "advisory_cache"
 FIXTURES_DIR = PROJECT_ROOT / "data" / "nasa_power" / "fixtures"
 
 _CLIMATE_DF_CACHE: Dict[str, Tuple[pd.DataFrame, str]] = {}
@@ -189,123 +188,37 @@ def nearest_district(latitude: float, longitude: float) -> str:
 def load_district_climate_data(
     district_key: str,
     offline: bool = False,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> Tuple[pd.DataFrame, str]:
-    """Retrieve daily NASA POWER observations (2001-2025) for a district.
+    """Retrieve daily NASA observations for a district or point via src.climate.point_data.
 
-    Returns:
-        Tuple of (DataFrame, data_mode)
-        data_mode is one of:
-          - 'cache': Loaded from local advisory cache
-          - 'fixture': Loaded from pre-bundled offline fixture
-          - 'live_acquired_cache': Freshly retrieved via NASA API and cached locally
+    Guarantees that all climate data flows through src/climate/point_data.py without
+    any direct reads of district advisory caches or static CSV archives.
     """
     key = district_key.strip().lower()
-    if key not in DISTRICT_REGISTRY:
+    if key not in DISTRICT_REGISTRY and (lat is None or lon is None):
         raise ValueError(
             f"Unsupported district '{district_key}'. Supported districts: "
             + ", ".join(DISTRICT_REGISTRY.keys())
         )
 
-    if key in _CLIMATE_DF_CACHE:
-        cached_df, cached_mode = _CLIMATE_DF_CACHE[key]
+    cache_key = f"{key}_{lat}_{lon}" if lat is not None and lon is not None else key
+    if cache_key in _CLIMATE_DF_CACHE:
+        cached_df, cached_mode = _CLIMATE_DF_CACHE[cache_key]
         return cached_df.copy(), cached_mode
 
-    district_info = DISTRICT_REGISTRY[key]
-    cache_file = CACHE_DIR / f"nasa_power_{key}_2001_2025.csv"
-    fixture_file = FIXTURES_DIR / f"nasa_power_{key}_fixture.csv"
-    fallback_fixture = FIXTURES_DIR / "nasa_power_rajshahi_fixture.csv"
+    district_info = DISTRICT_REGISTRY.get(key, {})
+    actual_lat = float(lat if lat is not None else (district_info.get("latitude") or district_info.get("lat") or 24.85))
+    actual_lon = float(lon if lon is not None else (district_info.get("longitude") or district_info.get("lon") or 89.37))
 
     is_forced_offline = bool(offline or os.getenv("OFFLINE") == "1")
+    from src.climate.point_data import get_point_weather_dataframe
+    df, point_climate = get_point_weather_dataframe(actual_lat, actual_lon, offline=is_forced_offline)
+    raw_mode = point_climate.get("nasa_power", {}).get("provenance", {}).get("method", "cache")
+    data_mode = "fixture" if raw_mode == "fixture" else ("live_acquired_cache" if raw_mode == "live_acquired_cache" else "cache")
 
-    df = None
-    data_mode = "cache"
-
-    # 1. Offline Mode: Strictly use local files; never hit network
-    if is_forced_offline:
-        if cache_file.exists():
-            df = pd.read_csv(cache_file)
-            data_mode = "cache"
-        elif fixture_file.exists():
-            df = pd.read_csv(fixture_file)
-            data_mode = "fixture"
-        elif fallback_fixture.exists():
-            df = pd.read_csv(fallback_fixture)
-            data_mode = "fixture"
-        else:
-            raise FileNotFoundError(
-                f"No offline cache or fixture available for district '{key}'."
-            )
-    elif cache_file.exists():
-        df = pd.read_csv(cache_file)
-        data_mode = "cache"
-    elif fixture_file.exists():
-        df = pd.read_csv(fixture_file)
-        data_mode = "fixture"
-    else:
-        # 3. Live acquisition via NASA POWER Daily Point API
-        try:
-            import requests
-            url = "https://power.larc.nasa.gov/api/temporal/daily/point"
-            params = {
-                "parameters": "PRECTOTCORR,T2M,T2M_MAX,T2M_MIN,RH2M,WS2M,ALLSKY_SFC_SW_DWN",
-                "community": "AG",
-                "longitude": float(district_info["longitude"]),
-                "latitude": float(district_info["latitude"]),
-                "start": "20010101",
-                "end": "20251231",
-                "format": "JSON",
-            }
-            resp = requests.get(url, params=params, timeout=45)
-            resp.raise_for_status()
-            data = resp.json()["properties"]["parameter"]
-
-            dates = list(data["PRECTOTCORR"].keys())
-            df = pd.DataFrame({
-                "date": [f"{d[:4]}-{d[4:6]}-{d[6:]}" for d in dates],
-                "rainfall": [data["PRECTOTCORR"].get(d, -999) for d in dates],
-                "temperature": [data["T2M"].get(d, -999) for d in dates],
-                "temp_max": [data["T2M_MAX"].get(d, -999) for d in dates],
-                "temp_min": [data["T2M_MIN"].get(d, -999) for d in dates],
-                "humidity": [data["RH2M"].get(d, -999) for d in dates],
-                "wind_speed": [data["WS2M"].get(d, -999) for d in dates],
-                "solar_radiation": [data["ALLSKY_SFC_SW_DWN"].get(d, -999) for d in dates],
-            })
-
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            df.to_csv(cache_file, index=False)
-            data_mode = "live_acquired_cache"
-
-        except Exception:
-            if fixture_file.exists():
-                df = pd.read_csv(fixture_file)
-                data_mode = "fixture"
-            elif fallback_fixture.exists():
-                df = pd.read_csv(fallback_fixture)
-                data_mode = "fixture"
-            else:
-                raise RuntimeError(
-                    f"Could not acquire NASA POWER telemetry for '{key}' and no local fixture exists."
-                )
-
-    # Standardize column naming if 'PRECTOTCORR' present
-    if "PRECTOTCORR" in df.columns and "rainfall" not in df.columns:
-        df["rainfall"] = df["PRECTOTCORR"]
-
-    # Overlay NASA GPM IMERG Final Daily v07 as primary rainfall source
-    try:
-        from src.compute.imerg import get_district_imerg_series
-        imerg_df = get_district_imerg_series(key)
-        if imerg_df is not None and not imerg_df.empty:
-            imerg_map = dict(zip(imerg_df["date"], imerg_df["rainfall"]))
-            df["rainfall_power"] = df["rainfall"]
-            df["rainfall"] = df["date"].map(imerg_map).fillna(df["rainfall"])
-            df.attrs["rain_source"] = "NASA GPM IMERG Final Daily v07 (0.1°)"
-        else:
-            df.attrs["rain_source"] = "POWER reanalysis rain (not satellite-confirmed)"
-    except Exception:
-        df.attrs["rain_source"] = "POWER reanalysis rain (not satellite-confirmed)"
-
-    _CLIMATE_DF_CACHE[key] = (df, data_mode)
+    _CLIMATE_DF_CACHE[cache_key] = (df, data_mode)
     return df.copy(), data_mode
 
 
@@ -349,16 +262,21 @@ def build_planting_advisory(
     dry_spell_max_consecutive_days: int = 7,
     offline: bool = False,
     lang: str = "bn",
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Assemble complete scientific planting-window advisory response."""
     dist_key = district.strip().lower()
     crop_key = crop.strip().lower()
 
     if dist_key not in DISTRICT_REGISTRY:
-        raise ValueError(
-            f"Unsupported district '{district}'. Supported districts: "
-            + ", ".join(DISTRICT_REGISTRY.keys())
-        )
+        if lat is not None and lon is not None:
+            dist_key = nearest_district(float(lat), float(lon))
+        else:
+            raise ValueError(
+                f"Unsupported district '{district}'. Supported districts: "
+                + ", ".join(DISTRICT_REGISTRY.keys())
+            )
     if crop_key not in RICE_SEASON_WINDOWS:
         raise ValueError(
             f"Unsupported crop '{crop}'. Supported crops: "
@@ -409,7 +327,7 @@ def build_planting_advisory(
     thermal_spec = RICE_THERMAL_SPECS.get(crop_key, RICE_THERMAL_SPECS["default"])
 
     # Load 2001-2025 daily climate data
-    daily_df, data_mode = load_district_climate_data(dist_key, offline=offline)
+    daily_df, data_mode = load_district_climate_data(dist_key, offline=offline, lat=lat, lon=lon)
 
     # Configure agronomic parameters
     config = AgronomicConfig(

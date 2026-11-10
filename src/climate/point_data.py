@@ -685,3 +685,45 @@ def get_point_climate(lat: float, lon: float, offline: Optional[bool] = None) ->
         "grace": grace,
         "onset": onset,
     }
+
+
+def get_point_weather_dataframe(
+    lat: float,
+    lon: float,
+    offline: Optional[bool] = None,
+    start_year: Optional[int] = 2001,
+    end_year: Optional[int] = 2025,
+) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    """Retrieve daily weather DataFrame for a point with IMERG 0.1° cell rainfall overlaid.
+
+    Used across Planning, Water, Stress, and Overview as the unified point weather source.
+    """
+    point_climate = get_point_climate(lat, lon, offline=offline)
+    power_series = point_climate.get("nasa_power", {}).get("series", [])
+    df = pd.DataFrame(power_series)
+    if not df.empty:
+        if "tmax" in df.columns and "temp_max" not in df.columns:
+            df["temp_max"] = df["tmax"]
+        if "tmin" in df.columns and "temp_min" not in df.columns:
+            df["temp_min"] = df["tmin"]
+        if "tavg" in df.columns and "temperature" not in df.columns:
+            df["temperature"] = df["tavg"]
+        if "date" in df.columns:
+            df["date"] = pd.to_datetime(df["date"])
+            if start_year is not None:
+                df = df[df["date"].dt.year >= int(start_year)].copy()
+            if end_year is not None:
+                df = df[df["date"].dt.year <= int(end_year)].copy()
+
+        # Overlay GPM IMERG 0.1° cell daily rainfall
+        imerg_series = point_climate.get("gpm_imerg", {}).get("series", [])
+        if imerg_series:
+            imerg_df = pd.DataFrame(imerg_series)
+            if "date" in imerg_df.columns and "rainfall" in imerg_df.columns:
+                imerg_df["date"] = pd.to_datetime(imerg_df["date"])
+                imerg_map = dict(zip(imerg_df["date"], imerg_df["rainfall"]))
+                df["rainfall_power"] = df["rainfall"]
+                df["rainfall"] = df["date"].map(imerg_map).fillna(df["rainfall"])
+                df.attrs["rain_source"] = "NASA GPM IMERG Final Daily v07 (0.1°)"
+    return df, point_climate
+

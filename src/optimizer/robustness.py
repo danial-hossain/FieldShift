@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 from src.compute.advisory_service import DISTRICT_REGISTRY, load_district_climate_data
-from src.compute.imerg import get_district_imerg_series
+from src.compute.imerg import get_field_imerg_series
 from src.data.crops import load_crop_knowledge
 from src.optimizer.dynamic_agronomy import SeasonalEnvironment, compute_dynamic_crop_season_metrics
 from src.state.field_state import build_field_state, FieldState
@@ -83,12 +83,16 @@ def evaluate_rotation_robustness(
         else:
             dist_key = "bogura"
 
-    # Load POWER and IMERG data
-    power_df, _ = load_district_climate_data(dist_key, offline=True)
+    ctx = DISTRICT_REGISTRY.get(dist_key, {})
+    lat = float(latitude or ctx.get("latitude") or ctx.get("lat") or 24.8465)
+    lon = float(longitude or ctx.get("longitude") or ctx.get("lon") or 89.3777)
+
+    # Load POWER and IMERG data for this specific field location
+    power_df, _ = load_district_climate_data(dist_key, offline=True, lat=lat, lon=lon)
     if "date" in power_df.columns:
         power_df["date"] = pd.to_datetime(power_df["date"])
 
-    imerg_df = get_district_imerg_series(dist_key)
+    imerg_df = get_field_imerg_series(lat, lon)
     if not imerg_df.empty and "date" in imerg_df.columns:
         imerg_df["date"] = pd.to_datetime(imerg_df["date"])
 

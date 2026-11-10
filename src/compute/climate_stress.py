@@ -676,11 +676,17 @@ def run_climate_stress_test(
     baseline_crops: Optional[List[str]] = None,
     area_ha: float = 0.133,
     climate_df: Optional[pd.DataFrame] = None,
+    lat: Optional[float] = None,
+    lon: Optional[float] = None,
 ) -> dict[str, Any]:
     """Execute complete 6-season climate stress test simulation."""
     dist_key = (district or "bogura").strip().lower()
     if dist_key not in DISTRICT_REGISTRY:
-        dist_key = "bogura"
+        if lat is not None and lon is not None:
+            from src.compute.advisory_service import nearest_district
+            dist_key = nearest_district(float(lat), float(lon))
+        else:
+            dist_key = "bogura"
 
     # Validate scenario and intensity
     if scenario not in SCENARIO_CONFIGS:
@@ -713,7 +719,7 @@ def run_climate_stress_test(
     # Load crop catalogue and climate observations
     catalog_df = load_crop_knowledge()
     if climate_df is None or climate_df.empty:
-        climate_df, _ = load_district_climate_data(dist_key, offline=True)
+        climate_df, _ = load_district_climate_data(dist_key, offline=True, lat=lat, lon=lon)
 
     # Resolve 6-crop plan sequence
     if not plan_crops or len(plan_crops) != 6:
