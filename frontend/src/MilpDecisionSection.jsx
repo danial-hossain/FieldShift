@@ -13,9 +13,10 @@ export function MilpDecisionSection({
   const STRATEGIES = [
     {
       id: 'balanced',
-      nameBn: 'ভারসাম্য (Balanced)',
+      nameBn: 'ভারসাম্য',
       nameEn: 'Balanced',
-      weights: { profit: '৩৪%', water: '৩৩%', soil: '৩৩%' },
+      weightsBn: { profit: '৩৪%', water: '৩৩%', soil: '৩৩%' },
+      weightsEn: { profit: '34%', water: '33%', soil: '33%' },
       rawWeights: '(0.34, 0.33, 0.33)',
       descBn: 'লাভ, পানি সাশ্রয় ও মাটির নাইট্রোজেনের সমান অগ্রাধিকার।',
       descEn: 'Equal trade-off across profit, water savings, and soil nitrogen preservation.',
@@ -23,9 +24,10 @@ export function MilpDecisionSection({
     },
     {
       id: 'profit',
-      nameBn: 'সর্বোচ্চ লাভ (Profit)',
+      nameBn: 'সর্বোচ্চ লাভ',
       nameEn: 'Maximum Profit',
-      weights: { profit: '৬০%', water: '২০%', soil: '২০%' },
+      weightsBn: { profit: '৬০%', water: '২০%', soil: '২০%' },
+      weightsEn: { profit: '60%', water: '20%', soil: '20%' },
       rawWeights: '(0.60, 0.20, 0.20)',
       descBn: 'বাজারমূল্য ও নিট আয়ের সর্বোচ্চকরণ (উচ্চমূল্যের তেলবীজ ও ডাল)।',
       descEn: 'Maximizes net financial margin using high-value oilseeds and pulses.',
@@ -33,9 +35,10 @@ export function MilpDecisionSection({
     },
     {
       id: 'water',
-      nameBn: 'পানি সাশ্রয় (Water)',
+      nameBn: 'পানি সাশ্রয়',
       nameEn: 'Water Saving',
-      weights: { profit: '২০%', water: '৬০%', soil: '২০%' },
+      weightsBn: { profit: '২০%', water: '৬০%', soil: '২০%' },
+      weightsEn: { profit: '20%', water: '60%', soil: '20%' },
       rawWeights: '(0.20, 0.60, 0.20)',
       descBn: 'সেচ পানির সর্বনিম্ন ব্যবহার (বোরো কমিয়ে রবিতে সরিষা ও খরিফে মুগডাল)।',
       descEn: 'Minimizes seasonal irrigation pumping; eliminates groundwater-intensive monoculture.',
@@ -43,9 +46,10 @@ export function MilpDecisionSection({
     },
     {
       id: 'soil',
-      nameBn: 'মাটির স্বাস্থ্য (Soil)',
+      nameBn: 'মাটির স্বাস্থ্য',
       nameEn: 'Soil Health',
-      weights: { profit: '২০%', water: '২০%', soil: '৬০%' },
+      weightsBn: { profit: '২০%', water: '২০%', soil: '৬০%' },
+      weightsEn: { profit: '20%', water: '20%', soil: '60%' },
       rawWeights: '(0.20, 0.20, 0.60)',
       descBn: 'জৈব নাইট্রোজেন সংযোজন ও কম পতিত দিন নিশ্চিতকরণ।',
       descEn: 'Maximizes biological nitrogen fixation and minimizes bare fallow exposure days.',
@@ -55,42 +59,48 @@ export function MilpDecisionSection({
 
   const RULES = [
     {
-      num: '১',
+      numBn: '১',
+      numEn: '1',
       titleBn: 'প্রতি মৌসুমে সর্বোচ্চ ১টি ফসল',
       titleEn: '1 Crop per Season',
       ruleBn: 'বছরের ৩টি মৌলিক মৌসুমে (রবি, খরিফ-১, খরিফ-২) জমিতে হয় ১টি ফসল থাকবে নতুবা জমি ফাঁকা (পতিত) থাকবে। একই জমিতে একসাথে দুটো প্রধান ফসল বসানো যাবে না।',
       ruleEn: 'Exactly one crop or planned fallow per seasonal window; no overlapping double cropping on the same parcel.',
     },
     {
-      num: '২',
+      numBn: '২',
+      numEn: '2',
       titleBn: 'একই বোটানিক্যাল পরিবারের পুনরাবৃত্তি নিষিদ্ধ',
       titleEn: 'No Same Family in Succession',
       ruleBn: 'একই পরিবারের ফসল (যেমন ধান ➔ ধান, কিংবা সরিষা ➔ সরিষা) পর পর দুই মৌসুমে চাষ করা যাবে না। এতে মাটিতে ক্ষতিকারক পোকা ও রোগজীবাণুর বিস্তার বন্ধ হয়।',
       ruleEn: 'Consecutive planting of the same botanical family (e.g., Poaceae ➔ Poaceae) is strictly prohibited to break pest cycles.',
     },
     {
-      num: '৩',
+      numBn: '৩',
+      numEn: '3',
       titleBn: 'ডালজাতীয় ফসলের আবশ্যিক বিরতি (Legume Interval)',
       titleEn: 'Legume Interval Requirement',
       ruleBn: 'মাটিতে প্রাকৃতিক নাইট্রোজেন সংযোজন ও মাটির স্বাস্থ্য রক্ষায় বছরে অন্তত একবার বা চক্রে ন্যূনতম বিরতিতে ডালজাতীয় ফসল (মুগ, ছোলা, মসুর) অন্তর্ভুক্ত করা বাধ্যতামূলক।',
       ruleEn: 'Leguminous nitrogen-fixing crops (Mungbean, Chickpea, Lentil) must be rotated at mandatory intervals.',
     },
     {
-      num: '৪',
+      numBn: '৪',
+      numEn: '4',
       titleBn: 'খামারের সেচ সুবিধার সীমার মধ্যে সেচ সীমাবদ্ধ',
       titleEn: 'Irrigation Capacity Envelope',
       ruleBn: 'কৃষকের সেচ সুবিধা "সীমিত" বা "নেই" হলে কোনো মৌসুমেই ফসলের পানির চাহিদা খামারের সর্বোচ্চ সেচ সক্ষমতা (মিমি) অতিক্রম করতে পারবে না।',
       ruleEn: 'Total seasonal irrigation demand cannot exceed the field\'s designated pumping capacity (adequate, limited, none).',
     },
     {
-      num: '৫',
+      numBn: '৫',
+      numEn: '5',
       titleBn: 'বিক্রি করতে পারি না এমন ফসল স্বয়ংক্রিয়ভাবে বাদ',
       titleEn: 'Non-Marketable Crops Excluded',
       ruleBn: 'যেসব ফসল কৃষক বাজারে বিক্রি করতে পারেন না বা চাষে অপারগ (যেমন এলাকায় কোল্ড স্টোরেজ না থাকলে আলু), তা MILP অপ্টিমাইজার আগেই বাদ দিয়ে সমাধান খোঁজে।',
       ruleEn: 'Crops marked as unmarketable or excluded by the farmer are pruned from the decision space prior to solving.',
     },
     {
-      num: '৬',
+      numBn: '৬',
+      numEn: '6',
       titleBn: 'পাওয়ার টিলার না থাকলে আলু বাদ (Manual Labor)',
       titleEn: 'No Power Tiller Exclusion',
       ruleBn: 'কৃষকের পাওয়ার টিলার বা আধুনিক চাষযন্ত্র না থাকলে অতিরিক্ত মাটি খনন প্রয়োজন এমন ফসল (যেমন আলু) স্বয়ংক্রিয়ভাবে বাদ দেওয়া হয়।',
@@ -138,7 +148,9 @@ export function MilpDecisionSection({
         }}
       >
         <div className="dash-card" style={{ padding: '16px', background: 'var(--glass-strong)', borderRadius: 12, border: '1px solid var(--line)' }}>
-          <div style={{ fontSize: 18, color: '#38bdf8', fontWeight: 800, marginBottom: 4 }}>ধাপ ১ / Step 1</div>
+          <div style={{ fontSize: 18, color: '#38bdf8', fontWeight: 800, marginBottom: 4 }}>
+            {isBn ? 'ধাপ ১' : 'Step 1'}
+          </div>
           <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
             {isBn ? 'ফসল ও মৌসুম ম্যাট্রিক্স' : 'Crop × Season Options'}
           </strong>
@@ -148,7 +160,9 @@ export function MilpDecisionSection({
         </div>
 
         <div className="dash-card" style={{ padding: '16px', background: 'var(--glass-strong)', borderRadius: 12, border: '1px solid var(--line)' }}>
-          <div style={{ fontSize: 18, color: '#06b6d4', fontWeight: 800, marginBottom: 4 }}>ধাপ ২ / Step 2</div>
+          <div style={{ fontSize: 18, color: '#06b6d4', fontWeight: 800, marginBottom: 4 }}>
+            {isBn ? 'ধাপ ২' : 'Step 2'}
+          </div>
           <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
             {isBn ? '৪টি মানদণ্ডে স্কোর নির্ণয়' : 'Multi-Metric Scoring'}
           </strong>
@@ -158,7 +172,9 @@ export function MilpDecisionSection({
         </div>
 
         <div className="dash-card" style={{ padding: '16px', background: 'var(--glass-strong)', borderRadius: 12, border: '1px solid var(--line)' }}>
-          <div style={{ fontSize: 18, color: '#10b981', fontWeight: 800, marginBottom: 4 }}>ধাপ ৩ / Step 3</div>
+          <div style={{ fontSize: 18, color: '#10b981', fontWeight: 800, marginBottom: 4 }}>
+            {isBn ? 'ধাপ ৩' : 'Step 3'}
+          </div>
           <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
             {isBn ? 'MILP সমাধান ও নির্বাচন' : 'Global Score Optimization'}
           </strong>
@@ -168,7 +184,9 @@ export function MilpDecisionSection({
         </div>
 
         <div className="dash-card" style={{ padding: '16px', background: 'var(--glass-strong)', borderRadius: 12, border: '1px solid var(--line)' }}>
-          <div style={{ fontSize: 18, color: '#f59e0b', fontWeight: 800, marginBottom: 4 }}>ধাপ ৪ / Step 4</div>
+          <div style={{ fontSize: 18, color: '#f59e0b', fontWeight: 800, marginBottom: 4 }}>
+            {isBn ? 'ধাপ ৪' : 'Step 4'}
+          </div>
           <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
             {isBn ? 'বাধ্যতামূলক নিয়ম যাচাই' : 'Strict Agronomic Constraints'}
           </strong>
@@ -210,7 +228,7 @@ export function MilpDecisionSection({
             overflowX: 'auto',
           }}
         >
-          Maximize Z = ∑ (Season s=1..6) ∑ (Crop c) [ x_{'{c,s}'} × ( w_profit × Profit_c + w_water × (1 - Water_c) + w_soil × Soil_c ) ]
+          <code>Maximize Z = ∑ (Season s=1..6) ∑ (Crop c) [ x_{'{c,s}'} × ( w_profit × Profit_c + w_water × (1 - Water_c) + w_soil × Soil_c ) ]</code>
         </div>
 
         <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, margin: 0 }}>
@@ -238,18 +256,18 @@ export function MilpDecisionSection({
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <strong style={{ fontSize: 14, color: s.color }}>{s.nameBn}</strong>
+                <strong style={{ fontSize: 14, color: s.color }}>{isBn ? s.nameBn : s.nameEn}</strong>
                 <code style={{ fontSize: 11, color: '#94a3b8' }}>{s.rawWeights}</code>
               </div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8, fontSize: 11.5 }}>
                 <span style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#fbbf24', padding: '2px 6px', borderRadius: 4 }}>
-                  লাভ: {s.weights.profit}
+                  {isBn ? 'লাভ:' : 'Profit:'} {isBn ? s.weightsBn.profit : s.weightsEn.profit}
                 </span>
                 <span style={{ background: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', padding: '2px 6px', borderRadius: 4 }}>
-                  পানি: {s.weights.water}
+                  {isBn ? 'পানি:' : 'Water:'} {isBn ? s.weightsBn.water : s.weightsEn.water}
                 </span>
                 <span style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#c084fc', padding: '2px 6px', borderRadius: 4 }}>
-                  মাটি: {s.weights.soil}
+                  {isBn ? 'মাটি:' : 'Soil:'} {isBn ? s.weightsBn.soil : s.weightsEn.soil}
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.4 }}>
@@ -283,7 +301,7 @@ export function MilpDecisionSection({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14 }}>
           {RULES.map((r) => (
             <div
-              key={r.num}
+              key={r.numEn}
               style={{
                 display: 'flex',
                 gap: 12,
@@ -308,7 +326,7 @@ export function MilpDecisionSection({
                   flexShrink: 0,
                 }}
               >
-                {r.num}
+                {isBn ? r.numBn : r.numEn}
               </div>
               <div>
                 <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 3 }}>

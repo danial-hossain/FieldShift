@@ -94,21 +94,21 @@ export function VerificationLimitationsSection({
   ];
 
   const REFERENCE_PRICES = [
-    { cropBn: 'বোরো ধান', cropEn: 'Boro Rice', maund: '১,১১৯ টাকা', kg: '৩০.০০ টাকা', yield: '৫.৫ টন/হে', source: 'DAM/TCB ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আমন ধান', cropEn: 'Aman Rice', maund: '১,১১৯ টাকা', kg: '৩০.০০ টাকা', yield: '৪.০ টন/হে', source: 'DAM/BBS ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আউশ ধান', cropEn: 'Aus Rice', maund: '১,১১৯ টাকা', kg: '৩০.০০ টাকা', yield: '৩.৫ টন/হে', source: 'DAM/BBS ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'গম', cropEn: 'Wheat', maund: '১,১৯৪ টাকা', kg: '৩২.০০ টাকা', yield: '২.৮ টন/হে', source: 'DAM/BBS ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'ভুট্টা', cropEn: 'Maize', maund: '৯৩৩ টাকা', kg: '২৫.০০ টাকা', yield: '৫.০ টন/হে', source: 'DAM পাইকারি ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সরিষা', cropEn: 'Mustard', maund: '২,৪২৬ টাকা', kg: '৬৫.০০ টাকা', yield: '১.৫ টন/হে', source: 'DAM/TCB ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'মুগডাল', cropEn: 'Mungbean', maund: '৩,১৭২ টাকা', kg: '৮৫.০০ টাকা', yield: '১.০ টন/হে', source: 'DAM ডাল বাজার ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'মসুর', cropEn: 'Lentil', maund: '৩,৩৫৯ টাকা', kg: '৯০.০০ টাকা', yield: '১.২ টন/হে', source: 'DAM ডাল বাজার ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'ছোলা', cropEn: 'Chickpea', maund: '৩,০৬০ টাকা', kg: '৮২.০০ টাকা', yield: '১.৩ টন/হে', source: 'DAM/TCB ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'তিল', cropEn: 'Sesame', maund: '৪,১০৫ টাকা', kg: '১১০.০০ টাকা', yield: '০.৯ টন/হে', source: 'DAM পাইকারি ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সয়াবিন', cropEn: 'Soybean', maund: '২,২৪০ টাকা', kg: '৬০.০০ টাকা', yield: '২.২ টন/হে', source: 'DAM/TCB ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সূর্যমুখী', cropEn: 'Sunflower', maund: '২,১৬৫ টাকা', kg: '৫৮.০০ টাকা', yield: '১.৮ টন/হে', source: 'কৃষি বিপণন ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আলু', cropEn: 'Potato', maund: '৬৭২ টাকা', kg: '১৮.০০ টাকা', yield: '১৫.০ টন/হে', source: 'BBS/DAM ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'টমেটো', cropEn: 'Tomato', maund: '৯৩৩ টাকা', kg: '২৫.০০ টাকা', yield: '১৮.০ টন/হে', source: 'DAM পাইকারি ২০২৪', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'পাট', cropEn: 'Jute', maund: '১,৯৪১ টাকা', kg: '৫২.০০ টাকা', yield: '২.৪ টন/হে', source: 'BJMC/DAM ২০২৪', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'বোরো ধান', cropEn: 'Boro Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৫.৫ টন/হে', yieldEn: '5.5 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'আমন ধান', cropEn: 'Aman Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৪.০ টন/হে', yieldEn: '4.0 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'আউশ ধান', cropEn: 'Aus Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৩.৫ টন/হে', yieldEn: '3.5 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'গম', cropEn: 'Wheat', maundBn: '১,১৯৪ টাকা', maundEn: '1,194 BDT', kgBn: '৩২.০০ টাকা', kgEn: '32.00 BDT', yieldBn: '২.৮ টন/হে', yieldEn: '2.8 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'ভুট্টা', cropEn: 'Maize', maundBn: '৯৩৩ টাকা', maundEn: '933 BDT', kgBn: '২৫.০০ টাকা', kgEn: '25.00 BDT', yieldBn: '৫.০ টন/হে', yieldEn: '5.0 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'সরিষা', cropEn: 'Mustard', maundBn: '২,৪২৬ টাকা', maundEn: '2,426 BDT', kgBn: '৬৫.০০ টাকা', kgEn: '65.00 BDT', yieldBn: '১.৫ টন/হে', yieldEn: '1.5 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'মুগডাল', cropEn: 'Mungbean', maundBn: '৩,১৭২ টাকা', maundEn: '3,172 BDT', kgBn: '৮৫.০০ টাকা', kgEn: '85.00 BDT', yieldBn: '১.০ টন/হে', yieldEn: '1.0 t/ha', sourceBn: 'DAM ডাল বাজার ২০২৪', sourceEn: 'DAM Pulses 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'মসুর', cropEn: 'Lentil', maundBn: '৩,৩৫৯ টাকা', maundEn: '3,359 BDT', kgBn: '৯০.০০ টাকা', kgEn: '90.00 BDT', yieldBn: '১.২ টন/হে', yieldEn: '1.2 t/ha', sourceBn: 'DAM ডাল বাজার ২০২৪', sourceEn: 'DAM Pulses 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'ছোলা', cropEn: 'Chickpea', maundBn: '৩,০৬০ টাকা', maundEn: '3,060 BDT', kgBn: '৮২.০০ টাকা', kgEn: '82.00 BDT', yieldBn: '১.৩ টন/হে', yieldEn: '1.3 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'তিল', cropEn: 'Sesame', maundBn: '৪,১০৫ টাকা', maundEn: '4,105 BDT', kgBn: '১১০.০০ টাকা', kgEn: '110.00 BDT', yieldBn: '০.৯ টন/হে', yieldEn: '0.9 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'সয়াবিন', cropEn: 'Soybean', maundBn: '২,২৪০ টাকা', maundEn: '2,240 BDT', kgBn: '৬০.০০ টাকা', kgEn: '60.00 BDT', yieldBn: '২.২ টন/হে', yieldEn: '2.2 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'সূর্যমুখী', cropEn: 'Sunflower', maundBn: '২,১৬৫ টাকা', maundEn: '2,165 BDT', kgBn: '৫৮.০০ টাকা', kgEn: '58.00 BDT', yieldBn: '১.৮ টন/হে', yieldEn: '1.8 t/ha', sourceBn: 'কৃষি বিপণন ২০২৪', sourceEn: 'DAM 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'আলু', cropEn: 'Potato', maundBn: '৬৭২ টাকা', maundEn: '672 BDT', kgBn: '১৮.০০ টাকা', kgEn: '18.00 BDT', yieldBn: '১৫.০ টন/হে', yieldEn: '15.0 t/ha', sourceBn: 'BBS/DAM ২০২৪', sourceEn: 'BBS/DAM 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'টমেটো', cropEn: 'Tomato', maundBn: '৯৩৩ টাকা', maundEn: '933 BDT', kgBn: '২৫.০০ টাকা', kgEn: '25.00 BDT', yieldBn: '১৮.০ টন/হে', yieldEn: '18.0 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
+    { cropBn: 'পাট', cropEn: 'Jute', maundBn: '১,৯৪১ টাকা', maundEn: '1,941 BDT', kgBn: '৫২.০০ টাকা', kgEn: '52.00 BDT', yieldBn: '২.৪ টন/হে', yieldEn: '2.4 t/ha', sourceBn: 'BJMC/DAM ২০২৪', sourceEn: 'BJMC/DAM 2024', link: 'http://www.dam.gov.bd' },
   ];
 
   return (
@@ -131,7 +131,7 @@ export function VerificationLimitationsSection({
               border: '1px solid rgba(16, 185, 129, 0.3)',
             }}
           >
-            ৪/৪ Guards Passed
+            {isBn ? '৪/৪ যাচাই উত্তীর্ণ' : '4/4 Guards Passed'}
           </span>
         </div>
         <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
@@ -265,7 +265,7 @@ export function VerificationLimitationsSection({
             </span>
           </div>
           <span style={{ fontSize: 14, color: '#38bdf8' }}>
-            {isPriceTableOpen ? '▲ সংক্ষেপ করুন' : '▼ বিস্তারিত দেখুন'}
+            {isPriceTableOpen ? (isBn ? '▲ সংক্ষেপ করুন' : '▲ Collapse') : (isBn ? '▼ বিস্তারিত দেখুন' : '▼ View Details')}
           </span>
         </div>
 

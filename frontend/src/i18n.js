@@ -302,6 +302,12 @@ export function toBengaliNumber(num) {
   return str.replace(/[0-9]/g, d => BENGALI_DIGITS[Number(d)]);
 }
 
+export function toEnglishNumber(str) {
+  if (str === null || str === undefined || str === '') return '';
+  const bnToEnMap = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+  return String(str).replace(/[০-৯]/g, d => bnToEnMap[d] || d);
+}
+
 export function formatArea(areaHa, lang = 'bn') {
   if (!areaHa || isNaN(Number(areaHa))) return lang === 'bn' ? 'অপ্রাপ্য' : 'Not available';
   const ha = Number(areaHa);
@@ -332,7 +338,7 @@ export function useTranslation(lang = 'bn') {
     return dict[key] !== undefined ? dict[key] : (TRANSLATIONS.en[key] || fallback || key);
   };
 
-  return { t, lang: currentLang, toBn: toBengaliNumber, formatArea, formatCurrency, formatNumber, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel };
+  return { t, lang: currentLang, toBn: toBengaliNumber, formatArea, formatCurrency, formatMoney, formatUnit, formatNumber, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel };
 }
 
 // ---------------------------------------------------------------------------
@@ -503,9 +509,20 @@ export const UNIT_LABELS = {
   taka: { bn: 'টাকা', en: 'BDT' },
   kg: { bn: 'কেজি', en: 'kg' },
   'kg/ha': { bn: 'কেজি/হেক্টর', en: 'kg/ha' },
-  't/ha': { bn: 'টন/হেক্টর', en: 'ton/ha' },
+  'kg n/ha': { bn: 'কেজি N/হেক্টর', en: 'kg N/ha' },
+  'kg n': { bn: 'কেজি N', en: 'kg N' },
+  'bdt/ha': { bn: 'টাকা/হেক্টর', en: 'BDT/ha' },
+  'bdt/bigha': { bn: 'টাকা/বিঘা', en: 'BDT/bigha' },
+  't/ha': { bn: 'টন/হেক্টর', en: 't/ha' },
   ton: { bn: 'টন', en: 'ton' },
   'ton/ha': { bn: 'টন/হেক্টর', en: 'ton/ha' },
+  days: { bn: 'দিন', en: 'days' },
+  day: { bn: 'দিন', en: 'days' },
+  c: { bn: '°সে', en: '°C' },
+  '°c': { bn: '°সে', en: '°C' },
+  'mm/day': { bn: 'মিমি/দিন', en: 'mm/day' },
+  'mm/yr': { bn: 'মিমি/বছর', en: 'mm/yr' },
+  'mm/season': { bn: 'মিমি/মৌসুম', en: 'mm/season' },
   percent: { bn: '%', en: '%' },
   '%': { bn: '%', en: '%' }
 };
@@ -516,4 +533,36 @@ export function unitLabel(unit, lang = 'bn') {
   const match = UNIT_LABELS[k];
   if (match) return lang === 'bn' ? match.bn : match.en;
   return String(unit);
+}
+
+export function formatMoney(amount, lang = 'bn', perUnit = null) {
+  if (amount === null || amount === undefined || isNaN(Number(amount))) {
+    return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  }
+  const val = Math.round(Number(amount));
+  const numStr = formatNumber(val, lang);
+  if (lang === 'bn') {
+    const unitSuffix = perUnit ? ` / ${unitLabel(perUnit, lang)}` : '';
+    return `৳ ${numStr}${unitSuffix}`;
+  } else {
+    const unitSuffix = perUnit ? ` / ${unitLabel(perUnit, lang)}` : '';
+    return `BDT ${numStr}${unitSuffix}`;
+  }
+}
+
+export function formatUnit(value, unit, lang = 'bn', options = {}) {
+  if (value === null || value === undefined || value === '') {
+    return lang === 'bn' ? 'তথ্য নেই' : 'No data';
+  }
+  const num = Number(value);
+  if (Number.isNaN(num)) return `${value} ${unitLabel(unit, lang)}`.trim();
+  const lowerUnit = String(unit || '').toLowerCase();
+  let defaultDecimals = 0;
+  if (lowerUnit.includes('t/ha') || lowerUnit.includes('ton') || lowerUnit.includes('ratio')) {
+    defaultDecimals = 1;
+  }
+  const decimals = options.decimals !== undefined ? options.decimals : defaultDecimals;
+  const numStr = formatNumber(num, lang, { decimals });
+  const u = unitLabel(unit, lang);
+  return u ? `${numStr} ${u}` : numStr;
 }

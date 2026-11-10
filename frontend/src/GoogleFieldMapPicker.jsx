@@ -18,7 +18,8 @@ export function GoogleFieldMapPicker({
   fields = [],
   selectedFieldId = null,
   onSelectField = null,
-  height = '260px'
+  height = '260px',
+  lang = 'bn'
 }) {
   const mapContainerRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -660,11 +661,11 @@ export function GoogleFieldMapPicker({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span>✓ Pin Synchronized</span>
+              <span>{lang === 'bn' ? '✓ পিন চিহ্নিত' : '✓ Pin Synchronized'}</span>
             </div>
           ) : (
             <div className="location-pending-tag" style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600 }}>
-              <span>⚠ মানচিত্রে জমি চিহ্নিত করুন</span>
+              <span>{lang === 'bn' ? '⚠ মানচিত্রে জমি চিহ্নিত করুন' : '⚠ Please pin field on map'}</span>
             </div>
           )
         )}

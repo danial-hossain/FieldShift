@@ -221,7 +221,7 @@ export function FarmerHarvestProfitView({
                   className={`crop-chip-btn ${selectedCrop === key ? 'active' : ''}`}
                   onClick={() => setSelectedCrop(key)}
                 >
-                  {c.name_bn} ({key})
+                  {lang === 'bn' ? c.name_bn : (c.name_en || key)}
                 </button>
               ))}
             </div>
@@ -284,27 +284,27 @@ export function FarmerHarvestProfitView({
             </h4>
 
             <div className="cost-row">
-              <span className="cost-name">🌱 বীজ ও রাসায়নিক সার:</span>
+              <span className="cost-name">🌱 {lang === 'bn' ? 'বীজ ও রাসায়নিক সার:' : 'Seeds & Chemical Fertilizer:'}</span>
               <strong className="cost-amount">{formatCurrency(totalCostSeedFert, lang)}</strong>
             </div>
 
             <div className="cost-row">
-              <span className="cost-name">💧 সেচ ও ডিজেল/বিদ্যুৎ:</span>
+              <span className="cost-name">💧 {lang === 'bn' ? 'সেচ ও ডিজেল/বিদ্যুৎ:' : 'Irrigation, Diesel & Power:'}</span>
               <strong className="cost-amount">{formatCurrency(totalCostIrrigation, lang)}</strong>
             </div>
 
             <div className="cost-row">
-              <span className="cost-name">🚜 জমি চাষ, রোপণ ও শ্রমিক:</span>
+              <span className="cost-name">🚜 {lang === 'bn' ? 'জমি চাষ, রোপণ ও শ্রমিক:' : 'Tillage, Planting & Labor:'}</span>
               <strong className="cost-amount">{formatCurrency(totalCostLabor, lang)}</strong>
             </div>
 
             <div className="cost-row">
-              <span className="cost-name">🚛 ফসল পরিবহন ও বিপণন:</span>
+              <span className="cost-name">🚛 {lang === 'bn' ? 'ফসল পরিবহন ও বিপণন:' : 'Transport & Marketing:'}</span>
               <strong className="cost-amount">{formatCurrency(totalCostMarketing, lang)}</strong>
             </div>
 
             <div className="cost-row total-row">
-              <span className="cost-name">মোট আনুমানিক খরচ:</span>
+              <span className="cost-name">{lang === 'bn' ? 'মোট আনুমানিক খরচ:' : 'Total Estimated Cost:'}</span>
               <strong className="cost-amount">{formatCurrency(grandTotalCost, lang)}</strong>
             </div>
           </div>
@@ -312,21 +312,21 @@ export function FarmerHarvestProfitView({
           {/* Expected Revenue & Yield */}
           <div className="farmer-revenue-card">
             <div className="revenue-item">
-              <span className="rev-label">সম্ভাব্য মোট ফলন:</span>
+              <span className="rev-label">{lang === 'bn' ? 'সম্ভাব্য মোট ফলন:' : 'Expected Total Yield:'}</span>
               <strong className="rev-val">
                 {lang === 'bn'
                   ? `${toBengaliNumber(totalYieldMaund.toFixed(1))} মণ (${toBengaliNumber((totalYieldMaund / 25).toFixed(2))} টন)`
-                  : `${totalYieldMaund.toFixed(1)} Maund (${(totalYieldMaund / 25).toFixed(2)} t)`}
+                  : `${totalYieldMaund.toFixed(1)} maund (${(totalYieldMaund / 25).toFixed(2)} ton)`}
               </strong>
             </div>
 
             <div className="revenue-item">
-              <span className="rev-label">সম্ভাব্য মোট বিক্রয়মূল্য:</span>
+              <span className="rev-label">{lang === 'bn' ? 'সম্ভাব্য মোট বিক্রয়মূল্য:' : 'Expected Gross Revenue:'}</span>
               <strong className="rev-val">{formatCurrency(grossSales, lang)}</strong>
             </div>
 
             <div className="revenue-item highlight-item">
-              <span className="rev-label">ব্রেক-ইভেন দাম (কেজি প্রতি):</span>
+              <span className="rev-label">{lang === 'bn' ? 'ব্রেক-ইভেন দাম (কেজি প্রতি):' : 'Break-even Price (per kg):'}</span>
               <strong className="rev-val">
                 {lang === 'bn'
                   ? `${toBengaliNumber(breakEvenPriceKg.toFixed(1))} টাকা/কেজি`
@@ -364,7 +364,7 @@ export function FarmerHarvestProfitView({
             <input
               type="number"
               className="input-number-farmer"
-              placeholder="যেমন: ৪৫ মণ"
+              placeholder={lang === 'bn' ? 'যেমন: ৪৫ মণ' : 'e.g. 45 maund'}
               value={actualYieldMaund}
               onChange={(e) => setActualYieldMaund(e.target.value)}
             />
@@ -375,7 +375,7 @@ export function FarmerHarvestProfitView({
             <input
               type="number"
               className="input-number-farmer"
-              placeholder="যেমন: ১০৫০ টাকা প্রতি মণ"
+              placeholder={lang === 'bn' ? 'যেমন: ১০৫০ টাকা প্রতি মণ' : 'e.g. 1050 BDT per maund'}
               value={actualPriceBdt}
               onChange={(e) => setActualPriceBdt(e.target.value)}
             />
@@ -383,12 +383,12 @@ export function FarmerHarvestProfitView({
 
           <div className="form-group-farmer full-col">
             <label className="form-label-farmer">
-              {lang === 'bn' ? 'বিশেষ কোনো মন্তব্য (যেমন: রোগবালাই বা অনাবৃষ্টির সমস্যা):' : 'Notes:'}
+              {lang === 'bn' ? 'বিশেষ কোনো মন্তব্য (যেমন: রোগবালাই বা অনাবৃষ্টির সমস্যা):' : 'Notes (e.g. pest issues or drought):'}
             </label>
             <input
               type="text"
               className="input-text-farmer"
-              placeholder="মন্তব্য লিখুন..."
+              placeholder={lang === 'bn' ? 'মন্তব্য লিখুন...' : 'Write notes...'}
               value={actualNotes}
               onChange={(e) => setActualNotes(e.target.value)}
             />
@@ -421,8 +421,8 @@ export function FarmerHarvestProfitView({
             <h3 className="confirm-title">{t('confirm_save_title')}</h3>
             <p className="confirm-desc">
               {lang === 'bn'
-                ? `আপনি "${selectedCrop}" ফসলের জন্য ${actualYieldMaund} মণ ফলন সংরক্ষণ করতে যাচ্ছেন। এটি কি নিশ্চিত?`
-                : `You are about to save an actual harvest record of ${actualYieldMaund} maunds for ${selectedCrop}. Are you sure?`}
+                ? `আপনি "${crop.name_bn}" ফসলের জন্য ${toBengaliNumber(actualYieldMaund)} মণ ফলন সংরক্ষণ করতে যাচ্ছেন। এটি কি নিশ্চিত?`
+                : `You are about to save an actual harvest record of ${actualYieldMaund} maunds for ${crop.name_en}. Are you sure?`}
             </p>
             <div className="confirm-buttons">
               <button

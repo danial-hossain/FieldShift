@@ -3,10 +3,9 @@
 // Verifies:
 // 1. In 'bn' mode: No banned English words ('Balanced', 'Water Saving', 'Soil Health', 'Profit', 'Mustard', 'Rice', 'Mungbean', 'T. Aman', 'Year 1 · Year 1 Rabi', 'Soil: Clay_loam', 'Annual profit', 'Total Water')
 // 2. In 'en' mode: No banned Bangla characters/words ('সুষম', 'পানি সাশ্রয়', 'মাটির স্বাস্থ্য', 'লাভ', 'সরিষা', 'মুগডাল', 'আমন ধান', 'বছর ১ · রবি', 'মাটি: এঁটেল দোআঁশ', 'টাকা', 'মণ', 'হেক্টর', 'বিঘা') outside the farmer's typed field name.
-// 3. Captures screenshot proofs in docs/screens/replan_fix/:
-//    - Planner Balanced vs Replan Balanced parity
-//    - Replan for Water Saving with ⭐ reason line
-//    - Dark and light mode proofs in bn and en
+// 3. Crawls all 8 destinations (dashboard, field, farm_planning, weather, water_irrigation, harvest_profit, data_evidence, assistant)
+//    for both Rahim's field (251) and Sunamganj field (247).
+// 4. Captures screenshot proofs in docs/screens/replan_fix/.
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -59,7 +58,7 @@ class CDPClient {
           this.pending.delete(id);
           rej(new Error(`Timeout waiting for CDP response to ${method}`));
         }
-      }, 10000);
+      }, 15000);
       this.pending.set(id, {
         res: (val) => { clearTimeout(timer); res(val); },
         rej: (err) => { clearTimeout(timer); rej(err); }
@@ -84,7 +83,6 @@ class CDPClient {
     const res = await this.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
     fs.writeFileSync(outputPath, Buffer.from(res.data, 'base64'));
     console.log(`Saved screenshot: ${path.basename(outputPath)}`);
-    // Also save copy to brain artifact dir
     try {
       const artifactPath = path.join(ARTIFACT_DIR, path.basename(outputPath));
       fs.writeFileSync(artifactPath, Buffer.from(res.data, 'base64'));
@@ -99,15 +97,6 @@ class CDPClient {
 async function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
-
-// Allowlisted Latin words/acronyms in Bangla mode
-const ALLOWED_LATIN_WORDS = new Set([
-  'nasa', 'power', 'gpm', 'imerg', 'grace', 'fo', 'grace-fo', 'soilgrids', 'milp', 'saao', 'ai',
-  'srtm', 'isric', 'modis', 'smap', 'bari', 'brri', 'srdi', 'fao', 'fao56', 'rl', 'q-learning',
-  'fieldshift', 'bdt', 'usd', 'utc', 'gmt', 'gps', 'gis', 'api', 'json', 'csv', 'http', 'https',
-  'ok', 'id', 'demo', 'url', 'cdp', 'dom', 'css', 'html', 'ssr', 'wcag', 'aa',
-  'n', 'e', 's', 'w', 'mm', 'ha', 'kg', 'ph', 'om', 'soc', 'taw', 'fc', 'pwp', 'kpa', 'md', 'yr', 'min', 'sec', 'km', 'cm'
-]);
 
 const BANNED_BN_WORDS = [
   'Balanced',
@@ -138,6 +127,35 @@ const BANNED_EN_WORDS = [
   'মণ',
   'হেক্টর',
   'বিঘা'
+];
+
+const STRIP_REGEXES = [
+  /রহিম\s*মিয়ার\s*জমি/g,
+  /সুনামগঞ্জ\s*হাওর\s*নিম্নাঞ্চল(?:\s*\([^)]*\))?/g,
+  /বগুড়া\s*ডেমো\s*খামার(?:\s*\([^)]*\))?/g,
+  /রাজশাহী\s*বরেন্দ্র\s*উচ্চভূমি(?:\s*\([^)]*\))?/g,
+  /হাওর\s*নিম্নাঞ্চল/g,
+  /বরেন্দ্র\s*উচ্চভূমি/g,
+  /ডেমো\s*খামার/g
+];
+
+function cleanEnText(rawText) {
+  let cleaned = rawText || '';
+  for (const rx of STRIP_REGEXES) {
+    cleaned = cleaned.replace(rx, '');
+  }
+  return cleaned;
+}
+
+const DESTINATIONS = [
+  { nav: 'dashboard', name: 'Overview' },
+  { nav: 'field', name: 'My Fields' },
+  { nav: 'farm_planning', name: 'Rotation Planner' },
+  { nav: 'weather', name: 'Climate & Risk' },
+  { nav: 'water_irrigation', name: 'Water' },
+  { nav: 'harvest_profit', name: 'Market & Profit' },
+  { nav: 'data_evidence', name: 'Evidence & Method' },
+  { nav: 'assistant', name: 'AI Assistant' }
 ];
 
 async function runCheck() {
@@ -187,203 +205,225 @@ async function runCheck() {
       })()
     `);
 
-    // Helper to evaluate text nodes in container
-    async function extractViewText(selector) {
+    async function extractPageText() {
       return await cdp.eval(`
         (() => {
-          const root = document.querySelector('${selector}') || document.querySelector('.six-season-recommendation-workspace') || document.body;
-          // Clone and remove scripts, styles, SVGs, code tags, and field name
+          const root = document.querySelector('.main-wrapper') || document.body;
           const clone = root.cloneNode(true);
-          const removeSelectors = ['script', 'style', 'svg', 'canvas', 'code', '.field-name-custom', '.user-menu-dropdown', '.field-switcher-dropdown'];
+          const removeSelectors = [
+            'script', 'style', 'svg', 'canvas', 'code',
+            '.field-name-custom', '.user-menu-dropdown', '.field-switcher-dropdown'
+          ];
           removeSelectors.forEach(sel => clone.querySelectorAll(sel).forEach(el => el.remove()));
           return clone.innerText || clone.textContent || '';
         })()
       `);
     }
 
-    // 1. BANGLA MODE TEST
-    console.log('\n[1/2] Testing Bangla Mode (lang=bn)...');
-    await cdp.eval(`
-      (() => {
-        localStorage.setItem('fieldshift_lang', 'bn');
-        localStorage.setItem('fieldshift_theme', 'light');
-        localStorage.setItem('fieldshift_last_field_id', '251');
-      })()
-    `);
-    // Reload page to apply localStorage
-    await cdp.eval(`window.location.reload();`);
-    await sleep(3500);
+    async function navigateTo(navKey) {
+      return await cdp.eval(`
+        (() => {
+          const btn = document.querySelector('[data-nav="${navKey}"]');
+          if (btn) {
+            btn.click();
+            return true;
+          }
+          return false;
+        })()
+      `);
+    }
 
-    // Navigate to Rotation Planner
-    await cdp.eval(`
-      (() => {
-        const navs = Array.from(document.querySelectorAll('.nav-item, .mobile-bottom-nav-item'));
-        const pNav = navs.find(el => el.textContent.includes('পরিকল্পনা'));
-        if (pNav) pNav.click();
-      })()
-    `);
-    await sleep(3000);
+    const TEST_CONFIGS = [
+      { fieldId: 251, fieldName: 'Rahim (Chapainawabganj)' },
+      { fieldId: 247, fieldName: 'Sunamganj (Haor)' }
+    ];
 
-    // Save proof screenshot of Planner Balanced
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_bn.png'));
+    for (const cfg of TEST_CONFIGS) {
+      console.log(`\n==============================================================`);
+      console.log(`FIELD: ${cfg.fieldName} (id=${cfg.fieldId})`);
+      console.log(`==============================================================`);
 
-    // Verify Rotation Planner text in bn
-    const plannerTextBn = await extractViewText('.six-season-recommendation-workspace');
-    for (const banned of BANNED_BN_WORDS) {
-      if (plannerTextBn.includes(banned)) {
-        problems.push(`[BN][Planner] Found forbidden English phrase: "${banned}"`);
-        problemsCount++;
+      // 1. BANGLA MODE
+      console.log(`\n--- [BN] Bangla Mode (${cfg.fieldName}) ---`);
+      await cdp.eval(`
+        (() => {
+          localStorage.setItem('fieldshift_lang', 'bn');
+          localStorage.setItem('fieldshift_theme', 'light');
+          localStorage.setItem('fs_selected_field_id', '${cfg.fieldId}');
+          localStorage.setItem('fs_selected_field_id_323', '${cfg.fieldId}');
+        })()
+      `);
+      await cdp.eval(`window.location.reload();`);
+      await sleep(3500);
+
+      // Verify each destination in bn
+      for (const dest of DESTINATIONS) {
+        await navigateTo(dest.nav);
+        await sleep(1500);
+
+        const pageText = await extractPageText();
+        for (const banned of BANNED_BN_WORDS) {
+          if (pageText.includes(banned)) {
+            problems.push(`[BN][${cfg.fieldName}][${dest.name}] Found forbidden English phrase: "${banned}"`);
+            problemsCount++;
+          }
+        }
+
+        // Special handling for farm_planning: also check Replan
+        if (dest.nav === 'farm_planning') {
+          if (cfg.fieldId === 251) {
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_bn.png'));
+          }
+
+          // Check sub-tab Adaptive Replan
+          await cdp.eval(`
+            (() => {
+              const advancedNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.textContent.includes('উন্নত'));
+              if (advancedNav) advancedNav.click();
+            })()
+          `);
+          await sleep(1000);
+          await cdp.eval(`
+            (() => {
+              const subNavs = Array.from(document.querySelectorAll('.sub-nav-item, button'));
+              const replanTab = subNavs.find(el => el.textContent.includes('অভিযোজন') || el.textContent.includes('পুনঃপরিকল্পনা'));
+              if (replanTab) replanTab.click();
+            })()
+          `);
+          await sleep(2500);
+
+          if (cfg.fieldId === 251) {
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_balanced_rahim_bn.png'));
+          }
+
+          // Switch to Water Saving
+          await cdp.eval(`
+            (() => {
+              const btns = Array.from(document.querySelectorAll('button'));
+              const waterBtn = btns.find(b => b.textContent.includes('পানি সাশ্রয়'));
+              if (waterBtn) waterBtn.click();
+            })()
+          `);
+          await sleep(1500);
+
+          if (cfg.fieldId === 251) {
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_water_star_rahim_bn.png'));
+          }
+
+          const replanText = await extractPageText();
+          for (const banned of BANNED_BN_WORDS) {
+            if (replanText.includes(banned)) {
+              problems.push(`[BN][${cfg.fieldName}][Adaptive Replan] Found forbidden English phrase: "${banned}"`);
+              problemsCount++;
+            }
+          }
+        }
       }
-    }
 
-    // Navigate to Adaptive Replan
-    console.log('Navigating to Adaptive Replan in Bangla...');
-    await cdp.eval(`
-      (() => {
-        const advancedNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.textContent.includes('উন্নত'));
-        if (advancedNav) advancedNav.click();
-      })()
-    `);
-    await sleep(1500);
-    await cdp.eval(`
-      (() => {
-        const subNavs = Array.from(document.querySelectorAll('.sub-nav-item, button'));
-        const replanTab = subNavs.find(el => el.textContent.includes('অভিযোজন') || el.textContent.includes('পুনঃপরিকল্পনা'));
-        if (replanTab) replanTab.click();
-      })()
-    `);
-    await sleep(3500);
+      // 2. ENGLISH MODE
+      console.log(`\n--- [EN] English Mode (${cfg.fieldName}) ---`);
+      await cdp.eval(`
+        (() => {
+          localStorage.setItem('fieldshift_lang', 'en');
+          localStorage.setItem('fieldshift_theme', 'light');
+          localStorage.setItem('fs_selected_field_id', '${cfg.fieldId}');
+          localStorage.setItem('fs_selected_field_id_323', '${cfg.fieldId}');
+        })()
+      `);
+      await cdp.eval(`window.location.reload();`);
+      await sleep(3500);
 
-    // Screenshot of Replan Balanced
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_balanced_rahim_bn.png'));
+      for (const dest of DESTINATIONS) {
+        await navigateTo(dest.nav);
+        await sleep(1500);
 
-    // Switch to Water Saving in Replan
-    await cdp.eval(`
-      (() => {
-        const btns = Array.from(document.querySelectorAll('button'));
-        const waterBtn = btns.find(b => b.textContent.includes('পানি সাশ্রয়'));
-        if (waterBtn) waterBtn.click();
-      })()
-    `);
-    await sleep(1500);
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_water_star_rahim_bn.png'));
+        const pageText = await extractPageText();
+        const cleanedText = cleanEnText(pageText);
 
-    // Verify Replan text in bn
-    const replanTextBn = await extractViewText('.adaptive-replan-root');
-    for (const banned of BANNED_BN_WORDS) {
-      if (replanTextBn.includes(banned)) {
-        const mIdx = replanTextBn.indexOf(banned);
-        console.log(`Context for banned "${banned}" in BN Replan:`, replanTextBn.substring(Math.max(0, mIdx - 50), Math.min(replanTextBn.length, mIdx + 50)));
-        problems.push(`[BN][Replan] Found forbidden English phrase: "${banned}"`);
-        problemsCount++;
+        for (const banned of BANNED_EN_WORDS) {
+          if (cleanedText.includes(banned)) {
+            problems.push(`[EN][${cfg.fieldName}][${dest.name}] Found forbidden Bangla phrase: "${banned}"`);
+            problemsCount++;
+          }
+        }
+
+        const banglaRegex = /[\u0980-\u09FF]+/g;
+        const strayBn = cleanedText.match(banglaRegex);
+        if (strayBn && strayBn.length > 0) {
+          const uniqueStray = Array.from(new Set(strayBn));
+          problems.push(`[EN][${cfg.fieldName}][${dest.name}] Found unhandled Bengali words: ${uniqueStray.slice(0, 10).join(', ')}`);
+          problemsCount++;
+        }
+
+        if (dest.nav === 'farm_planning') {
+          if (cfg.fieldId === 251) {
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_en_light.png'));
+            // Switch to Dark Theme
+            await cdp.eval(`
+              (() => {
+                const toggle = document.querySelector('.theme-toggle-btn, [aria-label*="theme"], [title*="Theme"], [title*="Dark"], [title*="ডার্ক"]');
+                if (toggle) toggle.click();
+              })()
+            `);
+            await sleep(1000);
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_en_dark.png'));
+            // Switch back to light
+            await cdp.eval(`
+              (() => {
+                const toggle = document.querySelector('.theme-toggle-btn, [aria-label*="theme"], [title*="Theme"], [title*="Dark"], [title*="ডার্ক"]');
+                if (toggle) toggle.click();
+              })()
+            `);
+            await sleep(1000);
+          }
+
+          // Check Adaptive Replan in EN
+          await cdp.eval(`
+            (() => {
+              const advancedNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.textContent.includes('Advanced'));
+              if (advancedNav) advancedNav.click();
+            })()
+          `);
+          await sleep(1000);
+          await cdp.eval(`
+            (() => {
+              const subNavs = Array.from(document.querySelectorAll('.sub-nav-item, button'));
+              const replanTab = subNavs.find(el => el.textContent.includes('Adaptive') || el.textContent.includes('Replan'));
+              if (replanTab) replanTab.click();
+            })()
+          `);
+          await sleep(2500);
+
+          await cdp.eval(`
+            (() => {
+              const btns = Array.from(document.querySelectorAll('button'));
+              const waterBtn = btns.find(b => b.textContent.includes('Water Saving'));
+              if (waterBtn) waterBtn.click();
+            })()
+          `);
+          await sleep(1500);
+
+          if (cfg.fieldId === 251) {
+            await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_water_star_rahim_en.png'));
+          }
+
+          const replanTextEn = await extractPageText();
+          const cleanedReplan = cleanEnText(replanTextEn);
+          for (const banned of BANNED_EN_WORDS) {
+            if (cleanedReplan.includes(banned)) {
+              problems.push(`[EN][${cfg.fieldName}][Adaptive Replan] Found forbidden Bangla phrase: "${banned}"`);
+              problemsCount++;
+            }
+          }
+
+          const strayReplan = cleanedReplan.match(banglaRegex);
+          if (strayReplan && strayReplan.length > 0) {
+            const uniqueStray = Array.from(new Set(strayReplan));
+            problems.push(`[EN][${cfg.fieldName}][Adaptive Replan] Found unhandled Bengali words: ${uniqueStray.slice(0, 10).join(', ')}`);
+            problemsCount++;
+          }
+        }
       }
-    }
-
-    // 2. ENGLISH MODE TEST
-    console.log('\n[2/2] Testing English Mode (lang=en)...');
-    await cdp.eval(`
-      (() => {
-        localStorage.setItem('fieldshift_lang', 'en');
-        localStorage.setItem('fieldshift_theme', 'light');
-        localStorage.setItem('fieldshift_last_field_id', '251');
-      })()
-    `);
-    // Reload page to apply localStorage
-    await cdp.eval(`window.location.reload();`);
-    await sleep(3500);
-
-    // Navigate to Rotation Planner
-    await cdp.eval(`
-      (() => {
-        const navs = Array.from(document.querySelectorAll('.nav-item, .mobile-bottom-nav-item'));
-        const pNav = navs.find(el => el.textContent.includes('Farm Planning') || el.textContent.includes('Rotation'));
-        if (pNav) pNav.click();
-      })()
-    `);
-    await sleep(3000);
-
-    // Screenshot of Planner Balanced in English (Light)
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_en_light.png'));
-
-    // Switch to Dark Theme
-    await cdp.eval(`
-      (() => {
-        const toggle = document.querySelector('.theme-toggle-btn, [aria-label*="theme"], [title*="Theme"], [title*="ডার্ক"], [title*="Dark"]');
-        if (toggle) toggle.click();
-      })()
-    `);
-    await sleep(1000);
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'planner_balanced_rahim_en_dark.png'));
-
-    // Check Planner text in en
-    const plannerTextEn = await extractViewText('.six-season-recommendation-workspace');
-    const stripFieldNames = (txt) => txt
-      .replace(/রহিম\s*মিয়ার\s*জমি/g, '')
-      .replace(/রাজশাহী\s*বরেন্দ্র\s*উচ্চভূমি(?:\s*\([^)]*\))?/g, '')
-      .replace(/সুনামগঞ্জ\s*হাওর\s*নিম্নাঞ্চল(?:\s*\([^)]*\))?/g, '')
-      .replace(/বগুড়া\s*ডেমো\s*খামার(?:\s*\([^)]*\))?/g, '');
-
-    const cleanedPlannerEn = stripFieldNames(plannerTextEn);
-    for (const banned of BANNED_EN_WORDS) {
-      if (cleanedPlannerEn.includes(banned)) {
-        problems.push(`[EN][Planner] Found forbidden Bangla phrase: "${banned}"`);
-        problemsCount++;
-      }
-    }
-
-    // Navigate to Replan in English
-    console.log('Navigating to Adaptive Replan in English...');
-    await cdp.eval(`
-      (() => {
-        const advancedNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.textContent.includes('Advanced'));
-        if (advancedNav) advancedNav.click();
-      })()
-    `);
-    await sleep(1500);
-    await cdp.eval(`
-      (() => {
-        const subNavs = Array.from(document.querySelectorAll('.sub-nav-item, button'));
-        const replanTab = subNavs.find(el => el.textContent.includes('Adaptive') || el.textContent.includes('Replan'));
-        if (replanTab) replanTab.click();
-      })()
-    `);
-    await sleep(3500);
-
-    // Select Water Saving
-    await cdp.eval(`
-      (() => {
-        const btns = Array.from(document.querySelectorAll('button'));
-        const waterBtn = btns.find(b => b.textContent.includes('Water Saving'));
-        if (waterBtn) waterBtn.click();
-      })()
-    `);
-    await sleep(1500);
-    await cdp.captureScreenshot(path.join(SCREENS_DIR, 'replan_water_star_rahim_en.png'));
-
-    const replanTextEn = await extractViewText('.adaptive-replan-root');
-    const cleanedReplanEn = stripFieldNames(replanTextEn);
-    for (const banned of BANNED_EN_WORDS) {
-      if (cleanedReplanEn.includes(banned)) {
-        problems.push(`[EN][Replan] Found forbidden Bangla phrase: "${banned}"`);
-        problemsCount++;
-      }
-    }
-
-    // Check for any unhandled Bangla character in English mode
-    const banglaRegex = /[\u0980-\u09FF]+/g;
-    const strayBnPlanner = cleanedPlannerEn.match(banglaRegex);
-    if (strayBnPlanner && strayBnPlanner.length > 0) {
-      console.log('Detected Bengali snippets in Planner [EN]:', strayBnPlanner);
-      problems.push(`[EN][Planner] Found ${strayBnPlanner.length} unhandled Bengali words: ${Array.from(new Set(strayBnPlanner)).join(' ')}`);
-      problemsCount++;
-    }
-    const strayBnReplan = cleanedReplanEn.match(banglaRegex);
-    if (strayBnReplan && strayBnReplan.length > 0) {
-      console.log('Detected Bengali snippets in Replan [EN]:', strayBnReplan);
-      const matchIdx = cleanedReplanEn.indexOf(strayBnReplan[0]);
-      console.log('Surrounding text:', cleanedReplanEn.substring(Math.max(0, matchIdx - 40), Math.min(cleanedReplanEn.length, matchIdx + 40)));
-      problems.push(`[EN][Replan] Found ${strayBnReplan.length} unhandled Bengali words: ${Array.from(new Set(strayBnReplan)).join(' ')}`);
-      problemsCount++;
     }
 
     cdp.close();

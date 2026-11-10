@@ -288,9 +288,11 @@ export function WaterIrrigationView({
   const selectedStrategyLabel = lang === 'bn' ? currentStratObj.labelBn : currentStratObj.labelEn;
 
   // Climatology note
-  const yrNote = isDry
-    ? `${climatology.dry_year_label_bn || '২০০৯–১০ (শুকনো বছর)'} · ${lang === 'bn' ? 'বছরে বৃষ্টি' : 'Annual rain'} ${formatNumberBnEn(climatology.dry_annual_rainfall_mm || 1166, 0, lang)} ${lang === 'bn' ? 'মিমি' : 'mm'}`
-    : `${climatology.normal_year_label_bn || '২০১৫–১৬ (স্বাভাবিক)'} · ${lang === 'bn' ? 'বছরে বৃষ্টি' : 'Annual rain'} ${formatNumberBnEn(climatology.normal_annual_rainfall_mm || 1372, 0, lang)} ${lang === 'bn' ? 'মিমি' : 'mm'}`;
+  const yrLabel = isDry
+    ? (lang === 'bn' ? (climatology.dry_year_label_bn || '২০০৯–১০ (শুকনো বছর)') : (climatology.dry_year_label_en || '2009–10 (Dry Year)'))
+    : (lang === 'bn' ? (climatology.normal_year_label_bn || '২০১৫–১৬ (স্বাভাবিক)') : (climatology.normal_year_label_en || '2015–16 (Normal Year)'));
+  const yrRain = isDry ? (climatology.dry_annual_rainfall_mm || 1166) : (climatology.normal_annual_rainfall_mm || 1372);
+  const yrNote = `${yrLabel} · ${lang === 'bn' ? 'বছরে বৃষ্টি' : 'Annual rain'} ${formatNumberBnEn(yrRain, 0, lang)} ${lang === 'bn' ? 'মিমি' : 'mm'}`;
 
   // Hydrological soil water calculations (FAO-56 standards)
   const soilWaterSpecs = useMemo(() => {

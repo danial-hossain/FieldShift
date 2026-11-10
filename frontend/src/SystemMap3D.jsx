@@ -47,7 +47,8 @@ export function SystemMap3D({
       color: '#00e5ff',
       roleBn: 'দৈনিক বৃষ্টিপাত পর্যবেক্ষণ (GPM_3IMERGDF V07B)',
       roleEn: 'Daily satellite precipitation (GPM_3IMERGDF V07B)',
-      resolution: '0.1° × 0.1° (~10 km), 2001–2024 (8,766 দিন)',
+      resolutionBn: '০.১° × ০.১° (~১০ কিমি), ২০০১–২০২৪ (৮,৭৬৬ দিন)',
+      resolutionEn: '0.1° × 0.1° (~10 km), 2001–2024 (8,766 days)',
       computesBn: 'মাটির আর্দ্রতা ঘাটতি, এডব্লিউডি (AWD) শুকানোর চক্র, আমন রোপণ বৃষ্টি শুরুর পরিসংখ্যান।',
       computesEn: 'Root-zone water deficit, AWD drying cycles, Aman monsoon onset shift statistics.',
       citation: 'data/imerg/bd_imerg_daily.npz, src/climate/point_data.py:302',
@@ -69,7 +70,8 @@ export function SystemMap3D({
       color: '#10b981',
       roleBn: 'ভূগর্ভস্থ ভূ-জল সঞ্চয় হ্রাস/বৃদ্ধি (JPL Mascon RL06.3M)',
       roleEn: 'Terrestrial water storage anomaly & depletion trend',
-      resolution: '0.5° Mascon CRI grid, 2002–2024 (259 মাস)',
+      resolutionBn: '০.৫° Mascon CRI গ্রিড, ২০০২–২০২৪ (২৫৯ মাস)',
+      resolutionEn: '0.5° Mascon CRI grid, 2002–2024 (259 months)',
       computesBn: 'বরেন্দ্র অঞ্চলের ভূগর্ভস্থ পানির দীর্ঘমেয়াদী ঘাটতি (-০.৫৮ সেমি/বছর) বনাম হাওর (+০.২২ সেমি/বছর)।',
       computesEn: 'Barind deep aquifer depletion (-0.58 cm/yr) vs Haor recharge (+0.22 cm/yr).',
       citation: 'data/grace/grace_bangladesh_trends.json, src/climate/point_data.py:469',
@@ -90,7 +92,8 @@ export function SystemMap3D({
       color: '#f59e0b',
       roleBn: 'সৌর বিকিরণ ও আলোর তীব্রতা (ALLSKY_SFC_SW_DWN)',
       roleEn: 'Surface solar irradiance for FAO-56 Penman-Monteith',
-      resolution: '1.0° CERES FlashFlux সিনোপটিক পর্যবেক্ষণ',
+      resolutionBn: '১.০° CERES FlashFlux সিনোপটিক পর্যবেক্ষণ',
+      resolutionEn: '1.0° CERES FlashFlux synoptic observations',
       computesBn: 'দৈনিক নিট সৌর বিকিরণ (Rn) যা বাষ্পীভবন (ET0) ও ফসলের পানির চাহিদা চালনা করে।',
       computesEn: 'Daily net solar radiation (Rn) driving Penman-Monteith reference ET0.',
       citation: 'src/climate/point_data.py:85, src/compute/water_service.py:102',
@@ -111,7 +114,8 @@ export function SystemMap3D({
       color: '#a855f7',
       roleBn: 'ডিজিটাল এলিভেশন মডেল (DEM 30m) ও ঢাল',
       roleEn: 'Digital elevation model & slope calculation',
-      resolution: '1 Arc-Second (~30 m global grid)',
+      resolutionBn: '১ আর্ক-সেকেন্ড (~৩০ মি গ্লোবাল গ্রিড)',
+      resolutionEn: '1 Arc-Second (~30 m global grid)',
       computesBn: 'বায়ুমণ্ডলীয় চাপ সংশোধন ও বন্যা ঝুঁকি স্তর নির্ধারণ। ডেটা না থাকলে জেলা মেটাডাটা ব্যবহার করে।',
       computesEn: 'Atmospheric pressure altitude correction for ET0; falls back to district metadata if tile absent.',
       citation: 'data/srtm/, backend/app/main.py:612',
@@ -132,7 +136,8 @@ export function SystemMap3D({
       color: '#94a3b8',
       roleBn: 'মাটির আর্দ্রতা অনুপাত (পরিকল্পিত দূরবর্তী ইনজেশন)',
       roleEn: 'Soil moisture active passive root zone simulation',
-      resolution: '9 km Global Assimilation (SPL4SMGP)',
+      resolutionBn: '৯ কিমি গ্লোবাল অ্যাসিমিল্যাশন (SPL4SMGP)',
+      resolutionEn: '9 km Global Assimilation (SPL4SMGP)',
       computesBn: 'বর্তমানে মাটির আর্দ্রতা সরাসরি স্যাটেলাইটের বদলে FAO-56 মডেল দিয়ে নিখুঁতভাবে সিমুলেট করা হয়।',
       computesEn: 'Currently simulated via daily FAO-56 dual Kc water balance rather than direct 9km raster download.',
       citation: 'backend/app/main.py:940 (Empty DataFrame frame placeholder)',
@@ -150,7 +155,8 @@ export function SystemMap3D({
       color: '#94a3b8',
       roleBn: 'ফসলের সবুজ ঘনত্ব সূচক (পরিকল্পিত উপগ্রহ যাচাই)',
       roleEn: 'Normalized difference vegetation index (Planned)',
-      resolution: '250 m 16-Day composite (MOD13Q1)',
+      resolutionBn: '২৫০ মি ১৬-দিনের কম্পোজিট (MOD13Q1)',
+      resolutionEn: '250 m 16-Day composite (MOD13Q1)',
       computesBn: 'পরিকল্পিত ইন-সিজন ফসল পর্যবেক্ষণ। বর্তমানে কৃষকের বাস্তব ইনপুট দিয়ে যাচাই করা হয়।',
       computesEn: 'Planned remote sensing validation; currently validated via farmer in-season feedback.',
       citation: 'frontend/src/DataEvidenceView.jsx:104',
@@ -168,7 +174,8 @@ export function SystemMap3D({
       color: '#38bdf8',
       roleBn: 'MERRA-2 + GEOS-5.12.4 আবহাওয়া ডেটাহাব',
       roleEn: 'MERRA-2 atmospheric assimilation & CERES solar data hub',
-      resolution: '0.5° × 0.5° পয়েন্ট এপিআই (১৯৮১–২০২৫ দৈনিক)',
+      resolutionBn: '০.৫° × ০.৫° পয়েন্ট এপিআই (১৯৮১–২০২৫ দৈনিক)',
+      resolutionEn: '0.5° × 0.5° point API (1981–2025 daily)',
       computesBn: 'তাপমাত্রা (Tmax, Tmin, Tmean), আর্দ্রতা (RH), বাতাসের গতি (WS2M) ও গ্রোইং ডিগ্রি ডে (GDD)।',
       computesEn: 'Daily Tmax, Tmin, Tavg, RH, Wind Speed, and thermal GDD accumulation.',
       citation: 'src/climate/point_data.py:79, src/compute/advisory_service.py:189',
@@ -193,7 +200,8 @@ export function SystemMap3D({
       color: '#06b6d4',
       roleBn: 'স্থানাঙ্কভিত্তিক উপাত্ত সমন্বয় ও ক্যাশিং',
       roleEn: 'Coordinate harmonisation & disk caching layer',
-      resolution: 'খামারের নিজস্ব অক্ষাংশ-দ্রাঘিমাংশ (FastAPI backend)',
+      resolutionBn: 'খামারের নিজস্ব অক্ষাংশ-দ্রাঘিমাংশ (FastAPI ব্যাকএন্ড)',
+      resolutionEn: 'Farm coordinate point (FastAPI backend)',
       computesBn: 'পয়েন্ট কোঅর্ডিনেট অনুযায়ী ০.১° আইমার্জ ও ০.৫° পাওয়ার ডেটা একত্রিত করে বৈজ্ঞানিক মডেলে সরবরাহ।',
       computesEn: 'Harmonises satellite rasters and reanalysis grids to exact field coordinates for engines.',
       citation: 'src/climate/point_data.py, backend/app/main.py',
@@ -216,7 +224,8 @@ export function SystemMap3D({
       color: '#3b82f6',
       roleBn: 'দৈনিক মৃত্তিকা আর্দ্রতা হিসাব ও এডব্লিউডি (AWD)',
       roleEn: 'Daily root-zone soil water balance & AWD scheduling',
-      resolution: 'দৈনিক টাইম-স্টেপ, মাটির গভীরতা ০-১০০ সেমি (ISRIC SoilGrids 250m)',
+      resolutionBn: 'দৈনিক টাইম-স্টেপ, মাটির গভীরতা ০-১০০ সেমি (ISRIC SoilGrids ২৫০ মি)',
+      resolutionEn: 'Daily time-step, soil depth 0-100 cm (ISRIC SoilGrids 250m)',
       computesBn: 'FAO-56 পেনম্যান-মন্টিথ রেফারেন্স বাষ্পীভবন (ET0), দ্বৈত ফসল সহগ (Kc) ও সেচের শিডিউল।',
       computesEn: 'FAO-56 Penman-Monteith ET0, dual Kc depletion, and Alternate Wetting & Drying schedules.',
       citation: 'src/compute/water_service.py:102-149, 382-450',
@@ -237,7 +246,8 @@ export function SystemMap3D({
       color: '#f97316',
       roleBn: 'খরা, তাপপ্রবাহ, বন্যা ও লবণাক্ততার ফলন হ্রাস মডেল',
       roleEn: 'Drought, heatwave, flood & salinity impact model',
-      resolution: 'মৌসুমভিত্তিক স্টেজ রেসপন্স (FAO-33 Ky ও FAO-29 ECe)',
+      resolutionBn: 'মৌসুমভিত্তিক স্টেজ রেসপন্স (FAO-33 Ky ও FAO-29 ECe)',
+      resolutionEn: 'Seasonal stage response (FAO-33 Ky & FAO-29 ECe)',
       computesBn: 'পানির অভাবে ফলন ক্ষতি (১ - Ya/Ym) = Ky × (১ - ETa/ETm) এবং লবণাক্ততা ক্ষতি (%/dS/m)।',
       computesEn: 'FAO-33 yield response to deficit and Maas-Hoffman salinity yield reduction curves.',
       citation: 'data/crops/crop_stress_params.json, src/compute/climate_stress.py:28-65',
@@ -257,7 +267,8 @@ export function SystemMap3D({
       color: '#14b8a6',
       roleBn: 'ম্যান-হুইটনি ইউ ও সেন-স্লোপ আবহাওয়া বিশ্লেষণ',
       roleEn: 'Mann-Whitney U, Sen slope & onset shift tests',
-      resolution: '২৪ বছরের দৈনিক উপাত্ত তুলনা (২০০১–২০১২ বনাম ২০১৩–২০২৪)',
+      resolutionBn: '২৪ বছরের দৈনিক উপাত্ত তুলনা (২০০১–২০১২ বনাম ২০১৩–২০২৪)',
+      resolutionEn: '24-year daily record comparison (2001–2012 vs 2013–2024)',
       computesBn: 'আমন বৃষ্টি শুরু হওয়ার তারিখের পরিবর্তন ও দীর্ঘমেয়াদী তাপপ্রবাহের পরিসংখ্যানগত তাৎপর্য।',
       computesEn: 'Empirical monsoon rainfall onset DOY distribution shifts and heatwave day frequencies.',
       citation: 'src/climate/point_data.py:602, src/climate/summary.py:210',
@@ -279,7 +290,8 @@ export function SystemMap3D({
       color: '#10b981',
       roleBn: '৬ মৌসুমের সর্বোত্তম ফসল চক্র নির্ধারণ',
       roleEn: 'Mixed Integer Linear Programming 6-season rotation',
-      resolution: 'মৌসুম ১ থেকে ৬, ৪টি কৌশল (ভারসাম্য, লাভ, পানি, মাটি)',
+      resolutionBn: 'মৌসুম ১ থেকে ৬, ৪টি কৌশল (ভারসাম্য, লাভ, পানি, মাটি)',
+      resolutionEn: 'Seasons 1 to 6, 4 strategies (balanced, profit, water, soil)',
       computesBn: 'সর্বোচ্চ লাভ, সর্বনিম্ন পানি ও সর্বোচ্চ মাটির নাইট্রোজেন বজায় রেখে বাস্তবসম্মত ফসল নির্বাচন।',
       computesEn: 'Solves optimal 6-season sequence subject to irrigation capacity, agronomic family & legume constraints.',
       citation: 'src/optimizer/milp.py:195-460',
@@ -300,7 +312,8 @@ export function SystemMap3D({
       color: '#0ea5e9',
       roleBn: 'কৃষকের আসল ফলন ও দাম থেকে প্রত্যাশা সমন্বয়',
       roleEn: 'In-season farmer feedback yield & profit calibration',
-      resolution: 'মৌসুম শেষে কৃষকের ইনপুট (মণ/বিঘা, টাকা/মণ)',
+      resolutionBn: 'মৌসুম শেষে কৃষকের ইনপুট (মণ/বিঘা, টাকা/মণ)',
+      resolutionEn: 'Post-harvest farmer input (maund/bigha, BDT/maund)',
       computesBn: 'মৌসুম শেষে দেওয়া আসল ফলন ও লাভের ভিত্তিতে বাকি মৌসুমগুলোর জন্য নতুন সেরা পরিকল্পনা তৈরি করে।',
       computesEn: 'Calibrates crop return priors with farmer recorded outcomes to re-solve future seasons.',
       citation: 'src/data/field_history.py, backend/app/main.py:1600-1750',
@@ -320,7 +333,8 @@ export function SystemMap3D({
       color: '#c084fc',
       roleBn: 'কৃত্রিম সিমুলেশন পরিবেশে রিইনফোর্সমেন্ট লার্নিং টেস্ট',
       roleEn: 'Reinforcement learning state-action transition benchmark',
-      resolution: '১০,০০০ এপিসোড কৃত্রিম জিম এনভায়রনমেন্ট',
+      resolutionBn: '১০,০০০ এপিসোড কৃত্রিম জিম এনভায়রনমেন্ট',
+      resolutionEn: '10,000 episode synthetic Gym environment',
       computesBn: 'ল্যাবে কৃত্রিম পরিবেশে পরীক্ষিত; বাস্তব কৃষকের সিদ্ধান্ত তৈরিতে এটি নয়, নিশ্চিতভাবে MILP ব্যবহৃত হয়।',
       computesEn: 'Trained strictly in synthetic environment; experimental research benchmark, NOT the production farmer advisor.',
       citation: 'src/rl/synthetic_q_learning.py:40-180',
@@ -340,7 +354,8 @@ export function SystemMap3D({
       color: '#10b981',
       roleBn: '৬ মৌসুমের কৌশলগত ফসল পরিকল্পনা',
       roleEn: '6-season rotation planner with 3D field preview',
-      resolution: 'কৃষকের নিজস্ব জমির আয়তন (বিঘা/হেক্টর)',
+      resolutionBn: 'কৃষকের নিজস্ব জমির আয়তন (বিঘা/হেক্টর)',
+      resolutionEn: 'Farmer parcel size (bigha / ha)',
       computesBn: 'কৌশলগত ফসল কার্ড, সেচ বাজেট, ও লাভ-ক্ষতির পূর্ণ চিত্র।',
       computesEn: 'Seasonal crop sequencing cards, yearly irrigation budget and profit.',
       citation: 'frontend/src/SixSeasonRecommendationView.jsx',
@@ -358,7 +373,8 @@ export function SystemMap3D({
       color: '#06b6d4',
       roleBn: 'দৈনিক সেচ সূচি ও ভূগর্ভস্থ পানির অবস্থা',
       roleEn: 'Day-by-day AWD pipe threshold & pump calendar',
-      resolution: 'খামারের নিজস্ব মাটির গঠন ও গভীরতা',
+      resolutionBn: 'খামারের নিজস্ব মাটির গঠন ও গভীরতা',
+      resolutionEn: 'Field soil texture & depth',
       computesBn: 'কবে সেচ দিতে হবে এবং বছরে মোট কত হাজার লিটার পানি লাগবে।',
       computesEn: 'Next irrigation date, seasonal AWD pipe level, and yearly liter requirements.',
       citation: 'frontend/src/WaterIrrigationView.jsx',
@@ -376,7 +392,8 @@ export function SystemMap3D({
       color: '#14b8a6',
       roleBn: 'খামারের নিজস্ব অক্ষাংশ-দ্রাঘিমাংশের আবহাওয়া ঝুঁকি',
       roleEn: 'Coordinate-specific rainfall, heatwave & GRACE trend',
-      resolution: '০.১° আইমার্জ গ্রিড সেল ও পয়েন্ট পাওয়ার উপাত্ত',
+      resolutionBn: '০.১° আইমার্জ গ্রিড সেল ও পয়েন্ট পাওয়ার উপাত্ত',
+      resolutionEn: '0.1° IMERG grid cell & point POWER data',
       computesBn: 'গত ২৪ বছরের বৃষ্টিপাত প্যাটার্ন, তাপপ্রবাহের দিন ও ভূগর্ভস্থ পানির গতিবিধি।',
       computesEn: '24-year precipitation shift, annual heatwave days and regional water trend.',
       citation: 'frontend/src/ClimateRiskView.jsx',
@@ -394,7 +411,8 @@ export function SystemMap3D({
       color: '#f97316',
       roleBn: 'প্রতিকূল আবহাওয়ায় বর্তমান পরিকল্পনার ঝুঁকি',
       roleEn: 'Empirical risk test against drought, heat & salinity',
-      resolution: 'FAO-33 স্টেজভিত্তিক সংবেদনশীলতা',
+      resolutionBn: 'FAO-33 স্টেজভিত্তিক সংবেদনশীলতা',
+      resolutionEn: 'FAO-33 stage-based sensitivity',
       computesBn: 'খরা বা বন্যা হলে ঠিক কত টাকা আর্থিক ক্ষতি হতে পারে তার পূর্বানুমান।',
       computesEn: 'Exact BDT financial loss simulation under adverse climate scenarios.',
       citation: 'frontend/src/ClimateStressView.jsx',
@@ -412,7 +430,8 @@ export function SystemMap3D({
       color: '#0ea5e9',
       roleBn: 'বাস্তব ফলনের ভিত্তিতে পরবর্তী মৌসুমের পরিকল্পনা বদল',
       roleEn: 'In-season adjustment from recorded harvest outcomes',
-      resolution: 'কৃষকের রেকর্ডকৃত তথ্য',
+      resolutionBn: 'কৃষকের রেকর্ডকৃত তথ্য',
+      resolutionEn: 'Farmer recorded harvest log',
       computesBn: 'আগের মৌসুমে কম বা বেশি ফলন হলে ভবিষ্যতের ফসল আবর্তন স্বয়ংক্রিয়ভাবে ঠিক করা।',
       computesEn: 'Auto-adjusts remaining season crops when yield or market prices deviate.',
       citation: 'frontend/src/AdaptiveReplanView.jsx',
@@ -430,7 +449,8 @@ export function SystemMap3D({
       color: '#eab308',
       roleBn: 'ফসলের দাম, খরচ, লাভ ও ব্রেক-ইভেন বিশ্লেষণ',
       roleEn: 'Farm-gate crop prices, revenue, and sensitivity analysis',
-      resolution: 'সরকারি কৃষি বিপণন অধিদপ্তর (DAM/TCB/BBS ২০২৪)',
+      resolutionBn: 'সরকারি কৃষি বিপণন অধিদপ্তর (DAM/TCB/BBS ২০২৪)',
+      resolutionEn: 'Dept. of Agricultural Marketing (DAM / TCB / BBS 2024)',
       computesBn: 'মৌসুমভিত্তিক আয়-ব্যয় এবং কত দামের নিচে নামলে লোকসান হবে।',
       computesEn: 'Seasonal cost-benefit breakdown, break-even price thresholds and -20% sensitivity.',
       citation: 'frontend/src/MarketProfitView.jsx',
@@ -448,7 +468,8 @@ export function SystemMap3D({
       color: '#8b5cf6',
       roleBn: 'নাসা উপাত্ত ও বৈজ্ঞানিক মডেলে পরিচালিত কৃষি বুদ্ধিমত্তা',
       roleEn: 'Agronomic AI grounded in NASA telemetry & MILP results',
-      resolution: 'খামারের সার্বিক প্রোফাইল ও পরিকল্পনা',
+      resolutionBn: 'খামারের সার্বিক প্রোফাইল ও পরিকল্পনা',
+      resolutionEn: 'Farm profile & crop plan telemetry',
       computesBn: 'কৃষকের জমিতে কোন সার, কখন পানি দিতে হবে এবং পোকা দমনে কী করতে হবে।',
       computesEn: 'Context-grounded agronomic briefings, fertilizer doses, and irrigation guidelines.',
       citation: 'frontend/src/AiAssistantView.jsx',
@@ -1081,16 +1102,26 @@ export function SystemMap3D({
         }}
       >
         <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.2)' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8' }}>🛰️ ১. মহাকাশ ও ডেটাহাব (Space)</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#38bdf8' }}>
+            {isBn ? '🛰️ ১. মহাকাশ ও ডেটাহাব' : '🛰️ 1. Space & Data Hubs'}
+          </span>
           <div style={{ fontSize: 10, color: '#94a3b8' }}>GPM, GRACE-FO, CERES, SRTM, POWER</div>
         </div>
         <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399' }}>⚙️ ২. বৈজ্ঞানিক ইঞ্জিন ও অপ্টিমাইজার</span>
-          <div style={{ fontSize: 10, color: '#94a3b8' }}>FAO-56 PM পানি ব্যালেন্স ➔ FAO-33 Ky ➔ PuLP MILP</div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#34d399' }}>
+            {isBn ? '⚙️ ২. বৈজ্ঞানিক ইঞ্জিন ও অপ্টিমাইজার' : '⚙️ 2. Scientific Engines & Optimization'}
+          </span>
+          <div style={{ fontSize: 10, color: '#94a3b8' }}>
+            {isBn ? 'FAO-56 PM পানি ব্যালেন্স ➔ FAO-33 Ky ➔ PuLP MILP' : 'FAO-56 PM Water Balance ➔ FAO-33 Ky ➔ PuLP MILP'}
+          </div>
         </div>
         <div style={{ background: 'rgba(15, 23, 42, 0.90)', padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>🌾 ৩. কৃষকের ইন্টারফেস (Farmer UI)</span>
-          <div style={{ fontSize: 10, color: '#94a3b8' }}>প্ল্যানার, সেচ শিডিউল, চাপ পরীক্ষা, বাজার</div>
+          <span style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24' }}>
+            {isBn ? '🌾 ৩. কৃষকের ইন্টারফেস' : '🌾 3. Farmer Applications'}
+          </span>
+          <div style={{ fontSize: 10, color: '#94a3b8' }}>
+            {isBn ? 'প্ল্যানার, সেচ শিডিউল, চাপ পরীক্ষা, বাজার' : 'Planner, Water Schedule, Stress Test, Market'}
+          </div>
         </div>
       </div>
 
@@ -1177,7 +1208,7 @@ export function SystemMap3D({
               <div style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', marginBottom: 2 }}>
                 {isBn ? 'রেজোলিউশন ও সময়কাল:' : 'Resolution & Period:'}
               </div>
-              <div style={{ color: '#f1f5f9' }}>{selectedNode.resolution}</div>
+              <div style={{ color: '#f1f5f9' }}>{isBn ? (selectedNode.resolutionBn || selectedNode.resolution) : (selectedNode.resolutionEn || selectedNode.resolution)}</div>
             </div>
 
             <div style={{ marginBottom: 12, background: 'rgba(255, 255, 255, 0.03)', padding: 10, borderRadius: 8 }}>

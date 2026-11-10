@@ -512,6 +512,9 @@ export function App() {
 
   useEffect(() => {
     localStorage.setItem('fieldshift_lang', lang);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('lang', lang);
+    }
   }, [lang]);
 
   // Sub-navigation state for 12 unified destinations
@@ -2012,6 +2015,7 @@ export function App() {
           {/* 1. Overview */}
           <button
             type="button"
+            data-nav="dashboard"
             className={`nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
             onClick={() => handleNavigate('dashboard')}
             title={lang === 'bn' ? '১. হোম - আজকের সারসংক্ষেপ ও পরামর্শ' : '1. Overview - Today\'s Summary & Answer'}
@@ -4132,6 +4136,7 @@ export function App() {
                           <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'মার্কার টেনে বা জিপিএস দিয়ে স্থানাঙ্ক নির্ধারণ করুন' : 'Click or drag marker to set coordinates'}</span>
                         </label>
                         <GoogleFieldMapPicker
+                          lang={lang}
                           latitude={fieldForm.latitude}
                           longitude={fieldForm.longitude}
                           onChange={(lat, lng) => {
@@ -4649,6 +4654,7 @@ export function App() {
                     <div className="form-group">
                       <label style={{ fontWeight: 600, marginBottom: 6, display: 'block' }}>Field Parcel Satellite Map</label>
                       <GoogleFieldMapPicker
+                        lang={lang}
                         latitude={viewingField.latitude}
                         longitude={viewingField.longitude}
                         readOnly={true}

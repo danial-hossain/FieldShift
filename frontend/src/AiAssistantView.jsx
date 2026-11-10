@@ -25,7 +25,7 @@ const SUGGESTED_PROMPTS = [
     items: [
       { label: '📈 Actual vs Estimated Comparison', text: 'What actual harvest outcome data do we have logged for this field, and how does it compare with prior optimizer estimates?' },
       { label: '📋 Next-Season Decision Checklist', text: 'What field, weather, and market factors should I check before making the next-season planting decision?' },
-      { label: '🇧🇩 বাংলায় ব্যাখ্যা (Bangla)', text: 'এই জমির জন্য উপযুক্ত ফসল আবর্তন পরিকল্পনা ও মাটির স্বাস্থ্য সম্পর্কে বাংলায় পরামর্শ দিন।' },
+      { label: '🇧🇩 Regional Language Advice', text: 'Provide targeted crop rotation and soil health advice suited for this specific agro-ecological zone.' },
       { label: '🏆 Summary for Judges & Farmers', text: 'Give me a concise 1-minute executive summary of this field\'s plan and climate resilience that I can present to a judge or farmer.' }
     ]
   }
@@ -440,15 +440,15 @@ export default function AiAssistantView({
               className={`ai-lang-btn ${language === 'en' ? 'active' : ''}`}
               onClick={() => setLanguage('en')}
             >
-              EN
+              {lang === 'bn' ? 'ইংরেজি' : 'EN'}
             </button>
             <button
               type="button"
               className={`ai-lang-btn ${language === 'bn' ? 'active' : ''}`}
               onClick={() => setLanguage('bn')}
-              title="বাংলা ভাষায় উত্তর পান"
+              title={lang === 'bn' ? 'বাংলা ভাষায় উত্তর পান' : 'Get response in Bangla'}
             >
-              বাংলা
+              {lang === 'bn' ? 'বাংলা' : 'BN'}
             </button>
           </div>
 

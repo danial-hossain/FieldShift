@@ -328,11 +328,17 @@ def compute_climate_summary(
         is_stale = False
         days_old = 0
         
-    stale_reason = (
+    stale_reason_bn = (
         f"সর্বশেষ তথ্য: {end_date}। এরপরের NASA POWER তথ্য এখনো এই জমির জন্য হালনাগাদ হয়নি (অফলাইন ক্যাশ)।"
         if is_stale
         else None
     )
+    stale_reason_en = (
+        f"Latest observation: {end_date}. Subsequent NASA POWER data not yet cached for this field (offline cache)."
+        if is_stale
+        else None
+    )
+    stale_reason = stale_reason_bn
 
     r_tmax = float(np.mean([r["tmax"] for r in recent_30]))
     r_tmin = float(np.mean([r["tmin"] for r in recent_30]))
@@ -425,6 +431,8 @@ def compute_climate_summary(
         "norm_et0": round(norm_recent_et0, 1),
         "stale": is_stale,
         "stale_reason": stale_reason,
+        "stale_reason_bn": stale_reason_bn,
+        "stale_reason_en": stale_reason_en,
         "baseline_period": "২০০১–২০২৪" if len(analysis_years) >= 20 else "ঐতিহাসিক গড়",
         "summary_bn": summary_bn,
         "summary_en": summary_en,

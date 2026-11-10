@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { request } from './apiClient.js';
 import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
+import { toEnglishNumber } from './i18n.js';
 
 export function NasaWeatherStation3D({
   nasa = {},
@@ -167,7 +168,7 @@ export function NasaWeatherStation3D({
       {
         icon: '🌡️',
         title_bn: `সর্বোচ্চ তাপমাত্রা দশকে ${bn(summary.tmax_trend?.[0], 2)}°C ${summary.tmax_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
-        title_en: `Maximum temperature shifted ${bn(summary.tmax_trend?.[0], 2)}°C per decade`,
+        title_en: `Maximum temperature shifted ${Number(summary.tmax_trend?.[0] || 0).toFixed(2)}°C per decade`,
         p: summary.tmax_trend?.[1] ?? 1.0,
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
@@ -175,7 +176,7 @@ export function NasaWeatherStation3D({
       {
         icon: '🌙',
         title_bn: `রাতের তাপমাত্রা দশকে ${bn(summary.tmin_trend?.[0], 2)}°C ${summary.tmin_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
-        title_en: `Nighttime minimum temperature shifted ${bn(summary.tmin_trend?.[0], 2)}°C per decade`,
+        title_en: `Nighttime minimum temperature shifted ${Number(summary.tmin_trend?.[0] || 0).toFixed(2)}°C per decade`,
         p: summary.tmin_trend?.[1] ?? 1.0,
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
@@ -183,7 +184,7 @@ export function NasaWeatherStation3D({
       {
         icon: '🔥',
         title_bn: `৩৫°C-এর বেশি গরম দিন দশকে ${bn(summary.heat_trend?.[0], 1)}টি ${summary.heat_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
-        title_en: `Heat stress days (>35°C) shifted ${bn(summary.heat_trend?.[0], 1)} days per decade`,
+        title_en: `Heat stress days (>35°C) shifted ${Number(summary.heat_trend?.[0] || 0).toFixed(1)} days per decade`,
         p: summary.heat_trend?.[1] ?? 1.0,
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
@@ -191,7 +192,7 @@ export function NasaWeatherStation3D({
       {
         icon: '🌧️',
         title_bn: `বছরের মোট বৃষ্টি দশকে ${bn(Math.abs(summary.annual_trend?.[0] || 0))} মিমি ${summary.annual_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
-        title_en: `Annual rainfall shifted ${bn(Math.abs(summary.annual_trend?.[0] || 0))} mm per decade`,
+        title_en: `Annual rainfall shifted ${Math.round(Math.abs(summary.annual_trend?.[0] || 0))} mm per decade`,
         p: summary.annual_trend?.[1] ?? 1.0,
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
@@ -862,7 +863,9 @@ export function NasaWeatherStation3D({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>
-                    ⏳ {lang === 'bn' ? `তখন বনাম এখন (${thenVsNow.period_then} বনাম ${thenVsNow.period_now})` : `Then vs Now (${thenVsNow.period_then} vs ${thenVsNow.period_now})`}
+                    ⏳ {lang === 'bn'
+                      ? `তখন বনাম এখন (${thenVsNow.period_then} বনাম ${thenVsNow.period_now})`
+                      : `Then vs Now (${toEnglishNumber(thenVsNow.period_then)} vs ${toEnglishNumber(thenVsNow.period_now)})`}
                   </h4>
                   <span style={{ fontSize: '11.5px', color: 'var(--muted, #93a597)' }}>
                     {lang === 'bn' ? 'NASA POWER ৪০ বছরের রেকর্ড' : 'NASA POWER 40-year baseline'}
@@ -1394,7 +1397,7 @@ export function NasaWeatherStation3D({
                   <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
                     {lang === 'bn'
                       ? `শেষ ৩০ দিন বনাম একই সময়ের ২৪ বছরের গড় (${summary.recent.baseline_period || '২০০১–২০২৪'})`
-                      : `Last 30 days vs 24-year historical normal (${summary.recent.baseline_period || '2001–2024'})`}
+                      : `Last 30 days vs 24-year historical normal (${toEnglishNumber(summary.recent.baseline_period) || '2001–2024'})`}
                   </div>
                 </div>
               </div>
@@ -1416,7 +1419,11 @@ export function NasaWeatherStation3D({
                   }}
                 >
                   <span>⚠</span>
-                  <div>{summary.recent.stale_reason}</div>
+                  <div>
+                    {lang === 'bn'
+                      ? (summary.recent.stale_reason_bn || summary.recent.stale_reason)
+                      : (summary.recent.stale_reason_en || `Latest observation: ${summary.recent.end_date || ''}. Subsequent NASA POWER data not yet cached for this field (offline cache).`)}
+                  </div>
                 </div>
               )}
 
