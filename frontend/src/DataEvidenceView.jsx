@@ -5,6 +5,7 @@
 // missing-value protocols, and reproducibility reports.
 
 import React, { useState, useEffect } from 'react';
+import { SystemMap3D } from './SystemMap3D.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
 import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
@@ -179,10 +180,15 @@ export function DataEvidenceView({
             </h1>
             <p style={{ margin: 0, fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.5, maxWidth: 840 }}>
               {lang === 'bn'
-                ? 'নাসা পাওয়ার দৈনিক উপাত্তের স্পেশাল ও টেম্পোরাল কভারেজ, ৪-স্তরের প্রোভেন্যান্স হায়ারার্কি, এবং বিআরআরআই ও এফএও অনুমোদিত বৈজ্ঞানিক পদ্ধতির প্রমাণ্য দলিল।'
-                : 'Traceable NASA Earth Observations, 4-tier data provenance hierarchy, dataset citations, and validated agro-meteorological calibration methodologies.'}
+                ? 'নাসা উপগ্রহ থেকে কৃষকের মাঠ: পূর্ণাঙ্গ ৩ডি সিস্টেম আর্কিটেকচার, বৈজ্ঞানিক প্রোভেন্যান্স, এবং বিআরআরআই ও এফএও অনুমোদিত পদ্ধতির প্রমাণ্য দলিল।'
+                : 'From Orbit to Field: Interactive 3D system pipeline, traceable NASA Earth Observations, and validated agro-meteorological calibration methodologies.'}
             </p>
           </div>
+        </div>
+
+        {/* 3D System Map: Space -> Data -> Science -> Decision -> Farmer UI */}
+        <div style={{ marginTop: 20 }}>
+          <SystemMap3D lang={lang} onNavigate={onNavigate} activeField={activeField} height="70vh" />
         </div>
 
         {/* Sub-Navigation Pills */}
