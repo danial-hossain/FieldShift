@@ -1036,23 +1036,54 @@ export function WaterIrrigationView({
 
       {/* SECTION 3: Why Save Water (GRACE-FO Aquifer depletion) */}
       <section className="wp-card">
-        <div className="wp-row" style={{ justifyContent: 'space-between', width: '100%' }}>
+        <div className="wp-row" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
           <div>
-            <b>{lang === 'bn' ? 'কেন পানি বাঁচানো দরকার:' : 'Why Save Water:'}</b>{' '}
-            {graceData.descBn}
+            <b>{lang === 'bn' ? 'কেন পানি বাঁচানো দরকার:' : 'Why save water:'}</b>{' '}
+            {lang === 'bn' ? (
+              graceData.isBarind ? (
+                <>বরেন্দ্রে মাটির নিচের পানি কমছে <b style={{ color: 'var(--red-wp)' }}>−১.০৭ সেমি/বছর</b> (NASA GRACE-FO, ২০০২–২০২৬)</>
+              ) : (
+                <>{graceData.descBn}</>
+              )
+            ) : (
+              graceData.isBarind ? (
+                <>Groundwater in Barind is depleting at <b style={{ color: 'var(--red-wp)' }}>−1.07 cm/year</b> (NASA GRACE-FO, 2002–2026)</>
+              ) : (
+                <>{graceData.descEn}</>
+              )
+            )}
           </div>
           {onNavigate && (
             <button
               type="button"
               className="wp-muted"
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--muted-wp)',
+                minHeight: 44,
+                display: 'inline-flex',
+                alignItems: 'center',
+              }}
               onClick={() => onNavigate('weather')}
+              aria-label={lang === 'bn' ? 'আবহাওয়া ও ঝুঁকি পৃষ্ঠায় যান' : 'Navigate to Climate & Risk'}
             >
               {lang === 'bn' ? 'আবহাওয়া ও ঝুঁকি →' : 'Climate & Risk →'}
             </button>
           )}
         </div>
       </section>
+
+      {/* Model & Evidence Provenance Note */}
+      <p className="wp-note">
+        {lang === 'bn'
+          ? 'আবহাওয়া তথ্য: NASA POWER (তাপমাত্রা, আর্দ্রতা, বিকিরণ, বায়ুপ্রবাহ) ও GPM IMERG বৃষ্টিপাত। হিসাব: FAO-56 Penman-Monteith মৃত্তিকা পানি ব্যালেন্স; ধানে AWD (পানি ১৫ সেমি নিচে নামলে সেচ, জমি তৈরিতে ১৫০ মিমি বোরো / ৫০ মিমি আমন)। মাটির বৈশিষ্ট্য: ISRIC SoilGrids ২৫০মি।'
+          : 'Climatology: NASA POWER (temperature, humidity, radiation, wind) & GPM IMERG precipitation. Balance: FAO-56 Penman-Monteith daily soil water balance; rice AWD (irrigate at 15 cm water table depth, puddling 150 mm Boro / 50 mm Aman). Soil texture: ISRIC SoilGrids 250m.'}
+      </p>
 
       {/* EXPERT DRAWER: Engineering Diagnostics */}
       <details className="wp-expert-details">
