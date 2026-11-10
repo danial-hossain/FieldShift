@@ -810,7 +810,7 @@ export function YourFarmingVsPlanView({
           fieldName={activeField?.name || 'খামার প্লট'}
           theme={theme}
           lang={lang}
-          height={460}
+          height={560}
         />
 
         {/* Legend */}

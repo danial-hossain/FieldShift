@@ -1636,7 +1636,7 @@ export function SixSeasonRecommendationView({
       {/* 6. HERO: 3D Farm (65%) + Rich Bed Card (35%) */}
       <div className="main" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 12 }}>
         {/* 3D Farm Diorama */}
-        <div className="stagebox" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 460 }}>
+        <div className="stagebox three-canvas-container" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 560, height: 560 }}>
           <FarmScene3D
             beds={farm3dBeds}
             selectedStrategy={selectedStrategy}
@@ -1648,7 +1648,7 @@ export function SixSeasonRecommendationView({
             fieldName={activeField?.name || (lang === 'bn' ? 'জমি বাছাই করুন' : 'Select a field')}
             theme={theme || 'dark'}
             lang={lang}
-            height={480}
+            height={560}
             annualIrrigationMm={selectedStrategy === 'baseline' ? (baseIrrigVal ?? avgIrrig) : avgIrrig}
           />
         </div>

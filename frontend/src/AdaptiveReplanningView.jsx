@@ -1021,7 +1021,7 @@ export function AdaptiveReplanningView({
           borderRadius: 16,
           overflow: 'hidden',
           border: '1px solid var(--line, #dfe6dc)',
-          height: 480,
+          height: 560,
           background: 'var(--surface-2, #cfdcc4)',
           marginBottom: 20,
         }}
@@ -1034,7 +1034,7 @@ export function AdaptiveReplanningView({
           fieldName={activeField?.name || (lang === 'bn' ? 'রহিম মিয়ার জমি' : 'Rahim Farm')}
           annualIrrigationMm={totals.annual_irrigation_new_mm}
           lang={lang}
-          height={480}
+          height={560}
         />
 
         {/* Legend */}

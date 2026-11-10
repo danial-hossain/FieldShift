@@ -1891,11 +1891,12 @@ export function FarmScene3D({
   if (!hasWebGL) {
     return (
       <div
+        className="farm-scene-container"
         style={{
           width: '100%',
-          height: height || 440,
+          height: height || 560,
           background: 'var(--surface-2, #18221b)',
-          borderRadius: 14,
+          borderRadius: 16,
           padding: 20,
           display: 'flex',
           flexDirection: 'column',
@@ -1951,11 +1952,12 @@ export function FarmScene3D({
 
   return (
     <div
+      className="farm-scene-container"
       style={{
         position: 'relative',
         width: '100%',
-        height: height || 440,
-        borderRadius: 14,
+        height: height || 560,
+        borderRadius: 16,
         overflow: 'hidden',
         background: '#0e1511',
       }}

@@ -567,7 +567,7 @@ export function ClimateStressTestView({
         </div>
 
         {/* 3D Scene Container */}
-        <div style={{ position: 'relative', width: '100%', height: 440 }}>
+        <div className="stress-test-3d-stage" style={{ position: 'relative', width: '100%', height: 560, borderRadius: 16, overflow: 'hidden' }}>
           <FarmScene3D
             beds={farm3dBeds}
             selectedBedIndex={selectedBedIndex}

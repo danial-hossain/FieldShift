@@ -1017,7 +1017,7 @@ export function ClayFarmScene({
   }, [viewMode, normalizedPlots, activeOverlay, cameraPreset, lang, onSelectPlot, webGLError]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 400, overflow: 'hidden' }}>
+    <div className="farm-scene-container" style={{ position: 'relative', width: '100%', height: 560, minHeight: 560, overflow: 'hidden', borderRadius: 16 }}>
       {/* Background Soft Accent Glow in DOM behind canvas (floating diorama look) */}
       <div
         style={{

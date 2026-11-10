@@ -16451,7 +16451,7 @@ span[style*="197, 232, 108"] {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--line-cv);
-  height: 460px;
+  height: 560px;
   background: #111a14;
 }
 .compare-view .vseg {
@@ -17217,5 +17217,273 @@ span[style*="197, 232, 108"] {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ============================================================
+   UP4: One Size System (Typography, Cards, Buttons, Tabs, 3D)
+   ============================================================ */
+
+/* 1. Font sizes: 5 sizes everywhere, nothing else */
+.font-page-title,
+.page-title,
+.page-header-title,
+h1.title-28 {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.font-section-title,
+.section-title,
+h2.title-18 {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+}
+
+.font-card-title,
+.card-title,
+.dash-card-title,
+h3.title-15 {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+
+.font-body,
+.text-body,
+p.body-14 {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  line-height: 1.5 !important;
+}
+
+.font-small,
+.font-caption,
+.text-small,
+.caption-12 {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+
+.kpi-num-28,
+.font-kpi-large {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+}
+
+.kpi-num-22,
+.font-kpi-medium {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+/* 2. Card padding: 20px everywhere (16px mobile), radius 16px */
+.card,
+.dash-card,
+.surface-card,
+.farmer-card,
+.wp-card,
+.stress-impact-card,
+.strategy-card {
+  padding: 20px !important;
+  border-radius: 16px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .card,
+  .dash-card,
+  .surface-card,
+  .farmer-card,
+  .wp-card,
+  .stress-impact-card,
+  .strategy-card {
+    padding: 16px !important;
+  }
+}
+
+/* 3. Grid gap: 16px everywhere */
+.card-grid,
+.dashboard-grid,
+.kpi-grid,
+.grid-gap-16,
+.wp-row,
+.stress-grid {
+  gap: 16px !important;
+}
+
+/* 4. Buttons: 40px tall everywhere (32px small), radius 10px, 14px semi font */
+button.btn,
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.ui-btn {
+  height: 40px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 0 16px !important;
+}
+
+button.btn-sm,
+.btn-small,
+.ui-btn-sm {
+  height: 32px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 12px !important;
+}
+
+/* 5. Chips / pills: 28px tall, radius 9999px, 12px font */
+.chip,
+.pill,
+.badge-pill,
+.filter-pill,
+.status-pill {
+  height: 28px !important;
+  border-radius: 9999px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+}
+
+/* 6. Tabs: 40px tall, radius 10px, 14px semi font */
+.nav-tab,
+.tab-button,
+[role="tab"] {
+  height: 40px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+/* 7. Icons: 18-20px inside buttons / chips, 24px for section headers */
+button svg,
+.btn svg,
+.chip svg,
+.pill svg {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+.section-header svg,
+.section-title svg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+/* 8. Number tiles (KPI cards):
+   Every 3-tile or 4-tile row must have the SAME height for all tiles.
+   The value must not wrap; if the label is long it wraps to 2 lines and all tiles in the row grow to match */
+.kpi-row,
+.kpi-cards-grid,
+.key-numbers-row,
+.metrics-row,
+.wp-scards {
+  display: grid !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+}
+
+.kpi-tile,
+.key-number-tile,
+.kpi-card,
+.stat-card {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+}
+
+.kpi-tile .kpi-value,
+.key-number-tile .value,
+.stat-value {
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+.kpi-tile .kpi-label,
+.key-number-tile .label,
+.stat-label {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  line-height: 1.3 !important;
+}
+
+/* 9. 3D panels:
+   All 3D panels (Overview, Rotation, Weather, Stress) use the SAME height:
+   560px on desktop (420px on laptop <= 1280px, 320px mobile <= 768px),
+   rounded corners, toolbar at the top-right, legend at the bottom-left. */
+.three-canvas-container,
+.scene-3d-container,
+.farm-scene-container,
+.digital-twin-container,
+.weather-station-3d-stage,
+.stress-test-3d-stage {
+  height: 560px !important;
+  min-height: 560px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+@media (max-width: 1280px) {
+  .three-canvas-container,
+  .scene-3d-container,
+  .farm-scene-container,
+  .digital-twin-container,
+  .weather-station-3d-stage,
+  .stress-test-3d-stage,
+  .compare-view .stagebox {
+    height: 420px !important;
+    min-height: 420px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .three-canvas-container,
+  .scene-3d-container,
+  .farm-scene-container,
+  .digital-twin-container,
+  .weather-station-3d-stage,
+  .stress-test-3d-stage,
+  .compare-view .stagebox {
+    height: 320px !important;
+    min-height: 320px !important;
+  }
+}
+
+.scene-toolbar,
+.farm-scene-toolbar {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  z-index: 10 !important;
+}
+
+.scene-legend,
+.farm-scene-legend {
+  position: absolute !important;
+  bottom: 14px !important;
+  left: 14px !important;
+  z-index: 10 !important;
+}
+
 
 
