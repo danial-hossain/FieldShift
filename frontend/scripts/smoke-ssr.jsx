@@ -73,7 +73,7 @@ import { ClimateStressTestView } from '../src/ClimateStressTestView.jsx';
 import { YourFarmingVsPlanView } from '../src/YourFarmingVsPlanView.jsx';
 import { WaterIrrigationView } from '../src/WaterIrrigationView.jsx';
 import { ResearchWorkspaceView } from '../src/ResearchWorkspaceView.jsx';
-import { MarketIntelligenceView } from '../src/MarketIntelligenceView.jsx';
+import { MarketProfitView } from '../src/MarketProfitView.jsx';
 import AiAssistantView from '../src/AiAssistantView.jsx';
 import { DataEvidenceView } from '../src/DataEvidenceView.jsx';
 
@@ -175,8 +175,8 @@ const destinations = [
     fixtureProps: { activeField: fixtureField, nasa: fixtureNasa, initialTab: 'six_seasons_milp', lang: 'bn' }
   },
   {
-    name: '08. MarketIntelligenceView (harvest_profit)',
-    component: MarketIntelligenceView,
+    name: '08. MarketProfitView (harvest_profit)',
+    component: MarketProfitView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, lang: 'bn' }
   },

@@ -58,41 +58,6 @@ def test_market_overview_api():
     assert "Lentil" in crops
     assert crops["Rice"]["farmgate_bdt_kg"] < crops["Rice"]["retail_bdt_kg"]
 
-def test_market_profitability_api():
-    payload = {
-        "crop": "Rice",
-        "area_ha": 2.0,
-        "expected_yield_t_ha": 4.0,
-        "farmgate_price_bdt_t": 26000.0,
-        "production_cost_bdt_ha": 80000.0,
-        "irrigation_cost_bdt_ha": 4000.0,
-        "marketing_cost_bdt_ha": 1000.0,
-    }
-    response = client.post("/api/market/profitability", json=payload)
-    assert response.status_code == 200
-    data = response.json()
-    assert data["crop"] == "Rice"
-    assert data["results"]["gross_revenue_bdt"] == 208000.0
-    assert data["results"]["cost_breakdown"]["total_cost_bdt"] == 170000.0
-    assert data["results"]["estimated_net_return_bdt"] == 38000.0
-    assert "scenarios" in data
-    assert "baseline" in data["scenarios"]
-    assert "optimistic" in data["scenarios"]
-    assert "downside" in data["scenarios"]
-
-
-def test_market_profitability_requires_field_area():
-    response = client.post(
-        "/api/market/profitability",
-        json={"crop": "Rice", "expected_yield_t_ha": 4.0},
-    )
-    assert response.status_code == 422
-
-def test_market_export_api():
-    response = client.get("/api/market/export")
-    assert response.status_code == 200
-    assert "text/csv" in response.headers["content-type"]
-    assert "Rice" in response.text
 
 def test_sensitivity_api():
     payload = {

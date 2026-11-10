@@ -327,7 +327,7 @@ async function runInventory() {
     { id: 'farm_planning', name: 'Rotation Planner (পরিকল্পনা)', file: 'frontend/src/FarmPlanningView.jsx' },
     { id: 'weather', name: 'Climate & Risk (আবহাওয়া)', file: 'frontend/src/WeatherUncertaintyView.jsx' },
     { id: 'water', name: 'Water & Irrigation (পানি ও সেচ)', file: 'frontend/src/WaterIrrigationView.jsx' },
-    { id: 'harvest_profit', name: 'Harvest & Market (ফসল ও বাজার)', file: 'frontend/src/FarmerHarvestProfitView.jsx' },
+    { id: 'harvest_profit', name: 'Market & Profit (বাজার ও লাভ)', file: 'frontend/src/MarketProfitView.jsx' },
     { id: 'digital_twin', name: '3D Farm (ডিজিটাল টুইন)', file: 'frontend/src/DigitalTwin3DView.jsx' },
     { id: 'data_evidence', name: 'Evidence & Method (প্রমাণ ও পদ্ধতি)', file: 'frontend/src/DataEvidenceView.jsx' },
     { id: 'account', name: 'Account Profile', file: 'frontend/src/main.jsx' }

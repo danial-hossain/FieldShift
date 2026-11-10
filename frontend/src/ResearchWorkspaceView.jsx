@@ -75,10 +75,8 @@ import { ComparisonLabView } from './ComparisonLabView.jsx';
 import { CropFailureRecoveryView } from './CropFailureRecoveryView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { WeatherUncertaintyView } from './WeatherUncertaintyView.jsx';
-import { SustainabilityTrackerView } from './SustainabilityTrackerView.jsx';
 import { CropCatalogView } from './CropCatalogView.jsx';
 import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
-import { ActualOutcomesView } from './ActualOutcomesView.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { SensitivityAnalysisView } from './SensitivityAnalysisView.jsx';
 import { MultiFieldExperimentView } from './MultiFieldExperimentView.jsx';
@@ -166,10 +164,8 @@ export function ResearchWorkspaceView({
         { id: 'recovery', label: lang === 'bn' ? 'ফসল বিপর্যয় ও পুনরুদ্ধার পরিকল্পনা' : 'Crop Failure & Recovery', icon: '🛡️', badge: 'MILP' },
         { id: 'rl_policy', label: lang === 'bn' ? 'রিইনফোর্সমেন্ট লার্নিং স্যান্ডবক্স' : 'RL Simulation Sandbox', icon: '🎮', badge: 'Q-LEARN' },
         { id: 'synthetic_lab', label: lang === 'bn' ? 'কৃত্রিম ডেটা জেনারেটর ল্যাব' : 'Synthetic Data Lab', icon: '🧬', badge: 'SEED 42' },
-        { id: 'outcomes', label: lang === 'bn' ? 'বাস্তব বনাম আনুমানিক ফলাফল' : 'Actual vs Estimated Outcomes', icon: '📋', badge: 'VALIDATION' },
         { id: 'crop_catalog', label: lang === 'bn' ? 'বাংলাদেশ শস্য তথ্যকোষ' : 'Bangladesh Crop Database', icon: '📚', badge: 'BARI' },
-        { id: 'satellite', label: lang === 'bn' ? 'স্যাটেলাইট সেন্সর প্রস্তুতি' : 'Satellite Sensor Readiness', icon: '📡', badge: 'NASA/ESA' },
-        { id: 'sustainability', label: lang === 'bn' ? 'মাটি স্বাস্থ্য ও নাইট্রোজেন স্থায়িত্ব' : 'Soil Health & Nitrogen', icon: '🌿', badge: 'MULTI-YR' }
+        { id: 'satellite', label: lang === 'bn' ? 'স্যাটেলাইট সেন্সর প্রস্তুতি' : 'Satellite Sensor Readiness', icon: '📡', badge: 'NASA/ESA' }
       ]
     }
   ], [lang]);
@@ -674,18 +670,7 @@ export function ResearchWorkspaceView({
             />
           )}
 
-          {subTab === 'outcomes' && (
-            <ActualOutcomesView
-              activeField={activeField}
-              user={user}
-              analysisResult={plan}
-              request={request}
-              formatNumber={formatNumber}
-              onBack={() => setSubTab('overview')}
-              onNavigateTab={(tab) => setSubTab(tab)}
-              lang={lang}
-            />
-          )}
+
 
           {subTab === 'crop_catalog' && (
             <CropCatalogView
@@ -709,19 +694,7 @@ export function ResearchWorkspaceView({
             />
           )}
 
-          {subTab === 'sustainability' && (
-            <SustainabilityTrackerView
-              activeField={activeField}
-              plan={plan}
-              analysisResult={plan}
-              summary={summary}
-              request={request}
-              formatNumber={formatNumber}
-              onBack={() => setSubTab('overview')}
-              onNavigateTab={(tab) => setSubTab(tab)}
-              lang={lang}
-            />
-          )}
+
         </main>
       </div>
     </div>

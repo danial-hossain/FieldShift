@@ -3853,60 +3853,6 @@ def market_overview(
         area_ha=area_ha,
     )
 
-@app.post("/api/market/profitability")
-def market_profitability(payload: Payload):
-    """Calculates crop profitability, cost breakdown, net returns, break-even price, and 3-point scenarios."""
-    from src.data.market_intelligence import calculate_crop_profitability
-    data = payload.model_dump()
-    crop_name = data.get("crop") or data.get("crop_name")
-    area_value = data.get("area_ha") if data.get("area_ha") is not None else data.get("field_size_ha")
-    if not isinstance(crop_name, str) or not crop_name.strip():
-        raise HTTPException(422, "A crop is required for profitability analysis.")
-    if area_value is None:
-        raise HTTPException(422, "Field area is required for profitability analysis.")
-    try:
-        area_ha = float(area_value)
-    except (TypeError, ValueError) as error:
-        raise HTTPException(422, "Field area must be a positive number.") from error
-    if not math.isfinite(area_ha) or area_ha <= 0:
-        raise HTTPException(422, "Field area must be a positive number.")
-    expected_yield = data.get("expected_yield_t_ha")
-    if expected_yield is not None:
-        expected_yield = float(expected_yield)
-    farmgate_price = data.get("farmgate_price_bdt_t")
-    if farmgate_price is not None:
-        farmgate_price = float(farmgate_price)
-    prod_cost = data.get("production_cost_bdt_ha")
-    if prod_cost is not None:
-        prod_cost = float(prod_cost)
-    irrig_cost = float(data.get("irrigation_cost_bdt_ha", 0.0) or 0.0)
-    mktg_cost = float(data.get("marketing_cost_bdt_ha", 0.0) or 0.0)
-    price_type = str(data.get("price_type", "farmgate"))
-
-    try:
-        return calculate_crop_profitability(
-            crop_name=crop_name.strip(),
-            area_ha=area_ha,
-            expected_yield_t_ha=expected_yield,
-            farmgate_price_bdt_t=farmgate_price,
-            production_cost_bdt_ha=prod_cost,
-            irrigation_cost_bdt_ha=irrig_cost,
-            marketing_cost_bdt_ha=mktg_cost,
-            price_type=price_type,
-        )
-    except ValueError as e:
-        raise HTTPException(400, str(e)) from e
-
-@app.get("/api/market/export")
-def market_export():
-    """Export Bangladesh benchmark prices to CSV with citations and disclaimers."""
-    from src.data.market_intelligence import export_market_catalog_csv
-    csv_content = export_market_catalog_csv()
-    return Response(
-        content=csv_content,
-        media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=fieldshift_market_benchmarks.csv"}
-    )
 
 # -----------------------------------------------------------------------------
 # PHASE 5: REPEATABLE SENSITIVITY ANALYSIS ENDPOINT

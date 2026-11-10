@@ -8,15 +8,12 @@ import { FieldParcelManagerView } from './FieldParcelManagerView.jsx';
 import AiAssistantView from './AiAssistantView.jsx';
 import { CropFailureRecoveryView } from './CropFailureRecoveryView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
-import { SustainabilityTrackerView } from './SustainabilityTrackerView.jsx';
 import { CropCatalogView } from './CropCatalogView.jsx';
-import { ActualOutcomesView } from './ActualOutcomesView.jsx';
-import { MarketIntelligenceView } from './MarketIntelligenceView.jsx';
+import { MarketProfitView } from './MarketProfitView.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { SensitivityAnalysisView } from './SensitivityAnalysisView.jsx';
 import { FarmerHomeView } from './FarmerHomeView.jsx';
 import { FarmerCropAdviceView } from './FarmerCropAdviceView.jsx';
-import { FarmerHarvestProfitView } from './FarmerHarvestProfitView.jsx';
 import { ResearchWorkspaceView } from './ResearchWorkspaceView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';
@@ -615,19 +612,8 @@ export function App() {
         setDataEvidenceSubTab('provenance');
         return;
       }
-      if (tab === 'market') {
+      if (tab === 'market' || tab === 'outcomes' || tab === 'sustainability') {
         setActiveNav('harvest_profit');
-        setHarvestSubTab('market');
-        return;
-      }
-      if (tab === 'outcomes') {
-        setActiveNav('harvest_profit');
-        setHarvestSubTab('outcomes');
-        return;
-      }
-      if (tab === 'sustainability') {
-        setActiveNav('harvest_profit');
-        setHarvestSubTab('sustainability');
         return;
       }
       if (tab === 'crops' || tab === 'crop_catalog') {
@@ -667,9 +653,8 @@ export function App() {
       return;
     }
 
-    if (nav === 'market') {
+    if (nav === 'market' || nav === 'harvest_profit') {
       setActiveNav('harvest_profit');
-      setHarvestSubTab('market');
       return;
     }
     if (nav === 'synthetic_lab') {
@@ -2101,15 +2086,15 @@ export function App() {
             <span className="nav-item-label">{lang === 'bn' ? 'পানি ও সেচ' : 'Water'}</span>
           </button>
 
-          {/* 6. Market */}
+          {/* 6. Market & Profit */}
           <button
             type="button"
             className={`nav-item ${activeNav === 'harvest_profit' || activeNav === 'market' ? 'active' : ''}`}
             data-nav="harvest_profit" onClick={() => handleNavigate('harvest_profit')}
-            title={lang === 'bn' ? '৬. বাজার - বাজারদর, আয় ও জাতীয় চাহিদা' : '6. Market - Prices, Revenue & National Need'}
+            title={lang === 'bn' ? '৬. বাজার ও লাভ - বাজারদর, আয় ও জাতীয় চাহিদা' : '6. Market & Profit - Prices, Revenue & National Need'}
           >
             <span className="nav-item-icon"><MarketIcon size={20} /></span>
-            <span className="nav-item-label">{lang === 'bn' ? 'বাজার' : 'Market'}</span>
+            <span className="nav-item-label">{lang === 'bn' ? 'বাজার ও লাভ' : 'Market & Profit'}</span>
           </button>
 
           {/* 7. Evidence & Method */}
@@ -2594,74 +2579,13 @@ export function App() {
           </div>
         )}
 
-        {/* -------------------- VIEW: HARVEST & PROFIT CALCULATOR -------------------- */}
-        {activeNav === 'harvest_profit' && (
-          <div>
-            <div className="subnav-pills-bar" style={{ display: 'flex', gap: 8, padding: '10px 24px', background: 'var(--bg-card)', borderBottom: '1px solid var(--border-medium)', marginBottom: 16, overflowX: 'auto' }}>
-              <button
-                type="button"
-                className={`btn ${harvestSubTab === 'calculator' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setHarvestSubTab('calculator')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                📋 {lang === 'bn' ? 'লাভ-ক্ষতি হিসাব' : 'Profit Calculator'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${harvestSubTab === 'market' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setHarvestSubTab('market')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                💰 {lang === 'bn' ? 'বাজারদর ও পূর্বাভাস' : 'Market Intelligence'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${harvestSubTab === 'outcomes' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setHarvestSubTab('outcomes')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                📈 {lang === 'bn' ? 'বাস্তব খামার ফলাফল' : 'Actual Outcomes'}
-              </button>
-              <button
-                type="button"
-                className={`btn ${harvestSubTab === 'sustainability' ? 'btn-primary' : 'btn-outline'}`}
-                onClick={() => setHarvestSubTab('sustainability')}
-                style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
-              >
-                🌱 {lang === 'bn' ? 'স্থায়িত্ব সূচক' : 'Sustainability Tracker'}
-              </button>
-            </div>
-            {harvestSubTab === 'calculator' && (
-              <FarmerHarvestProfitView
-                activeField={activeField}
-                user={user}
-                lang={lang}
-                onNavigate={handleNavigate}
-              />
-            )}
-            {harvestSubTab === 'market' && (
-              <MarketIntelligenceView
-                activeField={activeField}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-              />
-            )}
-            {harvestSubTab === 'outcomes' && (
-              <ActualOutcomesView
-                activeField={activeField}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-              />
-            )}
-            {harvestSubTab === 'sustainability' && (
-              <SustainabilityTrackerView
-                activeField={activeField}
-                plan={plan}
-                summary={summary}
-                analysisResult={plan}
-                lang={lang}
-                onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-              />
-            )}
-          </div>
+        {/* -------------------- VIEW: MARKET & PROFIT -------------------- */}
+        {(activeNav === 'harvest_profit' || activeNav === 'market') && (
+          <MarketProfitView
+            activeField={activeField}
+            lang={lang}
+            onNavigateTab={handleNavigate}
+          />
         )}
 
         {/* -------------------- VIEW: ADVANCED RESEARCH WORKSPACE -------------------- */}
@@ -3820,13 +3744,6 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 8: MARKET INTELLIGENCE & PROFITABILITY -------------------- */}
-        {activeNav === 'market' && (
-          <MarketIntelligenceView
-            activeField={activeField}
-            onNavigateTab={(tab) => handleNavigate('analytics', tab)}
-          />
-        )}
 
         {/* -------------------- VIEW 9: SYNTHETIC DATA LAB & PROVENANCE -------------------- */}
         {activeNav === 'synthetic_lab' && (
@@ -5050,10 +4967,10 @@ export function App() {
             type="button"
             className={`mobile-bottom-nav-item ${activeNav === 'harvest_profit' || activeNav === 'market' ? 'active' : ''}`}
             onClick={() => handleNavigate('harvest_profit')}
-            title="Market"
+            title="Market & Profit"
           >
             <span className="mobile-nav-icon"><MarketIcon size={20} /></span>
-            <span className="mobile-nav-text">{lang === 'bn' ? 'বাজার' : 'Market'}</span>
+            <span className="mobile-nav-text">{lang === 'bn' ? 'বাজার ও লাভ' : 'Market & Profit'}</span>
           </button>
           <button
             type="button"
