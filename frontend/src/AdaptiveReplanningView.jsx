@@ -6,7 +6,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
 import { formatCurrency, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel, formatNumber } from './i18n.js';
-import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
+import { useRotationPlans, extractPlanCrops, setAppliedReplan } from './store/rotationPlansStore.js';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 export function toBnDigits(val) {
@@ -1278,6 +1278,19 @@ export function AdaptiveReplanningView({
                         ? 'পরিকল্পনা প্রয়োগ করা হবে। জমির সেচ সুবিধাও আপডেট করবেন?'
                         : 'Plan will be updated. Update field irrigation capacity as well?'
                     );
+                    setAppliedReplan(activeField?.id, strategy, {
+                      fieldId: activeField?.id || 'demo',
+                      strategy,
+                      appliedAt: new Date().toISOString(),
+                      finishedCount,
+                      seasonRows: seasonRows.slice(0, finishedCount),
+                      seasonal_comparison: replanData?.seasonal_comparison,
+                      new_plan: replanData?.new_plan,
+                      original_plan: replanData?.original_plan,
+                      totals: replanData?.totals,
+                      why_changed: replanData?.why_changed,
+                      why_changed_en: replanData?.why_changed_en,
+                    });
                     setAppliedNotice(
                       lang === 'bn'
                         ? `✅ আবর্তন পরিকল্পনা পাতায় এই নতুন পরিকল্পনা সফলভাবে প্রয়োগ করা হয়েছে! (সেচ আপডেট: ${confirmIrrig ? 'হ্যাঁ' : 'না'})`

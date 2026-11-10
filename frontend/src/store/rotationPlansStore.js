@@ -31,6 +31,7 @@ export const PRIORITY_TO_STRATEGY = {
 const _plansCache = new Map();
 const _selectedStrategyByField = new Map();
 const _optionsByField = new Map();
+const _appliedReplans = new Map();
 const _listeners = new Set();
 
 function notifyListeners() {
@@ -41,6 +42,52 @@ function notifyListeners() {
       // ignore
     }
   });
+}
+
+export function getAppliedReplan(fieldId, strategy) {
+  const fId = fieldId != null ? String(fieldId) : 'demo';
+  const strat = strategy || 'balanced';
+  const key = `${fId}::${strat}`;
+  if (_appliedReplans.has(key)) {
+    return _appliedReplans.get(key);
+  }
+  try {
+    const raw = localStorage.getItem(`fs_applied_replan_${fId}_${strat}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      _appliedReplans.set(key, parsed);
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+export function setAppliedReplan(fieldId, strategy, replanRecord) {
+  const fId = fieldId != null ? String(fieldId) : 'demo';
+  const strat = strategy || 'balanced';
+  const key = `${fId}::${strat}`;
+  if (replanRecord) {
+    _appliedReplans.set(key, replanRecord);
+    try {
+      localStorage.setItem(`fs_applied_replan_${fId}_${strat}`, JSON.stringify(replanRecord));
+    } catch {
+      // ignore
+    }
+  } else {
+    _appliedReplans.delete(key);
+    try {
+      localStorage.removeItem(`fs_applied_replan_${fId}_${strat}`);
+    } catch {
+      // ignore
+    }
+  }
+  notifyListeners();
+}
+
+export function clearAppliedReplan(fieldId, strategy) {
+  setAppliedReplan(fieldId, strategy, null);
 }
 
 export function buildPlansCacheKey(field, options = {}) {
@@ -306,5 +353,127 @@ export function useRotationPlans({ field, options = {}, lang = 'bn', request = d
     setSelectedStrategy,
     refetch,
     cacheKey,
+  };
+}
+
+/**
+ * Extract annualized strategy metrics: crops (6), irrigation (mm/yr), profit (BDT/yr for parcel),
+ * bare days (days/yr), nitrogen (kg/ha/yr), and per-season irrigation (mm).
+ */
+export function extractStrategyMetrics(plan) {
+  if (!plan) return null;
+  const pData = plan?.summary?.planning || plan;
+  const milp = pData?.selected_strategy_result || pData?.milp_status || plan?.milp_status;
+  const bc = pData?.baseline_comparison || milp?.baseline_comparison || {};
+  const crops = extractPlanCrops(plan);
+  if (!crops || crops.length < 6) return null;
+
+  const csm = milp?.dynamic_agronomic_matrix?.crop_season_matrix || {};
+  const seasonIrrigs = CANONICAL_PERIOD_KEYS.map((pk, idx) => {
+    const crop = crops[idx];
+    const entry = csm[pk]?.[crop];
+    const val = entry?.water_balance?.irrigation_required_mm;
+    return val != null ? Number(val) : 0;
+  });
+
+  const irrigationMm = bc.plan_irrigation_mm != null
+    ? Number(bc.plan_irrigation_mm)
+    : (seasonIrrigs.reduce((a, b) => a + b, 0) / 2.0);
+
+  const profitBdt = bc.plan_profit_bdt != null
+    ? Number(bc.plan_profit_bdt)
+    : (milp?.total_profit_bdt != null ? Number(milp.total_profit_bdt) / 2.0 : 0);
+
+  const bareDays = bc.plan_bare_days != null
+    ? Number(bc.plan_bare_days)
+    : (milp?.bare_soil_days != null ? Number(milp.bare_soil_days) : 60);
+
+  const nitrogenKg = bc.plan_nitrogen_kg != null
+    ? Number(bc.plan_nitrogen_kg)
+    : (milp?.nitrogen_balance_kg_ha != null ? Number(milp.nitrogen_balance_kg_ha) : 35);
+
+  return {
+    crops,
+    irrigationMm: Math.round(irrigationMm * 10) / 10,
+    profitBdt: Math.round(profitBdt),
+    bareDays: Math.round(bareDays),
+    nitrogenKg: Math.round(nitrogenKg * 10) / 10,
+    seasonIrrigs,
+  };
+}
+
+/**
+ * Extract annualized baseline/current farming metrics:
+ * checks if activeField has an authentic saved rotation.
+ */
+export function extractBaselineMetrics(plan, activeField) {
+  const pData = plan?.summary?.planning || plan;
+  const milp = pData?.selected_strategy_result || pData?.milp_status || plan?.milp_status;
+  const bc = pData?.baseline_comparison || milp?.baseline_comparison || {};
+
+  const hasSavedInField = Boolean(
+    activeField?.existing_rotation &&
+    (
+      (typeof activeField.existing_rotation === 'object' && Object.values(activeField.existing_rotation).some(Boolean)) ||
+      (Array.isArray(activeField.existing_rotation) && activeField.existing_rotation.some(Boolean))
+    )
+  );
+  const isAssumed = bc.is_assumed_baseline ?? (!hasSavedInField);
+  const hasSavedRotation = hasSavedInField || (bc.baseline_source === 'saved_field_rotation' && !isAssumed);
+
+  if (!hasSavedRotation) {
+    return {
+      hasSavedRotation: false,
+      crops: null,
+      irrigationMm: null,
+      profitBdt: null,
+      bareDays: null,
+      nitrogenKg: null,
+      seasonIrrigs: null,
+    };
+  }
+
+  // Extract 3 crops (Rabi, Kharif-1, Kharif-2)
+  let rawCrops = bc.baseline_rotation;
+  if (!rawCrops && activeField?.existing_rotation) {
+    const er = activeField.existing_rotation;
+    if (typeof er === 'object' && !Array.isArray(er)) {
+      rawCrops = [er.rabi || 'Boro Rice', er.kharif1 || 'Fallow', er.kharif2 || 'Rice'];
+    } else if (Array.isArray(er)) {
+      rawCrops = er.slice(0, 3);
+    }
+  }
+
+  const baselineSeasons = bc.baseline_seasons || [];
+  const seasonIrrigs = [0, 1, 2].map((idx) => {
+    const bs = baselineSeasons[idx];
+    return bs?.irrigation_mm != null ? Number(bs.irrigation_mm) : 0;
+  });
+
+  const irrigationMm = bc.baseline_irrigation_mm != null
+    ? Number(bc.baseline_irrigation_mm)
+    : (seasonIrrigs.reduce((a, b) => a + b, 0));
+
+  const profitBdt = bc.baseline_profit_bdt != null
+    ? Number(bc.baseline_profit_bdt)
+    : 0;
+
+  const bareDays = bc.baseline_bare_days != null
+    ? Number(bc.baseline_bare_days)
+    : 115;
+
+  const nitrogenKg = bc.baseline_nitrogen_kg != null
+    ? Number(bc.baseline_nitrogen_kg)
+    : 0;
+
+  return {
+    hasSavedRotation: true,
+    isAssumed,
+    crops: rawCrops && rawCrops.length >= 3 ? rawCrops.slice(0, 3) : ['Boro Rice', 'Fallow', 'Rice'],
+    irrigationMm: Math.round(irrigationMm * 10) / 10,
+    profitBdt: Math.round(profitBdt),
+    bareDays: Math.round(bareDays),
+    nitrogenKg: Math.round(nitrogenKg * 10) / 10,
+    seasonIrrigs,
   };
 }

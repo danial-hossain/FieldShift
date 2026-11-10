@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<title>Your Farming vs Plan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
+<style>
+/* Layout: header → strategy → 3 columns (your farming | plan | after learning) → 3D (view toggle) → season table + bars → summary */
+:root{
+  --bg:#f1f4ee; --surface:#ffffff; --surface-2:#f5f8f2; --fg:#1b261d; --muted:#5e6b60; --line:#dfe6dc;
+  --accent:#2c8a4b; --accent-ink:#ffffff; --good:#2c8a4b; --bad:#b4532a; --warn:#b7791f; --water:#2f7fb8; --chg:#d9822b; --cur:#7a837b;
+  --display:"Outfit","Hind Siliguri",system-ui,sans-serif; --body:"Hind Siliguri","Outfit",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1410; --surface:#151d17; --surface-2:#1b251d; --fg:#e8efe7; --muted:#9fb1a2; --line:#273229;
+  --accent:#5cc27e; --accent-ink:#0b130d; --good:#6fd28f; --bad:#ec8a5f; --warn:#e3b05a; --water:#6cb6ea; --chg:#f0a14a; --cur:#a3ada4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1410; --surface:#151d17; --surface-2:#1b251d; --fg:#e8efe7; --muted:#9fb1a2; --line:#273229;
+  --accent:#5cc27e; --accent-ink:#0b130d; --good:#6fd28f; --bad:#ec8a5f; --warn:#e3b05a; --water:#6cb6ea; --chg:#f0a14a; --cur:#a3ada4; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:12px;
+  padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-family:var(--display);font-size:22px;margin:0;text-wrap:balance}
+h3{font-size:15px;margin:0 0 8px}
+.sub,.ex{color:var(--muted);font-size:13px}
+.ex{font-size:12.5px;margin:6px 0 0}
+.head{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between}
+.tag{font-size:11.5px;color:var(--warn);border:1px solid var(--line);background:var(--surface);padding:3px 9px;border-radius:99px}
+.row{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg button{font:600 13px var(--body);border:0;background:transparent;color:var(--fg);padding:7px 12px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.col{font:inherit;color:inherit;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;cursor:pointer;min-width:0;display:flex;flex-direction:column;gap:8px}
+.col.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 25%,transparent)}
+.col:first-child{background:color-mix(in srgb,var(--cur) 8%,var(--surface))}
+.col.upd{background:color-mix(in srgb,var(--chg) 6%,var(--surface))}
+.col.empty{cursor:default;border-style:dashed}
+.ch{font-weight:700;font-size:14.5px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
+.ch b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:12px}
+.ch small{font-weight:500;color:var(--muted);font-size:11.5px}
+.strip{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12.5px}
+.strip em{color:var(--muted);font-style:normal;font-size:11px}
+.cc{display:inline-flex;align-items:center;gap:4px;background:var(--surface-2);border-radius:99px;padding:2px 8px;white-space:nowrap}
+.cc.done{outline:1.5px solid var(--good)} .cc.chg{outline:1.5px solid var(--chg)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.n4{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.n4 div{background:var(--surface-2);border-radius:9px;padding:6px 8px;min-width:0}
+.n4 span{display:block;font-size:11.5px;color:var(--muted)}
+.n4 strong{font-size:15px;font-variant-numeric:tabular-nums}
+.n4 small{color:var(--muted);font-size:11px}
+.n4 em{display:block;font-style:normal;font-size:11.5px;font-weight:600}
+.pos{color:var(--good)} .neg{color:var(--bad)}
+.btn{font:600 13.5px var(--body);border:0;border-radius:10px;padding:8px 12px;cursor:pointer;background:var(--accent);color:var(--accent-ink);align-self:flex-start}
+.stagebox{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);height:460px;background:#cfdcc4}
+#stage{position:absolute;inset:0}
+.labels{position:absolute;inset:0;pointer-events:none}
+.lbl{position:absolute;transform:translate(-50%,-100%);font:600 12px var(--body);color:#fff;background:rgba(18,28,20,.72);padding:3px 8px;border-radius:8px;white-space:nowrap;display:flex;gap:5px;align-items:center}
+.lbl.done{background:rgba(31,110,60,.9)} .lbl.chg{background:rgba(196,104,24,.92)} .lbl.grey{background:rgba(90,96,92,.85)}
+.vseg{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);border:0}
+.vseg button{color:#1b261d}
+.vseg button[aria-pressed="true"]{background:#2c8a4b;color:#fff}
+.tankcap{position:absolute;right:10px;bottom:10px;font-size:12px;background:rgba(255,255,255,.9);color:#1b261d;border-radius:10px;padding:5px 9px}
+.legend{position:absolute;left:10px;bottom:10px;font-size:12px;background:rgba(255,255,255,.9);color:#1b261d;border-radius:10px;padding:5px 9px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;min-width:0}
+.two{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:12px;color:var(--muted);font-weight:600;text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+td small{display:block;color:var(--muted);font-size:11px;margin-top:2px;font-variant-numeric:tabular-nums}
+td s{color:var(--muted);font-size:12px}
+.bh,.br{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;font-size:12.5px;padding:4px 0}
+.bh{color:var(--muted);font-size:11.5px}
+.br.cur{border-bottom:1px dashed var(--line);padding-bottom:8px;margin-bottom:4px}
+.bar{position:relative;height:22px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:6px}
+.bar i.p{background:color-mix(in srgb,var(--good) 55%,transparent)} .bar i.w{background:color-mix(in srgb,var(--water) 55%,transparent)}
+.bar span{position:relative;padding-left:6px;line-height:22px;font-variant-numeric:tabular-nums;font-size:12px}
+.bar.na{font-size:11.5px;color:var(--muted);line-height:22px;padding-left:6px}
+.sum{background:color-mix(in srgb,var(--accent) 10%,var(--surface));border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14.5px;line-height:1.5}
+.note{font-size:12px;color:var(--muted)}
+.demo{font-size:12.5px;display:flex;gap:6px;align-items:center;color:var(--muted)}
+@media (max-width:900px){.cols,.two{grid-template-columns:minmax(0,1fr)}.stagebox{height:380px}.vseg{left:10px;right:10px;transform:none;justify-content:center}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>আপনার চাষ বনাম পরামর্শ · রহিম মিয়ার জমি</h1>
+      <div class="sub">চাঁপাইনবাবগঞ্জ · ৫ বিঘা · এঁটেল দোআঁশ · NASA POWER + GPM IMERG</div>
+    </div>
+    <span class="tag">ডিজাইন নমুনা · সংখ্যা অ্যাপের screenshot থেকে</span>
+  </div>
+</div>
+</body>
+</html>
