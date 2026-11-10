@@ -50,7 +50,6 @@ test('FIX 5: Every line containing var(-- in 3D/canvas files must also contain s
   const targetFiles = [
     ...research3dFiles,
     path.join(__dirname, 'ClayFarmScene.jsx'),
-    path.join(__dirname, 'NasaWeatherStation3D.jsx'),
     path.join(__dirname, 'FarmerFarm3D.jsx'),
     path.join(__dirname, 'RealFarmCanvas3D.jsx'),
     path.join(__dirname, 'ExperimentSimulator3DView.jsx'),

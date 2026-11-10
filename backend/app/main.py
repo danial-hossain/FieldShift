@@ -1431,9 +1431,9 @@ def api_water_plan(
     if not district and (actual_lat is None or actual_lon is None):
         raise HTTPException(422, "A district or field coordinates are required for a water plan.")
     if not crop or not crop.strip():
-        crop = "Rice"
+        raise HTTPException(422, "Crop name is required for a water plan.")
     if area_ha is None or not math.isfinite(area_ha) or area_ha <= 0:
-        area_ha = 1.0
+        raise HTTPException(422, "Field area in hectares (area_ha) is required and must be positive.")
     if actual_lat is not None and (
         not math.isfinite(actual_lat) or not -90 <= actual_lat <= 90
         or not math.isfinite(actual_lon) or not -180 <= actual_lon <= 180
@@ -1455,8 +1455,40 @@ def api_water_plan(
             longitude=actual_lon,
         )
         return finite_json_value(jsonable_encoder(result))
+    except ValueError as val_err:
+        raise HTTPException(422, str(val_err)) from val_err
     except Exception as exc:
         raise HTTPException(500, f"Water plan computation failed: {str(exc)}") from exc
+
+@app.get("/api/water/season-plan")
+def api_water_season_plan(
+    field_id: str | None = None,
+    strategy: str | None = None,
+    district: str | None = None,
+    area_ha: float | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+):
+    from src.compute.water_service import compute_season_water_plan
+
+    actual_lat = lat if lat is not None else latitude
+    actual_lon = lon if lon is not None else longitude
+    try:
+        res = compute_season_water_plan(
+            field_id=field_id,
+            strategy=strategy or "balanced",
+            district=district,
+            latitude=actual_lat,
+            longitude=actual_lon,
+            area_ha=area_ha,
+        )
+        return finite_json_value(jsonable_encoder(res))
+    except ValueError as val_err:
+        raise HTTPException(422, str(val_err)) from val_err
+    except Exception as exc:
+        raise HTTPException(500, f"Seasonal water plan computation failed: {str(exc)}") from exc
 
 @app.post("/api/counterfactual/reoptimize")
 def counterfactual_reoptimize(

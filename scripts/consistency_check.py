@@ -127,6 +127,20 @@ def run_consistency_audit():
         w_soil = w_body.get("soil_properties", {})
         w_texture = w_soil.get("texture_class", "").lower()
 
+        # 2b. Multi-Season Water Plan Endpoint (W1)
+        w_season_res = client.get(f"/api/water/season-plan?field_id={f['id']}&strategy=balanced&district={dist}&lat={lat}&lon={lon}&area_ha={area}")
+        if w_season_res.status_code != 200:
+            discrepancies.append(f"[{f['name']}] /api/water/season-plan returned HTTP {w_season_res.status_code}")
+        else:
+            w_season_body = w_season_res.json()
+            w_yearly = w_season_body.get("yearly_totals", {})
+            w_plan_yr_irrig = float(w_yearly.get("plan_yearly_mm") or 0.0)
+            w_base_yr_irrig = float(w_yearly.get("current_yearly_mm") or 0.0)
+            if p_plan_irrig is not None and abs(round(w_plan_yr_irrig, 1) - round(float(p_plan_irrig), 1)) > 0.5:
+                discrepancies.append(f"[{f['name']}] W1 Season plan plan_yearly_mm ({w_plan_yr_irrig}) != planner ({p_plan_irrig})")
+            if p_base_irrig is not None and abs(round(w_base_yr_irrig, 1) - round(float(p_base_irrig), 1)) > 0.5:
+                discrepancies.append(f"[{f['name']}] W1 Season plan current_yearly_mm ({w_base_yr_irrig}) != planner ({p_base_irrig})")
+
         # 3. Weather & Location Telemetry Endpoint
         loc_res = client.post("/api/location/weather", json={
             "district": dist,
