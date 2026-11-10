@@ -1145,21 +1145,26 @@ export function FarmScene3D({
 
     function plantBed(bedIdx, cropName, forceRebuild = false) {
       const b = bedObjects[bedIdx];
-      const seasonKind = seasonKinds[bedIdx];
-      const isBaselineGreyed = (selectedStrategyRef.current === 'baseline') && bedIdx >= 3;
-
-      if (isBaselineGreyed) {
+      if (!b) return;
+      const currentBeds = bedsRef.current || [];
+      const numBeds = currentBeds.length === 3 ? 3 : 6;
+      if (bedIdx >= numBeds) {
+        b.group.visible = false;
+        b.soil.visible = false;
+        b.pick.visible = false;
         b.inst.forEach((m) => {
           b.group.remove(m);
           m.geometry.dispose();
         });
         b.inst = [];
-        b.cropKey = 'greyedOut';
         b.water.visible = false;
-        b.soil.material = greySoilMat;
         return;
       }
+      b.group.visible = true;
+      b.soil.visible = true;
+      b.pick.visible = true;
 
+      const seasonKind = seasonKinds[bedIdx];
       const geoKey = mapCropToGeoKey(cropName, seasonKind);
 
       if (!forceRebuild && b.cropKey === geoKey && b.inst.length > 0) return;
@@ -1250,17 +1255,28 @@ export function FarmScene3D({
 
     // 9. Camera Presets Application
     const applyCameraPreset = (preset, targetBedIdx = activeIndex) => {
+      const is3Bed = (bedsRef.current && bedsRef.current.length === 3);
       if (preset === 'top') {
-        camera.position.set(0, 95, 6.01);
-        controls.target.set(0, 0, 6);
+        if (is3Bed) {
+          camera.position.set(0, 80, -3.99);
+          controls.target.set(0, 0, -4);
+        } else {
+          camera.position.set(0, 95, 6.01);
+          controls.target.set(0, 0, 6);
+        }
       } else if (preset === 'close') {
         const targetBed = bedCenters[targetBedIdx] || bedCenters[0];
         camera.position.set(targetBed.x + 18, 14, targetBed.z + 18);
         controls.target.set(targetBed.x, 0, targetBed.z);
       } else {
         // default 'iso'
-        camera.position.set(62, 48, 72);
-        controls.target.set(0, 0, 6);
+        if (is3Bed) {
+          camera.position.set(50, 38, 50);
+          controls.target.set(0, 0, -4);
+        } else {
+          camera.position.set(62, 48, 72);
+          controls.target.set(0, 0, 6);
+        }
       }
       controls.update();
     };
@@ -1311,12 +1327,9 @@ export function FarmScene3D({
           el.style.top = `${((1 - labelPos.y) / 2) * h}px`;
 
           const bedData = currentBeds[i] || {};
-          const isBaselineGreyed = (selectedStrategyRef.current === 'baseline' || bedData.isGreyedOut) && i >= 3;
-          if (isBaselineGreyed) {
-            const repeatText = currentLang === 'bn' ? 'একই আবার (২য় বছর)' : 'Repeat (Year 2)';
-            el.innerHTML = `<span style="display:inline-flex;align-items:center;color:#9ca3af;font-size:11px;font-style:italic;padding:1px 4px">${repeatText}</span>`;
-            el.style.background = 'rgba(20, 26, 22, 0.78)';
-            el.style.border = '1px dashed rgba(255, 255, 255, 0.2)';
+          const numBeds = currentBeds.length === 3 ? 3 : 6;
+          if (i >= numBeds) {
+            el.style.display = 'none';
             return;
           }
 
@@ -1806,9 +1819,24 @@ export function FarmScene3D({
 
     // Update beds if crops changed or LOD adjusted
     if (Array.isArray(beds)) {
+      const numBeds = beds.length === 3 ? 3 : 6;
+      bedObjects.forEach((b, i) => {
+        const isBedActive = i < numBeds;
+        b.group.visible = isBedActive;
+        b.soil.visible = isBedActive;
+        b.pick.visible = isBedActive;
+        if (!isBedActive) {
+          b.inst.forEach((m) => {
+            b.group.remove(m);
+            m.geometry.dispose();
+          });
+          b.inst = [];
+          b.water.visible = false;
+        }
+      });
       const cropNames = [];
       const geoKeys = [];
-      beds.slice(0, 6).forEach((bedData, i) => {
+      beds.slice(0, numBeds).forEach((bedData, i) => {
         const cropName = bedData.crop || bedData.crop_name || bedData.name;
         cropNames.push(cropName);
         if (cropName && bedObjects[i]) {
@@ -1823,6 +1851,7 @@ export function FarmScene3D({
         cropNames,
         geoKeys,
       });
+      updateLabels();
     }
 
     // Update selection outlines and changed replan beds

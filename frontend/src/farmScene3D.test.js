@@ -108,29 +108,22 @@ test('T3: Baseline current strategy presents 3 active seasons and greys out beds
   const displayedCards = isBaseline ? seasonKeys.slice(0, 3) : seasonKeys;
   assert.equal(displayedCards.length, 3);
 
-  // 3D bed construction
-  const farm3dBeds = seasonKeys.map((k, i) => {
-    const isGreyedOut = isBaseline && i >= 3;
+  // 3D bed construction: CF1 exactly 3 beds for baseline view
+  const activeKeys = isBaseline ? seasonKeys.slice(0, 3) : seasonKeys;
+  const farm3dBeds = activeKeys.map((k, i) => {
     return {
       id: k,
-      isGreyedOut,
-      crop: isGreyedOut ? null : (i === 0 ? currentRotation.rabi : i === 1 ? currentRotation.kharif1 : currentRotation.kharif2),
-      labelBn: isGreyedOut ? 'একই আবার (২য় বছর)' : 'সক্রিয় ফসল',
-      labelEn: isGreyedOut ? 'Repeat (Year 2)' : 'Active Crop',
+      crop: i === 0 ? currentRotation.rabi : i === 1 ? currentRotation.kharif1 : currentRotation.kharif2,
+      labelBn: 'আপনার চাষ · প্রতি বছর একই',
+      labelEn: 'Your farming now · same every year',
     };
   });
 
-  assert.equal(farm3dBeds.length, 6);
-  assert.equal(farm3dBeds[0].isGreyedOut, false);
-  assert.equal(farm3dBeds[1].isGreyedOut, false);
-  assert.equal(farm3dBeds[2].isGreyedOut, false);
-  assert.equal(farm3dBeds[3].isGreyedOut, true);
-  assert.equal(farm3dBeds[4].isGreyedOut, true);
-  assert.equal(farm3dBeds[5].isGreyedOut, true);
-
-  assert.equal(farm3dBeds[3].crop, null);
-  assert.equal(farm3dBeds[3].labelBn, 'একই আবার (২য় বছর)');
-  assert.equal(farm3dBeds[3].labelEn, 'Repeat (Year 2)');
+  assert.equal(farm3dBeds.length, 3);
+  assert.equal(farm3dBeds[0].crop, currentRotation.rabi);
+  assert.equal(farm3dBeds[1].crop, currentRotation.kharif1);
+  assert.equal(farm3dBeds[2].crop, currentRotation.kharif2);
+  assert.equal(farm3dBeds[0].labelEn, 'Your farming now · same every year');
 });
 
 test('T4: Performance optimizations clamp pixel ratio <= 1.5 and shadowMap config', () => {

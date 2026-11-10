@@ -156,7 +156,7 @@ export function SixSeasonRecommendationView({
     const rabi = ext.rabi || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
     const k1 = ext.kharif1 || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
     const k2 = ext.kharif2 || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
-    return [rabi, k1, k2, rabi, k1, k2];
+    return [rabi, k1, k2];
   }, [hasSavedRotation, activeField, lang]);
 
   // Helper: Format profit per ha per year with optional total farm calculation
@@ -761,24 +761,24 @@ export function SixSeasonRecommendationView({
 
   const farm3dBeds = useMemo(() => {
     const isBaseline = selectedStrategy === 'baseline';
-    return periodKeys.map((k, i) => {
+    const keys = isBaseline ? periodKeys.slice(0, 3) : periodKeys;
+    return keys.map((k) => {
       const c = activeCrops[k] || 'Fallow';
       const waterReq = seasonIrrigMap[k] || 0;
-      const isGreyedOut = isBaseline && i >= 3;
       return {
         id: k,
-        label: isGreyedOut
-          ? (lang === 'bn' ? 'একই আবার (২য় বছর)' : 'Repeat (Year 2)')
+        label: isBaseline
+          ? (lang === 'bn' ? 'আপনার চাষ · প্রতি বছর একই' : 'Your farming now · same every year')
           : (seasonMeta[k]?.[lang] || k),
-        crop: isGreyedOut ? null : ((k.endsWith('S3') && (c?.toLowerCase() === 'rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c),
+        crop: (k.endsWith('S3') && (c?.toLowerCase() === 'rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c,
         season: seasonMeta[k]?.months,
-        waterDepthMm: isGreyedOut ? 0 : waterReq,
-        irrigation_mm: isGreyedOut ? 0 : waterReq,
-        growthStage: isGreyedOut ? 0 : 0.9,
-        isGreyedOut,
+        waterDepthMm: waterReq,
+        irrigation_mm: waterReq,
+        growthStage: 0.9,
+        isGreyedOut: false,
         stress: {
-          heat: activePlanData?.risk?.heat?.level === 'high',
-          drought: activePlanData?.risk?.drought?.level === 'high',
+          heat: c.toLowerCase() !== 'fallow' && activePlanData?.risk?.heat?.level === 'high',
+          drought: c.toLowerCase() !== 'fallow' && activePlanData?.risk?.drought?.level === 'high',
         }
       };
     });
