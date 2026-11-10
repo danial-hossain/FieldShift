@@ -141,6 +141,29 @@ def run_consistency_audit():
             if p_base_irrig is not None and abs(round(w_base_yr_irrig, 1) - round(float(p_base_irrig), 1)) > 0.5:
                 discrepancies.append(f"[{f['name']}] W1 Season plan current_yearly_mm ({w_base_yr_irrig}) != planner ({p_base_irrig})")
 
+        # 2c. Market & Profit Plan Economics Endpoint (MP2)
+        m_econ_res = client.get(f"/api/market/plan-economics?field_id={f['id']}&strategy=balanced&district={dist}&lat={lat}&lon={lon}&area_ha={area}")
+        if m_econ_res.status_code != 200:
+            discrepancies.append(f"[{f['name']}] /api/market/plan-economics returned HTTP {m_econ_res.status_code}")
+        else:
+            m_econ_body = m_econ_res.json()
+            m_yearly = m_econ_body.get("yearly_totals", {})
+            m_plan_profit = float(m_yearly.get("plan_profit_bdt_ha") or 0.0)
+            m_base_profit = float(m_yearly.get("current_profit_bdt_ha") or 0.0)
+            if p_plan_profit is not None and abs(round(m_plan_profit, 0) - round(float(p_plan_profit), 0)) > 1.0:
+                discrepancies.append(f"[{f['name']}] MP2 Market plan_profit_bdt_ha ({m_plan_profit}) != planner ({p_plan_profit})")
+            if p_base_profit is not None and abs(round(m_base_profit, 0) - round(float(p_base_profit), 0)) > 1.0:
+                discrepancies.append(f"[{f['name']}] MP2 Market current_profit_bdt_ha ({m_base_profit}) != planner ({p_base_profit})")
+            # Verify seasons profit sum
+            seasons = m_econ_body.get("seasons", [])
+            for s in seasons:
+                if s["profit"] != s["revenue"] - s["cost"]:
+                    discrepancies.append(f"[{f['name']}] MP2 season {s['period']} profit ({s['profit']}) != revenue - cost ({s['revenue'] - s['cost']})")
+            # Verify sensitivity and riskiest crop
+            sens = m_econ_body.get("price_sensitivity", {})
+            if "downside_20_profit_field" not in sens or "riskiest_crop" not in sens:
+                discrepancies.append(f"[{f['name']}] MP2 missing price sensitivity or riskiest crop")
+
         # 3. Weather & Location Telemetry Endpoint
         loc_res = client.post("/api/location/weather", json={
             "district": dist,

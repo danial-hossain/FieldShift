@@ -15,7 +15,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DbSession
 from .database import Base, engine, get_db, is_postgres
@@ -3852,6 +3852,103 @@ def market_overview(
         longitude=actual_lon,
         area_ha=area_ha,
     )
+
+
+@app.get("/api/market/plan-economics")
+def market_plan_economics(
+    field_id: str | None = None,
+    strategy: str | None = "balanced",
+    district: str | None = None,
+    lat: float | None = None,
+    lon: float | None = None,
+    latitude: float | None = None,
+    longitude: float | None = None,
+    area_ha: float | None = None,
+):
+    """Calculates comprehensive plan economics, per-season breakdown, break-even prices, and sensitivities."""
+    from src.compute.market_service import compute_plan_economics
+    actual_lat = lat if lat is not None else latitude
+    actual_lon = lon if lon is not None else longitude
+    try:
+        res = compute_plan_economics(
+            field_id=field_id,
+            strategy=strategy or "balanced",
+            district=district,
+            latitude=actual_lat,
+            longitude=actual_lon,
+            area_ha=area_ha,
+        )
+        return finite_json_value(jsonable_encoder(res))
+    except ValueError as val_err:
+        raise HTTPException(422, str(val_err)) from val_err
+    except Exception as exc:
+        raise HTTPException(500, f"Plan economics computation failed: {str(exc)}") from exc
+
+
+@app.post("/api/market/custom-price")
+def market_custom_price(
+    payload: Payload,
+    db: DbSession = Depends(get_db),
+):
+    """Saves or updates custom farmer selling price (MF9) for a crop and resolves updated economics."""
+    data = payload.model_dump()
+    raw_fid = data.get("field_id")
+    crop = str(data.get("crop", "")).strip()
+    price = data.get("price_bdt_per_maund")
+    if not crop:
+        raise HTTPException(400, "Crop name is required.")
+    if price is None:
+        raise HTTPException(400, "price_bdt_per_maund is required.")
+    try:
+        p_val = float(price)
+        if not math.isfinite(p_val) or p_val <= 0:
+            raise ValueError()
+    except (ValueError, TypeError):
+        raise HTTPException(400, "price_bdt_per_maund must be a positive number.")
+
+    fid_num = None
+    if raw_fid not in (None, "", "demo"):
+        try:
+            fid_num = int(raw_fid)
+        except (ValueError, TypeError):
+            pass
+
+    if fid_num is not None:
+        existing_hist = db.scalars(
+            select(FieldHistory).where(
+                FieldHistory.field_id == fid_num,
+                func.lower(FieldHistory.crop) == crop.lower()
+            ).order_by(FieldHistory.year.desc(), FieldHistory.id.desc())
+        ).first()
+
+        now = datetime.now(timezone.utc)
+        if existing_hist:
+            existing_hist.price_bdt_per_maund = p_val
+            existing_hist.notes = f"Farmer custom price updated via Market & Profit: {p_val} BDT/maund"
+        else:
+            new_item = FieldHistory(
+                field_id=fid_num,
+                crop=crop,
+                season="rabi",
+                year=2025,
+                price_bdt_per_maund=p_val,
+                notes=f"Farmer custom price set via Market & Profit: {p_val} BDT/maund",
+                created_at=now,
+            )
+            db.add(new_item)
+        db.commit()
+
+    from src.compute.market_service import compute_plan_economics
+    updated = compute_plan_economics(
+        field_id=raw_fid,
+        strategy=data.get("strategy") or "balanced",
+        district=data.get("district"),
+        latitude=data.get("latitude") or data.get("lat"),
+        longitude=data.get("longitude") or data.get("lon"),
+        area_ha=data.get("area_ha"),
+    )
+    return finite_json_value(jsonable_encoder(updated))
+
 
 
 # -----------------------------------------------------------------------------
