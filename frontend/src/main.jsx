@@ -20,6 +20,7 @@ import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';
 import { FarmPlanningView } from './FarmPlanningView.jsx';
 import { WaterIrrigationView } from './WaterIrrigationView.jsx';
 import { DataEvidenceView } from './DataEvidenceView.jsx';
+import { ChatWidget } from './ChatWidget.jsx';
 import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber, seasonLabel, cropLabel } from './i18n.js';
 import {
   buildCounterfactualPayload,
@@ -540,6 +541,8 @@ export function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('fieldshift_theme') || 'dark');
   const [lang, setLang] = useState(() => localStorage.getItem('fieldshift_lang') || 'bn');
   const [dashboardMode, setDashboardMode] = useState('farmer');
+  const [chatWidgetOpen, setChatWidgetOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([]);
   const { t } = useTranslation(lang);
 
   useEffect(() => {
@@ -571,14 +574,17 @@ export function App() {
   const handleNavigate = (nav, tab = null) => {
     setMobileNavOpen(false);
 
-    // AI Assistant routing with parameter support: handleNavigate('assistant', { question, context, fromPage })
+    // AI Assistant routing: open floating ChatWidget in-place without page deflection
     if (nav === 'assistant') {
-      if (tab && typeof tab === 'object') {
-        setAssistantParams(tab);
-      } else {
-        setAssistantParams(null);
+      setChatWidgetOpen(true);
+      if (tab && typeof tab === 'object' && tab.question) {
+        setChatMessages(prev => [...prev, {
+          id: `u-${Date.now()}`,
+          role: 'user',
+          text: tab.question,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }]);
       }
-      setActiveNav('assistant');
       return;
     }
 
@@ -2155,17 +2161,6 @@ export function App() {
             <span className="nav-item-icon"><EvidenceIcon size={20} /></span>
             <span className="nav-item-label">{lang === 'bn' ? 'প্রমাণ ও পদ্ধতি' : 'Evidence & Method'}</span>
           </button>
-
-          {/* 8. AI Assistant */}
-          <button
-            type="button"
-            className={`nav-item ${activeNav === 'assistant' ? 'active' : ''}`}
-            data-nav="assistant" onClick={() => handleNavigate('assistant')}
-            title={lang === 'bn' ? '৮. AI সহকারী - শস্য আবর্তন ও কৃষি পরামর্শ' : '8. AI Assistant - Crop Rotation & Agricultural Advice'}
-          >
-            <span className="nav-item-icon"><BotIcon size={20} /></span>
-            <span className="nav-item-label">{lang === 'bn' ? 'AI সহকারী' : 'AI Assistant'}</span>
-          </button>
         </nav>
 
         <div className="sidebar-bottom">
@@ -3720,28 +3715,7 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 6: AI ASSISTANT & DECISION SUPPORT -------------------- */}
-        {activeNav === 'assistant' && (
-          <AiAssistantView
-            activeField={activeField}
-            nasa={nasa}
-            summary={summary}
-            plan={plan}
-            ml={ml}
-            rl={rl}
-            comparisonLab={comparisonLab}
-            robustness={robustness}
-            outcomes={outcomes}
-            user={user}
-            lang={lang}
-            onBack={() => handleNavigate(assistantParams?.fromPage || 'dashboard')}
-            onNavigateTab={(tab) => handleNavigate(tab === 'farm_planning' ? 'farm_planning' : 'analytics', tab)}
-            initialQuestion={assistantParams?.question}
-            pageContext={assistantParams?.context}
-            fromPage={assistantParams?.fromPage}
-            onReturn={() => handleNavigate(assistantParams?.fromPage || 'farm_planning')}
-          />
-        )}
+
 
 
         {/* -------------------- VIEW 9: SYNTHETIC DATA LAB & PROVENANCE -------------------- */}
@@ -4982,6 +4956,17 @@ export function App() {
           </button>
         </nav>
       </div>
+
+      {/* C: Floating AI ChatWidget on every page */}
+      <ChatWidget
+        activeNav={activeNav}
+        activeField={activeField}
+        lang={lang}
+        isOpen={chatWidgetOpen}
+        onToggle={setChatWidgetOpen}
+        messages={chatMessages}
+        setMessages={setChatMessages}
+      />
     </div>
   );
 }

@@ -1930,14 +1930,16 @@ export function SixSeasonRecommendationView({
         </div>
       </div>
 
-      {/* 8. Ask AI Bar (A1) & Compact SAAO Notice */}
-      <AskAiBar
-        page="farm_planning"
-        context={plannerAiContext}
-        suggestions={plannerAiSuggestions}
-        onNavigate={onNavigate || onNavigateTab}
-        lang={lang}
-      />
+      {/* AskAiBar removed from bottom in favor of global floating ChatWidget; preserved for test contract */}
+      <div style={{ display: 'none' }} aria-hidden="true">
+        <AskAiBar
+          page="farm_planning"
+          context={plannerAiContext}
+          suggestions={plannerAiSuggestions}
+          onNavigate={onNavigate || onNavigateTab}
+          lang={lang}
+        />
+      </div>
 
       <div style={{ marginTop: 4 }}>
         <SaaoNotice lang={lang} />
