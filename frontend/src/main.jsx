@@ -12,7 +12,7 @@ import { CropCatalogView } from './CropCatalogView.jsx';
 import { MarketProfitView } from './MarketProfitView.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { SensitivityAnalysisView } from './SensitivityAnalysisView.jsx';
-import { FarmerHomeView } from './FarmerHomeView.jsx';
+import { FarmerHomeView, StoryErrorBoundary } from './FarmerHomeView.jsx';
 import { FarmerCropAdviceView } from './FarmerCropAdviceView.jsx';
 import { ResearchWorkspaceView } from './ResearchWorkspaceView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
@@ -436,7 +436,10 @@ class GlobalErrorBoundary extends React.Component {
   };
   render() {
     if (this.state.hasError) {
-      const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+      const isDev = Boolean(import.meta.env?.DEV);
+      const errMsg = this.state.error?.message || String(this.state.error || 'Unknown error');
+      const errStack = this.state.error?.stack || '';
+      const compStack = this.state.errorInfo?.componentStack || '';
       return (
         <div
           role="alert"
@@ -460,14 +463,14 @@ class GlobalErrorBoundary extends React.Component {
           <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--text-muted, #9AA5A0)', lineHeight: 1.5 }}>
             An unexpected error occurred while rendering this section. You can retry loading or refresh the application.
           </p>
-          {isDev && this.state.error && (
+          {(isDev || this.state.error) && (
             <details open style={{ textAlign: 'left', marginBottom: 16 }}>
               <summary style={{ cursor: 'pointer', fontSize: 12, color: '#F5B04C', marginBottom: 6 }}>
-                DEV: {this.state.error.message}
+                DEV: {errMsg}
               </summary>
               <pre data-error-detail style={{ fontSize: 10, overflowX: 'auto', background: 'rgba(0,0,0,0.4)', padding: 10, borderRadius: 8, color: '#fca5a5', whiteSpace: 'pre-wrap', wordBreak: 'break-all', maxHeight: 200 }}>
-                {this.state.error.stack}
-                {this.state.errorInfo ? '\n\nComponent Stack:\n' + this.state.errorInfo.componentStack : ''}
+                {errStack}
+                {compStack ? '\n\nComponent Stack:\n' + compStack : ''}
               </pre>
             </details>
           )}
@@ -2622,18 +2625,20 @@ export function App() {
 
         {/* -------------------- VIEW 1: OVERVIEW 3D STORY (DEFAULT) -------------------- */}
         {activeNav === 'dashboard' && dashboardMode === 'farmer' && (
-          <FarmerHomeView
-            activeField={activeField}
-            userFields={userFields}
-            nasa={nasa}
-            lang={lang}
-            onNavigate={handleNavigate}
-            onSelectField={handleSelectActiveField}
-            onOpenVoice={() => {
-              const fab = document.querySelector('.farmer-voice-fab');
-              if (fab) fab.click();
-            }}
-          />
+          <StoryErrorBoundary lang={lang}>
+            <FarmerHomeView
+              activeField={activeField}
+              userFields={userFields}
+              nasa={nasa}
+              lang={lang}
+              onNavigate={handleNavigate}
+              onSelectField={handleSelectActiveField}
+              onOpenVoice={() => {
+                const fab = document.querySelector('.farmer-voice-fab');
+                if (fab) fab.click();
+              }}
+            />
+          </StoryErrorBoundary>
         )}
 
         {/* -------------------- VIEW 1: ADVANCED OVERVIEW DASHBOARD -------------------- */}

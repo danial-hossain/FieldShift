@@ -33,6 +33,33 @@ function NasaChip({ source }) {
   );
 }
 
+// ── Canvas-level ErrorBoundary: fallback to SVG still if Canvas crashes ──────
+class CanvasErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { crashed: false, errorMsg: '' };
+  }
+  static getDerivedStateFromError(error) {
+    return { crashed: true, errorMsg: error?.message || String(error) };
+  }
+  componentDidCatch(error, info) {
+    console.error('[CanvasErrorBoundary] OrbitToFieldCanvas crashed:', error?.message, info?.componentStack);
+  }
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <svg viewBox="0 0 800 400" style={{ width: '100%', height: '100%', opacity: 0.35 }} preserveAspectRatio="xMidYMid slice">
+            <circle cx="600" cy="200" r="140" fill="#1a3a6a" />
+            <ellipse cx="200" cy="300" rx="140" ry="80" fill="#1e5c38" opacity="0.7" />
+          </svg>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // ── Count-Up Number Hook ─────────────────────────────────────────────────────
 function useCountUp(target, active, decimals = 0, duration = 1000) {
   const [val, setVal] = useState(0);
@@ -303,7 +330,6 @@ export function OrbitToFieldStory({
 
   // Continuous Scroll listener
   useEffect(() => {
-    if (prefersReducedMotion) return;
     const handleScroll = () => {
       if (!containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -547,20 +573,23 @@ export function OrbitToFieldStory({
     },
   ], [isBn, fieldName, fieldAreaBigha, barindTrend, haorTrend, districtCapitalized, existingRotStr]);
 
-  // Reduced motion fallback
-  if (prefersReducedMotion || !hasWebGL) {
+  // Reduced motion: only fallback to stills when WebGL is truly not available!
+  if (!hasWebGL) {
     return <StaticFallback scenes={SCENES} isBn={isBn} onNavigate={onNavigate} />;
   }
 
   return (
     <>
-      {/* 3D Fixed Canvas Background */}
-      <OrbitToFieldCanvas
-        scrollProgress={scrollProgress}
-        activeField={activeField}
-        graceTrends={graceTrendsData}
-        onsetComparison={advisoryData?.comparison}
-      />
+      {/* 3D Fixed Canvas Background with isolated error boundary */}
+      <CanvasErrorBoundary>
+        <OrbitToFieldCanvas
+          scrollProgress={scrollProgress}
+          activeField={activeField}
+          graceTrends={graceTrendsData}
+          onsetComparison={advisoryData?.comparison}
+          prefersReducedMotion={prefersReducedMotion}
+        />
+      </CanvasErrorBoundary>
 
       {/* Spacer div driving scroll progress (10 scenes × 100vh) */}
       <div
@@ -674,6 +703,29 @@ export function OrbitToFieldStory({
           })}
         </div>
       </div>
+
+      {/* Dev Mode 3D Status Badge */}
+      {Boolean(import.meta.env?.DEV) && (
+        <div
+          data-testid="dev-mode-3d-badge"
+          style={{
+            position: 'fixed',
+            bottom: 12,
+            left: 12,
+            zIndex: 9999,
+            background: 'rgba(0, 0, 0, 0.75)',
+            color: hasWebGL ? '#10B981' : '#F59E0B',
+            border: `1px solid ${hasWebGL ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
+            borderRadius: 6,
+            padding: '4px 8px',
+            fontSize: 11,
+            fontFamily: 'monospace',
+            pointerEvents: 'none',
+          }}
+        >
+          3D: {hasWebGL ? 'live' : 'stills (no WebGL)'}
+        </div>
+      )}
     </>
   );
 }

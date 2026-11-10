@@ -12,17 +12,18 @@ const OrbitToFieldStory = React.lazy(() => import('./overview/OrbitToFieldStory.
 export class StoryErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { crashed: false, errorMsg: '' };
+    this.state = { crashed: false, errorMsg: '', componentStack: '' };
   }
   static getDerivedStateFromError(error) {
     return { crashed: true, errorMsg: error?.message || String(error) };
   }
   componentDidCatch(error, info) {
     console.error('[StoryErrorBoundary] 3D story crashed:', error?.message, '\nComponent stack:', info?.componentStack);
+    this.setState({ componentStack: info?.componentStack || '' });
   }
   render() {
     if (this.state.crashed) {
-      const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV;
+      const isDev = Boolean(import.meta.env?.DEV);
       return (
         <div style={{
           position: 'relative',
@@ -49,8 +50,13 @@ export class StoryErrorBoundary extends React.Component {
                 : '3D story could not load. Navigate to any page from the sidebar.'}
             </div>
             {isDev && (
-              <details style={{ marginTop: 14, textAlign: 'left', background: 'rgba(0,0,0,0.5)', padding: 12, borderRadius: 8 }}>
+              <details open style={{ marginTop: 14, textAlign: 'left', background: 'rgba(0,0,0,0.5)', padding: 12, borderRadius: 8 }}>
                 <summary style={{ cursor: 'pointer', fontSize: 12, color: '#F5B04C' }}>DEV: {this.state.errorMsg}</summary>
+                {this.state.componentStack && (
+                  <pre style={{ fontSize: 10, color: '#fca5a5', marginTop: 8, whiteSpace: 'pre-wrap' }}>
+                    {this.state.componentStack}
+                  </pre>
+                )}
               </details>
             )}
           </div>

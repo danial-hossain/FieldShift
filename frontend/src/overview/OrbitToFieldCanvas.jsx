@@ -26,6 +26,7 @@ export function OrbitToFieldCanvas({
   activeField = null,
   graceTrends = null,
   onsetComparison = null,
+  prefersReducedMotion = false,
 }) {
   const mountRef = useRef(null);
   const scrollProgRef = useRef(scrollProgress);
@@ -105,19 +106,26 @@ export function OrbitToFieldCanvas({
     );
     spaceGroup.add(stars);
 
-    // Texture Loader for NASA Visible Earth (Blue Marble) Textures
+    // Texture Loader with error-safe loading for NASA Visible Earth (Blue Marble) Textures
     const texLoader = new THREE.TextureLoader();
-    const earthDayTex = texLoader.load('/textures/earth_day_2048.jpg');
-    earthDayTex.colorSpace = THREE.SRGBColorSpace;
+    const loadSafeTex = (url, isSRGB = false) => {
+      return texLoader.load(
+        url,
+        (tex) => {
+          if (isSRGB) tex.colorSpace = THREE.SRGBColorSpace;
+        },
+        undefined,
+        (err) => {
+          console.warn(`[3D Orbit] Safe texture load warning (${url}):`, err);
+        }
+      );
+    };
 
-    const earthNormalTex = texLoader.load('/textures/earth_normal_2048.jpg');
-    const earthSpecularTex = texLoader.load('/textures/earth_specular_2048.jpg');
-
-    const earthNightTex = texLoader.load('/textures/earth_night_2048.png');
-    earthNightTex.colorSpace = THREE.SRGBColorSpace;
-
-    const earthCloudsTex = texLoader.load('/textures/earth_clouds_1024.png');
-    earthCloudsTex.colorSpace = THREE.SRGBColorSpace;
+    const earthDayTex = loadSafeTex('/textures/earth_day_2048.jpg', true);
+    const earthNormalTex = loadSafeTex('/textures/earth_normal_2048.jpg', false);
+    const earthSpecularTex = loadSafeTex('/textures/earth_specular_2048.jpg', false);
+    const earthNightTex = loadSafeTex('/textures/earth_night_2048.png', true);
+    const earthCloudsTex = loadSafeTex('/textures/earth_clouds_1024.png', true);
 
     // Direction of the sun (shining from the right, positive X)
     const sunDirVec = new THREE.Vector3(12.0, 3.0, 6.0).normalize();
@@ -140,6 +148,12 @@ export function OrbitToFieldCanvas({
 
     earthMat.onBeforeCompile = (shader) => {
       shader.uniforms.uSunDir = dayNightUniforms.uSunDir;
+
+      // Ensure uSunDir uniform is explicitly declared at fragment shader top
+      shader.fragmentShader = `
+        uniform vec3 uSunDir;
+        ${shader.fragmentShader}
+      `;
 
       // Invert specular map for roughness: oceans (specular 1.0) -> roughness ~0.08 (shiny); land (0.0) -> roughness ~0.92 (matte)
       shader.fragmentShader = shader.fragmentShader.replace(
@@ -804,9 +818,21 @@ export function OrbitToFieldCanvas({
     // ── Animation & Scroll Render Loop ───────────────────────────────────
     let isMounted = true;
     let animId = null;
+    let isVisible = typeof document !== 'undefined' ? !document.hidden : true;
+
+    const handleVisibilityChange = () => {
+      isVisible = !document.hidden;
+      if (isVisible && isMounted && !animId) {
+        animId = requestAnimationFrame(renderFrame);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     function renderFrame() {
-      if (!isMounted) return;
+      if (!isMounted || !isVisible) {
+        animId = null;
+        return;
+      }
       const t = scrollProgRef.current;
       const shot = getInterpolatedShot(t);
 
@@ -839,10 +865,10 @@ export function OrbitToFieldCanvas({
         // Rotate Earth slightly with scroll
         earthMesh.rotation.y = bangladeshRotY + (t * 0.8);
         // Clouds rotate slowly with time and scroll
-        cloudsMesh.rotation.y = bangladeshRotY + (t * 1.0) + (Date.now() * 0.0001);
+        cloudsMesh.rotation.y = bangladeshRotY + (t * 1.0) + (prefersReducedMotion ? 0 : (Date.now() * 0.0001));
 
         // Shot 02 cloud dive rush
-        cloudDiveGroup.visible = t > 0.08;
+        cloudDiveGroup.visible = t > 0.08 && !prefersReducedMotion;
         if (cloudDiveGroup.visible) {
           cloudDiveGroup.children.forEach(c => {
             c.position.z -= 0.04;
@@ -897,7 +923,7 @@ export function OrbitToFieldCanvas({
         const isPlanner = t >= 0.60 && t < 0.72;
         starGlowGroup.visible = isPlanner;
         if (isPlanner) {
-          starMesh.rotation.y += 0.03;
+          if (!prefersReducedMotion) starMesh.rotation.y += 0.03;
           // Strategy switch every 25% of this section
           const subT = (t - 0.60) / 0.12;
           if (subT < 0.25) {
@@ -1002,6 +1028,7 @@ export function OrbitToFieldCanvas({
       isMounted = false;
       if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       if (mount && renderer.domElement) {
         mount.removeChild(renderer.domElement);
       }
@@ -1010,7 +1037,7 @@ export function OrbitToFieldCanvas({
       }
       renderer.dispose();
     };
-  }, [activeField, graceTrends, onsetComparison]);
+  }, [activeField, graceTrends, onsetComparison, prefersReducedMotion]);
 
   return (
     <div
