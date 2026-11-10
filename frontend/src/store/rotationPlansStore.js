@@ -64,6 +64,14 @@ export function getAppliedReplan(fieldId, strategy) {
   return null;
 }
 
+export function hasAnyAppliedReplan(fieldId) {
+  const fId = fieldId != null ? String(fieldId) : 'demo';
+  for (const p of PRIORITIES) {
+    if (getAppliedReplan(fId, p)) return true;
+  }
+  return false;
+}
+
 export function setAppliedReplan(fieldId, strategy, replanRecord) {
   const fId = fieldId != null ? String(fieldId) : 'demo';
   const strat = strategy || 'balanced';

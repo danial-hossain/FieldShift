@@ -20,12 +20,12 @@ import {
   extractStrategyMetrics,
   extractBaselineMetrics,
   getAppliedReplan,
+  hasAnyAppliedReplan,
   PRIORITIES,
   CANONICAL_PERIOD_KEYS,
 } from './store/rotationPlansStore.js';
 import {
   cropLabel,
-  formatCurrency,
 } from './i18n.js';
 import { request as defaultRequest } from './apiClient.js';
 
@@ -135,6 +135,11 @@ export function YourFarmingVsPlanView({
     return getAppliedReplan(activeField?.id, selectedPriority);
   }, [activeField?.id, selectedPriority]);
 
+  // Check if activeField has any applied replan under ANY strategy
+  const anyReplanExists = useMemo(() => {
+    return hasAnyAppliedReplan(activeField?.id);
+  }, [activeField?.id]);
+
   // Baseline metrics (1-year current farming)
   const baselineMetrics = useMemo(() => {
     const anyPlan = plansByPriority[selectedPriority] || plansByPriority.balanced || Object.values(plansByPriority)[0];
@@ -157,14 +162,67 @@ export function YourFarmingVsPlanView({
 
   // Applied replan metrics if available
   const appliedReplanMetrics = useMemo(() => {
-    if (!appliedReplan || !appliedReplan.plan) return null;
-    const planCrops = appliedReplan.plan.map((p) => p.crop || 'Fallow');
-    const seasonIrrigs = appliedReplan.plan.map((p) => p.water_mm != null ? Number(p.water_mm) : 0);
-    const irrigationMm = Math.round((seasonIrrigs.reduce((a, b) => a + b, 0) / 2.0) * 10) / 10;
-    const totalProfit = (appliedReplan.soFarProfit || 0) + (appliedReplan.remainProfit || 0);
+    if (!appliedReplan) return null;
+    const sc = appliedReplan.seasonal_comparison || appliedReplan.plan || [];
+    let planCrops = [];
+    let seasonIrrigs = [];
+    let changedMap = [];
+
+    if (Array.isArray(sc) && sc.length === 6) {
+      planCrops = sc.map((item) => item.crop_after || item.crop || 'Fallow');
+      seasonIrrigs = sc.map((item) => (
+        item.irrigation_mm != null
+          ? Number(item.irrigation_mm)
+          : (item.water_mm != null ? Number(item.water_mm) : 0)
+      ));
+      changedMap = sc.map((item) => Boolean(item.changed));
+    } else if (Array.isArray(appliedReplan.new_plan)) {
+      planCrops = appliedReplan.new_plan;
+      seasonIrrigs = currentPlanMetrics?.seasonIrrigs || [0, 0, 0, 0, 0, 0];
+      changedMap = planCrops.map((c, i) => (
+        currentPlanMetrics?.crops ? c !== currentPlanMetrics.crops[i] : false
+      ));
+    } else {
+      return null;
+    }
+
+    const totals = appliedReplan.totals || {};
+    const soFar = totals.actual_so_far_profit_bdt != null
+      ? Number(totals.actual_so_far_profit_bdt)
+      : (appliedReplan.soFarProfit || 0);
+    const remain = totals.projected_remaining_profit_bdt != null
+      ? Number(totals.projected_remaining_profit_bdt)
+      : (appliedReplan.remainProfit || 0);
+    const totalProfit = totals.new_profit_bdt != null ? Number(totals.new_profit_bdt) : (soFar + remain);
     const profitBdt = Math.round(totalProfit / 2.0);
-    const bareDays = appliedReplan.bareSoilDays != null ? appliedReplan.bareSoilDays : (currentPlanMetrics?.bareDays || 60);
-    const nitrogenKg = appliedReplan.nitrogenKg != null ? appliedReplan.nitrogenKg : (currentPlanMetrics?.nitrogenKg || 35);
+
+    const irrigationMm = totals.new_irrigation_mm != null
+      ? Number(totals.new_irrigation_mm)
+      : Math.round((seasonIrrigs.reduce((a, b) => a + b, 0) / 2.0) * 10) / 10;
+
+    const bareDays = totals.new_bare_soil_days != null
+      ? Number(totals.new_bare_soil_days)
+      : (currentPlanMetrics?.bareDays || 60);
+
+    const nitrogenKg = totals.new_nitrogen_kg != null
+      ? Number(totals.new_nitrogen_kg)
+      : (currentPlanMetrics?.nitrogenKg || 35);
+
+    let formattedDate = lang === 'bn' ? '১০ নভে' : '10 Nov';
+    if (appliedReplan.appliedAt) {
+      try {
+        const d = new Date(appliedReplan.appliedAt);
+        const day = d.getDate();
+        const monthNamesBn = ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
+        const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        formattedDate = lang === 'bn'
+          ? `${toBanglaDigits(day)} ${monthNamesBn[d.getMonth()]}`
+          : `${day} ${monthNamesEn[d.getMonth()]}`;
+      } catch {
+        // fallback
+      }
+    }
+
     return {
       crops: planCrops,
       irrigationMm,
@@ -172,19 +230,20 @@ export function YourFarmingVsPlanView({
       bareDays,
       nitrogenKg,
       seasonIrrigs,
-      soFar: appliedReplan.soFarProfit || 0,
-      remain: appliedReplan.remainProfit || 0,
+      changedMap,
+      soFar,
+      remain,
       finishedCount: appliedReplan.finishedCount || 1,
-      date: appliedReplan.date || (lang === 'bn' ? '১০ নভে' : '10 Nov'),
+      date: formattedDate,
     };
   }, [appliedReplan, currentPlanMetrics, lang]);
 
   // Fallback viewMode if 'updated' was active but no replan exists
   const effectiveViewMode = useMemo(() => {
-    if (viewMode === 'updated' && !appliedReplan) return 'plan';
+    if (viewMode === 'updated' && !appliedReplanMetrics) return 'plan';
     if (viewMode === 'current' && !baselineMetrics.hasSavedRotation) return 'plan';
     return viewMode;
-  }, [viewMode, appliedReplan, baselineMetrics.hasSavedRotation]);
+  }, [viewMode, appliedReplanMetrics, baselineMetrics.hasSavedRotation]);
 
   // 3D Beds generation
   const beds3D = useMemo(() => {
@@ -202,17 +261,18 @@ export function YourFarmingVsPlanView({
           irrigation_mm: isYear2 ? 0 : (baselineMetrics.seasonIrrigs ? baselineMetrics.seasonIrrigs[i % 3] : 0),
           isLegume: crop ? LEGUMES.has(crop.toLowerCase()) : false,
         };
-      } else if (effectiveViewMode === 'updated' && appliedReplan && appliedReplan.plan) {
-        const item = appliedReplan.plan[i] || {};
-        const crop = item.crop || 'Fallow';
+      } else if (effectiveViewMode === 'updated' && appliedReplanMetrics) {
+        const crop = appliedReplanMetrics.crops[i];
+        const isDone = i < (appliedReplanMetrics.finishedCount || 0);
+        const isChg = Boolean(appliedReplanMetrics.changedMap[i]);
         return {
           id: pk,
           isGreyedOut: false,
-          isCompleted: i < (appliedReplan.finishedCount || 0),
-          isChanged: Boolean(item.changed),
+          isCompleted: isDone,
+          isChanged: isChg,
           crop,
           cropLabel: cropLabel(crop, lang),
-          irrigation_mm: item.water_mm != null ? item.water_mm : 0,
+          irrigation_mm: appliedReplanMetrics.seasonIrrigs ? appliedReplanMetrics.seasonIrrigs[i] : 0,
           isLegume: crop ? LEGUMES.has(crop.toLowerCase()) : false,
         };
       } else {
@@ -228,7 +288,7 @@ export function YourFarmingVsPlanView({
         };
       }
     });
-  }, [effectiveViewMode, baselineMetrics, appliedReplan, currentPlanMetrics, lang]);
+  }, [effectiveViewMode, baselineMetrics, appliedReplanMetrics, currentPlanMetrics, lang]);
 
   // Active Yearly Irrigation for 3D Water Tank
   const activeIrrigationMm = useMemo(() => {
@@ -638,7 +698,7 @@ export function YourFarmingVsPlanView({
             <div className="cv-strip">
               {appliedReplanMetrics.crops.map((c, i) => {
                 const isDone = i < appliedReplanMetrics.finishedCount;
-                const isChg = Boolean(appliedReplan?.plan?.[i]?.changed);
+                const isChg = Boolean(appliedReplanMetrics.changedMap[i]);
                 const extraCls = isDone ? 'done' : isChg ? 'chg' : '';
                 return (
                   <React.Fragment key={i}>
@@ -657,10 +717,22 @@ export function YourFarmingVsPlanView({
             )}
             <p className="cv-note" style={{ fontSize: '11.5px', marginTop: 4 }}>
               {lang === 'bn'
-                ? `২ বছরে মোট = এ পর্যন্ত আসল ${formatCurrency(appliedReplanMetrics.soFar, 'bn')} + বাকি আনুমানিক ${formatCurrency(appliedReplanMetrics.remain, 'bn')}`
-                : `2-yr total = Actual so far ${formatCurrency(appliedReplanMetrics.soFar, 'en')} + Projected remaining ${formatCurrency(appliedReplanMetrics.remain, 'en')}`}
+                ? `২ বছরে মোট = এ পর্যন্ত আসল ${formatBdt(appliedReplanMetrics.soFar, 'bn')} + বাকি আনুমানিক ${formatBdt(appliedReplanMetrics.remain, 'bn')}`
+                : `2-yr total = Actual so far ${formatBdt(appliedReplanMetrics.soFar, 'en')} + Projected remaining ${formatBdt(appliedReplanMetrics.remain, 'en')}`}
             </p>
           </button>
+        ) : anyReplanExists ? (
+          <div className="cv-col empty">
+            <div className="cv-ch">
+              <b>৩</b>
+              <span>{lang === 'bn' ? 'মাঠ থেকে শেখার পর' : 'After Field Learning'}</span>
+            </div>
+            <p className="cv-note">
+              {lang === 'bn'
+                ? 'এই কৌশলে কোনো হালনাগাদ নেই।'
+                : 'No replan update for this strategy.'}
+            </p>
+          </div>
         ) : (
           <div className="cv-col empty">
             <div className="cv-ch">
@@ -769,9 +841,8 @@ export function YourFarmingVsPlanView({
                   const planY2Crop = currentPlanMetrics?.crops ? currentPlanMetrics.crops[idx + 3] : null;
                   const planY2Irrig = currentPlanMetrics?.seasonIrrigs ? currentPlanMetrics.seasonIrrigs[idx + 3] : 0;
 
-                  const updItem = appliedReplan?.plan ? appliedReplan.plan[idx + 3] : null;
-                  const updCrop = updItem?.crop || null;
-                  const isUpdChanged = Boolean(updItem?.changed);
+                  const isUpdChanged = Boolean(appliedReplanMetrics?.changedMap[idx + 3]);
+                  const updCrop = appliedReplanMetrics?.crops ? appliedReplanMetrics.crops[idx + 3] : null;
 
                   const whatChanged = getWhatChangedReason(baseCrop, planY1Crop, baseIrrig, planY1Irrig);
 
