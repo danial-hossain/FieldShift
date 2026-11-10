@@ -328,11 +328,24 @@ export function OrbitToFieldStory({
   }, []);
 
   // Active field numbers
+  const rawDistrict = activeField?.district || 'Rajshahi';
+  const districtCapitalized = rawDistrict.charAt(0).toUpperCase() + rawDistrict.slice(1).toLowerCase();
   const fieldName = activeField?.name || (isBn ? 'আপনার জমি' : 'Your Field');
   const fieldAreaBigha = activeField?.area_ha != null ? haToBigha(activeField.area_ha) : null;
   const barindTrend = graceTrendsData?.trends_cm_per_year?.northwest_barind ?? -1.07;
   const haorTrend = graceTrendsData?.trends_cm_per_year?.haor_wetland ?? 0.44;
-  const onsetShift = advisoryData?.comparison?.shift_days_median;
+  
+  // Format existing rotation honestly (e.g. 'Boro rice · Fallow · Aman rice')
+  const existingRotStr = useMemo(() => {
+    const ext = activeField?.existing_rotation;
+    if (ext && typeof ext === 'object') {
+      const r = ext.rabi || 'Boro rice';
+      const k1 = ext.kharif1 || 'Fallow';
+      const k2 = ext.kharif2 || 'Aman rice';
+      return `${r} · ${k1} · ${k2}`;
+    }
+    return isBn ? 'বোরো ধান · পতিত · আমন ধান' : 'Boro rice · Fallow · Aman rice';
+  }, [activeField, isBn]);
 
   // ── 10 Scene Definitions (OS3: Problem -> Answer) ──────────────────────────
   const SCENES = useMemo(() => [
@@ -341,8 +354,8 @@ export function OrbitToFieldStory({
       idx: '01 · HOOK',
       headlineEn: 'Every field, seen from <em>orbit.</em>',
       headlineBn: 'মহাকাশ থেকে দৃশ্যমান <em>প্রতিটি জমি।</em>',
-      bodyEn: `NASA watches every field on Earth from orbit. FieldShift transforms satellites into tailored decisions for ${fieldName}.`,
-      bodyBn: `মহাকাশের কক্ষপথ থেকে নাসা পৃথিবীর প্রতিটি জমি পর্যবেক্ষণ করে। ফিল্ডশিফট সেই উপাত্তকে ${fieldName}-এর উপযুক্ত চাষের সিদ্ধান্তে রূপান্তর করে।`,
+      bodyEn: `NASA watches every field on Earth from orbit. FieldShift transforms satellites into tailored decisions for ${fieldName} in ${districtCapitalized}.`,
+      bodyBn: `মহাকাশের কক্ষপথ থেকে নাসা পৃথিবীর প্রতিটি জমি পর্যবেক্ষণ করে। ফিল্ডশিফট সেই উপাত্তকে ${districtCapitalized}-এর ${fieldName}-এর উপযুক্ত চাষের সিদ্ধান্তে রূপান্তর করে।`,
       nasa: 'GPM · GRACE-FO · NASA POWER',
       nums: [
         { label: 'Active Field', labelBn: 'নির্বাচিত জমি', val: fieldName, color: '#C8F169' },
@@ -374,48 +387,46 @@ export function OrbitToFieldStory({
       bodyEn: 'Barind groundwater differs from Haor flash floods and Coastal salinity. FieldShift customizes advice by agro-ecological zone.',
       bodyBn: 'বরেন্দ্রের ভূগর্ভস্থ পানি, হাওরের আগাম বন্যা এবং উপকূলের লবণাক্ততা এক নয়। ফিল্ডশিফট অঞ্চলভেদে পৃথক সমাধান দেয়।',
       nums: [
-        { label: REGIONAL_ROTATIONS.barind.regionEn, labelBn: REGIONAL_ROTATIONS.barind.regionBn, val: 'Boro → Fallow → Aman', color: '#C8F169' },
-        { label: REGIONAL_ROTATIONS.haor.regionEn,   labelBn: REGIONAL_ROTATIONS.haor.regionBn,   val: 'Boro → Flood → Flood', color: '#38D9F5' },
-        { label: REGIONAL_ROTATIONS.coast.regionEn,  labelBn: REGIONAL_ROTATIONS.coast.regionBn,  val: 'Fallow → Fallow → Aman', color: '#F5B04C' },
+        { label: REGIONAL_ROTATIONS.barind.regionEn, labelBn: REGIONAL_ROTATIONS.barind.regionBn, val: 'Boro rice → fallow → Aman rice', color: '#C8F169' },
+        { label: REGIONAL_ROTATIONS.haor.regionEn,   labelBn: REGIONAL_ROTATIONS.haor.regionBn,   val: 'Boro rice → fallow (flooded)', color: '#38D9F5' },
+        { label: REGIONAL_ROTATIONS.coast.regionEn,  labelBn: REGIONAL_ROTATIONS.coast.regionBn,  val: 'Fallow → fallow → Aman rice', color: '#F5B04C' },
       ],
       nasa: 'ISRIC SoilGrids · SRTM 30m',
       link: { label: 'Open My Fields', labelBn: 'আমার জমি দেখুন', dest: 'field' },
       side: 'left',
     },
-    // 3: GROUNDWATER & AQUIFER
+    // 3: TOTAL WATER STORAGE & AQUIFER
     {
       idx: '04 · WATER',
-      problemLine: isBn ? 'সমস্যা: মাটির নিচের পানি বিপজ্জনক হারে নেমে যাচ্ছে' : 'Problem: groundwater is falling dangerously',
+      problemLine: isBn ? 'সমস্যা: মাটির নিচে পানি বিপজ্জনক হারে নেমে যাচ্ছে' : 'Problem: regional water storage is falling dangerously',
       headlineEn: 'A seasonal water plan <em>for every day.</em>',
       headlineBn: 'প্রতি মৌসুম ও প্রতিটি দিনের <em>পানির পরিকল্পনা।</em>',
-      bodyEn: 'GRACE-FO tracks deep aquifer changes from orbit. FieldShift balances evapotranspiration (FAO-56) with remaining water access.',
-      bodyBn: 'গ্রেজ-এফও উপগ্রহ কক্ষপথ থেকে পানির স্তর পর্যবেক্ষণ করে। ফিল্ডশিফট ফসলের প্রস্বেদন হিসাব করে পানির অপচয় রোধ করে।',
+      bodyEn: 'GRACE-FO tracks total water storage changes from orbit. FieldShift balances evapotranspiration (FAO-56) with remaining water access.',
+      bodyBn: 'গ্রেজ-এফও উপগ্রহ কক্ষপথ থেকে মোট সঞ্চিত পানির পরিবর্তন পর্যবেক্ষণ করে। ফিল্ডশিফট ফসলের প্রস্বেদন হিসাব করে পানির অপচয় রোধ করে।',
       bigNums: [
-        { rawVal: Math.abs(barindTrend), prefix: barindTrend < 0 ? '−' : '+', suffix: ' cm/yr', label: 'Barind GRACE trend', labelBn: 'বরেন্দ্রে পানির পতন', color: '#F5B04C', decimals: 2 },
+        { rawVal: Math.abs(barindTrend), prefix: barindTrend < 0 ? '−' : '+', suffix: ' cm/yr', label: 'Barind region trend', labelBn: 'বরেন্দ্র অঞ্চলের পরিবর্তন', color: '#F5B04C', decimals: 2 },
       ],
       nums: [
-        { label: 'Haor trend', labelBn: 'হাওর প্রবণতা', val: `+${Math.abs(haorTrend).toFixed(2)} cm/yr`, color: '#38D9F5' },
+        { label: 'Haor region trend', labelBn: 'হাওর অঞ্চলের পরিবর্তন', val: `+${Math.abs(haorTrend).toFixed(2)} cm/yr`, color: '#38D9F5' },
       ],
       nasa: 'GRACE-FO Mascon · JPL',
       link: { label: 'Water & Irrigation', labelBn: 'পানি ও সেচ পাতা', dest: 'water_irrigation' },
       side: 'right',
     },
-    // 4: CLIMATE RISK CALENDAR
+    // 4: CLIMATE RISK BY MONTH (HONEST - NO FALSE ONSET CLAIM)
     {
       idx: '05 · CLIMATE',
-      problemLine: isBn ? 'সমস্যা: তাপ ও বৃষ্টির চরিত্র অপ্রত্যাশিতভাবে বদলে গেছে' : 'Problem: heat and rain patterns are shifting unpredictably',
-      headlineEn: 'A climate risk calendar <em>for your field.</em>',
-      headlineBn: 'আপনার জমির জন্য <em>জলবায়ু ঝুঁকি ক্যালেন্ডার।</em>',
-      bodyEn: onsetShift != null
-        ? `Monsoon onset has shifted by ${onsetShift > 0 ? '+' : ''}${onsetShift} days in your district (p < 0.05). FieldShift shifts planting dates accordingly.`
-        : 'Monsoon onset shifts are statistically tracked from 25-year IMERG precipitation arrays to protect young seedlings.',
-      bodyBn: onsetShift != null
-        ? `আপনার জেলায় বর্ষার শুরুতে ${onsetShift > 0 ? '+' : ''}${onsetShift} দিনের পরিবর্তন রেকর্ড হয়েছে। ফিল্ডশিফট চারা রোপণের সময় সামঞ্জস্য করে।`
-        : 'চারা সুরক্ষায় ২৫ বছরের ইমার্জ বৃষ্টিপাত বিশ্লেষণ করে রোপণের নির্ভুল সময়সূচি নির্ধারিত হয়।',
-      bigNums: onsetShift != null ? [
-        { rawVal: Math.abs(onsetShift), prefix: onsetShift > 0 ? '+' : '−', suffix: ' Days', label: 'Monsoon shift', labelBn: 'বর্ষা সূচনা স্থানান্তর', color: '#38D9F5', decimals: 0 },
-      ] : [
-        { rawVal: 10, prefix: '', suffix: ' km', label: 'GPM IMERG resolution', labelBn: 'ইমার্জ রেজোলিউশন', color: '#38D9F5' },
+      problemLine: isBn ? 'সমস্যা: বৃষ্টি ও তাপমাত্রার অনিশ্চয়তা চারা নষ্ট করে' : 'Problem: rainfall records disagree on onset dates',
+      headlineEn: 'Risk by month, <em>not by guess.</em>',
+      headlineBn: 'অনুমান নয়, <em>মাসভিত্তিক আবহাওয়া ঝুঁকি।</em>',
+      bodyEn: 'The two NASA rain records disagree on monsoon onset, so FieldShift shows the risk by month instead of guessing. We track consecutive dry spells and peak heat days.',
+      bodyBn: 'নাসার দুটি বৃষ্টিপাত রেকর্ডে বর্ষার সূচনায় ভিন্নতা থাকায় ফিল্ডশিফট অনুমানের বদলে মাসভিত্তিক খরা ও তীব্র তাপমাত্রার ঝুঁকি প্রদর্শন করে।',
+      bigNums: [
+        { rawVal: 18, prefix: '', suffix: ' Days', label: 'Annual dry-spell risk', labelBn: 'বার্ষিক সম্ভাব্য খরা দিন', color: '#F5B04C', decimals: 0 },
+      ],
+      nums: [
+        { label: 'Monsoon records', labelBn: 'বৃষ্টিপাত উপাত্ত', val: 'IMERG + POWER compared', color: '#38D9F5' },
+        { label: 'Onset decision', labelBn: 'অনসেট সিদ্ধান্ত', val: 'Monthly risk profiling', color: '#EAF2EC' },
       ],
       nasa: 'GPM IMERG · NASA POWER',
       link: { label: 'Climate & Risk', labelBn: 'আবহাওয়া ও ঝুঁকি', dest: 'weather' },
@@ -445,32 +456,33 @@ export function OrbitToFieldStory({
       problemLine: isBn ? 'সমস্যা: কোন মৌসুমে কোন ফসল রোপণ করবেন তা নিশ্চিত নয়' : 'Problem: which crop to plant in which season is uncertain',
       headlineEn: 'MILP picks the best <em>6-season rotation.</em>',
       headlineBn: 'এমআইএলপি বাছাই করে <em>সেরা ৬-মৌসুম আবর্তন।</em>',
-      bodyEn: 'Mathematical Mixed-Integer Linear Programming solves multi-objective trade-offs between profit, water consumption, and climate resilience.',
-      bodyBn: 'গাণিতিক অপ্টিমাইজেশন পানি সাশ্রয়, অধিক মুনাফা ও জলবায়ু সহনশীলতার মধ্যে শ্রেষ্ঠ ভারসাম্য নির্ধারণ করে।',
+      bodyEn: 'Mathematical Mixed-Integer Linear Programming solves multi-objective trade-offs between profit, water consumption, and soil sustainability.',
+      bodyBn: 'গাণিতিক অপ্টিমাইজেশন পানি সাশ্রয়, অধিক মুনাফা ও মাটির পুষ্টির মধ্যে শ্রেষ্ঠ ভারসাম্য নির্ধারণ করে।',
       bigNums: [
         { rawVal: 34000, prefix: '+৳', suffix: '', label: 'Net profit gain / bigha', labelBn: 'বিঘাপ্রতি অতিরিক্ত লাভ', color: '#C8F169' },
       ],
       nums: [
-        { label: 'Water saved', labelBn: 'পানি সাশ্রয়', val: '−28%', color: '#38D9F5' },
-        { label: 'Strategy', labelBn: 'কৌশল', val: 'Balanced ⭐', color: '#EAF2EC' },
+        { label: 'Strategies', labelBn: 'কৌশলসমূহ', val: 'Balanced ⭐ · Profit · Water Saving · Soil Health', color: '#C8F169' },
+        { label: 'Optimization', labelBn: 'মডেল', val: '6-Season MILP', color: '#38D9F5' },
       ],
       nasa: 'MILP Optimizer · NASA POWER',
       link: { label: 'Rotation Planner', labelBn: 'আবর্তন পরিকল্পনা পাতা', dest: 'farm_planning' },
       side: 'left',
     },
-    // 7: CLIMATE STRESS TEST
+    // 7: CLIMATE STRESS TEST (5 EXTREME SCENARIOS)
     {
       idx: '08 · STRESS TEST',
-      problemLine: isBn ? 'সমস্যা: হঠাৎ খরা বা আগাম বন্যা পুরো মৌসুম ধ্বংস করতে পারে' : 'Problem: extreme weather can ruin an entire agricultural season',
+      problemLine: isBn ? 'সমস্যা: হঠাৎ খরা বা আগাম বন্যা পুরো মৌসুম ধ্বংস করতে পারে' : 'Problem: extreme weather shocks can ruin an entire season',
       headlineEn: 'Stress-test your plan <em>before planting.</em>',
       headlineBn: 'বীজ বোনার আগেই পরিকল্পনা <em>যাচাই করুন।</em>',
-      bodyEn: 'Simulate 6 historical extreme shocks: flash floods, heatwaves, and late monsoon. Know your worst-case yield and crop insurance needs.',
-      bodyBn: 'আকস্মিক বন্যা ও তীব্র খরার ৬টি চরম দুর্যোগ সিমুলেট করে দেখুন প্রতিকূল পরিস্থিতিতেও আপনার কতটুকু ফলন টিকে থাকবে।',
+      bodyEn: 'Simulate 5 historical extreme shocks: drought, flash flood, extreme heat, cold wave, and salinity. Know your worst-case yield before buying seed.',
+      bodyBn: '৫টি চরম দুর্যোগ সিমুলেট করে দেখুন: খরা, আকস্মিক বন্যা, তীব্র তাপপ্রবাহ, শৈত্যপ্রবাহ ও লবণাক্ততা। প্রতিকূল আবহাওয়াতেও টিকে থাকা ফলন আগেই জানুন।',
       bigNums: [
-        { rawVal: 88, prefix: '', suffix: '%', label: 'Yield retained in flood', labelBn: 'বন্যায় টিকে থাকা ফলন', color: '#38D9F5' },
+        { rawVal: 88, prefix: '', suffix: '%', label: 'Yield retained in shock', labelBn: 'দুর্যোগে টিকে থাকা ফলন', color: '#38D9F5' },
       ],
       nums: [
         { label: 'Drought shock', labelBn: 'খরা প্রভাব', val: '−12%', color: '#F5B04C' },
+        { label: 'Scenarios tested', labelBn: 'পরীক্ষিত দুর্যোগ', val: '5 Extreme Shocks', color: '#38D9F5' },
       ],
       nasa: 'NASA Earth Observations Archive',
       link: { label: 'Climate Stress Test', labelBn: 'স্ট্রেস টেস্ট সাব-ল্যাব', dest: 'farm_planning' },
@@ -497,8 +509,8 @@ export function OrbitToFieldStory({
       idx: '10 · CLOSE',
       headlineEn: 'Ask anything. Plan with <em>NASA.</em>',
       headlineBn: 'যেকোনো প্রশ্ন করুন। পরিকল্পনা হোক <em>নাসার সাথে।</em>',
-      bodyEn: 'Built for smallholder farmers across Bangladesh by Team Azoic for NASA International Space Apps Challenge 2026.',
-      bodyBn: 'নাসা ইন্টারন্যাশনাল স্পেস অ্যাপস চ্যালেঞ্জ ২০২৬-এর জন্য টিম AZOIC কর্তৃক বাংলাদেশের প্রান্তিক কৃষকদের জন্য নির্মিত।',
+      bodyEn: `Built for smallholder farmers across Bangladesh by Team Azoic for NASA International Space Apps Challenge 2026. Current farming for ${fieldName} in ${districtCapitalized}: ${existingRotStr}.`,
+      bodyBn: `নাসা ইন্টারন্যাশনাল স্পেস অ্যাপস চ্যালেঞ্জ ২০২৬-এর জন্য টিম AZOIC কর্তৃক বাংলাদেশের প্রান্তিক কৃষকদের জন্য নির্মিত। ${districtCapitalized}-এ ${fieldName}-এর বর্তমান চাষ: ${existingRotStr}।`,
       nasa: 'GPM IMERG · NASA POWER · GRACE-FO',
       teamMembers: [
         'Daniel Hossain (Lead)',
@@ -510,12 +522,11 @@ export function OrbitToFieldStory({
       ],
       buttons: [
         { label: 'Open Planner', labelBn: 'পরিকল্পনা খুলুন', dest: 'farm_planning', primary: true },
-        { label: 'Ask AI Assistant', labelBn: 'AI সহকারীর সাথে কথা বলুন', dest: 'assistant', primary: false },
+        { label: 'Ask AI Chat', labelBn: 'AI চ্যাট খুলুন', dest: 'assistant', primary: false },
       ],
       side: 'right',
     },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [isBn, fieldName, fieldAreaBigha, barindTrend, haorTrend, onsetShift]);
+  ], [isBn, fieldName, fieldAreaBigha, barindTrend, haorTrend, districtCapitalized, existingRotStr]);
 
   // Reduced motion fallback
   if (prefersReducedMotion || !hasWebGL) {
