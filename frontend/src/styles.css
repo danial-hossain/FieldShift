@@ -16560,20 +16560,20 @@ span[style*="197, 232, 108"] {
    Layout reference: docs/water_layout_reference.html
    ============================================================================== */
 .water-planner-view {
-  --bg-wp: #f1f4ee;
-  --surface-wp: #ffffff;
-  --surface-2-wp: #f4f7f1;
-  --line-wp: #dde5da;
-  --fg-wp: #18231b;
-  --muted-wp: #5b6a5e;
-  --faint-wp: #8a988d;
-  --accent-wp: #2f8a4d;
-  --accent-ink-wp: #ffffff;
-  --green-wp: #24834f;
-  --amber-wp: #b5761a;
-  --red-wp: #b9472f;
-  --blue-wp: #2d78b5;
-  --grid-wp: #e3e9e0;
+  --bg-wp: #0c120e;
+  --surface-wp: #131b16;
+  --surface-2-wp: #18221c;
+  --line-wp: #243029;
+  --fg-wp: #e7efe8;
+  --muted-wp: #93a597;
+  --faint-wp: #5f7064;
+  --accent-wp: #c8e46a;
+  --accent-ink-wp: #0f1a07;
+  --green-wp: #3ecf8e;
+  --amber-wp: #f2b24c;
+  --red-wp: #f07a6a;
+  --blue-wp: #4fb3f0;
+  --grid-wp: #223028;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -16601,6 +16601,24 @@ span[style*="197, 232, 108"] {
   --red-wp: #f07a6a;
   --blue-wp: #4fb3f0;
   --grid-wp: #223028;
+}
+
+[data-theme="light"] .water-planner-view,
+.theme-light .water-planner-view {
+  --bg-wp: #f1f4ee;
+  --surface-wp: #ffffff;
+  --surface-2-wp: #f4f7f1;
+  --line-wp: #dde5da;
+  --fg-wp: #18231b;
+  --muted-wp: #5b6a5e;
+  --faint-wp: #8a988d;
+  --accent-wp: #2f8a4d;
+  --accent-ink-wp: #ffffff;
+  --green-wp: #24834f;
+  --amber-wp: #b5761a;
+  --red-wp: #b9472f;
+  --blue-wp: #2d78b5;
+  --grid-wp: #e3e9e0;
 }
 
 .water-planner-view .wp-head {

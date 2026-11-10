@@ -1029,12 +1029,18 @@ export function WaterIrrigationView({
                           }}
                         >
                           <div style={{ fontWeight: 600 }}>{formatShortDate(item.date, lang)}</div>
-                          <div style={{ color: 'var(--green-wp, #3ecf8e)', marginTop: 2 }}>{formatNumberBnEn(item.etc, 1, lang)} mm</div>
+                          <div style={{ color: 'var(--green-wp, #3ecf8e)', marginTop: 2 }}>
+                            {formatNumberBnEn(item.etc, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                          </div>
                           {(item.irr || 0) > 0 && (
-                            <div style={{ color: 'var(--blue-wp, #4fb3f0)', fontWeight: 700, marginTop: 2 }}>💧 সেচ</div>
+                            <div style={{ color: 'var(--blue-wp, #4fb3f0)', fontWeight: 700, marginTop: 2 }}>
+                              {lang === 'bn' ? '💧 সেচ' : '💧 Irrig'}
+                            </div>
                           )}
                           {(item.rain || 0) > 0.5 && !(item.irr > 0) && (
-                            <div style={{ color: 'var(--blue-wp, #4fb3f0)', marginTop: 2 }}>🌧️ {formatNumberBnEn(item.rain, 1, lang)}</div>
+                            <div style={{ color: 'var(--blue-wp, #4fb3f0)', marginTop: 2 }}>
+                              🌧️ {formatNumberBnEn(item.rain, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -1151,19 +1157,19 @@ export function WaterIrrigationView({
               <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 12 }}>
                 <div>
                   <span>{lang === 'bn' ? 'গাছের মোট চাহিদা (ETc)' : 'Crop Demand (ETc)'}</span>
-                  <strong>{formatNumberBnEn(activeSeason?.crop_demand_etc_mm, 1, lang)} mm</strong>
+                  <strong>{formatNumberBnEn(activeSeason?.crop_demand_etc_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'মৌসুমি বৃষ্টিপাত' : 'Seasonal Rainfall'}</span>
-                  <strong>{formatNumberBnEn(activeSeason?.rainfall_mm, 1, lang)} mm</strong>
+                  <strong>{formatNumberBnEn(activeSeason?.rainfall_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'নিট সেচ চাহিদা' : 'Net Irrigation Requirement'}</span>
-                  <strong>{formatNumberBnEn(activeSeason?.net_irrigation_mm, 1, lang)} mm</strong>
+                  <strong>{formatNumberBnEn(activeSeason?.net_irrigation_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'ভর সংরক্ষণ (Mass Balance)' : 'Mass Residual'}</span>
-                  <strong>0.0 mm ({lang === 'bn' ? 'সংরক্ষিত' : 'Conserved'})</strong>
+                  <strong>{lang === 'bn' ? '০.০ মিমি (সংরক্ষিত)' : '0.0 mm (Conserved)'}</strong>
                 </div>
               </div>
 
@@ -1230,11 +1236,11 @@ export function WaterIrrigationView({
               <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginBottom: 12 }}>
                 <div>
                   <span>{lang === 'bn' ? 'মাটি সর্বোচ্চ কত পানি ধরে রাখে (TAW)' : 'Soil Max Holding Capacity (TAW)'}</span>
-                  <strong>{formatNumberBnEn(tawMm, 0, lang)} mm</strong>
+                  <strong>{formatNumberBnEn(tawMm, 0, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'সহজে তোলার পানি (RAW)' : 'Readily Available Water (RAW)'}</span>
-                  <strong>{formatNumberBnEn(rawMm, 0, lang)} mm</strong>
+                  <strong>{formatNumberBnEn(rawMm, 0, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'মৃত্তিকা গঠন ও টেক্সচার' : 'Soil Texture Classification'}</span>
@@ -1259,15 +1265,15 @@ export function WaterIrrigationView({
               <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginBottom: 12 }}>
                 <div>
                   <span>{lang === 'bn' ? 'সেচ নলকূপ সীমা (Borewell / Canal Limit)' : 'Borewell / Canal Capacity Limit'}</span>
-                  <strong>{formatNumberBnEn(borewellLimitMm, 0, lang)} mm/yr</strong>
+                  <strong>{formatNumberBnEn(borewellLimitMm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'পরিকল্পনায় বাৎসরিক সেচ (স্বাভাবিক)' : 'Plan Annual Irrigation (Normal)'}</span>
-                  <strong>{formatNumberBnEn(yearly.plan_yearly_mm, 0, lang)} mm/yr</strong>
+                  <strong>{formatNumberBnEn(yearly.plan_yearly_mm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
                 </div>
                 <div>
                   <span>{lang === 'bn' ? 'পরিকল্পনায় বাৎসরিক সেচ (শুকনো বছর)' : 'Plan Annual Irrigation (Dry Year)'}</span>
-                  <strong>{formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} mm/yr</strong>
+                  <strong>{formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
                 </div>
               </div>
 
