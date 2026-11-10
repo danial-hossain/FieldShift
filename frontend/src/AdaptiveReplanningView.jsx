@@ -145,9 +145,9 @@ export function AdaptiveReplanningView({
 
   // 4. Irrigation selector for remaining seasons
   const defaultIrrigClass = useMemo(() => {
-    const raw = activeField?.irrigation_class || activeField?.irrigation_capacity_mm;
-    if (raw === 'none' || raw === 0 || raw === '0') return 'none';
-    if (raw === 'limited' || raw === 400 || raw === '400') return 'limited';
+    const raw = String(activeField?.irrigation_class || activeField?.irrigation_capacity_mm || '').toLowerCase();
+    if (raw === 'rainfed' || raw === 'none' || raw === '0' || raw === '০') return 'rainfed';
+    if (raw === 'limited' || raw === '400' || raw === '৪০০') return 'limited';
     return 'full';
   }, [activeField]);
 
@@ -236,7 +236,7 @@ export function AdaptiveReplanningView({
             field_area_ha: activeField?.area_ha || 0.67,
             state: {
               temperature_c: 26.5,
-              available_water_mm: irrigationClass === 'none' ? 0 : irrigationClass === 'limited' ? 400 : 1200,
+              available_water_mm: (irrigationClass === 'rainfed' || irrigationClass === 'none') ? 0 : irrigationClass === 'limited' ? 400 : 1200,
               ...(realSoil != null ? { soil_health_score: realSoil } : {}),
             },
             initial_state: {
@@ -927,27 +927,34 @@ export function AdaptiveReplanningView({
           </b>
           <div style={{ display: 'inline-flex', gap: 6 }}>
             {[
-              { id: 'full', labelBn: 'পর্যাপ্ত (১২০০ মিমি)', labelEn: 'Ample (1200 mm)' },
+              { id: 'full', labelBn: 'পর্যাপ্ত (১২০০ মিমি)', labelEn: 'Full (1200 mm)' },
               { id: 'limited', labelBn: 'সীমিত (৪০০ মিমি)', labelEn: 'Limited (400 mm)' },
-              { id: 'none', labelBn: 'নেই (০ মিমি)', labelEn: 'None (0 mm)' },
-            ].map((ir) => (
-              <button
-                key={ir.id}
-                onClick={() => {
-                  setIrrigationClass(ir.id);
-                  setIsDirty(true);
-                }}
-                style={{
-                  background: irrigationClass === ir.id ? 'var(--accent)' : 'var(--surface-2, rgba(0,0,0,0.04))',
-                  color: irrigationClass === ir.id ? 'var(--accent-ink)' : 'var(--text)',
-                  border: '1px solid var(--line, #dfe6dc)',
-                  borderRadius: 8,
-                  padding: '5px 12px',
-                  fontSize: 12.5,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
+              { id: 'rainfed', labelBn: 'বৃষ্টিনির্ভর (০ মিমি)', labelEn: 'Rainfed (0 mm)' },
+            ].map((ir) => {
+              const isSelected = irrigationClass === ir.id || (ir.id === 'rainfed' && irrigationClass === 'none') || (ir.id === 'full' && irrigationClass === 'ample');
+              return (
+                <button
+                  key={ir.id}
+                  onClick={() => {
+                    setIrrigationClass(ir.id);
+                    setIsDirty(true);
+                  }}
+                  style={{
+                    background: isSelected ? 'var(--accent)' : 'var(--surface-2, rgba(0,0,0,0.04))',
+                    color: isSelected ? 'var(--accent-ink)' : 'var(--text)',
+                    border: '1px solid var(--line, #dfe6dc)',
+                    borderRadius: 8,
+                    padding: '5px 12px',
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {lang === 'bn' ? ir.labelBn : ir.labelEn}
+                </button>
+              );
+            })}
+          </div>
                 {lang === 'bn' ? ir.labelBn : ir.labelEn}
               </button>
             ))}

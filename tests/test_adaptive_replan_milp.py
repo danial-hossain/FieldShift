@@ -411,3 +411,49 @@ def test_rd2_learning_updates_and_why_changed_explanations():
     assert "erosion" in y2_k2_explanation
 
 
+def test_rd3_water_availability_rainfed_matches_none():
+    """RD3: water_availability='rainfed' maps to 0.0 mm capacity,
+    identically matching 'none', and remaining seasons' irrigation <= 0."""
+    crops_df = load_crop_knowledge()
+    power, _ = load_district_climate_data("chapainawabganj", offline=True)
+    if "date" in power.columns:
+        power["date"] = pd.to_datetime(power["date"])
+
+    state = build_field_state(
+        "rahim_field",
+        24.62,
+        88.55,
+        power["date"].max(),
+        power.tail(60),
+        crop_knowledge=crops_df,
+    )
+    state.field_size_ha = 0.67
+    state.area_ha = 0.67
+    state.texture = "clay_loam"
+    state.district = "chapainawabganj"
+
+    completed = [{"crop": "Mustard", "yield_maund_bigha": 5.0, "sale_price_bdt_maund": 3200, "outcome": "normal"}]
+
+    res_none = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=completed,
+        priority="balanced",
+        water_availability="none",
+    )
+    res_rainfed = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=completed,
+        priority="balanced",
+        water_availability="rainfed",
+    )
+
+    assert res_rainfed["new_plan"]["sequence"] == res_none["new_plan"]["sequence"]
+    assert res_rainfed["new_plan"]["total_profit_bdt"] == res_none["new_plan"]["total_profit_bdt"]
+    assert res_rainfed["irrigation_capacity_mm"] == 0.0
+    assert res_rainfed["irrigation_class_used"] == "rainfed"
+    assert res_rainfed["totals"]["remaining_irrigation_new_mm"] == 0.0
+
+
+

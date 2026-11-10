@@ -403,21 +403,28 @@ def run_adaptive_replan(
     if "organic_matter" in updated_cond and updated_cond["organic_matter"] is not None:
         updated_state.organic_matter = safe_num(updated_cond["organic_matter"], getattr(field_state, "organic_matter", 1.5))
 
-    # Irrigation availability constraint for remaining seasons (R2e)
+    # Irrigation availability constraint for remaining seasons (R2e / RD3)
     eff_water_avail = water_availability or updated_cond.get("irrigation_class") or updated_cond.get("water_availability")
     water_class_changed = False
     old_irrig_cap = safe_num(getattr(field_state, "irrigation_capacity_mm", None), 1200.0)
-    if eff_water_avail in {"none", "0", 0, "নেই"}:
+    eff_water_str = str(eff_water_avail).strip().lower() if eff_water_avail is not None else ""
+
+    if eff_water_str in {"rainfed", "rain-fed", "none", "0", "নেই", "বৃষ্টিনির্ভর", "0 mm"}:
         updated_state.irrigation_capacity_mm = 0.0
+        eff_water_class = "rainfed"
         water_class_changed = (old_irrig_cap != 0.0)
-    elif eff_water_avail in {"limited", "400", 400, "সীমিত"}:
+        allow_k2_fallow = True
+    elif eff_water_str in {"limited", "400", "সীমিত", "400 mm"}:
         updated_state.irrigation_capacity_mm = 400.0
+        eff_water_class = "limited"
         water_class_changed = (old_irrig_cap != 400.0)
-    elif eff_water_avail in {"full", "ample", "1200", 1200, "পর্যাপ্ত"}:
+    elif eff_water_str in {"full", "ample", "1200", "পর্যাপ্ত", "1200 mm"}:
         updated_state.irrigation_capacity_mm = 1200.0
+        eff_water_class = "full"
         water_class_changed = (old_irrig_cap != 1200.0)
     else:
         updated_state.irrigation_capacity_mm = old_irrig_cap
+        eff_water_class = "full" if old_irrig_cap >= 1000.0 else ("limited" if old_irrig_cap >= 300.0 else "rainfed")
 
     # Carryover rotation state from last finished season
     if num_completed > 0:
@@ -568,17 +575,18 @@ def run_adaptive_replan(
         orig_info = crop_lookup.get(orig_crop.strip().lower(), {})
 
         # New plan metrics from replan_matrix if available, else catalog
+        cur_cap = safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0)
         if p_id in replan_matrix and new_crop in replan_matrix[p_id]:
             m_entry = replan_matrix[p_id][new_crop]
             new_margin_ha = safe_num(m_entry.get("dynamic_gross_margin_bdt_ha"))
-            new_water_mm = safe_num(m_entry.get("crop_water_requirement_mm"))
+            new_water_mm = min(cur_cap, safe_num(m_entry.get("irrigation_supplied_mm"), safe_num(m_entry.get("crop_water_requirement_mm"))))
             new_yield_tha = safe_num(m_entry.get("dynamic_yield_t_ha"), safe_num(new_info.get("expected_yield"), 1.0))
         else:
             new_yield_tha = safe_num(new_info.get("expected_yield"), 1.0)
             new_pr_ton = safe_num(new_info.get("market_price"), 25000.0)
             new_cost_ha = safe_num(new_info.get("production_cost"), 40000.0)
             new_margin_ha = new_yield_tha * new_pr_ton - new_cost_ha
-            new_water_mm = safe_num(new_info.get("water_requirement"), 350.0)
+            new_water_mm = min(cur_cap, safe_num(new_info.get("water_requirement"), 350.0))
 
         # Original plan metrics
         if p_id in initial_matrix and orig_crop in initial_matrix[p_id]:
@@ -782,7 +790,7 @@ def run_adaptive_replan(
         "remaining_seasons_count": len(periods) - num_completed,
         "strategy": priority,
         "finished_seasons": finished_seasons,
-        "irrigation_class_used": eff_water_avail or ("full" if safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0) >= 1000 else "limited" if safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0) >= 300 else "none"),
+        "irrigation_class_used": eff_water_class,
         "irrigation_capacity_mm": safe_num(getattr(updated_state, "irrigation_capacity_mm", 1200.0), 1200.0),
         "original_plan": {
             "sequence": initial_crops,
