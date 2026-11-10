@@ -450,8 +450,9 @@ def run_d3_new_field_lifecycle() -> dict[str, Any]:
 def main():
     try:
         run_d2_audit()
+        run_d3_new_field_lifecycle()
         print("\n" + "=" * 110)
-        print("🎉 ALL CHECKS PASSED: Dynamic Multi-Field Variation (D2) Verified!")
+        print("🎉 ALL CHECKS PASSED: Dynamic Multi-Field Variation (D2) and New Field Lifecycle (D3) Verified!")
         print("=" * 110)
         sys.exit(0)
     except Exception as e:
