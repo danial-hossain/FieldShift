@@ -161,6 +161,20 @@ export function DataEvidenceView({
           ? 'কোন তথ্য "ব্যবহৃত" আর কোনটা "পরিকল্পিত", সেটা repo দেখে বসানো; অ্যাপে প্রতিটার প্রমাণ (file:line) সাথে যুক্ত।'
           : 'Verified system architecture. Datasets marked "Used" or "Planned" based strictly on active codebase calls with traceable file citations.'}
       </p>
+
+      {/* Required Public Domain Attribution Credit */}
+      <div
+        className="evidence-credits"
+        style={{
+          fontSize: 11,
+          color: '#94a3b8',
+          textAlign: 'center',
+          marginTop: 6,
+          letterSpacing: '0.02em',
+        }}
+      >
+        Earth imagery: NASA Visible Earth (Blue Marble)
+      </div>
     </div>
   );
 }

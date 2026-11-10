@@ -315,15 +315,34 @@ export function OrbitToFieldStory({
       setScrollProgress(progress);
       setCurrentSceneIndex(Math.min(SCENE_COUNT - 1, Math.floor(progress * SCENE_COUNT)));
     };
+
+    window.__FS_SET_STORY_PROGRESS__ = (p) => {
+      const progress = Math.max(0, Math.min(1, p));
+      setScrollProgress(progress);
+      setCurrentSceneIndex(Math.min(SCENE_COUNT - 1, Math.floor(progress * SCENE_COUNT)));
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
+    const scrollParent = containerRef.current?.closest('.main-wrapper') || null;
+    if (scrollParent) {
+      scrollParent.addEventListener('scroll', handleScroll, { passive: true });
+    }
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollParent) scrollParent.removeEventListener('scroll', handleScroll);
+      delete window.__FS_SET_STORY_PROGRESS__;
+    };
   }, [prefersReducedMotion]);
 
   const scrollToScene = useCallback((idx) => {
     if (!containerRef.current) return;
     const totalH = containerRef.current.offsetHeight - window.innerHeight;
     const targetY = containerRef.current.offsetTop + (idx / (SCENE_COUNT - 1)) * totalH;
+    const scrollParent = containerRef.current?.closest('.main-wrapper');
+    if (scrollParent) {
+      scrollParent.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
     window.scrollTo({ top: targetY, behavior: 'smooth' });
   }, []);
 

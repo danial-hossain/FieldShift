@@ -84,12 +84,14 @@ export function OrbitToFieldCanvas({
     const spaceGroup = new THREE.Group();
     scene.add(spaceGroup);
 
-    // Deep space starfield
-    const STAR_COUNT = 1600;
+    // Deep cosmic space with stars (NOT blue)
+    scene.background = new THREE.Color(0x0a101b);
+
+    const STAR_COUNT = 2800;
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(STAR_COUNT * 3);
     for (let i = 0; i < STAR_COUNT; i++) {
-      const r = 80 + Math.random() * 120;
+      const r = 40 + Math.random() * 80;
       const th = Math.random() * Math.PI * 2;
       const ph = Math.acos(2 * Math.random() - 1);
       starPos[i * 3]     = r * Math.sin(ph) * Math.cos(th);
@@ -99,67 +101,157 @@ export function OrbitToFieldCanvas({
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     const stars = new THREE.Points(
       starGeo,
-      new THREE.PointsMaterial({ color: 0xe0f2fe, size: 0.4, transparent: true, opacity: 0.9 })
+      new THREE.PointsMaterial({ color: 0xffffff, size: 0.35, transparent: true, opacity: 0.95 })
     );
     spaceGroup.add(stars);
 
-    // Texture Loader for Earth Day & Clouds
+    // Texture Loader for NASA Visible Earth (Blue Marble) Textures
     const texLoader = new THREE.TextureLoader();
     const earthDayTex = texLoader.load('/textures/earth_day_2048.jpg');
     earthDayTex.colorSpace = THREE.SRGBColorSpace;
-    const earthCloudsTex = texLoader.load('/textures/earth_clouds_2048.jpg');
+
+    const earthNormalTex = texLoader.load('/textures/earth_normal_2048.jpg');
+    const earthSpecularTex = texLoader.load('/textures/earth_specular_2048.jpg');
+
+    const earthNightTex = texLoader.load('/textures/earth_night_2048.png');
+    earthNightTex.colorSpace = THREE.SRGBColorSpace;
+
+    const earthCloudsTex = texLoader.load('/textures/earth_clouds_1024.png');
     earthCloudsTex.colorSpace = THREE.SRGBColorSpace;
 
-    // Earth Sphere (radius 6.0)
-    const earthRadius = 6.0;
+    // Direction of the sun (shining from the right, positive X)
+    const sunDirVec = new THREE.Vector3(12.0, 3.0, 6.0).normalize();
+    const dayNightUniforms = {
+      uSunDir: { value: sunDirVec },
+    };
+
+    // Earth Sphere (radius 1, 128 segments wide, 64 height) + MeshStandardMaterial
+    const earthRadius = 1.0;
+    const earthMat = new THREE.MeshStandardMaterial({
+      map: earthDayTex,
+      normalMap: earthNormalTex,
+      normalScale: new THREE.Vector2(0.9, 0.9),
+      roughnessMap: earthSpecularTex,
+      roughness: 0.9,
+      metalness: 0.05,
+      emissive: 0xffffff,
+      emissiveMap: earthNightTex,
+    });
+
+    earthMat.onBeforeCompile = (shader) => {
+      shader.uniforms.uSunDir = dayNightUniforms.uSunDir;
+
+      // Invert specular map for roughness: oceans (specular 1.0) -> roughness ~0.08 (shiny); land (0.0) -> roughness ~0.92 (matte)
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <roughnessmap_fragment>',
+        `
+        float roughnessFactor = roughness;
+        #ifdef USE_ROUGHNESSMAP
+          vec4 texelRoughness = texture2D( roughnessMap, vRoughnessMapUv );
+          roughnessFactor = clamp(1.0 - texelRoughness.r, 0.08, 0.92);
+        #endif
+        `
+      );
+
+      // Night side city lights: only illuminate emissiveMap on the dark side of terminator
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        `
+        #ifdef USE_EMISSIVEMAP
+          vec4 emissiveColor = texture2D( emissiveMap, vEmissiveMapUv );
+          vec3 viewSun = normalize((viewMatrix * vec4(uSunDir, 0.0)).xyz);
+          float sunDot = dot(normal, viewSun);
+          float nightFactor = 1.0 - smoothstep(-0.08, 0.08, sunDot);
+          totalEmissiveRadiance = emissiveColor.rgb * emissive * nightFactor * 2.2;
+        #endif
+        `
+      );
+    };
+
     const earthMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(earthRadius, 64, 48),
-      new THREE.MeshStandardMaterial({
-        map: earthDayTex,
-        roughness: 0.75,
-        metalness: 0.05,
-      })
+      new THREE.SphereGeometry(earthRadius, 128, 64),
+      earthMat
     );
     earthMesh.name = 'EarthDaySphere';
     earthMesh.position.set(0, 0, 0);
-    // Align Bangladesh (long ~90.4°E) facing camera
-    const bangladeshRotY = THREE.MathUtils.degToRad(-90.4 + 90);
-    earthMesh.rotation.set(0, bangladeshRotY, 0);
+
+    // Rotate Earth so Bangladesh (lat 23.7° N, lon 90.4° E) directly faces camera
+    // In equirectangular SphereGeometry, lon 90.4°E points at +Z when rotY = -PI
+    // Tilt slightly (-10 deg) so northern hemisphere, India and Bay of Bengal face camera
+    const bangladeshRotY = -Math.PI;
+    const bangladeshTiltX = THREE.MathUtils.degToRad(-10);
+    earthMesh.rotation.set(bangladeshTiltX, bangladeshRotY, 0);
     spaceGroup.add(earthMesh);
     registeredMeshes.push(earthMesh);
 
-    // Clouds Sphere (radius 6.08)
+    // Clouds Sphere (radius 1.01, earth_clouds_1024.png as alphaMap, white, transparent, depthWrite false)
+    const cloudsMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      alphaMap: earthCloudsTex,
+      transparent: true,
+      opacity: 0.9,
+      roughness: 1.0,
+      depthWrite: false,
+    });
+    cloudsMat.onBeforeCompile = (shader) => {
+      // Use alpha channel from earth_clouds_1024.png for smooth gradient transparency
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <alphamap_fragment>',
+        `
+        #ifdef USE_ALPHAMAP
+          diffuseColor.a *= texture2D( alphaMap, vAlphaMapUv ).a;
+        #endif
+        `
+      );
+    };
+
     const cloudsMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(earthRadius * 1.013, 64, 48),
-      new THREE.MeshStandardMaterial({
-        map: earthCloudsTex,
-        transparent: true,
-        opacity: 0.85,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
+      new THREE.SphereGeometry(1.01, 128, 64),
+      cloudsMat
     );
     cloudsMesh.position.copy(earthMesh.position);
-    cloudsMesh.rotation.set(0, bangladeshRotY, 0);
+    cloudsMesh.rotation.set(bangladeshTiltX, bangladeshRotY, 0);
     spaceGroup.add(cloudsMesh);
 
-    // Atmosphere Fresnel Glow (radius 6.36)
-    const atmMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(earthRadius * 1.06, 48, 32),
-      new THREE.MeshBasicMaterial({
-        color: 0x38d9f5,
-        transparent: true,
-        opacity: 0.22,
-        side: THREE.BackSide,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-      })
-    );
+    // Atmosphere Fresnel Glow (radius 1.06, additive, BackSide)
+    const atmGeo = new THREE.SphereGeometry(1.06, 64, 48);
+    const atmMat = new THREE.ShaderMaterial({
+      uniforms: {
+        glowColor: { value: new THREE.Color(0x38bdf8) }
+      },
+      vertexShader: `
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          vViewPosition = -mvPosition.xyz;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 glowColor;
+        varying vec3 vNormal;
+        varying vec3 vViewPosition;
+        void main() {
+          vec3 viewDir = normalize(vViewPosition);
+          float rim = 1.0 - abs(dot(vNormal, viewDir));
+          float alpha = pow(rim, 3.5) * 0.95;
+          gl_FragColor = vec4(glowColor, alpha);
+        }
+      `,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true,
+      depthWrite: false,
+    });
+    const atmMesh = new THREE.Mesh(atmGeo, atmMat);
     atmMesh.position.copy(earthMesh.position);
     spaceGroup.add(atmMesh);
 
     // Orbiting Satellite (NASA GPM / GRACE-FO)
     const satGroup = new THREE.Group();
+    satGroup.scale.set(0.08, 0.08, 0.08);
     const satBody = new THREE.Mesh(
       new THREE.BoxGeometry(0.35, 0.25, 0.25),
       new THREE.MeshStandardMaterial({ color: 0xcedee9, metalness: 0.8, roughness: 0.2 })
@@ -180,12 +272,12 @@ export function OrbitToFieldCanvas({
     satRadar.rotation.set(Math.PI, 0, 0);
     satRadar.position.set(0, -1.0, 0);
     satGroup.add(satRadar);
-    satGroup.position.set(3.2, 3.8, 12);
+    satGroup.position.set(0.9, 0.7, 0.9);
     spaceGroup.add(satGroup);
 
-    // Cloud dive rush sprites (30 sprites for Shot 02)
+    // Cloud dive rush sprites (Shot 02)
     const cloudDiveGroup = new THREE.Group();
-    const diveCloudGeo = new THREE.PlaneGeometry(1.6, 1.2);
+    const diveCloudGeo = new THREE.PlaneGeometry(0.3, 0.2);
     const diveCloudMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
@@ -196,9 +288,9 @@ export function OrbitToFieldCanvas({
     for (let i = 0; i < 30; i++) {
       const sprite = new THREE.Mesh(diveCloudGeo, diveCloudMat);
       sprite.position.set(
-        (Math.random() - 0.5) * 6,
-        (Math.random() - 0.5) * 4,
-        8.0 + Math.random() * 8
+        (Math.random() - 0.5) * 1.5,
+        (Math.random() - 0.5) * 1.0 + 0.3,
+        1.2 + Math.random() * 2.5
       );
       cloudDiveGroup.add(sprite);
     }
@@ -213,9 +305,22 @@ export function OrbitToFieldCanvas({
     scene.add(mapGroup);
 
     // Ground plane extending to horizon with soft atmospheric fog (NOT floating in space!)
+    const mapGroundGeo = new THREE.PlaneGeometry(80, 80, 32, 32);
+    const mapColors = [];
+    const mapPalette = [
+      new THREE.Color(0x183c24), // lush alluvial silt
+      new THREE.Color(0x2d6238), // green delta plain
+      new THREE.Color(0x14341e), // wetland marsh
+      new THREE.Color(0x387244), // fertile basin
+    ];
+    for (let i = 0; i < mapGroundGeo.attributes.position.count; i++) {
+      const c = mapPalette[i % mapPalette.length];
+      mapColors.push(c.r, c.g, c.b);
+    }
+    mapGroundGeo.setAttribute('color', new THREE.Float32BufferAttribute(mapColors, 3));
     const mapGround = new THREE.Mesh(
-      new THREE.PlaneGeometry(80, 80),
-      new THREE.MeshLambertMaterial({ color: 0x08160f })
+      mapGroundGeo,
+      new THREE.MeshLambertMaterial({ vertexColors: true })
     );
     mapGround.rotation.set(-Math.PI / 2, 0, 0);
     mapGround.position.set(0, -0.05, 0);
@@ -226,8 +331,8 @@ export function OrbitToFieldCanvas({
     const districts = bdGeoData?.districts || [];
     const distMeshes = [];
     const defaultDistMat = new THREE.MeshStandardMaterial({
-      color: 0x143420,
-      roughness: 0.7,
+      color: 0x255834,
+      roughness: 0.65,
       metalness: 0.1,
     });
     const barindDistMat = new THREE.MeshStandardMaterial({
@@ -342,10 +447,23 @@ export function OrbitToFieldCanvas({
     farmGroup.position.set(0, 0, -18.0);
     scene.add(farmGroup);
 
-    // Ground plane reaching horizon
+    // Ground plane reaching horizon with natural grass / soil variation
+    const farmGroundGeo = new THREE.PlaneGeometry(120, 100, 32, 32);
+    const farmColors = [];
+    const farmPalette = [
+      new THREE.Color(0x234d2a),
+      new THREE.Color(0x35683b),
+      new THREE.Color(0x1e4224),
+      new THREE.Color(0x2d5c32),
+    ];
+    for (let i = 0; i < farmGroundGeo.attributes.position.count; i++) {
+      const c = farmPalette[i % farmPalette.length];
+      farmColors.push(c.r, c.g, c.b);
+    }
+    farmGroundGeo.setAttribute('color', new THREE.Float32BufferAttribute(farmColors, 3));
     const farmGround = new THREE.Mesh(
-      new THREE.PlaneGeometry(120, 100),
-      new THREE.MeshLambertMaterial({ color: 0x2b5435 })
+      farmGroundGeo,
+      new THREE.MeshLambertMaterial({ vertexColors: true })
     );
     farmGround.rotation.set(-Math.PI / 2, 0, 0);
     farmGround.position.set(0, 0, 0);
@@ -719,15 +837,16 @@ export function OrbitToFieldCanvas({
         farmGroup.visible = false;
 
         // Rotate Earth slightly with scroll
-        earthMesh.rotation.y = bangladeshRotY + (t * 1.5);
-        cloudsMesh.rotation.y = bangladeshRotY + (t * 1.8);
+        earthMesh.rotation.y = bangladeshRotY + (t * 0.8);
+        // Clouds rotate slowly with time and scroll
+        cloudsMesh.rotation.y = bangladeshRotY + (t * 1.0) + (Date.now() * 0.0001);
 
         // Shot 02 cloud dive rush
         cloudDiveGroup.visible = t > 0.08;
         if (cloudDiveGroup.visible) {
           cloudDiveGroup.children.forEach(c => {
-            c.position.z -= 0.12;
-            if (c.position.z < 6.0) c.position.z = 16.0;
+            c.position.z -= 0.04;
+            if (c.position.z < 1.0) c.position.z = 2.8;
           });
         }
       } else if (t < 0.42) {
