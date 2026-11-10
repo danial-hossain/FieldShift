@@ -166,9 +166,9 @@ export function OrbitToFieldStory({
       chips: { label: isBn ? 'আমার জমি দেখুন →' : 'See My Fields →', dest: 'field' },
       cta: null,
       nums: [
-        { label: REGIONAL_ROTATIONS.barind.regionEn, val: REGIONAL_ROTATIONS.barind.rotationEn, color: REGIONAL_ROTATIONS.barind.color },
-        { label: REGIONAL_ROTATIONS.haor.regionEn, val: REGIONAL_ROTATIONS.haor.rotationEn, color: REGIONAL_ROTATIONS.haor.color },
-        { label: REGIONAL_ROTATIONS.coast.regionEn, val: REGIONAL_ROTATIONS.coast.rotationEn, color: REGIONAL_ROTATIONS.coast.color },
+        { label: isBn ? REGIONAL_ROTATIONS.barind.regionBn : REGIONAL_ROTATIONS.barind.regionEn, val: isBn ? REGIONAL_ROTATIONS.barind.rotationBn : REGIONAL_ROTATIONS.barind.rotationEn, color: REGIONAL_ROTATIONS.barind.color },
+        { label: isBn ? REGIONAL_ROTATIONS.haor.regionBn : REGIONAL_ROTATIONS.haor.regionEn, val: isBn ? REGIONAL_ROTATIONS.haor.rotationBn : REGIONAL_ROTATIONS.haor.rotationEn, color: REGIONAL_ROTATIONS.haor.color },
+        { label: isBn ? REGIONAL_ROTATIONS.coast.regionBn : REGIONAL_ROTATIONS.coast.regionEn, val: isBn ? REGIONAL_ROTATIONS.coast.rotationBn : REGIONAL_ROTATIONS.coast.rotationEn, color: REGIONAL_ROTATIONS.coast.color },
       ],
     },
     {
@@ -180,8 +180,8 @@ export function OrbitToFieldStory({
       chips: { label: isBn ? 'পানির হিসাব দেখুন →' : 'See Water →', dest: 'water_irrigation' },
       cta: null,
       nums: [
-        { label: 'Barind', val: `${barindTrend > 0 ? '+' : ''}${barindTrend} cm/yr`, color: '#F5B04C' },
-        { label: 'Haor', val: `+${haorTrend} cm/yr`, color: '#38D9F5' },
+        { label: isBn ? 'বরেন্দ্র' : 'Barind', val: `${barindTrend > 0 ? '+' : ''}${barindTrend} cm/yr`, color: '#F5B04C' },
+        { label: isBn ? 'হাওর' : 'Haor', val: `+${haorTrend} cm/yr`, color: '#38D9F5' },
         { label: 'GRACE-FO', val: '2002–2026', color: '#EAF2EC' },
       ],
     },
@@ -190,17 +190,17 @@ export function OrbitToFieldStory({
       titleEn: 'Even the sky is uncertain.',
       titleBn: 'আকাশের পূর্বাভাসও দ্বিধাদ্বন্দ্বে ভরা।',
       descEn: isConfirmedShift
-        ? `Monsoon onset delayed by ${onsetShift} days in this district (statistically confirmed).`
-        : 'Two NASA datasets disagree on when the monsoon starts here, so FieldShift only advises on what is confirmed.',
+        ? (isBn ? `এই জেলায় আমন রোপণের বৃষ্টি শুরু গড়ে ${onsetShift} দিন পিছিয়েছে (পরিসংখ্যানগতভাবে নিশ্চিত)।` : `Monsoon onset delayed by ${onsetShift} days in this district (statistically confirmed).`)
+        : (isBn ? 'বর্ষা শুরুর বিষয়ে নাসার দুই উপাত্তের ভেতর মতভেদ রয়েছে, তাই ফিল্ডশিফট কেবল প্রমাণিত সত্যের ওপর পরামর্শ দেয়।' : 'Two NASA datasets disagree on when the monsoon starts here, so FieldShift only advises on what is confirmed.'),
       descBn: isConfirmedShift
         ? `এই জেলায় আমন রোপণের বৃষ্টি শুরু গড়ে ${onsetShift} দিন পিছিয়েছে (পরিসংখ্যানগতভাবে নিশ্চিত)।`
         : 'বর্ষা শুরুর বিষয়ে নাসার দুই উপাত্তের ভেতর মতভেদ রয়েছে, তাই ফিল্ডশিফট কেবল প্রমাণিত সত্যের ওপর পরামর্শ দেয়।',
       chips: { label: isBn ? 'জলবায়ু ও ঝুঁকি দেখুন →' : 'See Climate & Risk →', dest: 'weather' },
       cta: null,
       nums: [
-        { label: 'POWER', val: '+13 days', color: '#F5B04C' },
-        { label: 'IMERG', val: '+2.5 days', color: '#38D9F5' },
-        { label: 'Stat.', val: 'p > 0.1', color: '#9fb3a5' },
+        { label: 'POWER', val: isBn ? '+১৩ দিন' : '+13 days', color: '#F5B04C' },
+        { label: 'IMERG', val: isBn ? '+২.৫ দিন' : '+2.5 days', color: '#38D9F5' },
+        { label: isBn ? 'তাৎপর্য' : 'Stat.', val: 'p > 0.1', color: '#9fb3a5' },
       ],
     },
     {
@@ -209,13 +209,13 @@ export function OrbitToFieldStory({
       titleBn: 'পরের মৌসুমে আপনার জমিতে কী ফলানো উচিত?',
       descEn: 'One field, many options. The answer depends on its water, soil, climate and the farmer.',
       descBn: 'এক জমি, অনেক বিকল্প। সঠিক সিদ্ধান্ত নির্ভর করে পানি, মাটি, আবহাওয়া ও কৃষকের সক্ষমতার ওপর।',
-      chips: null,
+      chips: { label: isBn ? 'আবর্তন পরিকল্পনা দেখুন →' : 'See Rotation Planner →', dest: 'farm_planning' },
       cta: null,
       nums: [
-        { label: 'Mustard?', val: 'সরিষা?', color: '#C8F169' },
-        { label: 'Mungbean?', val: 'মুগডাল?', color: '#C8F169' },
-        { label: 'Chickpea?', val: 'ছোলা?', color: '#C8F169' },
-        { label: 'Sesame?', val: 'তিল?', color: '#C8F169' },
+        { label: isBn ? 'সরিষা?' : 'Mustard?', val: isBn ? 'বিকল্প' : 'Option', color: '#C8F169' },
+        { label: isBn ? 'মুগডাল?' : 'Mungbean?', val: isBn ? 'বিকল্প' : 'Option', color: '#C8F169' },
+        { label: isBn ? 'ছোলা?' : 'Chickpea?', val: isBn ? 'বিকল্প' : 'Option', color: '#C8F169' },
+        { label: isBn ? 'তিল?' : 'Sesame?', val: isBn ? 'বিকল্প' : 'Option', color: '#C8F169' },
       ],
     },
     {
@@ -543,54 +543,21 @@ export function OrbitToFieldStory({
                   </button>
                 )}
 
-                {/* Scene 7 Specific: 4 Inputs Summary Card */}
-                {idx === 6 && (
-                  <div
-                    style={{
-                      marginTop: 16,
-                      background: 'rgba(10, 18, 14, 0.6)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      borderRadius: 14,
-                      padding: '12px 14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 8,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                      <span style={{ color: '#9fb3a5' }}>📍 Location</span>
-                      <b style={{ color: '#ffffff' }}>{activeField?.name || 'Chapainawabganj'}</b>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                      <span style={{ color: '#9fb3a5' }}>🌾 Current</span>
-                      <b style={{ color: '#ffffff' }}>{fieldCurrentCrop}</b>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                      <span style={{ color: '#9fb3a5' }}>💧 Water</span>
-                      <b style={{ color: '#38D9F5' }}>{fieldWater}</b>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-                      <span style={{ color: '#9fb3a5' }}>📐 Area</span>
-                      <b style={{ color: '#ffffff' }}>{fieldAreaBigha} bigha</b>
-                    </div>
-                  </div>
-                )}
-
                 {/* Primary CTA button on Scene 7 */}
                 {scene.cta && (
                   <button
                     type="button"
                     onClick={() => onNavigate(scene.cta.dest)}
                     style={{
-                      marginTop: 16,
+                      marginTop: 18,
                       background: 'var(--accent, #C8F169)',
                       color: 'var(--accent-ink, #10200a)',
                       fontFamily: 'var(--display, "Space Grotesk", sans-serif)',
                       fontWeight: 700,
                       border: 'none',
                       borderRadius: 14,
-                      padding: '12px 22px',
-                      fontSize: 15,
+                      padding: '13px 24px',
+                      fontSize: 'clamp(13px, 1.3vw, 16px)',
                       cursor: 'pointer',
                       boxShadow: '0 0 30px rgba(200, 241, 105, 0.45)',
                       display: 'inline-flex',
@@ -604,6 +571,110 @@ export function OrbitToFieldStory({
                   </button>
                 )}
               </div>
+
+              {/* Scene 7: Right-hand "Your Field" Telemetry & Map Card (Matches Storyboard Frame 7) */}
+              {idx === 6 && (
+                <div
+                  className="story-field-card"
+                  style={{
+                    position: 'absolute',
+                    right: '5%',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 'min(42%, 480px)',
+                    background: 'rgba(14, 24, 20, 0.88)',
+                    border: '1px solid rgba(255, 255, 255, 0.16)',
+                    borderRadius: 24,
+                    padding: '22px 24px',
+                    color: '#EAF2EC',
+                    pointerEvents: 'auto',
+                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.65), 0 0 30px rgba(200, 241, 105, 0.12)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                  }}
+                >
+                  {/* Mini Map View with Grid & Pin */}
+                  <div
+                    style={{
+                      height: 160,
+                      borderRadius: 16,
+                      background: 'radial-gradient(circle at 50% 50%, #153322 0%, #0d1e15 100%)',
+                      border: '1px solid rgba(255, 255, 255, 0.12)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <svg viewBox="0 0 400 160" style={{ width: '100%', height: '100%' }}>
+                      <defs>
+                        <pattern id="field-grid-p7" width="28" height="28" patternUnits="userSpaceOnUse">
+                          <path d="M 28 0 L 0 0 0 28" fill="none" stroke="rgba(200, 241, 105, 0.15)" strokeWidth="1" />
+                        </pattern>
+                      </defs>
+                      <rect width="400" height="160" fill="url(#field-grid-p7)" />
+                      {/* Stylized river bend */}
+                      <path d="M 20 140 Q 120 40 240 100 T 380 30" fill="none" stroke="#38D9F5" strokeWidth="8" strokeOpacity="0.35" strokeLinecap="round" />
+                      {/* Active field parcel polygon */}
+                      <polygon points="170,45 230,40 245,115 185,120" fill="rgba(200, 241, 105, 0.22)" stroke="#C8F169" strokeWidth="2" strokeDasharray="3 3" />
+                      {/* Glowing Field Pin */}
+                      <g transform="translate(205 75)">
+                        <circle r="22" fill="#C8F169" opacity="0.2" />
+                        <circle r="12" fill="#C8F169" opacity="0.4" />
+                        <path d="M0,0 c-8,-12 -8,-22 0,-26 c8,4 8,14 0,26z" fill="#C8F169" />
+                        <circle cy="-17" r="4" fill="#0c1a12" />
+                      </g>
+                    </svg>
+                    <div style={{ position: 'absolute', bottom: 10, left: 14, fontSize: 11, fontWeight: 700, color: 'var(--lime, #C8F169)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                      {isBn ? 'স্যাটেলাইট পার্সেল পর্যবেক্ষণ' : 'Satellite Parcel Telemetry'}
+                    </div>
+                  </div>
+
+                  {/* Header Title */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ fontFamily: 'var(--display, "Space Grotesk", sans-serif)', fontSize: 20, fontWeight: 700, color: '#ffffff' }}>
+                      {isBn ? 'আপনার জমি' : 'Your field'}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#9fb3a5', background: 'rgba(255,255,255,0.08)', padding: '2px 8px', borderRadius: 99 }}>
+                      {activeField?.district || 'Chapainawabganj'}
+                    </span>
+                  </div>
+
+                  {/* 4 Detail Rows */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: 13, color: '#9fb3a5', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📍</span>
+                        <span>{isBn ? 'অবস্থান' : 'Location'}</span>
+                      </span>
+                      <b style={{ fontSize: 13, color: '#ffffff' }}>{activeField?.name || (isBn ? 'রহিমের খামার' : "Rahim's Farm")}</b>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: 13, color: '#9fb3a5', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>🌾</span>
+                        <span>{isBn ? 'বর্তমান ফসল' : 'What you grow now'}</span>
+                      </span>
+                      <b style={{ fontSize: 13, color: '#ffffff' }}>{fieldCurrentCrop}</b>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: 13, color: '#9fb3a5', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>💧</span>
+                        <span>{isBn ? 'পানির সুবিধা' : 'Water access'}</span>
+                      </span>
+                      <b style={{ fontSize: 13, color: '#38D9F5' }}>{fieldWater}</b>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                      <span style={{ fontSize: 13, color: '#9fb3a5', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📐</span>
+                        <span>{isBn ? 'জমির পরিমাপ' : 'Area'}</span>
+                      </span>
+                      <b style={{ fontSize: 13, color: 'var(--lime, #C8F169)' }}>{fieldAreaBigha} {isBn ? 'বিঘা' : 'bigha'}</b>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
