@@ -1,287 +1,223 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="bn">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FieldShift — প্রমাণ ও পদ্ধতি (Evidence & Method) Reference Layout</title>
-  <style>
-    :root {
-      --bg: #060b13;
-      --card-bg: rgba(15, 23, 42, 0.85);
-      --used: #a3e635;
-      --partial: #f59e0b;
-      --exp: #c084fc;
-      --planned: #64748b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --grid: rgba(6, 182, 212, 0.15);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding: 24px;
-    }
-    .container {
-      max-width: 1280px;
-      margin: 0 auto;
-    }
-    .header-bar {
-      margin-bottom: 24px;
-    }
-    .header-bar h1 {
-      font-size: 24px;
-      font-weight: 800;
-      color: #fff;
-      margin-bottom: 4px;
-    }
-    .header-bar p {
-      font-size: 13.5px;
-      color: var(--text-muted);
-    }
-    .map-wrapper {
-      position: relative;
-      height: 640px;
-      background: radial-gradient(circle at 18% 60%, rgba(14, 165, 233, 0.12) 0%, rgba(6, 11, 19, 0.98) 70%);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 16px;
-      overflow: hidden;
-      margin-bottom: 32px;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-    }
-    .controls-bar {
-      position: absolute;
-      top: 16px;
-      left: 20px;
-      display: flex;
-      gap: 12px;
-      z-index: 10;
-    }
-    .btn-follow {
-      background: var(--used);
-      color: #052e16;
-      border: none;
-      padding: 9px 18px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 0 20px rgba(163, 230, 53, 0.35);
-      transition: all 0.2s;
-    }
-    .btn-follow:hover { transform: scale(1.03); }
-    .btn-show-all {
-      background: rgba(15, 23, 42, 0.75);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      padding: 9px 16px;
-      border-radius: 999px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .floor-grid {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 240px;
-      background:
-        linear-gradient(to bottom, transparent, rgba(6, 11, 19, 0.9)),
-        repeating-linear-gradient(90deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 40px),
-        repeating-linear-gradient(0deg, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 40px);
-      transform: perspective(400px) rotateX(60deg) translateY(60px);
-      transform-origin: bottom center;
-      pointer-events: none;
-      opacity: 0.6;
-    }
-    .node-box {
-      position: absolute;
-      background: rgba(15, 23, 42, 0.88);
-      border-radius: 8px;
-      padding: 8px 12px;
-      font-size: 12px;
-      color: #fff;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-      transition: all 0.25s ease;
-      z-index: 5;
-    }
-    .node-box:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 0 20px rgba(163, 230, 53, 0.4);
-    }
-    .node-box .title { font-weight: 700; font-size: 12.5px; display: flex; align-items: center; gap: 6px; }
-    .node-box .sub { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
-    .status-used { border: 1.5px solid var(--used); box-shadow: 0 0 10px rgba(163, 230, 53, 0.15); }
-    .status-partial { border: 1.5px solid var(--partial); box-shadow: 0 0 10px rgba(245, 158, 11, 0.15); }
-    .status-exp { border: 1.5px dashed var(--exp); box-shadow: 0 0 10px rgba(192, 132, 252, 0.2); }
-    .status-planned { border: 1.5px dashed var(--planned); opacity: 0.65; }
-    .column-labels {
-      position: absolute;
-      bottom: 12px;
-      left: 20px;
-      right: 20px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      color: #64748b;
-      font-weight: 700;
-      text-transform: uppercase;
-      z-index: 10;
-      pointer-events: none;
-    }
-    .legend-bar {
-      position: absolute;
-      bottom: 34px;
-      left: 20px;
-      display: flex;
-      gap: 16px;
-      font-size: 11.5px;
-      z-index: 10;
-    }
-    .legend-item { display: flex; align-items: center; gap: 6px; }
-    .legend-dot { width: 9px; height: 9px; border-radius: 50%; }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FieldShift System Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Hind+Siliguri:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: header → 3D-style system map (space | engine | farmer) with side panel → NASA data cards → how MILP decides → learning loop → validation & limits */
+:root{--bg:#060b10;--surface:#121a17;--surface-2:#18221c;--line:#243029;--fg:#e7efe8;--muted:#93a597;--faint:#5f7064;
+  --lime:#C8F169;--cyan:#38D9F5;--amber:#F5B04C;--violet:#b49cff;--grey:#5d6b63;
+  --display:"Space Grotesk","Hind Siliguri",system-ui,sans-serif;--body:"Hind Siliguri","Space Grotesk",system-ui,sans-serif;color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--pagebg:#eef2ec}}
+:root[data-theme="light"]{--pagebg:#eef2ec}
+body{margin:0;background:var(--pagebg,var(--bg));color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1240px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.hero{position:relative;border-radius:20px;overflow:hidden;background:radial-gradient(120% 90% at 15% 50%,#0d1f33 0%,#070d14 45%,#08130e 100%);border:1px solid #1b2a24}
+.hero h1{position:absolute;left:22px;top:16px;margin:0;font-family:var(--display);font-size:22px;color:#fff;z-index:2}
+.hero .tag{position:absolute;left:22px;top:48px;font-size:12.5px;color:#9fb3a5;z-index:2}
+.tools{position:absolute;right:16px;top:14px;display:flex;gap:8px;z-index:3}
+.tools button{font:600 13px var(--body);border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.07);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer}
+.tools button.main{background:var(--lime);color:#10200a;border-color:var(--lime)}
+button:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+#map{display:block;width:100%;height:auto}
+.node{cursor:pointer}
+.node rect.body{transition:opacity .2s}
+.dim .node:not(.on) {opacity:.22}
+.dim .edge:not(.on){opacity:.06}
+.edge{transition:opacity .2s}
+.panel{position:absolute;right:16px;top:64px;width:300px;max-width:calc(100% - 32px);background:rgba(14,24,20,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:14px 16px;color:#e7efe8;z-index:3;display:none}
+.panel.show{display:block}
+.panel h3{margin:0 0 4px;font-family:var(--display);font-size:17px}
+.panel .st{display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:1px 8px;margin-bottom:8px}
+.st.used{background:rgba(200,241,105,.16);color:var(--lime)} .st.partial{background:rgba(245,176,76,.16);color:var(--amber)} .st.planned{background:rgba(255,255,255,.08);color:#a5b2a9} .st.exp{background:rgba(180,156,255,.16);color:var(--violet)}
+.panel dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:12.5px}
+.panel dt{color:#93a597} .panel dd{margin:0}
+.panel code{font-size:11.5px;color:#9fd8ff}
+.panel .x{position:absolute;right:10px;top:8px;background:none;border:0;color:#93a597;font-size:18px;cursor:pointer}
+.cap{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:rgba(14,24,20,.85);border:1px solid rgba(200,241,105,.35);color:#eaf2ec;border-radius:99px;padding:6px 14px;font-size:13.5px;z-index:3;white-space:nowrap;display:none}
+.cap.show{display:block}
+.legend{position:absolute;left:22px;bottom:14px;display:flex;gap:12px;font-size:12px;color:#9fb3a5;z-index:2;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;min-width:0}
+.card h2{font-family:var(--display);font-size:18px;margin:0 0 4px}
+.muted{color:var(--muted);font-size:13px}
+.ds{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.d{background:var(--surface-2);border-radius:14px;padding:12px;border:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.d.pl{opacity:.55}
+.d b{font-size:15px}
+.d .sat{font-size:12px;color:var(--cyan);font-family:var(--display)}
+.d .meta{font-size:12px;color:var(--muted)}
+.d .fact{margin-top:4px;font-size:12.5px;background:rgba(200,241,105,.08);border-radius:8px;padding:5px 8px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}
+.stp{background:var(--surface-2);border-radius:14px;padding:12px;border:1px solid var(--line)}
+.stp .n{font-family:var(--display);color:var(--lime);font-weight:700}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+ul{margin:6px 0 0;padding-left:18px} li{margin:3px 0}
+.loop{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:13.5px}
+.loop span{background:var(--surface-2);border:1px solid var(--line);border-radius:99px;padding:5px 11px}
+.loop em{font-style:normal;color:var(--lime)}
+.q{margin-top:10px;border:1px dashed rgba(180,156,255,.5);border-radius:12px;padding:10px 12px;font-size:13px;color:#d6ccff}
+.note{font-size:12px;color:var(--faint)}
+@media (max-width:900px){.steps,.two{grid-template-columns:minmax(0,1fr)}.panel{left:16px;right:16px;width:auto;top:auto;bottom:56px}.tools{position:static;padding:70px 12px 0}.hero h1,.hero .tag{position:static;padding:0 12px}.hero h1{padding-top:12px}}
+@media (prefers-reduced-motion: reduce){.particle{display:none}}
+.dt{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+.dt th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px;border-bottom:1px solid var(--line)}
+.dt td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.dt tr{cursor:pointer}.dt tr:hover td{background:rgba(200,241,105,.05)}
+.dt tr.pl td{opacity:.5}
+.dt b{font-family:var(--display)}
+.dt .v{font-variant-numeric:tabular-nums;color:var(--lime);font-weight:600}
+.badge{font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;white-space:nowrap}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="header-bar">
-      <h1>FieldShift কীভাবে কাজ করে</h1>
-      <p>মহাকাশ থেকে মাঠ পর্যন্ত — কোনো স্যাটেলাইট বা বাক্সে মাউস রাখুন বা click করুন</p>
+<div class="wrap">
+  <section class="hero" id="hero">
+    <h1>FieldShift কীভাবে কাজ করে</h1>
+    <div class="tag">মহাকাশ থেকে মাঠ পর্যন্ত — কোনো স্যাটেলাইট বা বাক্সে মাউস রাখুন বা click করুন</div>
+    <div class="tools"><button class="main" id="follow" type="button">▶ একটা সংখ্যা অনুসরণ করুন: ৭১৮ মিমি</button><button id="reset" type="button">সব দেখান</button></div>
+    <svg id="map" viewBox="0 0 1600 860" role="img" aria-label="FieldShift সিস্টেম মানচিত্র"></svg>
+    <div class="panel" id="panel" aria-live="polite"></div>
+    <div class="cap" id="cap"></div>
+    <div class="legend"><span><i style="background:var(--lime)"></i>ব্যবহৃত</span><span><i style="background:var(--amber)"></i>আংশিক / নির্মাণাধীন</span><span><i style="background:var(--violet)"></i>পরীক্ষামূলক</span><span><i style="background:#5d6b63"></i>পরিকল্পিত</span></div>
+  </section>
+
+  <section class="card"><h2>🛰️ যে তথ্য ব্যবহার করি</h2><div class="muted">প্রতিটা তথ্য জমির নিজের বিন্দু বা ঘর থেকে নেওয়া হয়, তারপর দৈনিক তথ্য মৌসুমে যোগ করা হয়। কোনো সারিতে click করলে উপরের মানচিত্রে তার পথ জ্বলে ওঠে।</div>
+<div style="overflow-x:auto;margin-top:10px"><table class="dt"><thead><tr><th>তথ্য</th><th>কী মাপে</th><th>মাপ · সময়</th><th>রহিমের জমিতে</th><th>কোথায় লাগে</th><th>অবস্থা</th></tr></thead><tbody id="dt"></tbody></table></div></section>
+
+  <section class="card"><h2>🧮 সিদ্ধান্ত কীভাবে হয় (MILP)</h2><div class="muted">PuLP Mixed-Integer Linear Programming — ৬ মৌসুমের সবচেয়ে ভালো ফসল-সারি একসাথে খোঁজে।</div>
+    <div class="steps">
+      <div class="stp"><div class="n">১ · বিকল্প</div>প্রতিটা মৌসুমে কোন কোন ফসল সম্ভব (রবি/খরিফ-১/খরিফ-২-এর নিয়ম মেনে)</div>
+      <div class="stp"><div class="n">২ · স্কোর</div>ফলন (FAO-33), পানির চাহিদা (FAO-56), মাটি (ডালে N, খালি দিন), লাভ (দাম)</div>
+      <div class="stp"><div class="n">৩ · বাছাই</div>সব মিলিয়ে সর্বোচ্চ ওজনদার স্কোর: max Σ w·(লাভ, −পানি, মাটি)</div>
+      <div class="stp"><div class="n">৪ · নিয়ম</div>এক মৌসুমে এক ফসল · ডাল ফসলের ফাঁক · একই পরিবার পরপর নয় · সেচ সুবিধার সীমা · বিক্রি-অযোগ্য ফসল বাদ</div>
     </div>
+    <p class="note" style="margin:8px 0 0">৪ কৌশল = ৪ সেট ওজন (সুষম, লাভ, পানি সাশ্রয়, মাটির স্বাস্থ্য); অ্যাপে code থেকে আসল ওজন দেখাবে।</p></section>
 
-    <div class="map-wrapper">
-      <div class="controls-bar">
-        <button class="btn-follow">▶ একটা সংখ্যা অনুসরণ করুন: ৭১৮ মিমি</button>
-        <button class="btn-show-all">সব দেখান</button>
-      </div>
-
-      <div class="floor-grid"></div>
-
-      <!-- SPACE · NASA -->
-      <div class="node-box status-used" style="left: 14%; top: 40%;">
-        <div class="title">GPM</div>
-        <div class="sub">বৃষ্টি</div>
-      </div>
-      <div class="node-box status-used" style="left: 24%; top: 49%;">
-        <div class="title">Terra/Aqua · CERES</div>
-        <div class="sub">রোদ (POWER-এ)</div>
-      </div>
-      <div class="node-box status-used" style="left: 4%; top: 56%;">
-        <div class="title">GRACE-FO</div>
-        <div class="sub">মাটির নিচের পানি</div>
-      </div>
-      <div class="node-box status-partial" style="left: 4%; top: 74%;">
-        <div class="title">SRTM</div>
-        <div class="sub">উচ্চতা</div>
-      </div>
-      <div class="node-box status-planned" style="left: 9%; top: 88%;">
-        <div class="title">SMAP</div>
-        <div class="sub">মাটির আর্দ্রতা</div>
-      </div>
-      <div class="node-box status-planned" style="left: 20%; top: 86%;">
-        <div class="title">MODIS</div>
-        <div class="sub">গাছের সবুজভাব (NDVI)</div>
-      </div>
-
-      <!-- DATA INPUTS -->
-      <div class="node-box status-used" style="left: 31%; top: 58%;">
-        <div class="title">NASA POWER</div>
-        <div class="sub">তাপ · আর্দ্রতা · বাতাস · রোদ</div>
-      </div>
-      <div class="node-box status-used" style="left: 31%; top: 72%;">
-        <div class="title">ISRIC SoilGrids</div>
-        <div class="sub">মাটি (২৫০ মি)</div>
-      </div>
-      <div class="node-box status-used" style="left: 31%; top: 83%;">
-        <div class="title">দাম</div>
-        <div class="sub">DAM · TCB · BBS</div>
-      </div>
-
-      <!-- ENGINE: DATA -->
-      <div class="node-box status-used" style="left: 45%; top: 62%;">
-        <div class="title">FieldShift API</div>
-        <div class="sub">FastAPI + cache</div>
-      </div>
-
-      <!-- ENGINE: SCIENCE -->
-      <div class="node-box status-used" style="left: 58%; top: 48%;">
-        <div class="title">পানির হিসাব</div>
-        <div class="sub">FAO-56 Penman-Monteith</div>
-      </div>
-      <div class="node-box status-used" style="left: 58%; top: 62%;">
-        <div class="title">ফসলের চাপ</div>
-        <div class="sub">Ky · তাপ · খরা · লবণ</div>
-      </div>
-      <div class="node-box status-used" style="left: 58%; top: 76%;">
-        <div class="title">জলবায়ুর প্রবণতা</div>
-        <div class="sub">Mann-Kendall · বর্ষা শুরু</div>
-      </div>
-
-      <!-- ENGINE: DECISION -->
-      <div class="node-box status-used" style="left: 72%; top: 41%;">
-        <div class="title">AI সহকারী</div>
-        <div class="sub">Gemini + পর্যবেক্ষণ ডেটা</div>
-      </div>
-      <div class="node-box status-used" style="left: 71%; top: 55%; padding: 12px 16px; border-width: 2px;">
-        <div class="title" style="font-size: 14px;">MILP অপ্টিমাইজার</div>
-        <div class="sub">PuLP - ৬ মৌসুম - ৪ কৌশল</div>
-      </div>
-      <div class="node-box status-used" style="left: 72%; top: 71%;">
-        <div class="title">মাঠ থেকে শেখা</div>
-        <div class="sub">অমল -> ফলন -> অর্থনীতি</div>
-      </div>
-      <div class="node-box status-exp" style="left: 72%; top: 84%;">
-        <div class="title">Q-learning</div>
-        <div class="sub">পরীক্ষামূলক</div>
-      </div>
-
-      <!-- FARMER APP -->
-      <div class="node-box status-used" style="right: 3%; top: 39%; width: 140px;">
-        <div class="title">আবর্তন পরিকল্পনা</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 46%; width: 140px;">
-        <div class="title">পানি ও সেচ</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 54%; width: 140px;">
-        <div class="title">আবহাওয়া ও ঝুঁকি</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 62%; width: 140px;">
-        <div class="title">চাপ পরীক্ষা</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 69%; width: 140px;">
-        <div class="title">অভিযোজিত</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 77%; width: 140px;">
-        <div class="title">বাজার ও লাভ</div>
-      </div>
-      <div class="node-box status-used" style="right: 3%; top: 84%; width: 140px;">
-        <div class="title">AI সহকারী</div>
-      </div>
-
-      <!-- LEGEND -->
-      <div class="legend-bar">
-        <div class="legend-item"><span class="legend-dot" style="background: var(--used);"></span> ব্যবহৃত</div>
-        <div class="legend-item"><span class="legend-dot" style="background: var(--partial);"></span> আংশিক / নির্মাণাধীন</div>
-        <div class="legend-item"><span class="legend-dot" style="background: var(--exp);"></span> পরীক্ষামূলক</div>
-        <div class="legend-item"><span class="legend-dot" style="background: var(--planned);"></span> পরিকল্পিত</div>
-      </div>
-
-      <!-- COLUMNS -->
-      <div class="column-labels">
-        <span>SPACE · NASA</span>
-        <span>ENGINE · SCIENCE · DECISION</span>
-        <span>FARMER · APP</span>
-      </div>
-    </div>
+  <div class="two">
+    <section class="card"><h2>🔁 মাঠ থেকে শেখা</h2><div class="muted">RL-অনুপ্রাণিত অভিযোজিত শেখা</div>
+      <div class="loop"><span>কাজ: কী লাগালেন</span><em>→</em><span>পুরস্কার: আসল ফলন × দাম</span><em>→</em><span>শেখা: ফসলের প্রত্যাশিত লাভ আপডেট</span><em>→</em><span>নতুন সিদ্ধান্ত: MILP বাকি মৌসুম</span></div>
+      <div class="q">🧪 পরীক্ষামূলক Q-learning: কৃত্রিম পরিবেশে প্রশিক্ষিত (<code>src/rl/synthetic_q_learning.py</code>)। চূড়ান্ত পরামর্শ MILP দেয়।</div></section>
+    <section class="card"><h2>⚖️ যাচাই ও সীমাবদ্ধতা</h2>
+      <ul><li>সব পাতায় একই সংখ্যা (consistency check) · ৫টা জমিতে আলাদা ফল (field variation check)</li>
+      <li>দুই NASA dataset বর্ষা শুরুর তারিখে একমত নয় → এ নিয়ে কোনো দাবি করি না</li>
+      <li>NASA POWER ~৫০ কিমি এলাকার গড়; জমির নিজের আবহাওয়া একটু আলাদা হতে পারে</li>
+      <li>মাটি পরীক্ষা না থাকলে মাটির ধরনের গড় মান; দাম স্থির তালিকা</li>
+      <li>পোকা-রোগ মডেলে নেই · লাগানোর আগে উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে যাচাই করুন</li></ul></section>
   </div>
+  <p class="note">ডিজাইন নমুনা। অ্যাপে উপরের মানচিত্র three.js-এ 3D হবে (ঘুরন্ত পৃথিবী, স্যাটেলাইট, আলোর নল)। কোন তথ্য "ব্যবহৃত" আর কোনটা "পরিকল্পিত", সেটা repo দেখে বসানো; অ্যাপে প্রতিটার প্রমাণ (file:line) সাথে থাকবে।</p>
+</div>
+<script>
+const W=1600,H=860;
+/* nodes: id,x,y,w,h,label,sub,col,kind,status,info */
+const N=[
+ // space
+ {id:'gpm',t:'sat',x:250,y:150,l:'GPM',s:'বৃষ্টি',st:'used',i:{what:'Global Precipitation Measurement — IMERG Final, দৈনিক বৃষ্টি',res:'০.১° (~১০ কিমি), ২০০১–২০২৪',use:'পানির হিসাব, খরা/অতিবৃষ্টি, বর্ষা শুরু',pages:'পানি, আবহাওয়া ও ঝুঁকি, প্ল্যানার',code:'data/imerg/bd_imerg_daily.npz'}},
+ {id:'grace',t:'sat',x:92,y:300,l:'GRACE-FO',s:'মাটির নিচের পানি',st:'used',i:{what:'জোড়া স্যাটেলাইট, পৃথিবীর মাধ্যাকর্ষণ মেপে মোট পানি সঞ্চয়',res:'mascon ~৩°, ২০০২–২০২৬',use:'পানি সঞ্চয়ের প্রবণতা (বরেন্দ্র −১.০৭ সেমি/বছর)',pages:'আবহাওয়া ও ঝুঁকি, পানি, Overview',code:'data/grace/grace_bangladesh_trends.json'}},
+ {id:'ceres',t:'sat',x:400,y:255,l:'Terra/Aqua · CERES',s:'রোদ (POWER-এ)',st:'used',i:{what:'সূর্যের বিকিরণ মাপে; NASA POWER-এর রোদের তথ্যের উৎস',res:'POWER-এর মাধ্যমে, ০.৫°',use:'ET০ (FAO-56)',pages:'পানি',code:'via NASA POWER ALLSKY_SFC_SW_DWN'}},
+ {id:'srtm',t:'sat',x:98,y:560,l:'SRTM',s:'উচ্চতা',st:'partial',i:{what:'Shuttle Radar Topography Mission — জমির উচ্চতা ও ঢাল',res:'৩০ মিটার',use:'ঢাল, নিচু জায়গায় পানি জমা',pages:'পানি (কিছু জমিতে)',code:'scripts/fetch_srtm.py'}},
+ {id:'smap',t:'sat',x:150,y:720,l:'SMAP',s:'মাটির আর্দ্রতা',st:'planned',i:{what:'মাটির আর্দ্রতা (L4)',res:'৯ কিমি, ২০১৫–',use:'এখনো ব্যবহার হয় না',pages:'—',code:'main.py:888 (খালি টেবিল)'}},
+ {id:'modis',t:'sat',x:330,y:690,l:'MODIS',s:'গাছের সবুজভাব (NDVI)',st:'planned',i:{what:'Terra/Aqua MODIS NDVI',res:'২৫০ মিটার, ১৬ দিন',use:'এখনো ব্যবহার হয় না',pages:'—',code:'—'}},
+ {id:'power',t:'hub',x:520,y:400,l:'NASA POWER',s:'তাপ · আর্দ্রতা · বাতাস · রোদ',st:'used',i:{what:'MERRA-2 reanalysis + CERES থেকে দৈনিক কৃষি-আবহাওয়া (স্যাটেলাইট নয়, তথ্যের কেন্দ্র)',res:'০.৫° (~৫০ কিমি), ১৯৮১–এখন',use:'তাপমাত্রা, গরম দিন, ET০, ফসলের উপযোগিতা',pages:'সব পাতা',code:'data/nasa_power/'}},
+ {id:'soil',t:'box',x:520,y:560,l:'ISRIC SoilGrids',s:'মাটি (২৫০ মি)',st:'used',ext:1,i:{what:'মাটির বালি/পলি/কাদা, জৈব কার্বন (NASA নয়)',res:'২৫০ মিটার',use:'মাটি কত পানি ধরে রাখে',pages:'আমার জমি, পানি',code:'src/compute/field_enrichment.py'}},
+ {id:'price',t:'box',x:520,y:680,l:'দাম',s:'DAM · TCB · BBS',st:'used',ext:1,i:{what:'সরকারি বাজার দরের স্থির তালিকা (NASA নয়) + কৃষকের নিজের দাম',res:'ফসলভিত্তিক',use:'লাভের হিসাব',pages:'প্ল্যানার, বাজার ও লাভ',code:'src/data/market_intelligence.py'}},
+ // engine
+ {id:'api',t:'box',x:740,y:430,l:'FieldShift API',s:'FastAPI + cache',st:'used',big:1,i:{what:'সব তথ্য জমির বিন্দুতে এনে ক্যাশ করে, সব পাতায় একই সংখ্যা দেয়',res:'—',use:'তথ্য সংগ্রহ ও মেলানো',pages:'সব',code:'backend/app/main.py'}},
+ {id:'water',t:'box',x:960,y:260,l:'পানির হিসাব',s:'FAO-56 Penman-Monteith',st:'used',i:{what:'দৈনিক ET০, ফসলের পানি, মাটির পানির হিসাব, ধানে AWD',res:'দৈনিক',use:'কোন মৌসুমে কত সেচ',pages:'পানি, প্ল্যানার',code:'src/compute/water_service.py'}},
+ {id:'stress',t:'box',x:960,y:430,l:'ফসলের চাপ',s:'Ky · তাপ · বন্যা · লবণ',st:'partial',i:{what:'খরা (FAO-33 Ky), লবণ (FAO-29), তাপ/ঠান্ডা/বন্যা',res:'মৌসুমভিত্তিক',use:'ফলন কত কমতে পারে',pages:'জলবায়ু চাপ পরীক্ষা (নির্মাণাধীন)',code:'/api/planning/stress'}},
+ {id:'trend',t:'box',x:960,y:600,l:'জলবায়ুর প্রবণতা',s:'Mann-Kendall · বর্ষা শুরু',st:'used',i:{what:'২৪–৪৫ বছরের প্রবণতা, p-মান; বর্ষা শুরুর পরীক্ষা (Mann-Whitney U)',res:'বার্ষিক',use:'কী বদলেছে, কী নিশ্চিত',pages:'আবহাওয়া ও ঝুঁকি',code:'src/compute/agro.py'}},
+ {id:'milp',t:'box',x:1180,y:350,l:'MILP অপ্টিমাইজার',s:'PuLP · ৬ মৌসুম · ৪ কৌশল',st:'used',big:1,i:{what:'সব স্কোর আর নিয়ম মেনে ৬ মৌসুমের সেরা ফসল-সারি বাছে',res:'২ বছর × ৩ মৌসুম',use:'আবর্তন পরিকল্পনা',pages:'প্ল্যানার, তুলনা, পানি, বাজার',code:'src/optimizer/milp.py'}},
+ {id:'learn',t:'box',x:1180,y:540,l:'মাঠ থেকে শেখা',s:'ফলন × দাম → আপডেট',st:'used',i:{what:'আসল ফলন-দামকে পুরস্কার ধরে ফসলের প্রত্যাশিত লাভ আপডেট, তারপর MILP আবার',res:'প্রতি মৌসুম',use:'বাকি মৌসুম নতুন করে',pages:'অভিযোজিত পুনঃপরিকল্পনা',code:'src/optimizer/adaptive_replan.py'}},
+ {id:'qrl',t:'box',x:1180,y:690,l:'Q-learning',s:'পরীক্ষামূলক',st:'exp',dash:1,i:{what:'Reinforcement learning পরীক্ষা, কৃত্রিম পরিবেশে প্রশিক্ষিত',res:'—',use:'দ্বিতীয় মত মাত্র; সিদ্ধান্ত MILP দেয়',pages:'অভিযোজিত (ছোট বাক্স)',code:'src/rl/synthetic_q_learning.py'}},
+ {id:'gemini',t:'box',x:1180,y:180,l:'AI সহকারী',s:'Gemini + পরিকল্পনার তথ্য',st:'used',i:{what:'পরিকল্পনার আসল সংখ্যা দিয়ে বাংলায় উত্তর; অফলাইনে নিজের তথ্য থেকে',res:'—',use:'কৃষকের প্রশ্নের উত্তর',pages:'AI সহকারী',code:'AiAssistantView.jsx, /api/assistant/chat'}},
+ // farmer pages
+ {id:'p_plan',t:'page',x:1440,y:150,l:'আবর্তন পরিকল্পনা',st:'used'},
+ {id:'p_water',t:'page',x:1440,y:240,l:'পানি ও সেচ',st:'used'},
+ {id:'p_clim',t:'page',x:1440,y:330,l:'আবহাওয়া ও ঝুঁকি',st:'used'},
+ {id:'p_stress',t:'page',x:1440,y:420,l:'চাপ পরীক্ষা',st:'partial'},
+ {id:'p_adapt',t:'page',x:1440,y:510,l:'অভিযোজিত',st:'used'},
+ {id:'p_market',t:'page',x:1440,y:600,l:'বাজার ও লাভ',st:'used'},
+ {id:'p_ai',t:'page',x:1440,y:690,l:'AI সহকারী',st:'used'}
+];
+const E=[['gpm','api'],['grace','api'],['ceres','power'],['power','api'],['srtm','api'],['smap','api'],['modis','api'],['soil','api'],['price','api'],
+ ['api','water'],['api','stress'],['api','trend'],['water','milp'],['stress','milp'],['trend','milp'],['api','milp'],['milp','learn'],['learn','milp'],['milp','qrl'],['milp','gemini'],
+ ['milp','p_plan'],['water','p_water'],['trend','p_clim'],['stress','p_stress'],['learn','p_adapt'],['milp','p_market'],['gemini','p_ai'],['milp','p_water'],['grace','p_clim']];
+const COL={used:'#C8F169',partial:'#F5B04C',planned:'#5d6b63',exp:'#b49cff'};
+const byId=Object.fromEntries(N.map(n=>[n.id,n]));
+const size=n=>n.t==='sat'?[0,0]:n.t==='page'?[200,56]:n.big?[220,84]:[200,70];
+function anchor(n,side){const [w,h]=size(n);if(n.t==='sat')return [n.x+(side==='out'?30:-30),n.y];return side==='out'?[n.x+w/2,n.y]:[n.x-w/2,n.y]}
+function edgePath(a,b){const A=byId[a],B=byId[b];let [x1,y1]=anchor(A,'out'),[x2,y2]=anchor(B,'in');
+  if(a==='learn'&&b==='milp'){[x1,y1]=[A.x-size(A)[0]/2,A.y-20];[x2,y2]=[B.x-size(B)[0]/2,B.y+30];return `M${x1},${y1} C${x1-70},${y1} ${x2-70},${y2} ${x2},${y2}`}
+  if(a==='milp'&&b==='learn'){[x1,y1]=[A.x+size(A)[0]/2,A.y+30];[x2,y2]=[B.x+size(B)[0]/2,B.y-20];return `M${x1},${y1} C${x1+60},${y1} ${x2+60},${y2} ${x2},${y2}`}
+  if(a==='milp'&&(b==='qrl')){[x1,y1]=[A.x,A.y+42];[x2,y2]=[B.x,B.y-35];return `M${x1},${y1} C${x1-140},${y1+120} ${x2-140},${y2-80} ${x2},${y2}`}
+  if(a==='milp'&&b==='gemini'){[x1,y1]=[A.x,A.y-42];[x2,y2]=[B.x,B.y+35];return `M${x1},${y1} L${x2},${y2}`}
+  const dx=(x2-x1)*0.5;return `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`}
+function sat(n){const c=COL[n.st];return `<g transform="translate(${n.x} ${n.y})"><circle r="34" fill="${c}" opacity=".08"/>
+  <rect x="-9" y="-7" width="18" height="14" rx="3" fill="${n.st==='planned'?'#6b7670':'#dfe7ee'}"/><rect x="-36" y="-4" width="24" height="8" fill="${n.st==='planned'?'#4a5550':'#3a7bd5'}"/><rect x="12" y="-4" width="24" height="8" fill="${n.st==='planned'?'#4a5550':'#3a7bd5'}"/>
+  ${n.id==='grace'?`<g transform="translate(0 30)"><rect x="-7" y="-5" width="14" height="10" rx="2" fill="#dfe7ee"/><rect x="-26" y="-3" width="17" height="6" fill="#3a7bd5"/><rect x="9" y="-3" width="17" height="6" fill="#3a7bd5"/></g><path d="M0,8 L0,22" stroke="#38D9F5" stroke-dasharray="2 3"/>`:''}
+  <text y="${n.id==='grace'?58:30}" text-anchor="middle" font-family="Space Grotesk" font-size="16" font-weight="700" fill="${c}">${n.l}</text>
+  <text y="${n.id==='grace'?76:48}" text-anchor="middle" font-family="Hind Siliguri" font-size="13" fill="#b9c8be">${n.s}</text></g>`}
+function box(n){const [w,h]=size(n),c=COL[n.st];const d=10;// pseudo-3D block
+  return `<g transform="translate(${n.x-w/2} ${n.y-h/2})">
+   <polygon points="${w},0 ${w+d},${-d} ${w+d},${h-d} ${w},${h}" fill="${c}" opacity=".18"/>
+   <polygon points="0,0 ${d},${-d} ${w+d},${-d} ${w},0" fill="${c}" opacity=".28"/>
+   <rect class="body" width="${w}" height="${h}" rx="10" fill="${n.ext?'#141f1a':'#10241a'}" stroke="${c}" stroke-width="${n.big?2.5:1.5}" ${n.dash?'stroke-dasharray="7 5"':''} filter="url(#glow)"/>
+   ${n.t==='hub'?`<circle cx="22" cy="${h/2}" r="10" fill="none" stroke="${c}" stroke-width="2"/><circle cx="22" cy="${h/2}" r="3.5" fill="${c}"/>`:''}
+   <text x="${n.t==='hub'?42:14}" y="${n.s?h/2-4:h/2+6}" font-family="Hind Siliguri" font-size="${n.big?19:16}" font-weight="700" fill="#eef5ef">${n.l}</text>
+   ${n.s?`<text x="${n.t==='hub'?42:14}" y="${h/2+17}" font-family="Hind Siliguri" font-size="12.5" fill="#9fb3a5">${n.s}</text>`:''}
+   ${n.ext?`<text x="${w-10}" y="14" text-anchor="end" font-family="Space Grotesk" font-size="10" fill="#7f9186">non-NASA</text>`:''}</g>`}
+function page(n){const [w,h]=size(n),c=COL[n.st];return `<g transform="translate(${n.x-w/2} ${n.y-h/2})"><rect width="${w}" height="${h}" rx="9" fill="#0f1c16" stroke="${c}" stroke-opacity=".7"/><rect x="8" y="8" width="26" height="${h-16}" rx="4" fill="${c}" opacity=".2"/><path d="M14,${h/2-6} h14 M14,${h/2} h10 M14,${h/2+6} h12" stroke="${c}" stroke-width="2"/><text x="44" y="${h/2+5}" font-family="Hind Siliguri" font-size="15" font-weight="600" fill="#eef5ef">${n.l}</text></g>`}
+function draw(){let s=`<defs><filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <radialGradient id="earth" cx="38%" cy="35%"><stop offset="0" stop-color="#5bb4f0"/><stop offset=".6" stop-color="#1f5fa6"/><stop offset="1" stop-color="#0a2550"/></radialGradient>
+  <radialGradient id="atm"><stop offset=".7" stop-color="#38D9F5" stop-opacity="0"/><stop offset=".82" stop-color="#38D9F5" stop-opacity=".35"/><stop offset="1" stop-color="#38D9F5" stop-opacity="0"/></radialGradient></defs>`;
+  let st='';let seed=3;const r=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};for(let i=0;i<140;i++)st+=`<circle cx="${r()*640}" cy="${r()*H}" r="${r()*1.2+.3}" fill="#fff" opacity="${.2+r()*.6}"/>`;s+=st;
+  // perspective floor for the engine
+  for(let i=0;i<=14;i++){const x=640+i*68;s+=`<line x1="${x}" y1="780" x2="${1120+(x-1120)*0.35}" y2="560" stroke="#1d3a2a" stroke-width="1"/>`}
+  for(let j=0;j<6;j++){const y=780-j*44,k=1-j*0.13;s+=`<line x1="${1120-480*k}" y1="${y}" x2="${1120+480*k}" y2="${y}" stroke="#1d3a2a" stroke-width="1"/>`}
+  // earth + orbits
+  s+=`<circle cx="250" cy="430" r="190" fill="url(#atm)"/><circle cx="250" cy="430" r="150" fill="url(#earth)"/><path d="M190,360 q50,-30 95,0 q30,30 5,70 q-45,30 -90,0 q-40,-30 -10,-70z M270,470 q40,-10 60,25 q0,40 -45,40 q-40,-10 -15,-65z" fill="#3f9a57" opacity=".85"/><path d="M262,410 l9,-3 l5,7 l-3,7 l-8,1z" fill="#C8F169"/>
+   <ellipse cx="250" cy="430" rx="250" ry="285" fill="none" stroke="#9fd8ff" stroke-opacity=".18" stroke-dasharray="3 7"/><ellipse cx="250" cy="430" rx="180" ry="300" fill="none" stroke="#9fd8ff" stroke-opacity=".12" stroke-dasharray="3 7" transform="rotate(30 250 430)"/>
+   <text x="250" y="800" text-anchor="middle" font-family="Space Grotesk" font-size="14" letter-spacing="3" fill="#6f8577">SPACE · NASA</text><text x="960" y="835" text-anchor="middle" font-family="Space Grotesk" font-size="14" letter-spacing="3" fill="#6f8577">ENGINE · SCIENCE · DECISION</text><text x="1440" y="835" text-anchor="middle" font-family="Space Grotesk" font-size="14" letter-spacing="3" fill="#6f8577">FARMER · APP</text>`;
+  s+='<g id="edges">'+E.map(([a,b],i)=>{const d=edgePath(a,b),c=COL[byId[a].st==='planned'?'planned':byId[b].st==='exp'?'exp':byId[a].st];const pl=byId[a].st==='planned';
+    return `<g class="edge" data-a="${a}" data-b="${b}"><path d="${d}" fill="none" stroke="${c}" stroke-opacity="${pl?.25:.35}" stroke-width="${pl?1.5:3}" ${pl?'stroke-dasharray="4 6"':''}/>${pl?'':`<circle class="particle" r="4" fill="${c}" filter="url(#glow)"><animateMotion dur="${2.4+(i%5)*0.5}s" repeatCount="indefinite" path="${d}" begin="${(i%7)*0.3}s"/></circle>`}</g>`}).join('')+'</g>';
+  s+='<g id="nodes">'+N.map(n=>`<g class="node" data-id="${n.id}" tabindex="0" role="button" aria-label="${n.l}">${n.t==='sat'?sat(n):n.t==='page'?page(n):box(n)}</g>`).join('')+'</g>';
+  document.getElementById('map').innerHTML=s;
+  document.querySelectorAll('.node').forEach(g=>{g.addEventListener('mouseenter',()=>light(g.dataset.id));g.addEventListener('mouseleave',()=>{if(!pinned)clear()});
+    g.addEventListener('click',()=>{pinned=g.dataset.id;light(pinned);panel(pinned)});g.addEventListener('keydown',e=>{if(e.key==='Enter'){pinned=g.dataset.id;light(pinned);panel(pinned)}})});
+}
+let pinned=null;
+function reach(id){const up=new Set([id]),down=new Set([id]);let ch=true;while(ch){ch=false;E.forEach(([a,b])=>{if(down.has(a)&&!down.has(b)&&!(a==='learn'&&b==='milp')){down.add(b);ch=true}if(up.has(b)&&!up.has(a)&&!(a==='milp'&&b==='learn')){up.add(a);ch=true}})}return new Set([...up,...down])}
+function light(id,set){const s=set||reach(id);const svg=document.getElementById('map');svg.classList.add('dim');
+  svg.querySelectorAll('.node').forEach(g=>g.classList.toggle('on',s.has(g.dataset.id)));svg.querySelectorAll('.edge').forEach(g=>g.classList.toggle('on',s.has(g.dataset.a)&&s.has(g.dataset.b)))}
+function clear(){const svg=document.getElementById('map');svg.classList.remove('dim');svg.querySelectorAll('.on').forEach(g=>g.classList.remove('on'))}
+const SL={used:['used','ব্যবহৃত'],partial:['partial','আংশিক / নির্মাণাধীন'],planned:['planned','পরিকল্পিত'],exp:['exp','পরীক্ষামূলক']};
+function panel(id){const n=byId[id],p=document.getElementById('panel');if(!n.i){p.innerHTML=`<button class="x" aria-label="বন্ধ">×</button><h3>${n.l}</h3><span class="st ${SL[n.st][0]}">${SL[n.st][1]}</span><p style="margin:0;font-size:13px">অ্যাপের পাতা। আলো-জ্বলা পথ দেখায় এই পাতার সংখ্যা কোন তথ্য আর হিসাব থেকে আসে।</p>`}
+  else p.innerHTML=`<button class="x" aria-label="বন্ধ">×</button><h3>${n.l}</h3><span class="st ${SL[n.st][0]}">${SL[n.st][1]}</span><dl><dt>কী</dt><dd>${n.i.what}</dd><dt>মাপ/সময়</dt><dd>${n.i.res}</dd><dt>কী হিসাব করি</dt><dd>${n.i.use}</dd><dt>কোন পাতায়</dt><dd>${n.i.pages}</dd><dt>code</dt><dd><code>${n.i.code}</code></dd></dl>`;
+  p.classList.add('show');p.querySelector('.x').onclick=()=>{p.classList.remove('show');pinned=null;clear()}}
+document.getElementById('reset').onclick=()=>{pinned=null;clear();document.getElementById('panel').classList.remove('show');document.getElementById('cap').classList.remove('show');stopFollow()};
+/* follow one number */
+let ft=null;function stopFollow(){if(ft){clearTimeout(ft);ft=null}document.getElementById('cap').classList.remove('show')}
+document.getElementById('follow').onclick=()=>{stopFollow();pinned=null;document.getElementById('panel').classList.remove('show');
+  const steps=[[['gpm'],'GPM: রহিমের জমির ১০ কিমি ঘরের দৈনিক বৃষ্টি'],[['gpm','ceres','power'],'NASA POWER: তাপ, আর্দ্রতা, বাতাস, রোদ (CERES)'],[['gpm','ceres','power','soil','api'],'API: সব তথ্য জমির বিন্দুতে, মাটি SoilGrids থেকে'],
+   [['gpm','ceres','power','soil','api','water'],'FAO-56: প্রতিদিন ফসলের পানি − বৃষ্টি = সেচ'],[['gpm','ceres','power','soil','api','water','milp'],'MILP: কম পানির ফসল বেছে ৬ মৌসুম সাজায়'],[['gpm','ceres','power','soil','api','water','milp','p_plan'],'প্ল্যানার: বছরে সেচ ১৫৪৮ → ৭১৮ মিমি']];
+  const cap=document.getElementById('cap');let k=0;const go=()=>{const [ids,t]=steps[k];light(null,new Set(ids));cap.textContent=`${k+1}/${steps.length} · ${t}`;cap.classList.add('show');k++;if(k<steps.length)ft=setTimeout(go,1700)};go()};
+const DT=[
+ ['gpm','GPM IMERG','বৃষ্টি (দৈনিক)','১০ কিমি · ২০০১–২০২৪','বছরে ~১,৩৫০ মিমি','পানি, ঝুঁকি, প্ল্যানার','used'],
+ ['power','NASA POWER','তাপ, আর্দ্রতা, বাতাস, রোদ','৫০ কিমি · ১৯৮১–এখন','বছরে ~৯০ দিন ৩৫°C+','সব পাতা','used'],
+ ['grace','GRACE / GRACE-FO','মাটির নিচের ও উপরের মোট পানি','~৩০০ কিমি · ২০০২–২০২৬','বরেন্দ্রে −১.০৭ সেমি/বছর','পানি, ঝুঁকি','used'],
+ ['srtm','SRTM','জমির উচ্চতা','৩০ মি','জমির উচ্চতা','পানি (ET০-এর চাপ সংশোধন)','partial'],
+ ['soil','ISRIC SoilGrids (NASA নয়)','মাটির ধরন','২৫০ মি','এঁটেল দোআঁশ','পানি, আমার জমি','used'],
+ ['price','DAM · TCB · BBS (NASA নয়)','বাজার দর','স্থির তালিকা','সরিষা ~২,৮০০ টাকা/মণ','প্ল্যানার, বাজার','used'],
+ ['smap','SMAP','মাটির আর্দ্রতা','৯ কিমি · ২০১৫–','—','—','planned'],
+ ['modis','MODIS NDVI','গাছের সবুজভাব','২৫০ মি · ১৬ দিন','—','—','planned']];
+const BC={used:['ব্যবহৃত','rgba(200,241,105,.16)','#C8F169'],partial:['আংশিক','rgba(245,176,76,.16)','#F5B04C'],planned:['পরিকল্পিত','rgba(255,255,255,.08)','#a5b2a9']};
+document.getElementById('dt').innerHTML=DT.map(([id,n,w,r,v,p,s])=>`<tr data-id="${id}" class="${s==='planned'?'pl':''}"><td><b>${n}</b></td><td>${w}</td><td>${r}</td><td class="v">${v}</td><td>${p}</td><td><span class="badge" style="background:${BC[s][1]};color:${BC[s][2]}">${BC[s][0]}</span></td></tr>`).join('');
+document.querySelectorAll('#dt tr').forEach(tr=>tr.onclick=()=>{pinned=tr.dataset.id;light(pinned);panel(pinned);document.getElementById('hero').scrollIntoView({behavior:'smooth'})});
+draw();
+</script>
 </body>
 </html>
