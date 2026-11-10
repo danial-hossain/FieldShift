@@ -31,3 +31,4 @@ test('SH2: getInterpolatedShot smoothly calculates position and lookAt across sc
 test('SH2: Camera clearance check function is defined and callable', () => {
   assert.equal(typeof checkCameraClearance, 'function');
 });
+

@@ -668,10 +668,10 @@ export function OrbitToFieldCanvas({
       barind: createHtmlPill('Barind · বরেন্দ্র'),
       haor: createHtmlPill('Haor · হাওর'),
       coast: createHtmlPill('Coast · উপকূল'),
-      field: createHtmlPill(`Active Field: ${activeField?.name || 'Your Field'}`),
-      waterTrend: createHtmlPill('Barind region trend: −1.07 cm/yr'),
-      starBed: createHtmlPill('Balanced Plan ⭐ Best Across 6 Seasons'),
-      harvestDone: createHtmlPill('✓ Harvest Logged · Model Updated'),
+      field: createHtmlPill(activeField?.name || 'Active Field'),
+      waterTrend: createHtmlPill('Trend: −1.07 cm/yr'),
+      starBed: createHtmlPill('Balanced ⭐ Optimum'),
+      harvestDone: createHtmlPill('✓ Harvest Logged'),
     };
 
     function projectToScreen(pos3D) {

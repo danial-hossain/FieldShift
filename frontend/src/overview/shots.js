@@ -9,22 +9,22 @@ export const SHOTS = [
   {
     id: '01_space',
     name: 'Space · Earth Hook',
-    camPos: [0.0, 2.0, 32.0],
+    camPos: [0.0, 0.6, 14.0],
     lookAt: [0.0, 0.0, 0.0],
-    fov: 45,
-    sun: { dir: [15, 8, 12], color: 0xfff6e8, intensity: 2.2 },
-    fog: { color: 0x040810, density: 0.0006 },
+    fov: 46,
+    sun: { dir: [15, 8, 12], color: 0xfff6e8, intensity: 2.4 },
+    fog: { color: 0x182c42, density: 0.0004 },
     sceneState: { world: 'space', earthRotY: 0.0 },
   },
   // 1: Cloud Dive into Bangladesh
   {
     id: '02_dive',
     name: 'Atmosphere · Cloud Dive',
-    camPos: [0.8, 1.2, 14.0],
-    lookAt: [0.6, 0.2, 0.0],
-    fov: 45,
+    camPos: [0.6, 0.4, 10.2],
+    lookAt: [0.4, 0.1, 0.0],
+    fov: 46,
     sun: { dir: [12, 10, 8], color: 0xfff2da, intensity: 2.4 },
-    fog: { color: 0x081622, density: 0.002 },
+    fog: { color: 0x1c344a, density: 0.001 },
     sceneState: { world: 'space_dive', cloudFlash: true },
   },
   // 2: Bangladesh 3D Extruded Regional Map
@@ -35,7 +35,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.0, -4.0],
     fov: 48,
     sun: { dir: [8, 14, 6], color: 0xffffff, intensity: 1.8 },
-    fog: { color: 0x071510, density: 0.010 },
+    fog: { color: 0x143422, density: 0.008 },
     sceneState: { world: 'map_overview', showRegions: true },
   },
   // 3: Aquifer & Soil Column Cutaway
@@ -46,7 +46,7 @@ export const SHOTS = [
     lookAt: [-1.4, 0.2, -4.5],
     fov: 45,
     sun: { dir: [6, 12, 5], color: 0xffedd5, intensity: 1.9 },
-    fog: { color: 0x081814, density: 0.012 },
+    fog: { color: 0x163826, density: 0.008 },
     sceneState: { world: 'map_water', cutaway: true },
   },
   // 4: Farm · Sky Uncertainty & Climate
@@ -57,7 +57,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.8, -18.0],
     fov: 45,
     sun: { dir: [10, 10, 5], color: 0xfde047, intensity: 1.6 },
-    fog: { color: 0x0a1612, density: 0.012 },
+    fog: { color: 0x183024, density: 0.008 },
     sceneState: { world: 'farm', rain: true, heat: true },
   },
   // 5: Farm · Soil Health & Biological Nitrogen
@@ -68,7 +68,7 @@ export const SHOTS = [
     lookAt: [-1.2, 0.6, -18.0],
     fov: 42,
     sun: { dir: [8, 12, 6], color: 0xecfccb, intensity: 1.8 },
-    fog: { color: 0x0a1814, density: 0.010 },
+    fog: { color: 0x1a3824, density: 0.008 },
     sceneState: { world: 'farm', legumes: true, nParticles: true },
   },
   // 6: Farm · 6-Season MILP Rotation Optimum
@@ -79,7 +79,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.4, -18.0],
     fov: 45,
     sun: { dir: [12, 14, 8], color: 0xffffff, intensity: 2.0 },
-    fog: { color: 0x0b1a16, density: 0.009 },
+    fog: { color: 0x1c3a26, density: 0.008 },
     sceneState: { world: 'farm', strategies: true, starGlow: true },
   },
   // 7: Farm · Extreme Climate Stress Test
@@ -90,7 +90,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.5, -18.0],
     fov: 44,
     sun: { dir: [4, 6, 2], color: 0x94a3b8, intensity: 0.8 },
-    fog: { color: 0x0c141c, density: 0.022 },
+    fog: { color: 0x1e2834, density: 0.012 },
     sceneState: { world: 'farm', storm: true, flood: true, drought: true },
   },
   // 8: Farm · Adaptive Harvest Learning Loop
@@ -101,7 +101,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.5, -18.0],
     fov: 42,
     sun: { dir: [10, 10, 6], color: 0xfef08a, intensity: 1.7 },
-    fog: { color: 0x0a1713, density: 0.011 },
+    fog: { color: 0x1c3624, density: 0.008 },
     sceneState: { world: 'farm', learning: true, replanPulse: true },
   },
   // 9: Farm · Dawn Closing Wide View
@@ -112,7 +112,7 @@ export const SHOTS = [
     lookAt: [0.0, 0.6, -18.0],
     fov: 48,
     sun: { dir: [18, 5, -8], color: 0xffedd5, intensity: 2.4 },
-    fog: { color: 0x1f170f, density: 0.008 },
+    fog: { color: 0x362c20, density: 0.006 },
     sceneState: { world: 'farm', dawn: true, widePullback: true },
   },
 ];
