@@ -144,23 +144,20 @@ export function SixSeasonRecommendationView({
   const district = activeField?.district || defaultDistrict || 'bogura';
 
   // A1: Compute Farmer Existing Rotation Baseline
+  const hasSavedRotation = Boolean(
+    activeField?.existing_rotation &&
+    typeof activeField.existing_rotation === 'object' &&
+    (activeField.existing_rotation.rabi || activeField.existing_rotation.kharif1 || activeField.existing_rotation.kharif2)
+  );
+
   const baselineRotationList = useMemo(() => {
-    const ext = activeField?.existing_rotation;
-    if (ext && typeof ext === 'object') {
-      const rabi = ext.rabi || 'Boro Rice';
-      const k1 = ext.kharif1 || 'Fallow';
-      const k2 = ext.kharif2 || ['R', 'i', 'c', 'e'].join('');
-      return [rabi, k1, k2, rabi, k1, k2];
-    }
-    const prev = activeField?.previous_crop;
-    if (prev) {
-      return [prev, 'Fallow', ['R', 'i', 'c', 'e'].join(''), prev, 'Fallow', ['R', 'i', 'c', 'e'].join('')];
-    }
-    const isHaor = Boolean(activeField?.seasonally_flooded || district.toLowerCase() === 'sunamganj');
-    return isHaor
-      ? ['Boro Rice', 'Fallow', 'Fallow', 'Boro Rice', 'Fallow', 'Fallow']
-      : ['Boro Rice', 'Fallow', ['R', 'i', 'c', 'e'].join(''), 'Boro Rice', 'Fallow', ['R', 'i', 'c', 'e'].join('')];
-  }, [activeField, district]);
+    if (!hasSavedRotation) return null;
+    const ext = activeField.existing_rotation;
+    const rabi = ext.rabi || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
+    const k1 = ext.kharif1 || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
+    const k2 = ext.kharif2 || (lang === 'bn' ? 'তথ্য নেই' : 'No data');
+    return [rabi, k1, k2, rabi, k1, k2];
+  }, [hasSavedRotation, activeField, lang]);
 
   // Helper: Format profit per ha per year with optional total farm calculation
   const formatProfitWithTotal = (profitPerHaYear, areaHa, langCode) => {
@@ -647,12 +644,12 @@ export function SixSeasonRecommendationView({
       : activePlanData?.baselineSource === 'request_supplied_rotation'
         ? ' (request-supplied; unverified)'
         : isAssumed ? ' (assumed)' : ' (your saved rotation)';
-  const baselineRotationBn = baselineCropsEarly
+  const baselineRotationBn = hasSavedRotation && baselineCropsEarly
     ? baselineCropsEarly.map(c => translateCropName(c, 'bn')).join(' → ') + baselineQualifierBn
-    : 'তথ্য অনুপলভ্য';
-  const baselineRotationEn = baselineCropsEarly
+    : (lang === 'bn' ? 'বর্তমান আবর্তন দেওয়া নেই — আমার জমিতে যোগ করুন' : 'No current rotation provided — add in My Farm');
+  const baselineRotationEn = hasSavedRotation && baselineCropsEarly
     ? baselineCropsEarly.map(c => translateCropName(c, 'en')).join(' → ') + baselineQualifierEn
-    : 'Unavailable';
+    : 'No current rotation provided — add in My Farm';
 
   // G1 Hero 3D Beds Mapping
   const seasonMeta = {
@@ -763,28 +760,39 @@ export function SixSeasonRecommendationView({
   }, [activePlanData, fieldAreaHa, baseIrrigVal, plansByPriority, bestScoringStrategyId]);
 
   const farm3dBeds = useMemo(() => {
-    return periodKeys.map(k => {
+    const isBaseline = selectedStrategy === 'baseline';
+    return periodKeys.map((k, i) => {
       const c = activeCrops[k] || 'Fallow';
       const waterReq = seasonIrrigMap[k] || 0;
+      const isGreyedOut = isBaseline && i >= 3;
       return {
         id: k,
-        label: seasonMeta[k]?.[lang] || k,
-        crop: (k.endsWith('S3') && (c?.toLowerCase() === 'rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c,
+        label: isGreyedOut
+          ? (lang === 'bn' ? 'একই আবার (২য় বছর)' : 'Repeat (Year 2)')
+          : (seasonMeta[k]?.[lang] || k),
+        crop: isGreyedOut ? null : ((k.endsWith('S3') && (c?.toLowerCase() === 'rice' || c === 'ধান')) ? (lang === 'bn' ? 'আমন ধান' : 'Aman Rice') : c),
         season: seasonMeta[k]?.months,
-        waterDepthMm: waterReq,
-        irrigation_mm: waterReq,
-        growthStage: 0.9,
+        waterDepthMm: isGreyedOut ? 0 : waterReq,
+        irrigation_mm: isGreyedOut ? 0 : waterReq,
+        growthStage: isGreyedOut ? 0 : 0.9,
+        isGreyedOut,
         stress: {
           heat: activePlanData?.risk?.heat?.level === 'high',
           drought: activePlanData?.risk?.drought?.level === 'high',
         }
       };
     });
-  }, [activeCrops, seasonIrrigMap, seasonMeta, lang, activePlanData]);
+  }, [activeCrops, seasonIrrigMap, seasonMeta, lang, activePlanData, selectedStrategy, periodKeys]);
 
   // Selected period details for side panel
-  const activeSelectedPeriod = selectedPeriodKey || 'Y1_S1';
-  const selectedCropName = activeCrops[activeSelectedPeriod] || 'Mustard';
+  const activeSelectedPeriod = useMemo(() => {
+    const key = selectedPeriodKey || 'Y1_S1';
+    if (selectedStrategy === 'baseline' && ['Y2_S1', 'Y2_S2', 'Y2_S3'].includes(key)) {
+      return periodKeys[periodKeys.indexOf(key) % 3] || 'Y1_S1';
+    }
+    return key;
+  }, [selectedPeriodKey, selectedStrategy, periodKeys]);
+  const selectedCropName = activeCrops[activeSelectedPeriod] || null;
   const matchingRec = sixSeasonRecommendations.find(r => r.id === activeSelectedPeriod);
   const selectedPeriodMatrix = activePlanData?.cropSeasonMatrix?.[activeSelectedPeriod] || {};
   const selectedCropEntry = selectedPeriodMatrix[selectedCropName] || {};
@@ -934,7 +942,9 @@ export function SixSeasonRecommendationView({
 
   // A1: Dynamic Suggestion Chips derived from THIS plan
   const plannerAiSuggestions = useMemo(() => {
-    const y1RabiCrop = translateCropName(activeCrops['Y1_S1'] || 'Mustard', lang);
+    const y1RabiCrop = activeCrops['Y1_S1']
+      ? translateCropName(activeCrops['Y1_S1'], lang)
+      : (lang === 'bn' ? 'রবি ফসল' : 'Rabi crop');
     const altCrop = candidateAlternatives[0]?.crop
       ? translateCropName(candidateAlternatives[0].crop, lang)
       : (lang === 'bn' ? 'বিকল্প ফসল' : 'Alternative crop');
@@ -1015,7 +1025,7 @@ export function SixSeasonRecommendationView({
         organic_matter_pct: activeField?.organic_matter ?? null,
         irrigation_class: waterAvailability,
         irrigation_capacity_mm: waterAvailability === 'none' ? 0 : (waterAvailability === 'limited' ? 400 : (activeField?.irrigation_capacity_mm ?? 1200)),
-        current_rotation: activeField?.existing_rotation || { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: 'T. Aman Rice' },
+        current_rotation: activeField?.existing_rotation || null,
         current_rotation_bn: baselineRotationBn,
         current_rotation_en: baselineRotationEn,
         seasonally_flooded: isHaor,
@@ -1102,12 +1112,16 @@ export function SixSeasonRecommendationView({
   const currentRotation = activePlanData.rotation || {};
   const currentRotationList = Object.values(currentRotation);
   const year1RotationList = [
-    currentRotation['Y1_S1'] || currentRotationList[0] || 'Mustard',
-    currentRotation['Y1_S2'] || currentRotationList[1] || 'Mungbean',
-    currentRotation['Y1_S3'] || currentRotationList[2] || 'T. Aman Rice'
-  ];
-  const rotationTextBn = year1RotationList.map(c => translateCropName(c, 'bn')).join(' → ');
-  const rotationTextEn = year1RotationList.map(c => translateCropName(c, 'en')).join(' → ');
+    currentRotation['Y1_S1'] || currentRotationList[0] || null,
+    currentRotation['Y1_S2'] || currentRotationList[1] || null,
+    currentRotation['Y1_S3'] || currentRotationList[2] || null
+  ].filter(Boolean);
+  const rotationTextBn = year1RotationList.length
+    ? year1RotationList.map(c => translateCropName(c, 'bn')).join(' → ')
+    : (lang === 'bn' ? 'তথ্য নেই' : 'No data');
+  const rotationTextEn = year1RotationList.length
+    ? year1RotationList.map(c => translateCropName(c, 'en')).join(' → ')
+    : 'No data';
 
   const hasBaseline = Boolean(baselineCropsEarly?.length);
   const deltaProfit = hasBaseline && activePlanData.deltaProfit != null ? Math.round(activePlanData.deltaProfit) : null;
@@ -1516,62 +1530,92 @@ export function SixSeasonRecommendationView({
       </div>
 
       {/* 5. Season Strip (.strip) + Totals (.totals) */}
-      <div className="strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
-        {periodKeys.map((k, i) => {
-          const isSelected = activeSelectedPeriod === k;
-          const c = activeCrops[k] || 'Fallow';
-          const cMeta = CROP_DATABASE[c] || {};
-          const s = seasonMeta[k];
-          const irrig = seasonIrrigMap[k] || 0;
-          return (
-            <button
-              key={k}
-              type="button"
-              className="sc"
-              aria-current={isSelected ? 'true' : 'false'}
-              onClick={() => setSelectedPeriodKey(k)}
-              style={{
-                textAlign: 'left',
-                background: 'var(--surface)',
-                border: isSelected ? '2px solid var(--accent, #2c8a4b)' : '1px solid var(--line)',
-                borderRadius: 12,
-                padding: '8px 10px',
-                cursor: 'pointer',
-                boxShadow: isSelected ? '0 0 0 2px rgba(44, 138, 75, 0.25)' : 'none'
-              }}
-            >
-              <small style={{ display: 'block', color: 'var(--text-muted)', fontSize: 11 }}>
-                {lang === 'bn' ? `${i < 3 ? '১ম বছর' : '২য় বছর'} · ${(s.bn || '').replace(/^(?:১ম|২য়)\s*বছর\s*/i, '')}` : `${i < 3 ? 'Year 1' : 'Year 2'} · ${(s.en || '').replace(/^Year\s*\d+\s*/i, '')}`}
-              </small>
-              <b style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, margin: '2px 0', color: 'var(--text)' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: cMeta.color || '#5cc27e', flex: 'none' }} />
-                <span>{translateCropName(c, lang)}</span>
-              </b>
-              <span style={{ fontSize: 12, color: 'var(--water)', fontVariantNumeric: 'tabular-nums' }}>
-                💧 {irrig > 0 ? `${formatNumber(irrig, lang)} ${unitLabel('mm', lang)}` : (lang === 'bn' ? 'সেচ নেই' : '0 mm')}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {selectedStrategy === 'baseline' && !hasSavedRotation ? (
+        <div style={{ padding: '24px 20px', background: 'var(--surface)', border: '1px dashed var(--line)', borderRadius: 14, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13.5, fontWeight: 600 }}>
+          {lang === 'bn' ? 'বর্তমান আবর্তন দেওয়া নেই — আমার জমিতে যোগ করুন' : 'No current rotation provided — add in My Farm'}
+        </div>
+      ) : (
+        <>
+          {selectedStrategy === 'baseline' && (
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+              {lang === 'bn' ? 'বর্তমান আবর্তন (প্রতি বছর একই)' : 'Current Rotation (Same Every Year)'}
+            </div>
+          )}
+          <div
+            className="strip"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: selectedStrategy === 'baseline' ? 'repeat(3, minmax(0, 1fr))' : 'repeat(6, minmax(0, 1fr))',
+              gap: 6
+            }}
+          >
+            {(selectedStrategy === 'baseline' ? periodKeys.slice(0, 3) : periodKeys).map((k, i) => {
+              const isSelected = activeSelectedPeriod === k;
+              const c = activeCrops[k] || 'Fallow';
+              const cMeta = CROP_DATABASE[c] || {};
+              const s = seasonMeta[k];
+              const irrig = seasonIrrigMap[k] || 0;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  className="sc"
+                  aria-current={isSelected ? 'true' : 'false'}
+                  onClick={() => setSelectedPeriodKey(k)}
+                  style={{
+                    textAlign: 'left',
+                    background: 'var(--surface)',
+                    border: isSelected ? '2px solid var(--accent, #2c8a4b)' : '1px solid var(--line)',
+                    borderRadius: 12,
+                    padding: '8px 10px',
+                    cursor: 'pointer',
+                    boxShadow: isSelected ? '0 0 0 2px rgba(44, 138, 75, 0.25)' : 'none'
+                  }}
+                >
+                  <small style={{ display: 'block', color: 'var(--text-muted)', fontSize: 11 }}>
+                    {selectedStrategy === 'baseline'
+                      ? (lang === 'bn' ? (s.bn || '').replace(/^(?:১ম|২য়)\s*বছর\s*/i, '') : (s.en || '').replace(/^Year\s*\d+\s*/i, ''))
+                      : (lang === 'bn' ? `${i < 3 ? '১ম বছর' : '২য় বছর'} · ${(s.bn || '').replace(/^(?:১ম|২য়)\s*বছর\s*/i, '')}` : `${i < 3 ? 'Year 1' : 'Year 2'} · ${(s.en || '').replace(/^Year\s*\d+\s*/i, '')}`)}
+                  </small>
+                  <b style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, margin: '2px 0', color: 'var(--text)' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: cMeta.color || '#5cc27e', flex: 'none' }} />
+                    <span>{translateCropName(c, lang)}</span>
+                  </b>
+                  <span style={{ fontSize: 12, color: 'var(--water)', fontVariantNumeric: 'tabular-nums' }}>
+                    💧 {irrig > 0 ? `${formatNumber(irrig, lang)} ${unitLabel('mm', lang)}` : (lang === 'bn' ? 'সেচ নেই' : '0 mm')}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
 
-      <div className="totals" style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '0 2px' }}>
-        {lang === 'bn' ? (
-          <span>
-            ১ম বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y1Irrig)} মিমি</b> · ২য় বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y2Irrig)} মিমি</b> · গড়: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(avgIrrig)} মিমি/বছর</b>
-            {selectedStrategy !== 'baseline' && (
-              <span> · বর্তমান {toBanglaDigits(baseIrrigVal)} মিমি থেকে <b style={{ color: 'var(--leaf)' }}>{toBanglaDigits(savingsVal)} মিমি সাশ্রয়</b></span>
+          <div className="totals" style={{ fontSize: 12.5, color: 'var(--text-muted)', padding: '0 2px' }}>
+            {selectedStrategy === 'baseline' ? (
+              lang === 'bn' ? (
+                <span>বছরে <b style={{ color: 'var(--text)' }}>{toBanglaDigits(baseIrrigVal ?? avgIrrig)} মিমি</b></span>
+              ) : (
+                <span><b style={{ color: 'var(--text)' }}>{baseIrrigVal ?? avgIrrig} mm</b>/year</span>
+              )
+            ) : (
+              lang === 'bn' ? (
+                <span>
+                  ১ম বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y1Irrig)} মিমি</b> · ২য় বছর: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(y2Irrig)} মিমি</b> · গড়: <b style={{ color: 'var(--text)' }}>{toBanglaDigits(avgIrrig)} মিমি/বছর</b>
+                  {selectedStrategy !== 'baseline' && (
+                    <span> · বর্তমান {toBanglaDigits(baseIrrigVal)} মিমি থেকে <b style={{ color: 'var(--leaf)' }}>{toBanglaDigits(savingsVal)} মিমি সাশ্রয়</b></span>
+                  )}
+                </span>
+              ) : (
+                <span>
+                  Year 1: <b>{y1Irrig} mm</b> · Year 2: <b>{y2Irrig} mm</b> · Avg: <b>{avgIrrig} mm/yr</b>
+                  {selectedStrategy !== 'baseline' && (
+                    <span> · Saved: <b>{savingsVal} mm</b> vs current {baseIrrigVal} mm</span>
+                  )}
+                </span>
+              )
             )}
-          </span>
-        ) : (
-          <span>
-            Year 1: <b>{y1Irrig} mm</b> · Year 2: <b>{y2Irrig} mm</b> · Avg: <b>{avgIrrig} mm/yr</b>
-            {selectedStrategy !== 'baseline' && (
-              <span> · Saved: <b>{savingsVal} mm</b> vs current {baseIrrigVal} mm</span>
-            )}
-          </span>
-        )}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* 12-month continuous cropping calendar strip */}
       <div style={{ marginTop: 2, fontSize: 11, color: 'var(--text-muted)' }}>

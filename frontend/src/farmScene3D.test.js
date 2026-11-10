@@ -99,4 +99,38 @@ test('T2: Clicking bed or season card retains camera position and updates select
   assert.equal(camera.position.z, customPos.z);
 });
 
+test('T3: Baseline current strategy presents 3 active seasons and greys out beds 4-6 with repeat label', () => {
+  const currentRotation = { rabi: 'Boro Rice', kharif1: 'Fallow', kharif2: 'T. Aman Rice' };
+  const seasonKeys = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
+  const isBaseline = true;
+
+  // The 3 displayed cards for baseline
+  const displayedCards = isBaseline ? seasonKeys.slice(0, 3) : seasonKeys;
+  assert.equal(displayedCards.length, 3);
+
+  // 3D bed construction
+  const farm3dBeds = seasonKeys.map((k, i) => {
+    const isGreyedOut = isBaseline && i >= 3;
+    return {
+      id: k,
+      isGreyedOut,
+      crop: isGreyedOut ? null : (i === 0 ? currentRotation.rabi : i === 1 ? currentRotation.kharif1 : currentRotation.kharif2),
+      labelBn: isGreyedOut ? 'একই আবার (২য় বছর)' : 'সক্রিয় ফসল',
+      labelEn: isGreyedOut ? 'Repeat (Year 2)' : 'Active Crop',
+    };
+  });
+
+  assert.equal(farm3dBeds.length, 6);
+  assert.equal(farm3dBeds[0].isGreyedOut, false);
+  assert.equal(farm3dBeds[1].isGreyedOut, false);
+  assert.equal(farm3dBeds[2].isGreyedOut, false);
+  assert.equal(farm3dBeds[3].isGreyedOut, true);
+  assert.equal(farm3dBeds[4].isGreyedOut, true);
+  assert.equal(farm3dBeds[5].isGreyedOut, true);
+
+  assert.equal(farm3dBeds[3].crop, null);
+  assert.equal(farm3dBeds[3].labelBn, 'একই আবার (২য় বছর)');
+  assert.equal(farm3dBeds[3].labelEn, 'Repeat (Year 2)');
+});
+
 

@@ -470,6 +470,8 @@ export function FarmScene3D({
   bedsRef.current = beds;
   const langRef = useRef(lang);
   langRef.current = lang;
+  const selectedStrategyRef = useRef(selectedStrategy);
+  selectedStrategyRef.current = selectedStrategy;
   const [hasWebGL, setHasWebGL] = useState(true);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
   const [infoStats, setInfoStats] = useState({ calls: 0, triangles: 0, fps: 60 });
@@ -964,9 +966,10 @@ export function FarmScene3D({
 
     const soilMat = new THREE.MeshStandardMaterial({ color: '#6b4f36', roughness: 1 });
     const wetSoilMat = new THREE.MeshStandardMaterial({ color: '#4a3626', roughness: 0.7 });
+    const greySoilMat = new THREE.MeshStandardMaterial({ color: '#323a35', roughness: 0.95 });
     const bundMat = new THREE.MeshStandardMaterial({ color: '#7d6143', roughness: 1 });
     const cropMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, side: THREE.DoubleSide });
-    disposables.push(soilMat, wetSoilMat, bundMat, cropMat);
+    disposables.push(soilMat, wetSoilMat, greySoilMat, bundMat, cropMat);
 
     // Compile crop geometries
     const G = buildCropGeometries();
@@ -1090,6 +1093,20 @@ export function FarmScene3D({
     function plantBed(bedIdx, cropName, forceRebuild = false) {
       const b = bedObjects[bedIdx];
       const seasonKind = seasonKinds[bedIdx];
+      const isBaselineGreyed = (selectedStrategyRef.current === 'baseline') && bedIdx >= 3;
+
+      if (isBaselineGreyed) {
+        b.inst.forEach((m) => {
+          b.group.remove(m);
+          m.geometry.dispose();
+        });
+        b.inst = [];
+        b.cropKey = 'greyedOut';
+        b.water.visible = false;
+        b.soil.material = greySoilMat;
+        return;
+      }
+
       const geoKey = mapCropToGeoKey(cropName, seasonKind);
 
       if (!forceRebuild && b.cropKey === geoKey && b.inst.length > 0) return;
@@ -1241,6 +1258,15 @@ export function FarmScene3D({
           el.style.top = `${((1 - labelPos.y) / 2) * h}px`;
 
           const bedData = currentBeds[i] || {};
+          const isBaselineGreyed = (selectedStrategyRef.current === 'baseline' || bedData.isGreyedOut) && i >= 3;
+          if (isBaselineGreyed) {
+            const repeatText = currentLang === 'bn' ? 'একই আবার (২য় বছর)' : 'Repeat (Year 2)';
+            el.innerHTML = `<span style="display:inline-flex;align-items:center;color:#9ca3af;font-size:11px;font-style:italic;padding:1px 4px">${repeatText}</span>`;
+            el.style.background = 'rgba(20, 26, 22, 0.78)';
+            el.style.border = '1px dashed rgba(255, 255, 255, 0.2)';
+            return;
+          }
+
           let cp = bedData.cropLabel || (bedData.crop ? cropLabel(bedData.crop, currentLang) : null) || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][currentLang === 'bn' ? 'bn' : 'en'] : b.cropKey);
           if (i % 3 === 2 && (String(cp).toLowerCase().includes('rice') || String(cp).includes('ধান'))) {
             cp = currentLang === 'bn' ? 'আমন ধান' : 'Aman Rice';
