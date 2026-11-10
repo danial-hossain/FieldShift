@@ -30,6 +30,7 @@ const CROP_TRANSLATIONS = {
   'Aus Rice': 'আউশ ধান',
   Mungbean: 'মুগ ডাল',
   Potato: 'আলু',
+  Tomato: 'টমেটো',
   Maize: 'ভুট্টা',
   Jute: 'পাট',
   Sunflower: 'সূর্যমুখী',
@@ -40,9 +41,9 @@ const CROP_TRANSLATIONS = {
 };
 
 const SEASON_ALLOWED_CROPS = {
-  rabi: ['Mustard', 'Chickpea', 'Wheat', 'Boro Rice', 'Lentil', 'Potato', 'Maize', 'Sunflower', 'Sesame'],
-  kharif1: ['Mungbean', 'Jute', 'Aus Rice', 'Sesame', 'Maize'],
-  kharif2: ['T. Aman Rice', 'Rice', 'Fallow'],
+  rabi: ['Tomato', 'Mustard', 'Chickpea', 'Wheat', 'Boro Rice', 'Lentil', 'Potato', 'Maize', 'Sunflower', 'Sesame', 'Soybean', 'Groundnut', 'Fallow'],
+  kharif1: ['Mungbean', 'Jute', 'Aus Rice', 'Sesame', 'Maize', 'Soybean', 'Groundnut', 'Fallow'],
+  kharif2: ['Rice', 'T. Aman Rice', 'Fallow'],
 };
 
 const SEASONS_CONFIG = [
@@ -644,8 +645,16 @@ export function AdaptiveReplanningView({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {SEASONS_CONFIG.slice(0, finishedCount).map((season, idx) => {
             const row = seasonRows[idx] || {};
-            const allowedCrops = SEASON_ALLOWED_CROPS[season.kind] || [];
-            const currentSeasonCrop = row.crop || plannerCrops?.[idx];
+            const planCrop = plannerCrops?.[idx];
+            const allowedBase = SEASON_ALLOWED_CROPS[season.kind] || [];
+            const allowedCrops = [...allowedBase];
+            if (planCrop && !allowedCrops.includes(planCrop)) {
+              allowedCrops.unshift(planCrop);
+            }
+            if (row.crop && !allowedCrops.includes(row.crop)) {
+              allowedCrops.unshift(row.crop);
+            }
+            const currentSeasonCrop = row.crop || planCrop || allowedCrops[0];
             const matrixEntry = currentSeasonCrop ? cropSeasonMatrix?.[season.id]?.[currentSeasonCrop] : null;
 
             let yieldPlaceholder = lang === 'bn' ? 'ফলন দিন' : 'Enter yield';
@@ -689,7 +698,7 @@ export function AdaptiveReplanningView({
                       {lang === 'bn' ? 'কী চাষ করেছেন' : 'Planted Crop'}
                     </label>
                     <select
-                      value={row.crop || ''}
+                      value={row.crop || planCrop || ''}
                       onChange={(e) => updateSeasonRow(idx, 'crop', e.target.value)}
                       style={{
                         width: '100%',
