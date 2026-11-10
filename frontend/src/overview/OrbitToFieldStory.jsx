@@ -492,7 +492,7 @@ export function OrbitToFieldStory({
     {
       idx: '09 · LEARNING',
       problemLine: isBn ? 'সমস্যা: মাঠের বাস্তব ফলাফলের সাথে ভবিষ্যৎ পরিকল্পনা খাপ খায় না' : 'Problem: plans must adapt dynamically to actual field harvests',
-      headlineEn: 'RL-inspired adaptive <em>learning loop.</em>',
+      headlineEn: 'It learns from your <em>harvest.</em>',
       headlineBn: 'বাস্তব ফলন থেকে শেখার <em>স্মার্ট লুপ।</em>',
       bodyEn: 'Log real-world yields and market wholesale prices. FieldShift updates transition probabilities to continuously sharpen next year’s advice.',
       bodyBn: 'বাস্তব ফলন ও বাজার দর যুক্ত করুন। রিইনফোর্সমেন্ট লার্নিং অ্যালগরিদম ভবিষ্যতের পরামর্শকে আরও বাস্তবমুখী করে তোলে।',
@@ -501,7 +501,7 @@ export function OrbitToFieldStory({
         { label: 'Feedback', labelBn: 'ফিডব্যাক', val: 'Harvest & Soil Logged', color: '#EAF2EC' },
       ],
       nasa: 'Reinforcement Learning · History',
-      link: { label: 'Market & Profit', labelBn: 'বাজার ও লাভ পাতা', dest: 'harvest_profit' },
+      link: { label: 'Adaptive Replan', labelBn: 'অভিযোজিত পুনর্পরিকল্পনা', dest: 'farm_planning' },
       side: 'left',
     },
     // 9: CLOSE & TEAM AZOIC
@@ -554,6 +554,8 @@ export function OrbitToFieldStory({
       >
         {/* Right-Side Progress Rail with 10 dots & hover tooltips */}
         <div
+          data-testid="story-progress-rail"
+          className="story-progress-rail"
           style={{
             position: 'fixed',
             top: '50%',
@@ -573,9 +575,11 @@ export function OrbitToFieldStory({
           {SCENES.map((s, i) => {
             const isActive = currentSceneIndex === i;
             return (
-              <div key={i} style={{ position: 'relative' }}>
+              <div key={i} className="story-rail-dot-wrap" style={{ position: 'relative' }}>
                 <button
                   type="button"
+                  className="story-rail-dot"
+                  data-scene-idx={i}
                   onClick={() => scrollToScene(i)}
                   onMouseEnter={() => setHoveredScene(i)}
                   onMouseLeave={() => setHoveredScene(null)}
