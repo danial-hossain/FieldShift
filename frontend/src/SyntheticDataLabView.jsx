@@ -120,7 +120,7 @@ export function SyntheticDataLabView({
       a.click();
       a.remove();
     } catch (err) {
-      alert(`Export error: ${err.message}`);
+      console.error('Export error:', err);
     }
   };
 

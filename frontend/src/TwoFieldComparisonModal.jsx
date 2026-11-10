@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { request } from './apiClient.js';
-import { toBengaliNumber } from './i18n.js';
+import { toBengaliNumber, soilLabel } from './i18n.js';
 
 const CANONICAL_FIELDS = [
   {
@@ -451,7 +451,7 @@ export function TwoFieldComparisonModal({
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-2, #cbd5e1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldA.district.toUpperCase()}</div>
-                <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {selectedFieldA.soil_texture}</div>
+                <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {soilLabel(selectedFieldA.soil_texture, lang)}</div>
                 <div><strong>{lang === 'bn' ? 'উচ্চতা ও ঢাল (SRTM):' : 'Elevation & Slope (SRTM):'}</strong> {metricsA.elevationM}m ({metricsA.slopePct}% slope)</div>
                 <div><strong>{lang === 'bn' ? 'হাইড্রোলজি (GRACE):' : 'Aquifer Trend (GRACE):'}</strong> {metricsA.graceTrend} cm/yr ({metricsA.graceLabel})</div>
                 <div><strong>{lang === 'bn' ? 'প্লাবন ঝুঁকি:' : 'Flood Vulnerability:'}</strong> {metricsA.floodHint}</div>
@@ -486,7 +486,7 @@ export function TwoFieldComparisonModal({
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-2, #cbd5e1)', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div><strong>{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District:'}</strong> {selectedFieldB.district.toUpperCase()}</div>
-                <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {selectedFieldB.soil_texture}</div>
+                <div><strong>{lang === 'bn' ? 'মাটি (SoilGrids):' : 'Soil Texture:'}</strong> {soilLabel(selectedFieldB.soil_texture, lang)}</div>
                 <div><strong>{lang === 'bn' ? 'উচ্চতা ও ঢাল (SRTM):' : 'Elevation & Slope (SRTM):'}</strong> {metricsB.elevationM}m ({metricsB.slopePct}% slope)</div>
                 <div><strong>{lang === 'bn' ? 'হাইড্রোলজি (GRACE):' : 'Aquifer Trend (GRACE):'}</strong> {metricsB.graceTrend} cm/yr ({metricsB.graceLabel})</div>
                 <div><strong>{lang === 'bn' ? 'প্লাবন ঝুঁকি:' : 'Flood Vulnerability:'}</strong> {metricsB.floodHint}</div>

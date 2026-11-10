@@ -436,34 +436,41 @@ class GlobalErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: '40px 24px', maxWidth: 800, margin: '60px auto', background: '#ffffff', borderRadius: 16, border: '1px solid #fed7d7', boxShadow: '0 8px 30px rgba(0,0,0,0.08)', fontFamily: 'Inter, sans-serif' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <span style={{ fontSize: 32 }}>⚠️</span>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 20, color: '#c53030' }}>FieldShift Interface Notice</h2>
-              <p style={{ margin: '4px 0 0', fontSize: 13, color: '#742a2a' }}>An unexpected render issue occurred while processing field data.</p>
-            </div>
-          </div>
-          <div style={{ background: '#fff5f5', border: '1px solid #feb2b2', borderRadius: 8, padding: 16, marginBottom: 20 }}>
-            <strong style={{ display: 'block', fontSize: 13, color: '#9b2c2c', marginBottom: 6 }}>Error Details:</strong>
-            <code style={{ fontSize: 12.5, color: '#742a2a', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-              {String(this.state.error?.message || this.state.error)}
-            </code>
-          </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              type="button"
-              onClick={this.handleReset}
-              className="ui-btn ui-btn-primary ui-btn-md"
-            >
-              Reload Application
-            </button>
+        <div
+          role="alert"
+          style={{
+            padding: '28px 24px',
+            maxWidth: 560,
+            margin: '40px auto',
+            background: 'var(--surface, #121A15)',
+            borderRadius: 'var(--r-lg, 16px)',
+            border: '1px solid var(--border-glass, rgba(255,255,255,0.12))',
+            boxShadow: 'var(--shadow-glass-elevated, 0 16px 40px rgba(0,0,0,0.35))',
+            color: 'var(--text, #E8ECE9)',
+            textAlign: 'center'
+          }}
+        >
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+          <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text, #E8ECE9)' }}>
+            Something went wrong / একটি সমস্যা দেখা দিয়েছে
+          </h3>
+          <p style={{ margin: '0 0 20px', fontSize: 13, color: 'var(--text-muted, #9AA5A0)', lineHeight: 1.5 }}>
+            An unexpected error occurred while rendering this section. You can retry loading or refresh the application.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
             <button
               type="button"
               onClick={() => this.setState({ hasError: false, error: null })}
+              className="ui-btn ui-btn-primary ui-btn-md"
+            >
+              Try Again / পুনরায় চেষ্টা করুন
+            </button>
+            <button
+              type="button"
+              onClick={this.handleReset}
               className="ui-btn ui-btn-secondary ui-btn-md"
             >
-              Dismiss & Continue
+              Reload Page
             </button>
           </div>
         </div>

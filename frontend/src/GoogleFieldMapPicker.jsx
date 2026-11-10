@@ -305,8 +305,9 @@ export function GoogleFieldMapPicker({
 
   // Get User's Browser GPS Location
   const handleGetGPS = () => {
+    setStatusMessage('');
     if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
+      setStatusMessage('Geolocation is not supported by your browser.');
       return;
     }
     setIsLocating(true);
@@ -328,7 +329,7 @@ export function GoogleFieldMapPicker({
       },
       err => {
         setIsLocating(false);
-        alert(`Could not retrieve GPS location: ${err.message}`);
+        setStatusMessage(`Could not retrieve GPS location: ${err.message}`);
       },
       { timeout: 10000, enableHighAccuracy: true }
     );
@@ -337,6 +338,7 @@ export function GoogleFieldMapPicker({
   // Search Address Fallback if Autocomplete didn't fire
   const handleManualSearch = e => {
     if (e) e.preventDefault();
+    setStatusMessage('');
     const query = searchInputRef.current?.value?.trim();
     if (!query) return;
 
@@ -361,7 +363,7 @@ export function GoogleFieldMapPicker({
           if (match) {
             handleApplyPreset(match);
           } else {
-            alert(`Location "${query}" not found.`);
+            setStatusMessage(`Location "${query}" not found.`);
           }
         }
       });
@@ -370,7 +372,7 @@ export function GoogleFieldMapPicker({
       if (match) {
         handleApplyPreset(match);
       } else {
-        alert(`Preset for "${query}" not found. Try Dhaka, Barisal, or Rajshahi.`);
+        setStatusMessage(`Preset for "${query}" not found. Try Dhaka, Barisal, or Rajshahi.`);
       }
     }
   };
@@ -443,6 +445,12 @@ export function GoogleFieldMapPicker({
           >
             {isLocating ? 'Locating…' : '🎯 Current GPS'}
           </button>
+        </div>
+      )}
+
+      {statusMessage && (
+        <div style={{ fontSize: 12, color: 'var(--danger, #ef4444)', padding: '6px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, margin: '8px 0' }}>
+          {statusMessage}
         </div>
       )}
 

@@ -1069,12 +1069,7 @@ export function ClayFarmScene({
         <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }} />
       )}
 
-      {/* Floating Glass HUD Card for Selected Plot */}
-      <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 2 }}>
-        <span style={{ fontSize: 10.5, background: 'rgba(15, 23, 42, 0.75)', border: '1px solid rgba(255, 255, 255, 0.1)', color: '#e2e8f0', padding: '3px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
-          Draw calls: {drawCallsCount} {typeof window !== 'undefined' && window.innerWidth >= 1024 ? '• GTAOPass: ON' : ''}
-        </span>
-      </div>
+      {/* Draw calls: diagnostics logged to console; debug HUD removed from visible production UI */}
       {/* Floating Glass HUD Card for Selected Plot */}
       <div
         style={{

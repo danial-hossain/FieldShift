@@ -1981,6 +1981,18 @@ export function MyFarmWorkspaceView({
                   icon="📜"
                   title={lang === 'bn' ? 'এখনো কোনো রেকর্ড নেই' : 'No records yet'}
                   description={lang === 'bn' ? 'এই জমির জন্য পূর্ববর্তী কোনো ফসলের ইতিহাস নেই। নিচে বিগত মৌসুমের ফলন তথ্য যুক্ত করুন।' : 'No historical crop records found for this field. Add past seasonal records below.'}
+                  action={
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => {
+                        const el = document.getElementById('history-entry-form');
+                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                    >
+                      {lang === 'bn' ? '+ রেকর্ড যোগ করুন' : '+ Add Record'}
+                    </Button>
+                  }
                 />
               </div>
             ) : (
@@ -2087,7 +2099,7 @@ export function MyFarmWorkspaceView({
                 <span>➕</span>
                 <span>{lang === 'bn' ? 'বিগত মৌসুমের রেকর্ড যোগ করুন' : 'Add Past Seasonal Record'}</span>
               </div>
-              <form onSubmit={handleAddHistory}>
+              <form id="history-entry-form" onSubmit={handleAddHistory}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 12 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: 'var(--text-3)', marginBottom: 4 }}>

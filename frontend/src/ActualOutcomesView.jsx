@@ -212,7 +212,7 @@ export function ActualOutcomesView({
                 fontWeight: 700,
                 letterSpacing: '0.04em',
               }}>
-                P2 EMPIRICAL VALIDATION
+                {lang === 'bn' ? 'বাস্তব ফলন যাচাই' : 'Empirical Validation'}
               </span>
             </div>
             <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-muted, #94a3b8)', maxWidth: '840px', lineHeight: 1.5 }}>
