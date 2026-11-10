@@ -924,7 +924,11 @@ export function WaterIrrigationView({
 
             {/* Scrub Controls */}
             <div className="wp-ctrl">
-              <button type="button" onClick={togglePlay}>
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? (lang === 'bn' ? 'অ্যানিমেশন থামান' : 'Pause animation') : (lang === 'bn' ? 'অ্যানিমেশন চালু করুন' : 'Play animation')}
+              >
                 {isPlaying ? (lang === 'bn' ? '⏸ থামান' : '⏸ Pause') : (lang === 'bn' ? '▶ চালান' : '▶ Play')}
               </button>
               <input

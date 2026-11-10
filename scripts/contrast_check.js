@@ -1,12 +1,8 @@
 // scripts/contrast_check.js
 // Automated WCAG AA Contrast and Theme Consistency Validator
-// Verifies --accent and --accent-ink contrast ratio >= 4.5:1 in both Dark Mode and Light Mode
-// for key interactive selectors:
-// 1. Strategy pills (.strategy-pill[aria-pressed="true"])
-// 2. Irrigation selector chips (.pb[aria-pressed="true"])
-// 3. Add Field button (+ নতুন জমি / .add-field-btn / .ui-btn-primary)
-// 4. Replan finished seasons count buttons (.replan-count-btn)
-// 5. Top-bar language toggle button (.lang-toggle-btn)
+// Verifies:
+// 1. --accent and --accent-ink contrast ratio >= 4.5:1 in both Dark Mode and Light Mode
+// 2. Glass surface text contrast (normal text >= 4.5:1, large text >= 3.0:1) over real backgrounds
 
 import fs from 'fs';
 import path from 'path';
@@ -40,6 +36,15 @@ function contrastRatio(hex1, hex2) {
   const brighter = Math.max(l1, l2);
   const darker = Math.min(l1, l2);
   return (brighter + 0.05) / (darker + 0.05);
+}
+
+function blendRgbaOverHex(fgR, fgG, fgB, alpha, bgHex) {
+  const [br, bg, bb] = parseHex(bgHex);
+  const outR = Math.round((1 - alpha) * br * 255 + alpha * fgR);
+  const outG = Math.round((1 - alpha) * bg * 255 + alpha * fgG);
+  const outB = Math.round((1 - alpha) * bb * 255 + alpha * fgB);
+  const toHex = n => Math.min(255, Math.max(0, n)).toString(16).padStart(2, '0');
+  return `#${toHex(outR)}${toHex(outG)}${toHex(outB)}`;
 }
 
 const THEME_TOKENS = {
@@ -85,13 +90,40 @@ const REQUIRED_SELECTORS = [
   }
 ];
 
+const GLASS_SURFACES = [
+  {
+    theme: 'Dark Theme',
+    bg: '#0A0F0D',
+    glassTint: { r: 255, g: 255, b: 255, a: 0.06 },
+    texts: [
+      { name: 'Primary Text (--text)', hex: '#E8ECE9', required: 4.5, type: 'Normal Text' },
+      { name: 'Muted Text (--text-muted)', hex: '#9AA5A0', required: 4.5, type: 'Normal Text' },
+      { name: 'Accent Highlight (--accent)', hex: '#C8F169', required: 3.0, type: 'Large / Component' },
+      { name: 'Water Tag (--water)', hex: '#38BDF8', required: 3.0, type: 'Large / Component' }
+    ]
+  },
+  {
+    theme: 'Light Theme',
+    bg: '#F4F6F2',
+    glassTint: { r: 255, g: 255, b: 255, a: 0.60 },
+    texts: [
+      { name: 'Primary Text (--text)', hex: '#0E1A13', required: 4.5, type: 'Normal Text' },
+      { name: 'Muted Text (--text-muted)', hex: '#4A5B50', required: 4.5, type: 'Normal Text' },
+      { name: 'Accent Highlight (--accent)', hex: '#15803D', required: 4.5, type: 'Normal Text' },
+      { name: 'Water Tag (--water)', hex: '#0369A1', required: 4.5, type: 'Normal Text' }
+    ]
+  }
+];
+
 function verifyTokenContrast() {
   console.log('========================================================================');
-  console.log('FIELDSHIFT C2: ACCESSIBLE BUTTON CONTRAST VERIFICATION (WCAG AA >= 4.5:1)');
+  console.log('FIELDSHIFT U7: WCAG AA CONTRAST & GLASS SURFACE VALIDATION (>= 4.5:1)');
   console.log('========================================================================\n');
 
   let allPass = true;
 
+  // 1. Interactive Button & Chip Accents
+  console.log('--- 1. INTERACTIVE ACCENT CONTRAST RATIOS ---');
   for (const [key, theme] of Object.entries(THEME_TOKENS)) {
     const ratio = contrastRatio(theme.accent, theme.accentInk);
     const pass = ratio >= 4.5;
@@ -109,7 +141,29 @@ function verifyTokenContrast() {
     console.log('');
   }
 
-  // Also verify that styles.css defines these tokens
+  // 2. Glass Surfaces over Darkest & Lightest Page Backgrounds
+  console.log('--- 2. GLASS SURFACE CONTRAST OVER PAGE BACKGROUNDS ---');
+  for (const surface of GLASS_SURFACES) {
+    const blendedBg = blendRgbaOverHex(
+      surface.glassTint.r,
+      surface.glassTint.g,
+      surface.glassTint.b,
+      surface.glassTint.a,
+      surface.bg
+    );
+    console.log(`[SURFACE] ${surface.theme}`);
+    console.log(`  Base Canvas BG: ${surface.bg}`);
+    console.log(`  Glass Blended Surface: ${blendedBg}`);
+    for (const text of surface.texts) {
+      const ratio = contrastRatio(text.hex, blendedBg);
+      const pass = ratio >= text.required;
+      if (!pass) allPass = false;
+      console.log(`  - ${text.name}: ${text.hex} vs ${blendedBg} -> ${ratio.toFixed(2)}:1 (Req >= ${text.required.toFixed(1)}:1, ${text.type}) -> ${pass ? 'PASSED ✓' : 'FAILED ✗'}`);
+    }
+    console.log('');
+  }
+
+  // 3. Declaration in styles.css
   const stylesCss = fs.readFileSync(path.join(REPO_ROOT, 'frontend', 'src', 'styles.css'), 'utf-8');
   const hasDarkAccent = stylesCss.includes('--accent: #22c55e') || stylesCss.includes('--accent: #22c55e;');
   const hasDarkInk = stylesCss.includes('--accent-ink: #052e16') || stylesCss.includes('--accent-ink: #052e16;');
@@ -126,7 +180,7 @@ function verifyTokenContrast() {
   if (!cssVerified) allPass = false;
 
   console.log('\n========================================================================');
-  console.log(`OVERALL RESULT: ${allPass ? 'ALL SELECTORS PASS WCAG AA (>= 4.5:1) ✓' : 'CONTRAST CHECKS FAILED ✗'}`);
+  console.log(`OVERALL RESULT: ${allPass ? 'ALL SELECTORS AND GLASS SURFACES PASS WCAG AA ✓' : 'CONTRAST CHECKS FAILED ✗'}`);
   console.log('========================================================================\n');
 
   if (!allPass) {

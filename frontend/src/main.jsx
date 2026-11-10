@@ -1626,6 +1626,23 @@ export function App() {
     }
   }, []);
 
+  // U7 Keyboard Accessibility: Esc closes open modals and overlays
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (helpModalOpen) { setHelpModalOpen(false); return; }
+        if (showNotifications) { setShowNotifications(false); return; }
+        if (fieldModal) { setFieldModal(null); return; }
+        if (viewingField) { setViewingField(null); return; }
+        if (profileModal) { setProfileModal(false); return; }
+        if (authModal) { setAuthModal(false); return; }
+        if (mobileNavOpen) { setMobileNavOpen(false); return; }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [helpModalOpen, showNotifications, fieldModal, viewingField, profileModal, authModal, mobileNavOpen]);
+
   const summary = result?.summary || {};
   const ml = summary.ml || {};
   const planning = summary.planning || {};
@@ -2155,7 +2172,12 @@ export function App() {
                 onChange={e => setGlobalSearchQuery(e.target.value)}
               />
               {globalSearchQuery && (
-                <button type="button" className="search-clear-btn" onClick={() => setGlobalSearchQuery('')}>✕</button>
+                <button
+                  type="button"
+                  className="search-clear-btn"
+                  onClick={() => setGlobalSearchQuery('')}
+                  aria-label={lang === 'bn' ? 'অনুসন্ধান মুছুন' : 'Clear search'}
+                >✕</button>
               )}
 
               {globalSearchQuery.trim() && (
@@ -2352,7 +2374,7 @@ export function App() {
               className="top-bar-icon-btn lang-toggle-btn"
               title={lang === 'bn' ? 'Switch to English' : 'বাংলায় দেখুন'}
               onClick={() => setLang(prev => prev === 'bn' ? 'en' : 'bn')}
-              aria-label="Language switch"
+              aria-label={lang === 'bn' ? 'ভাষা পরিবর্তন করুন (ইংরেজি)' : 'Switch language to Bangla'}
               style={{
                 width: 'auto',
                 padding: '0 14px',
@@ -2379,7 +2401,7 @@ export function App() {
               className="top-bar-icon-btn theme-toggle-btn"
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Theme`}
               onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-              aria-label="Toggle visual theme"
+              aria-label={lang === 'bn' ? (theme === 'dark' ? 'হালকা থিম চালু করুন' : 'ডার্ক থিম চালু করুন') : `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} theme`}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               {theme === 'dark' ? <SunIcon size={18} /> : <MoonIcon size={18} />}
@@ -2391,7 +2413,7 @@ export function App() {
               className="top-bar-icon-btn help-guide-btn"
               title={lang === 'bn' ? 'ব্যবহারকারী নির্দেশিকা ও সহায়তা (?)' : 'User Guide & Help (?)'}
               onClick={() => setHelpModalOpen(true)}
-              aria-label="Help & User Guide"
+              aria-label={lang === 'bn' ? 'ব্যবহারকারী নির্দেশিকা ও সহায়তা' : 'User guide and help'}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
               <HelpIcon size={18} />
@@ -2404,7 +2426,7 @@ export function App() {
                 className="top-bar-icon-btn notification-bell-btn hide-on-mobile"
                 title="System Alerts & Analysis Notifications"
                 onClick={() => setShowNotifications(prev => !prev)}
-                aria-label="System notifications"
+                aria-label={lang === 'bn' ? 'সিস্টেম বিজ্ঞপ্তি' : 'System notifications'}
               >
                 <BellIcon size={18} />
                 <span className="notification-badge-count">2</span>
@@ -2426,7 +2448,12 @@ export function App() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, borderBottom: '1px solid var(--border-light, #2d3748)', paddingBottom: 6 }}>
                     <strong style={{ fontSize: 13 }}>{lang === 'bn' ? 'সিস্টেম নোটিফিকেশন' : 'System Notifications'}</strong>
-                    <button type="button" className="modal-close-btn" onClick={() => setShowNotifications(false)}>✕</button>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => setShowNotifications(false)}
+                      aria-label={lang === 'bn' ? 'বিজ্ঞপ্তি বন্ধ করুন' : 'Close notifications'}
+                    >✕</button>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12 }}>
                     <div style={{ padding: '8px 10px', borderRadius: 6, background: 'rgba(0, 223, 129, 0.08)', borderLeft: '3px solid #00df81' }}>
@@ -4103,7 +4130,12 @@ export function App() {
                 <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: 720, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   <div className="modal-header" style={{ flexShrink: 0 }}>
                     <h3>{fieldModal === 'edit' ? (lang === 'bn' ? `জমি সম্পাদন: ${fieldForm.name || ''}` : `Edit Field: ${fieldForm.name || 'Parcel'}`) : (lang === 'bn' ? 'নতুন কৃষি জমি যোগ করুন' : 'Add New Agricultural Field')}</h3>
-                    <button type="button" className="modal-close-btn" onClick={() => !fieldModalLoading && setFieldModal(null)}>×</button>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => !fieldModalLoading && setFieldModal(null)}
+                      aria-label={lang === 'bn' ? 'পপআপ বন্ধ করুন' : 'Close modal'}
+                    >×</button>
                   </div>
                   <form onSubmit={handleFieldFormSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', margin: 0 }}>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 22px' }}>
@@ -4635,7 +4667,12 @@ export function App() {
                       <h3 style={{ margin: 0 }}>{viewingField.name}</h3>
                       <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Field ID #{viewingField.id} • Farm Station #{viewingField.farm_id}</span>
                     </div>
-                    <button type="button" className="modal-close-btn" onClick={() => setViewingField(null)}>×</button>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => setViewingField(null)}
+                      aria-label={lang === 'bn' ? 'পপআপ বন্ধ করুন' : 'Close modal'}
+                    >×</button>
                   </div>
                   <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 22px' }}>
                     {/* Read-only Google Maps Field Location View */}
@@ -4753,7 +4790,12 @@ export function App() {
                 <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: 480, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   <div className="modal-header" style={{ flexShrink: 0 }}>
                     <h3>Edit Agronomist Profile & Station</h3>
-                    <button type="button" className="modal-close-btn" onClick={() => !profileLoading && setProfileModal(false)}>×</button>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => !profileLoading && setProfileModal(false)}
+                      aria-label={lang === 'bn' ? 'পপআপ বন্ধ করুন' : 'Close modal'}
+                    >×</button>
                   </div>
                   <form onSubmit={handleProfileUpdate} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', margin: 0 }}>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 22px' }}>
@@ -4811,7 +4853,12 @@ export function App() {
                 <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: 420 }}>
                   <div className="modal-header">
                     <h3>{authMode === 'register' ? 'Register Agronomist Account' : 'Sign In to FieldShift'}</h3>
-                    <button type="button" className="modal-close-btn" onClick={() => setAuthModal(false)}>×</button>
+                    <button
+                      type="button"
+                      className="modal-close-btn"
+                      onClick={() => setAuthModal(false)}
+                      aria-label={lang === 'bn' ? 'লগইন উইন্ডো বন্ধ করুন' : 'Close authentication dialog'}
+                    >×</button>
                   </div>
                   <form onSubmit={handleAuthSubmit}>
                     <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '18px 22px' }}>

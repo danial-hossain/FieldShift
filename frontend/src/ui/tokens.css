@@ -110,7 +110,7 @@ html[data-theme="light"],
   --accent-ink: #FFFFFF;
   --accent-hover: #22533D;
 
-  --water: #0284C7;
+  --water: #0369A1;
   --warn: #D97706;
   --danger: #DC2626;
   --success: #059669;
@@ -280,6 +280,12 @@ html[lang="bn"] h6 {
 
 .ui-btn:active:not(:disabled) {
   transform: scale(0.98);
+}
+
+/* Universal keyboard focus indicator (WCAG AA 2.4.7) */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .ui-btn:focus-visible {
