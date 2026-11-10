@@ -549,9 +549,83 @@ export function NasaWeatherStation3D({
       </div>
 
       {loading && (
-        <div style={{ padding: 48, textAlign: 'center', color: 'var(--muted, #93a597)' }}>
-          <div style={{ fontSize: 24, marginBottom: 8 }}>⏳</div>
-          <div>{lang === 'bn' ? 'জমির নিজস্ব জলবায়ু তথ্য প্রস্তুত হচ্ছে...' : 'Loading point climate data...'}</div>
+        <div
+          style={{
+            padding: '36px 20px',
+            background: 'var(--surface, #131b16)',
+            border: '1px solid var(--line, rgba(255,255,255,0.1))',
+            borderRadius: 16,
+            textAlign: 'center',
+            color: 'var(--fg, #e7efe8)',
+            margin: '20px 0',
+          }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 10 }}>🛰️</div>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 6px' }}>
+            {lang === 'bn' ? 'জমির নিজস্ব স্যাটেলাইট ও আবহাওয়া উপাত্ত লোড হচ্ছে...' : 'Loading Point-Specific Satellite & Weather Telemetry...'}
+          </h3>
+          <p style={{ fontSize: '13px', color: 'var(--muted, #93a597)', margin: '0 0 20px' }}>
+            {lang === 'bn'
+              ? `স্থানাঙ্ক: ${bn(lat, 2)}° উত্তর, ${bn(lon, 2)}° পূর্ব · সরাসরি গ্রিড ও পয়েন্ট উপাত্ত বিশ্লেষণ চলছে`
+              : `Coordinates: ${lat.toFixed(2)}° N, ${lon.toFixed(2)}° E · Analyzing point & grid telemetry`}
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: 12,
+              maxWidth: 680,
+              margin: '0 auto',
+            }}
+          >
+            {[
+              {
+                source: 'NASA POWER',
+                name_bn: 'দৈনিক তাপমাত্রা ও সৌর বিকিরণ',
+                name_en: 'Daily Temperature & Solar Radiation',
+                status_bn: '১৯৮১–বর্তমান বিন্দু উপাত্ত',
+                status_en: '1981–present point series',
+              },
+              {
+                source: 'NASA GPM IMERG',
+                name_bn: '১০ কিমি গ্রিড বৃষ্টিপাত',
+                name_en: '10km Grid Daily Precipitation',
+                status_bn: '২০০১–২০২৪ স্যাটেলাইট রেকর্ড',
+                status_en: '2001–2024 satellite record',
+              },
+              {
+                source: 'NASA GRACE / FO',
+                name_bn: 'ভূগর্ভস্থ পানির সঞ্চয় ধারা',
+                name_en: 'Aquifer Total Water Storage',
+                status_bn: 'জেপিএল ম্যাসকন অবক্ষেপ বিশ্লেষণ',
+                status_en: 'JPL Mascon Trend Analysis',
+              },
+            ].map((st, i) => (
+              <div
+                key={i}
+                style={{
+                  background: 'var(--surface-2, #18221c)',
+                  border: '1px solid var(--line, rgba(255,255,255,0.08))',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  flex: '1 1 200px',
+                  textAlign: 'left',
+                }}
+              >
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent, #c8e46a)', marginBottom: 2 }}>
+                  ✓ {st.source}
+                </div>
+                <div style={{ fontSize: '12.5px', color: 'var(--fg, #e7efe8)' }}>
+                  {lang === 'bn' ? st.name_bn : st.name_en}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--muted, #93a597)', marginTop: 2 }}>
+                  {lang === 'bn' ? st.status_bn : st.status_en}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -970,7 +1044,7 @@ export function NasaWeatherStation3D({
                     cursor: 'pointer',
                   }}
                 >
-                  {lang === 'bn' ? 'বছর ১ (Year 1)' : 'Year 1'}
+                  {lang === 'bn' ? 'বছর ১' : 'Year 1'}
                 </button>
                 <button
                   type="button"
@@ -985,7 +1059,7 @@ export function NasaWeatherStation3D({
                     cursor: 'pointer',
                   }}
                 >
-                  {lang === 'bn' ? 'বছর ২ (Year 2)' : 'Year 2'}
+                  {lang === 'bn' ? 'বছর ২' : 'Year 2'}
                 </button>
               </div>
             </div>
@@ -1013,7 +1087,7 @@ export function NasaWeatherStation3D({
 
                 {/* Crop Bars Row */}
                 <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: '12.5px', paddingRight: 6 }}>
-                  {lang === 'bn' ? `পরিকল্পিত ফসল (বছর ${activePlanYear + 1})` : `Planned Crops (Y${activePlanYear + 1})`}
+                  {lang === 'bn' ? `পরিকল্পিত ফসল (বছর ${bn(activePlanYear + 1)})` : `Planned Crops (Y${activePlanYear + 1})`}
                 </div>
                 {(() => {
                   const elements = [];
