@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="bn">
-<head>
-<meta charset="utf-8">
 <title>Your Farming vs Plan</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap">
@@ -89,8 +84,7 @@ td s{color:var(--muted);font-size:12px}
 @media (max-width:900px){.cols,.two{grid-template-columns:minmax(0,1fr)}.stagebox{height:380px}.vseg{left:10px;right:10px;transform:none;justify-content:center}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
-</head>
-<body>
+
 <div class="wrap">
   <div class="head">
     <div>
@@ -99,6 +93,604 @@ td s{color:var(--muted);font-size:12px}
     </div>
     <span class="tag">ডিজাইন নমুনা · সংখ্যা অ্যাপের screenshot থেকে</span>
   </div>
+
+  <div class="row">
+    <div class="seg" id="seg" role="group" aria-label="কৌশল">
+      <button data-s="balanced">সুষম</button><button data-s="profit">লাভ ⭐</button><button data-s="water">পানি সাশ্রয়</button><button data-s="soil">মাটির স্বাস্থ্য</button>
+    </div>
+    <label class="demo"><input type="checkbox" id="demoToggle" checked> নমুনা: মাঠ থেকে শেখার ফল আছে</label>
+  </div>
+
+  <div class="cols" id="cols"></div>
+
+  <div class="stagebox">
+    <div id="stage"></div>
+    <div class="labels" id="labels"></div>
+    <div class="seg vseg" id="vseg" role="group" aria-label="3D-তে দেখুন">
+      <button data-v="current">আপনার চাষ</button><button data-v="plan">মূল পরামর্শ</button><button data-v="updated">হালনাগাদ</button>
+    </div>
+    <div class="legend">✓ শেষ হয়েছে · <span style="color:#c46818;font-weight:700">⟳</span> শেখার পর বদলেছে · ধূসর = একই চাষ আবার</div>
+    <div class="tankcap" id="tankcap"></div>
+  </div>
+
+  <div class="two">
+    <section class="card"><h3>মৌসুম ধরে তুলনা</h3><div class="tw" id="tbl"></div></section>
+    <section class="card"><h3>৪ কৌশল বনাম আপনার চাষ</h3><div id="bars"></div><p class="note" style="margin-top:6px">মাটির স্বাস্থ্য কৌশলের সংখ্যা এই নমুনায় নেই।</p></section>
+  </div>
+
+  <div class="sum" id="sum"></div>
+  <p class="note">নমুনা: "আপনার চাষ", "সুষম" আর "লাভ"-এর সংখ্যা অ্যাপের রহিম জমির screenshot থেকে। "হালনাগাদ" কলাম উদাহরণ (১ম বছর রবিতে সরিষা ৬ মণ/বিঘা, ২,৮০০ টাকা/মণ) থেকে সরল নিয়মে হিসাব করা।</p>
 </div>
-</body>
-</html>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+/* ---------- data (sample strategies, design preview only) ---------- */
+const CROPS = {
+  boro:    {bn:'বোরো ধান', fam:'Poaceae', water:'১০০০–১২০০ মিমি', soil:'নিবিড় সেচ', why:'শীতের সেচনির্ভর ধান। ফলন বেশি, কিন্তু ভূগর্ভস্থ পানি অনেক লাগে।', color:'#7fae3c', type:'rice'},
+  aman:    {bn:'আমন ধান', fam:'Poaceae', water:'প্রায় বৃষ্টিনির্ভর', soil:'খড় অবশিষ্ট', why:'বর্ষার ধান। বৃষ্টিই প্রধান পানির উৎস, তাই সেচ খুব কম লাগে।', color:'#5f9e35', type:'rice'},
+  mustard: {bn:'সরিষা', fam:'Brassicaceae', water:'১৫০–৩০০ মিমি', soil:'রোগচক্র ভাঙে', why:'কম পানিতে শীতে হয়, অল্প সময়ে ওঠে, আর ধানের রোগচক্র ভেঙে দেয়।', color:'#f2c318', type:'mustard'},
+  soybean: {bn:'সয়াবিন', fam:'Fabaceae', water:'প্রায় বৃষ্টিনির্ভর', soil:'+ নাইট্রোজেন', why:'ঘন ঝোপালো ডাল ফসল, চওড়া গাঢ় পাতা আর লোমশ শুঁটি। শিকড়ে বাতাসের নাইট্রোজেন মাটিতে জমা করে।', color:'#2f5f22', type:'bush'},
+  lentil:  {bn:'মসুর', fam:'Fabaceae', water:'১০০–২০০ মিমি', soil:'+ নাইট্রোজেন', why:'মাটির কাছে ঘন নিচু চাদরের মতো, সূক্ষ্ম নীলচে-সবুজ পাতা আর হালকা বেগুনি ফুল। খুব কম পানি লাগে।', color:'#7fa48a', type:'low'},
+  chickpea:{bn:'ছোলা', fam:'Fabaceae', water:'১০০–২০০ মিমি', soil:'+ নাইট্রোজেন', why:'হাঁটু-সমান ধূসর-সবুজ ঝোপ, গোল ফোলা শুঁটি আর সাদা-গোলাপি ফুল। খরা সহনশীল।', color:'#b9c96a', type:'low'},
+  mungbean:{bn:'মুগ ডাল', fam:'Fabaceae', water:'প্রায় বৃষ্টিনির্ভর', soil:'+ নাইট্রোজেন', why:'হালকা সবুজ খাড়া গাছ, লম্বা কালো শুঁটি আর হলুদ ফুল। গ্রীষ্মে অল্প সময়ে ওঠে, পতিত জমি ঢেকে রাখে।', color:'#8fbf3e', type:'bush'},
+  sesame:  {bn:'তিল', fam:'Pedaliaceae', water:'প্রায় বৃষ্টিনির্ভর', soil:'গভীর শিকড়', why:'খরা সহনশীল তেলবীজ, প্রাক-বর্ষায় কম পানিতে টেকে।', color:'#6aa04a', type:'tall'},
+  jute:    {bn:'পাট', fam:'Malvaceae', water:'প্রায় বৃষ্টিনির্ভর', soil:'পাতা ঝরে জৈব পদার্থ', why:'নগদ আঁশ ফসল, পাতা ঝরে মাটিতে জৈব পদার্থ যোগ করে।', color:'#3d7d34', type:'jute'},
+  wheat:   {bn:'গম', fam:'Poaceae', water:'২০০–৩৫০ মিমি', soil:'খড় অবশিষ্ট', why:'বোরোর চেয়ে অনেক কম পানিতে শীতের খাদ্যশস্য।', color:'#d8b45a', type:'wheat'},
+  fallow:  {bn:'পতিত', fam:'—', water:'—', soil:'মাটি খোলা, ক্ষয় ঝুঁকি', why:'জমি ফাঁকা থাকে। বৃষ্টিতে মাটির ক্ষয় হয় আর আগাছা বাড়ে।', color:'#8a6a4a', type:'fallow'}
+};
+const SEASONS = [
+  {y:'১ম বছর',s:'রবি',m:'নভে–এপ্রি',kind:'rabi'},{y:'১ম বছর',s:'খরিফ-১',m:'এপ্রি–জুন',kind:'k1'},{y:'১ম বছর',s:'খরিফ-২',m:'জুলা–অক্টো',kind:'k2'},
+  {y:'২য় বছর',s:'রবি',m:'নভে–এপ্রি',kind:'rabi'},{y:'২য় বছর',s:'খরিফ-১',m:'এপ্রি–জুন',kind:'k1'},{y:'২য় বছর',s:'খরিফ-২',m:'জুলা–অক্টো',kind:'k2'}
+];
+const STRATS = {
+  current: ['boro','fallow','aman','boro','fallow','aman'],
+  balanced:['mustard','mungbean','aman','chickpea','sesame','aman'],
+  profit:  ['mustard','jute','aman','wheat','sesame','aman'],
+  water:   ['mustard','mungbean','aman','lentil','sesame','aman'],
+  soil:    ['lentil','mungbean','aman','chickpea','soybean','aman']
+};
+
+/* ---------- renderer / scene ---------- */
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(stage.clientWidth,stage.clientHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+stage.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+const SKY_TOP=new THREE.Color('#7fb2e5'), SKY_HOR=new THREE.Color('#e9e4d2');
+scene.fog=new THREE.Fog('#dfe3d6',120,320);
+
+/* sky dome */
+const skyMat=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{top:{value:SKY_TOP},hor:{value:SKY_HOR}},
+  vertexShader:`varying vec3 vP;void main(){vP=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*viewMatrix*vec4(vP,1.);}`,
+  fragmentShader:`uniform vec3 top;uniform vec3 hor;varying vec3 vP;void main(){float h=normalize(vP).y;float t=pow(max(h,0.),.55);gl_FragColor=vec4(mix(hor,top,t),1.);}`});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(600,32,16),skyMat));
+
+/* environment map from the sky for soft PBR reflections */
+{
+  const pm=new THREE.PMREMGenerator(renderer);
+  const envScene=new THREE.Scene();
+  envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50,32,16),skyMat.clone()));
+  const sunBall=new THREE.Mesh(new THREE.SphereGeometry(4,16,8),new THREE.MeshBasicMaterial({color:new THREE.Color(8,7.2,6)}));
+  sunBall.position.set(30,25,15);envScene.add(sunBall);
+  scene.environment=pm.fromScene(envScene,0.04).texture;
+}
+
+const hemi=new THREE.HemisphereLight('#cfe3ff','#5b4a32',0.55);scene.add(hemi);
+const sun=new THREE.DirectionalLight('#fff1d6',2.6);
+sun.position.set(55,70,35);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-70,right:70,top:70,bottom:-70,near:10,far:220});
+sun.shadow.camera.updateProjectionMatrix();sun.shadow.bias=-0.0004;sun.shadow.normalBias=0.03;
+scene.add(sun);
+
+const camera=new THREE.PerspectiveCamera(36,stage.clientWidth/stage.clientHeight,0.5,1500);
+camera.position.set(58,52,70);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0,6);controls.enableDamping=true;controls.dampingFactor=0.07;
+controls.maxPolarAngle=Math.PI*0.46;controls.minDistance=28;controls.maxDistance=190;
+controls.autoRotate=false;controls.autoRotateSpeed=0.35;
+renderer.domElement.addEventListener('pointerdown',()=>{controls.autoRotate=false},{once:true});
+
+/* ---------- helpers ---------- */
+const rnd=(()=>{let s=7;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646}})();
+function hash(x,z){const s=Math.sin(x*127.1+z*311.7)*43758.5453;return s-Math.floor(s)}
+function vnoise(x,z){const xi=Math.floor(x),zi=Math.floor(z),xf=x-xi,zf=z-zi;
+  const u=xf*xf*(3-2*xf),v=zf*zf*(3-2*zf);
+  const a=hash(xi,zi),b=hash(xi+1,zi),c=hash(xi,zi+1),d=hash(xi+1,zi+1);
+  return a*(1-u)*(1-v)+b*u*(1-v)+c*(1-u)*v+d*u*v}
+function colorGeo(g,hex){const c=new THREE.Color(hex);const n=g.attributes.position.count;const arr=new Float32Array(n*3);
+  for(let i=0;i<n;i++){arr[i*3]=c.r;arr[i*3+1]=c.g;arr[i*3+2]=c.b}g.setAttribute('color',new THREE.BufferAttribute(arr,3));
+  if(g.index)g=g.toNonIndexed();return g}
+function prep(g,hex){g=g.index?g.toNonIndexed():g;return colorGeo(g,hex)}
+const vcMat=(rough=0.85)=>new THREE.MeshStandardMaterial({vertexColors:true,roughness:rough,metalness:0});
+
+/* ---------- ground with soft terrain outside the farm ---------- */
+const FARM={w:66,d:46}; // flat farm area centred at (0,0,6)
+{
+  const g=new THREE.PlaneGeometry(420,420,180,180);g.rotateX(-Math.PI/2);
+  const p=g.attributes.position,col=new Float32Array(p.count*3);
+  const gA=new THREE.Color('#5f8a35'),gB=new THREE.Color('#7da343'),gC=new THREE.Color('#4c7a2e'),c=new THREE.Color();
+  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);
+    const dx=Math.max(0,Math.abs(x)-FARM.w/2-6),dz=Math.max(0,Math.abs(z-6)-FARM.d/2-6);
+    const fall=Math.min(1,Math.hypot(dx,dz)/30);
+    const h=(vnoise(x*0.03,z*0.03)*3.2+vnoise(x*0.11,z*0.11)*0.8)*fall-0.15;
+    p.setY(i,h);
+    const n=vnoise(x*0.07+11,z*0.07-3);c.copy(gA).lerp(gB,n).lerp(gC,vnoise(x*0.02,z*0.02)*0.5);
+    col.set([c.r,c.g,c.b],i*3)}
+  g.setAttribute('color',new THREE.BufferAttribute(col,3));g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:1}));
+  m.receiveShadow=true;scene.add(m);
+}
+
+/* ---------- pond ---------- */
+const waterMat=new THREE.MeshStandardMaterial({color:'#3f6f7c',roughness:0.06,metalness:0.1,transparent:true,opacity:0.88});
+{
+  const pond=new THREE.Mesh(new THREE.CircleGeometry(9,48),waterMat);pond.rotation.x=-Math.PI/2;pond.scale.set(1.5,1,1);
+  pond.position.set(-44,0.06,-14);pond.receiveShadow=true;scene.add(pond);
+  const bank=new THREE.Mesh(new THREE.RingGeometry(9,10.4,48),new THREE.MeshStandardMaterial({color:'#7a6142',roughness:1}));
+  bank.rotation.x=-Math.PI/2;bank.scale.set(1.5,1,1);bank.position.set(-44,0.04,-14);scene.add(bank);
+}
+
+/* ---------- house (village tin-roof house with veranda) ---------- */
+function buildHouse(){
+  const grp=new THREE.Group();
+  const wall=new THREE.MeshStandardMaterial({color:'#e9dcc6',roughness:0.92});
+  const plinth=new THREE.MeshStandardMaterial({color:'#9b8b77',roughness:1});
+  const tin=new THREE.MeshStandardMaterial({color:'#8a9499',roughness:0.38,metalness:0.75});
+  const wood=new THREE.MeshStandardMaterial({color:'#6b4a2f',roughness:0.85});
+  const base=new THREE.Mesh(new THREE.BoxGeometry(16,0.8,11),plinth);base.position.y=0.4;grp.add(base);
+  const body=new THREE.Mesh(new THREE.BoxGeometry(14,5.2,8),wall);body.position.set(0,3.4,-0.8);grp.add(body);
+  // corrugated roof: two slopes with ribs
+  const ribGeo=[];for(let i=0;i<34;i++){const b=new THREE.BoxGeometry(0.16,0.12,6.6);b.translate(-8+i*0.485,0,0);ribGeo.push(b)}
+  const ribs=mergeGeometries(ribGeo);
+  [-1,1].forEach(side=>{
+    const slope=new THREE.Group();
+    const sheet=new THREE.Mesh(new THREE.BoxGeometry(16.6,0.12,6.6),tin);slope.add(sheet);
+    const r=new THREE.Mesh(ribs,tin);r.position.y=0.1;slope.add(r);
+    slope.position.set(0,7.3,-0.8+side*2.9);slope.rotation.x=side*0.52;grp.add(slope)});
+  // gable triangles
+  const tri=new THREE.Shape();tri.moveTo(-4,0);tri.lineTo(4,0);tri.lineTo(0,2.6);tri.lineTo(-4,0);
+  [-7,7].forEach(x=>{const g=new THREE.Mesh(new THREE.ShapeGeometry(tri),wall);g.rotation.y=Math.PI/2;g.position.set(x,6,-0.8);grp.add(g);
+    const g2=g.clone();g2.rotation.y=-Math.PI/2;grp.add(g2)});
+  // veranda roof + posts
+  const ver=new THREE.Mesh(new THREE.BoxGeometry(15,0.12,3.4),tin);ver.position.set(0,5.1,4.6);ver.rotation.x=0.18;grp.add(ver);
+  for(let i=0;i<5;i++){const p=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.18,4.4,8),wood);p.position.set(-6.8+i*3.4,2.9,6.0);grp.add(p)}
+  // door & windows
+  const door=new THREE.Mesh(new THREE.BoxGeometry(2,3.4,0.2),wood);door.position.set(0,2.5,3.25);grp.add(door);
+  [-4.4,4.4].forEach(x=>{const w=new THREE.Mesh(new THREE.BoxGeometry(2,1.6,0.2),new THREE.MeshStandardMaterial({color:'#2e3b40',roughness:0.25,metalness:0.2}));
+    w.position.set(x,3.6,3.25);grp.add(w);
+    const fr=new THREE.Mesh(new THREE.BoxGeometry(2.3,1.9,0.12),wood);fr.position.set(x,3.6,3.18);grp.add(fr)});
+  grp.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+  return grp;
+}
+const house=buildHouse();house.position.set(0,0,-26);scene.add(house);
+
+/* straw stack + tubewell */
+{
+  const straw=new THREE.MeshStandardMaterial({color:'#d1a85a',roughness:1});
+  const stack=new THREE.Mesh(new THREE.CylinderGeometry(0.4,2.4,4.6,18),straw);stack.position.set(15,2.3,-24);stack.castShadow=true;scene.add(stack);
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.08,6,6),new THREE.MeshStandardMaterial({color:'#5b4630'}));pole.position.set(15,3,-24);scene.add(pole);
+  const metal=new THREE.MeshStandardMaterial({color:'#2f6b4f',roughness:0.4,metalness:0.6});
+  const tw=new THREE.Group();
+  const pipe=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,2.2,12),metal);pipe.position.y=1.1;tw.add(pipe);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.5,1.2),metal);head.position.set(0,2.2,0.3);tw.add(head);
+  const pad=new THREE.Mesh(new THREE.CylinderGeometry(1.1,1.1,0.2,20),new THREE.MeshStandardMaterial({color:'#a9a39a',roughness:1}));pad.position.y=0.1;tw.add(pad);
+  tw.position.set(-6,0,-15);tw.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.add(tw);
+}
+
+/* ---------- trees: round trees + coconut palms (instanced) ---------- */
+{
+  const crownParts=[];for(let i=0;i<5;i++){const s=new THREE.IcosahedronGeometry(1.6+rnd()*0.6,1);
+    s.translate((rnd()-.5)*1.8,(rnd())*1.2,(rnd()-.5)*1.8);crownParts.push(prep(s,i%2?'#3f7a2c':'#4e8a33'))}
+  const crown=mergeGeometries(crownParts);crown.translate(0,5.2,0);
+  const trunk=prep(new THREE.CylinderGeometry(0.28,0.42,4.6,7).translate(0,2.3,0),'#5c4330');
+  const treeGeo=mergeGeometries([trunk,crown]);
+  const spots=[];
+  for(let i=0;i<46;i++){const a=rnd()*Math.PI*2,r=46+rnd()*60;const x=Math.cos(a)*r,z=Math.sin(a)*r*0.8+6;
+    if(Math.abs(x+44)<16&&Math.abs(z+14)<12)continue;spots.push([x,z,0.8+rnd()*0.7])}
+  [[-14,-30,1.1],[14,-32,1],[-22,-20,1.2],[24,-18,0.9],[-36,30,1.1],[38,32,1]].forEach(s=>spots.push(s));
+  const im=new THREE.InstancedMesh(treeGeo,vcMat(0.9),spots.length);
+  const m=new THREE.Matrix4(),q=new THREE.Quaternion(),e=new THREE.Euler();
+  spots.forEach((s,i)=>{e.set(0,rnd()*6,0);q.setFromEuler(e);m.compose(new THREE.Vector3(s[0],-0.1,s[1]),q,new THREE.Vector3(s[2],s[2]*(0.9+rnd()*0.3),s[2]));im.setMatrixAt(i,m)});
+  im.castShadow=true;im.receiveShadow=true;scene.add(im);
+
+  // palms
+  const palmParts=[];
+  const seg=8;for(let i=0;i<seg;i++){const c=new THREE.CylinderGeometry(0.26,0.3,1.4,6);c.translate(Math.sin(i/seg*1.2)*1.4*i/seg,0.7+i*1.35,0);palmParts.push(prep(c,'#7a6248'))}
+  const topY=seg*1.35,topX=Math.sin(1.2)*1.4;
+  for(let k=0;k<9;k++){const leaf=new THREE.PlaneGeometry(0.9,5.2,1,4);const lp=leaf.attributes.position;
+    for(let i=0;i<lp.count;i++){const y=lp.getY(i)+2.6;lp.setZ(i,-0.06*y*y);lp.setY(i,y*0.9)}
+    leaf.rotateX(-0.6);leaf.rotateY(k/9*Math.PI*2);leaf.translate(topX,topY,0);palmParts.push(prep(leaf,k%2?'#4a8a2a':'#3b7a24'))}
+  const palmGeo=mergeGeometries(palmParts);
+  const palmMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.8,side:THREE.DoubleSide});
+  const pts=[[-26,-30],[22,-34],[-48,-2],[-38,-26],[44,-6],[30,-40],[-10,-40]];
+  const pim=new THREE.InstancedMesh(palmGeo,palmMat,pts.length);
+  pts.forEach((p,i)=>{e.set(0,rnd()*6,0);q.setFromEuler(e);m.compose(new THREE.Vector3(p[0],0,p[1]),q,new THREE.Vector3(1,1,1).multiplyScalar(0.9+rnd()*0.3));pim.setMatrixAt(i,m)});
+  pim.castShadow=true;scene.add(pim);
+}
+
+/* ---------- bamboo fence ---------- */
+{
+  const bamboo=prep(new THREE.CylinderGeometry(0.09,0.1,1.5,5).translate(0,0.75,0),'#b39a5e');
+  const rail=prep(new THREE.BoxGeometry(2.2,0.08,0.08).translate(0,1.0,0),'#a48b52');
+  const unit=mergeGeometries([bamboo,rail,rail.clone().translate(0,-0.45,0)]);
+  const posts=[];const x0=-FARM.w/2-2,x1=FARM.w/2+2,z0=6-FARM.d/2-2,z1=6+FARM.d/2+2;
+  for(let x=x0;x<=x1;x+=2.2){posts.push([x,z1,0])}
+  for(let z=z0+6;z<=z1;z+=2.2){posts.push([x0,z,Math.PI/2]);posts.push([x1,z,Math.PI/2])}
+  const im=new THREE.InstancedMesh(unit,vcMat(0.9),posts.length);const m=new THREE.Matrix4(),q=new THREE.Quaternion();
+  posts.forEach((p,i)=>{q.setFromAxisAngle(new THREE.Vector3(0,1,0),p[2]);m.compose(new THREE.Vector3(p[0],0,p[1]),q,new THREE.Vector3(1,1,1));im.setMatrixAt(i,m)});
+  im.castShadow=true;scene.add(im);
+}
+
+/* ---------- beds (2 rows x 3) with raised bunds (আইল) ---------- */
+const BED={w:18,d:15};
+const bedCenters=[];
+for(let r=0;r<2;r++)for(let c=0;c<3;c++)bedCenters.push(new THREE.Vector3((c-1)*(BED.w+3),0,(r===0?-4:15)));
+const soilMat=new THREE.MeshStandardMaterial({color:'#6b4f36',roughness:1});
+const wetSoilMat=new THREE.MeshStandardMaterial({color:'#4a3626',roughness:0.7});
+const bundMat=new THREE.MeshStandardMaterial({color:'#7d6143',roughness:1});
+const pathMat=new THREE.MeshStandardMaterial({color:'#b59c76',roughness:1});
+{
+  const path=new THREE.Mesh(new THREE.BoxGeometry(3,0.12,46),pathMat);path.position.set(0,0.06,5.5);path.receiveShadow=true;
+  // paths between columns
+  [-(BED.w/2+1.5),(BED.w/2+1.5)].forEach(x=>{const p=path.clone();p.position.x=x;scene.add(p)});
+  const cross=new THREE.Mesh(new THREE.BoxGeometry(66,0.12,3),pathMat);cross.position.set(0,0.06,5.5);cross.receiveShadow=true;scene.add(cross);
+  const lane=new THREE.Mesh(new THREE.BoxGeometry(3,0.12,12),pathMat);lane.position.set(0,0.06,-17);lane.receiveShadow=true;scene.add(lane);
+}
+const bedObjs=bedCenters.map((c,i)=>{
+  const g=new THREE.Group();g.position.copy(c);
+  // ploughed soil with furrow undulation
+  const sg=new THREE.PlaneGeometry(BED.w,BED.d,60,40);sg.rotateX(-Math.PI/2);
+  const sp=sg.attributes.position;for(let k=0;k<sp.count;k++){const z=sp.getZ(k),x=sp.getX(k);sp.setY(k,0.18+Math.sin(z*2.6)*0.07+vnoise(x*0.6,z*0.6)*0.05)}
+  sg.computeVertexNormals();
+  const soil=new THREE.Mesh(sg,soilMat);soil.receiveShadow=true;g.add(soil);
+  // bunds
+  const bw=0.7,bh=0.55;
+  [[0,-BED.d/2,BED.w+bw,bw],[0,BED.d/2,BED.w+bw,bw],[-BED.w/2,0,bw,BED.d],[BED.w/2,0,bw,BED.d]].forEach(b=>{
+    const geo=new THREE.BoxGeometry(b[2],bh,b[3]);const m=new THREE.Mesh(geo,bundMat);m.position.set(b[0],bh/2,b[1]);m.castShadow=true;m.receiveShadow=true;g.add(m)});
+  // water layer (for rice)
+  const water=new THREE.Mesh(new THREE.PlaneGeometry(BED.w-0.2,BED.d-0.2),waterMat);water.rotation.x=-Math.PI/2;water.position.y=0.34;water.visible=false;g.add(water);
+  // pick plane
+  const pick=new THREE.Mesh(new THREE.BoxGeometry(BED.w,1,BED.d),new THREE.MeshBasicMaterial({visible:false}));pick.position.y=0.5;pick.userData.bed=i;g.add(pick);
+  // selection outline
+  const ol=new THREE.Mesh(new THREE.RingGeometry(0,1,4,1),new THREE.MeshBasicMaterial({color:'#ffffff',transparent:true,opacity:0}));
+  const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BED.w+1.2,0.9,BED.d+1.2)),new THREE.LineBasicMaterial({color:'#ffe680',transparent:true,opacity:0}));
+  edges.position.y=0.45;g.add(edges);
+  scene.add(g);
+  return {group:g,water,soil,pick,edges,crop:null,inst:[],grow:1};
+});
+
+/* ---------- crop geometries (merged, vertex coloured) ---------- */
+function blade(h,w,lean,hex){const g=new THREE.ConeGeometry(w,h,3,1,true);g.translate(0,h/2,0);g.rotateZ(lean);return prep(g,hex)}
+const G={};
+G.rice=(()=>{const parts=[];for(let i=0;i<9;i++){const a=i/9*Math.PI*2;const b=blade(1.6+rnd()*0.5,0.05,0.18+rnd()*0.15,i%3?'#5f9e35':'#79b844');b.rotateY(a);parts.push(b)}return mergeGeometries(parts)})();
+G.riceRipe=(()=>{const parts=[];for(let i=0;i<9;i++){const a=i/9*Math.PI*2;const b=blade(1.7,0.05,0.25,i%3?'#b7a33a':'#cdb64a');b.rotateY(a);parts.push(b)}
+  for(let i=0;i<4;i++){const p=new THREE.SphereGeometry(0.12,5,4);p.scale(1,2.2,1);p.translate(Math.cos(i*1.6)*0.45,1.5,Math.sin(i*1.6)*0.45);parts.push(prep(p,'#d9b84e'))}return mergeGeometries(parts)})();
+G.mustard=(()=>{const parts=[];const stem=prep(new THREE.CylinderGeometry(0.035,0.05,1.9,4).translate(0,0.95,0),'#5e8f2c');parts.push(stem);
+  for(let i=0;i<4;i++){const l=new THREE.PlaneGeometry(0.4,0.7);l.rotateX(-0.9);l.rotateY(i*1.6);l.translate(0,0.35+i*0.12,0);parts.push(prep(l,'#5b8c2d'))}
+  for(let i=0;i<7;i++){const f=new THREE.IcosahedronGeometry(0.17,0);f.translate((rnd()-.5)*0.45,1.85+rnd()*0.35,(rnd()-.5)*0.45);parts.push(prep(f,i%2?'#f5cf1d':'#f0b915'))}return mergeGeometries(parts)})();
+/* soybean: medium dense bush, broad dark trifoliate leaves, fuzzy tan pod clusters */
+G.soybean=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.04,0.06,0.9,5).translate(0,0.45,0),'#5f7a2e')];
+  for(let i=0;i<9;i++){const a=i/9*Math.PI*2,h=0.35+rnd()*0.55;
+    for(let j=0;j<3;j++){const l=new THREE.CircleGeometry(0.17,7);l.scale(1,1.35,1);l.rotateX(-1.2);l.rotateY(a+j*0.6-0.6);
+      l.translate(Math.cos(a)*0.32+Math.cos(a+j)*0.1,h,Math.sin(a)*0.32+Math.sin(a+j)*0.1);parts.push(prep(l,j===1?'#2f5f22':'#356b26'))}}
+  for(let i=0;i<7;i++){const pod=new THREE.CapsuleGeometry(0.045,0.16,2,5);pod.rotateZ(0.5+rnd()*0.6);pod.translate((rnd()-.5)*0.4,0.35+rnd()*0.4,(rnd()-.5)*0.4);parts.push(prep(pod,'#a8915a'))}
+  return mergeGeometries(parts)})();
+/* mungbean: taller open upright plant, light yellow-green leaves, long slender black pods, small yellow flowers */
+G.mungbean=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.03,0.045,1.3,4).translate(0,0.65,0),'#7d9a3a')];
+  for(let i=0;i<5;i++){const a=i/5*Math.PI*2+0.3;const st=new THREE.CylinderGeometry(0.015,0.02,0.5,3);st.rotateZ(0.9);st.rotateY(a);st.translate(Math.cos(a)*0.18,0.55+i*0.12,Math.sin(a)*0.18);parts.push(prep(st,'#7d9a3a'));
+    const l=new THREE.PlaneGeometry(0.22,0.34);l.rotateX(-0.6);l.rotateY(a);l.translate(Math.cos(a)*0.4,0.6+i*0.12,Math.sin(a)*0.4);parts.push(prep(l,'#8fbf3e'))}
+  for(let i=0;i<8;i++){const a=rnd()*6.28;const pod=new THREE.CylinderGeometry(0.018,0.018,0.42,4);pod.rotateZ(1.25);pod.rotateY(a);
+    pod.translate(Math.cos(a)*0.3,1.05+rnd()*0.25,Math.sin(a)*0.3);parts.push(prep(pod,'#1f2420'))}
+  for(let i=0;i<4;i++){const f=new THREE.SphereGeometry(0.05,4,3);f.translate((rnd()-.5)*0.3,1.3+rnd()*0.1,(rnd()-.5)*0.3);parts.push(prep(f,'#f2d22b'))}
+  return mergeGeometries(parts)})();
+/* lentil: very low dense mat of fine feathery blue-green leaflets, tiny pale violet flowers */
+G.lentil=(()=>{const parts=[];
+  for(let i=0;i<22;i++){const b=new THREE.ConeGeometry(0.018,0.32+rnd()*0.12,3,1,true);b.translate(0,0.16,0);b.rotateZ(0.5+rnd()*0.6);b.rotateY(rnd()*6.28);parts.push(prep(b,i%2?'#7fa48a':'#6f9a7e'))}
+  for(let i=0;i<5;i++){const f=new THREE.SphereGeometry(0.035,4,3);f.translate((rnd()-.5)*0.35,0.3,(rnd()-.5)*0.35);parts.push(prep(f,'#c9b8ea'))}
+  return mergeGeometries(parts)})();
+/* chickpea: knee-high bushy grey-green, feathery, round inflated green pods, white-pink flowers */
+G.chickpea=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.03,0.045,0.7,4).translate(0,0.35,0),'#8a9a5a')];
+  for(let i=0;i<16;i++){const b=new THREE.ConeGeometry(0.03,0.42,3,1,true);b.translate(0,0.21,0);b.rotateZ(0.7+rnd()*0.5);b.rotateY(rnd()*6.28);b.translate(0,0.25+rnd()*0.3,0);parts.push(prep(b,i%2?'#9aab78':'#8c9f6a'))}
+  for(let i=0;i<6;i++){const pod=new THREE.SphereGeometry(0.07,6,5);pod.scale(1,0.8,1.2);pod.translate((rnd()-.5)*0.45,0.35+rnd()*0.35,(rnd()-.5)*0.45);parts.push(prep(pod,'#b9c96a'))}
+  for(let i=0;i<4;i++){const f=new THREE.SphereGeometry(0.04,4,3);f.translate((rnd()-.5)*0.4,0.75,(rnd()-.5)*0.4);parts.push(prep(f,'#f3d6e2'))}
+  return mergeGeometries(parts)})();
+G.tall=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.04,0.06,2.2,4).translate(0,1.1,0),'#5d8f38')];
+  for(let i=0;i<6;i++){const l=new THREE.PlaneGeometry(0.22,0.6);l.rotateX(-0.7);l.rotateY(i*1.1);l.translate(0,0.5+i*0.28,0);parts.push(prep(l,'#5f9a3c'))}
+  for(let i=0;i<4;i++){const f=new THREE.ConeGeometry(0.07,0.22,5);f.rotateX(Math.PI);f.translate(Math.cos(i*1.5)*0.12,1.4+i*0.18,Math.sin(i*1.5)*0.12);parts.push(prep(f,'#f3eef6'))}return mergeGeometries(parts)})();
+G.jute=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.04,0.06,3.4,5).translate(0,1.7,0),'#6c8a35')];
+  for(let i=0;i<6;i++){const l=new THREE.PlaneGeometry(0.35,0.7);l.rotateX(-0.8);l.rotateY(i*1.3);l.translate(0,2.2+i*0.2,0);parts.push(prep(l,'#3d7d34'))}return mergeGeometries(parts)})();
+G.wheat=(()=>{const parts=[];for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const st=new THREE.CylinderGeometry(0.02,0.025,1.5,3);st.translate(0,0.75,0);st.rotateZ(0.08);st.rotateY(a);parts.push(prep(st,'#c9a94a'));
+  const ear=new THREE.SphereGeometry(0.07,5,4);ear.scale(1,3,1);ear.translate(Math.sin(0.08)*1.5,1.55,0);ear.rotateY(a);parts.push(prep(ear,'#e0bf5c'))}return mergeGeometries(parts)})();
+G.weed=(()=>{const parts=[];for(let i=0;i<4;i++){const b=blade(0.35,0.04,0.5,'#7a8f45');b.rotateY(i*1.6);parts.push(b)}return mergeGeometries(parts)})();
+const cropMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.78,side:THREE.DoubleSide});
+
+function geoFor(key,season){
+  const t=CROPS[key].type;
+  if(t==='rice')return season==='k2'?G.rice:G.riceRipe;
+  if(G[key])return G[key];
+  if(t==='mustard')return G.mustard; if(t==='tall')return G.tall; if(t==='jute')return G.jute; if(t==='wheat')return G.wheat; return G.weed;
+}
+const SPACING={rice:0.75,mustard:0.62,soybean:0.95,mungbean:0.8,lentil:0.42,chickpea:0.7,tall:0.7,jute:0.75,wheat:0.5,fallow:2.4};
+function plant(bedIdx,key){
+  const b=bedObjs[bedIdx];b.inst.forEach(m=>{b.group.remove(m);m.dispose()});b.inst=[];
+  const crop=CROPS[key],season=SEASONS[bedIdx].kind;b.crop=key;
+  const isRice=crop.type==='rice',fallow=crop.type==='fallow';
+  b.water.visible=isRice;b.soil.material=isRice?wetSoilMat:soilMat;
+  const geo=geoFor(key,season);
+  const spacing=SPACING[key]||SPACING[crop.type]||0.7;
+  const cols=Math.floor((BED.w-1.6)/spacing),rows=Math.floor((BED.d-1.6)/spacing);
+  const list=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    if(fallow&&rnd()>0.35)continue;
+    const x=-((cols-1)*spacing)/2+c*spacing+(rnd()-.5)*spacing*(isRice?0.15:0.45);
+    const z=-((rows-1)*spacing)/2+r*spacing+(rnd()-.5)*spacing*(isRice?0.15:0.45);
+    list.push([x,z])}
+  const im=new THREE.InstancedMesh(geo,cropMat,list.length);
+  im.castShadow=!fallow;im.receiveShadow=true;
+  im.userData.base=list.map(p=>({x:p[0],z:p[1],s:0.8+rnd()*0.4,r:rnd()*6.28}));
+  b.group.add(im);b.inst.push(im);b.grow=0;setGrowth(b,0);
+}
+const _m=new THREE.Matrix4(),_q=new THREE.Quaternion(),_e=new THREE.Euler(),_v=new THREE.Vector3(),_s=new THREE.Vector3();
+function setGrowth(b,t){
+  const k=t<1?1-Math.pow(1-t,3):1;
+  b.inst.forEach(im=>{const base=im.userData.base;const y0=b.water.visible?0.2:0.18;
+    base.forEach((p,i)=>{_e.set(0,p.r,0);_q.setFromEuler(_e);_v.set(p.x,y0,p.z);const s=p.s*Math.max(0.001,k);_s.set(s,s,s);
+      _m.compose(_v,_q,_s);im.setMatrixAt(i,_m)});im.instanceMatrix.needsUpdate=true})
+}
+
+
+/* ================= replan logic (design preview) ================= */
+const BIGHA=0.13378, FIELD_BIGHA=5, FIELD_M2=5*1337.8;
+const bn=n=>Number(n).toLocaleString('bn-BD',{maximumFractionDigits:1});
+const tk=n=>(n<0?'−':'')+bn(Math.abs(Math.round(n/100)*100));
+/* model numbers for Rahim's field per ha (from the app, Balanced plan) */
+const FACT={
+  mustard:{irr:315,y:1.346,m:43196,fam:'Brassicaceae'},
+  mungbean:{irr:25,y:0.915,m:47277,fam:'Fabaceae'},
+  aman:{irr:424,y:4.31,m:40818,fam:'Poaceae'},
+  chickpea:{irr:248,y:0.915,m:36070,fam:'Fabaceae'},
+  sesame:{irr:0,y:0.615,m:41650,fam:'Pedaliaceae'},
+  fallow:{irr:0,y:0,m:0,fam:null}
+};
+/* example prices (টাকা/মণ) – only to split margin into revenue and cost */
+const PRICE={mustard:2800,mungbean:4000,chickpea:4000,sesame:5000,aman:1200,fallow:0};
+const LEG=new Set(['mungbean','chickpea']);
+const ORIG=['mustard','mungbean','aman','chickpea','sesame','aman'];
+const CAND={rabi:['mustard','chickpea'],k1:['mungbean','sesame'],k2:['aman']};
+const CHOICES={rabi:['mustard','chickpea'],k1:['mungbean','sesame','fallow'],k2:['aman','fallow']};
+const poss=n=>n+(/[\u09BE-\u09CC]$/.test(n)?'র':'ের');
+const yMB=k=>FACT[k].y*3.585;                          // model yield, মণ/বিঘা
+const revHa=(k,y,p)=>y/BIGHA*p;                        // টাকা/হেক্টর
+const costHa=k=>k==='fallow'?0:revHa(k,yMB(k),PRICE[k])-FACT[k].m;
+const W_IRR=10, LEG_BONUS=2000, REPEAT=8000, SAME_FAM=15000;   // simplified weights
+const IRR={full:{bn:'পর্যাপ্ত',f:()=>1},lim:{bn:'সীমিত',f:mm=>mm>=300?0.8:mm>200?0.9:1},none:{bn:'নেই',f:(mm,k)=>mm<=50?1:(k==='aman'?0.8:k==='chickpea'?0.85:0.55)}};
+
+let finished=[], irrClass='full', planned=[...ORIG], result=null, selected=0, dirty=false;
+
+function seasonProfitBigha(rec){ // actual profit per bigha for a finished season
+  return rec.parts.reduce((s,p)=>s+p.share*(p.k==='fallow'?0:(p.y*p.price-costHa(p.k)*BIGHA)),0);
+}
+function learn(){
+  const L={};
+  finished.forEach((rec,i)=>rec.parts.forEach(p=>{if(p.k==='fallow'||!(p.y>0))return;
+    const o=L[p.k]||(L[p.k]={ratios:[],price:null,failed:false});
+    o.ratios.push(p.y/yMB(p.k)); if(p.price>0)o.price=p.price; if(rec.outcome==='failed')o.failed=true}));
+  Object.values(L).forEach(o=>{o.ratio=Math.min(1.5,Math.max(0.5,o.ratios.reduce((a,b)=>a+b,0)/o.ratios.length))});
+  return L;
+}
+function evalCrop(k,i,L,prevK,used){
+  const kind=SEASONS[i].kind,l=L[k];
+  const ratio=l?l.ratio:1, pen=l&&l.failed?0.7:1, wf=IRR[irrClass].f(FACT[k].irr,k);
+  const price=l&&l.price?l.price:PRICE[k];
+  const y=yMB(k)*ratio*pen*wf;
+  const margin=(revHa(k,y,price)-costHa(k));
+  let score=margin-W_IRR*FACT[k].irr+(LEG.has(k)?LEG_BONUS:0);
+  if(used.has(kind+':'+k))score-=REPEAT;
+  if(prevK&&FACT[prevK].fam&&FACT[prevK].fam===FACT[k].fam)score-=SAME_FAM;
+  return {k,y,price,margin,score,ratio,pen,wf,fromFarmer:!!(l&&l.price)};
+}
+function replan(){
+  const L=learn(), n=finished.length, used=new Set(), plan=[], why=[];
+  for(let i=0;i<6;i++){
+    const kind=SEASONS[i].kind;
+    if(i<n){const main=finished[i].parts.slice().sort((a,b)=>b.share-a.share)[0].k;plan.push({k:main,done:true});used.add(kind+':'+main);continue}
+    const prev=plan[i-1]?plan[i-1].k:'aman';
+    const opts=CAND[kind].map(k=>evalCrop(k,i,L,prev,used)).sort((a,b)=>b.score-a.score);
+    const best=opts[0];plan.push({...best,done:false,changed:best.k!==ORIG[i],alt:opts[1]});used.add(kind+':'+best.k);
+    const s=SEASONS[i];
+    const alt=opts[1],oe=opts.find(o=>o.k===ORIG[i]);
+    if(best.k!==ORIG[i]){
+      const r=[];const lb=L[best.k],lo=L[ORIG[i]];
+      if(lb)r.push(`আপনার ${poss(CROPS[best.k].bn)} ফলন মডেলের ${bn(Math.round(lb.ratio*100))}%${lb.price?`, দাম ${bn(lb.price)} টাকা/মণ`:''}`);
+      if(lo)r.push(`${poss(CROPS[ORIG[i]].bn)} ফলন মডেলের ${bn(Math.round(lo.ratio*100))}%${lo.failed?' (নষ্ট হয়েছিল)':''}`);
+      if(irrClass!=='full'&&oe&&oe.wf<best.wf)r.push(`সেচ সুবিধা ${IRR[irrClass].bn}, ${CROPS[ORIG[i]].bn}তে পানি বেশি লাগে`);
+      why.push(`<b>${s.y} ${s.s}: ${CROPS[ORIG[i]].bn} → ${CROPS[best.k].bn}।</b> ${r.join('; ')}। তাই ${CROPS[best.k].bn} এখন বেশি লাভজনক (~${tk(best.margin*BIGHA)} টাকা/বিঘা)।`);
+    } else if(alt){
+      const r=[];
+      if(L[best.k])r.push(`আপনার তথ্যে ${poss(CROPS[best.k].bn)} ফলন মডেলের ${bn(Math.round(L[best.k].ratio*100))}%`);
+      if(L[alt.k]&&L[alt.k].ratio>1&&alt.wf<1)r.push(`${CROPS[alt.k].bn} ভালো হলেও সেচ সুবিধা ${IRR[irrClass].bn} বলে ফলন অনেক কম ধরা হয়েছে`);
+      else if(L[alt.k]&&L[alt.k].ratio<1)r.push(`আপনার ${poss(CROPS[alt.k].bn)} ফলন মডেলের ${bn(Math.round(L[alt.k].ratio*100))}%, তাই সেটা আনা হয়নি`);
+      else if(best.wf<1)r.push(`সেচ সুবিধা ${IRR[irrClass].bn} বলে ফলন কম ধরা হয়েছে`);
+      why.push(`${s.y} ${s.s}: ${CROPS[best.k].bn} থাকল${r.length?'। '+r.join('; '):''}। বিকল্প ${CROPS[alt.k].bn} পিছিয়ে।`);
+    }
+  }
+  if(n===0)why.unshift('কোনো মৌসুম শেষ চিহ্নিত হয়নি, তাই পরিকল্পনা আগের মতোই।');
+  const soFar=finished.reduce((s,r)=>s+seasonProfitBigha(r),0)*FIELD_BIGHA;
+  const remain=plan.filter(p=>!p.done).reduce((s,p)=>s+p.margin,0)*BIGHA*FIELD_BIGHA;
+  const origTotal=ORIG.reduce((s,k)=>s+FACT[k].m,0)*BIGHA*FIELD_BIGHA;
+  const irrNew=plan.filter(p=>!p.done).reduce((s,p)=>s+FACT[p.k].irr,0), irrOld=ORIG.slice(n).reduce((s,k)=>s+FACT[k].irr,0);
+  result={plan,why,soFar,remain,total:soFar+remain,origTotal,irrNew,irrOld,L,n};
+  planned=plan.map(p=>p.k);dirty=false;
+}
+
+/* ---------- 3D: split beds + status outlines ---------- */
+const statusLines=bedObjs.map(b=>{const l=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(BED.w+2.4,1.3,BED.d+2.4)),
+  new THREE.LineBasicMaterial({color:'#ffffff',transparent:true,opacity:0}));l.position.y=0.65;b.group.add(l);return l});
+function plantParts(bedIdx,parts){
+  const b=bedObjs[bedIdx];b.inst.forEach(m=>{b.group.remove(m);m.dispose()});b.inst=[];
+  const season=SEASONS[bedIdx].kind;let x0=-BED.w/2+0.8;const usable=BED.w-1.6;
+  let riceShare=0,riceX=0;
+  parts.forEach(p=>{
+    const key=p.k,crop=CROPS[key],isRice=crop.type==='rice',fallow=crop.type==='fallow';
+    const wPart=usable*p.share,spacing=SPACING[key]||SPACING[crop.type]||0.7;
+    const cols=Math.max(1,Math.floor(wPart/spacing)),rows=Math.floor((BED.d-1.6)/spacing);const list=[];
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){if(fallow&&rnd()>0.35)continue;
+      const x=x0+spacing/2+c*spacing+(rnd()-.5)*spacing*(isRice?0.15:0.4);
+      const z=-((rows-1)*spacing)/2+r*spacing+(rnd()-.5)*spacing*(isRice?0.15:0.4);list.push([x,z])}
+    if(isRice){riceShare+=p.share;riceX=x0+wPart/2}
+    const im=new THREE.InstancedMesh(geoFor(key,season),cropMat,Math.max(1,list.length));
+    im.count=list.length;im.castShadow=!fallow;im.receiveShadow=true;
+    im.userData.base=list.map(q=>({x:q[0],z:q[1],s:0.8+rnd()*0.4,r:rnd()*6.28}));
+    b.group.add(im);b.inst.push(im);x0+=wPart;
+  });
+  b.water.visible=riceShare>0;b.water.scale.x=Math.max(0.01,riceShare);b.water.position.x=riceShare>=0.999?0:riceX;
+  b.soil.material=riceShare>0.5?wetSoilMat:soilMat;
+  b.crop=parts.map(p=>p.k+p.share).join('|');b.grow=0;setGrowth(b,0);
+}
+const tank=new THREE.Group();
+const glass=new THREE.Mesh(new THREE.CylinderGeometry(1.7,1.7,5.2,24,1,true),new THREE.MeshStandardMaterial({color:'#dfe9ee',transparent:true,opacity:0.35,roughness:0.1,side:THREE.DoubleSide}));glass.position.y=3.0;tank.add(glass);
+const legs=new THREE.Mesh(new THREE.BoxGeometry(3,0.4,3),new THREE.MeshStandardMaterial({color:'#7b7f80',roughness:0.6,metalness:0.5}));legs.position.y=0.2;tank.add(legs);
+const tankWater=new THREE.Mesh(new THREE.CylinderGeometry(1.6,1.6,1,24),new THREE.MeshStandardMaterial({color:'#3d86c6',roughness:0.15,transparent:true,opacity:0.9}));
+tank.add(tankWater);tank.position.set(-11,0,-15);scene.add(tank);
+let tankLevel=0.4,tankTarget=0.4;function setTank(mm){tankTarget=Math.max(0.05,mm/1600)}
+function drawTank(){const h=5*tankLevel;tankWater.scale.y=h;tankWater.position.y=0.4+h/2}
+function size(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(size).observe(stage);
+
+/* ================= compare page (design preview) ================= */
+CROPS.sunflower={bn:'সূর্যমুখী',fam:'Asteraceae',color:'#e8b923',type:'tall'};
+CROPS.tomato={bn:'টমেটো',fam:'Solanaceae',color:'#d8452f',type:'bush'};
+G.sunflower=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.05,0.07,2.4,5).translate(0,1.2,0),'#5f8f30')];
+  for(let i=0;i<5;i++){const l=new THREE.CircleGeometry(0.28,7);l.rotateX(-1.0);l.rotateY(i*1.3);l.translate(Math.cos(i*1.3)*0.2,0.5+i*0.32,Math.sin(i*1.3)*0.2);parts.push(prep(l,'#4f8a2c'))}
+  const disc=new THREE.CylinderGeometry(0.34,0.34,0.08,12);disc.rotateX(1.2);disc.translate(0,2.45,0.12);parts.push(prep(disc,'#5a3a1a'));
+  for(let i=0;i<12;i++){const p=new THREE.PlaneGeometry(0.14,0.3);p.translate(0,0.42,0);p.rotateZ(i/12*Math.PI*2);p.rotateX(1.2);p.translate(0,2.45,0.14);parts.push(prep(p,'#f2c318'))}
+  return mergeGeometries(parts)})();
+G.tomato=(()=>{const parts=[prep(new THREE.CylinderGeometry(0.03,0.05,0.9,4).translate(0,0.45,0),'#4f7a2a')];
+  for(let i=0;i<10;i++){const l=new THREE.CircleGeometry(0.16,6);l.scale(1,1.5,1);l.rotateX(-1.1);l.rotateY(i*0.7);l.translate(Math.cos(i*0.7)*0.28,0.3+(i%4)*0.18,Math.sin(i*0.7)*0.28);parts.push(prep(l,i%2?'#3f7a2a':'#4b8a30'))}
+  for(let i=0;i<6;i++){const f=new THREE.SphereGeometry(0.09,7,6);f.translate((rnd()-.5)*0.45,0.35+rnd()*0.35,(rnd()-.5)*0.45);parts.push(prep(f,i%3?'#d8452f':'#e8742f'))}
+  return mergeGeometries(parts)})();
+SPACING.sunflower=0.85;SPACING.tomato=0.9;SPACING.bush=0.9;
+FACT.sunflower={irr:381,y:0,m:0,fam:'Asteraceae'};FACT.soybean={irr:163,y:0,m:0,fam:'Fabaceae'};FACT.tomato={irr:505,y:0,m:0,fam:'Solanaceae'};FACT.boro={irr:1124,y:0,m:0,fam:'Poaceae'};
+
+/* numbers from the app screenshots for Rahim's field (per year, 5 bigha) */
+const CUR={crops:['boro','fallow','aman'],irr:[1124,0,424],yr:{irr:1548,bare:115,n:0,profit:37402}};
+const STRAT={
+  balanced:{bn:'সুষম',crops:ORIG,irr:[315,25,424,248,0,424],yr:{irr:718,bare:60,n:35,profit:83692}},
+  profit:{bn:'লাভ',crops:['sunflower','soybean','aman','tomato','mungbean','aman'],irr:[381,163,424,505,25,424],yr:{irr:961,bare:60,n:35,profit:124436}},
+  water:{bn:'পানি সাশ্রয়',same:'balanced'},
+  soil:{bn:'মাটির স্বাস্থ্য',missing:true}
+};
+const BEST='profit';
+let strat='balanced', view='plan', replanApplied=true;
+const S=k=>STRAT[k].same?{...STRAT[STRAT[k].same],bn:STRAT[k].bn,isSame:true}:STRAT[k];
+
+/* adaptive result (example: Y1 Rabi mustard 7 মণ/বিঘা at 3,000) */
+finished=[{parts:[{k:'mustard',share:1,y:6,price:2800}],outcome:'normal'}];irrClass='full';replan();
+function updatedYr(){const p=result.plan.map(x=>x.k);const legumes=p.filter(k=>LEG.has(k)).length;
+  return {crops:p,irr:p.map(k=>FACT[k].irr),yr:{irr:Math.round(p.reduce((s,k)=>s+FACT[k].irr,0)/2),bare:60,n:Math.round(legumes*35/2),profit:Math.round(result.total/2)}}}
+
+/* ---------- 3D ---------- */
+const labelsEl=document.getElementById('labels');
+const labelEls=bedObjs.map(()=>{const d=document.createElement('div');d.className='lbl';labelsEl.appendChild(d);return d});
+const greyMat=new THREE.MeshStandardMaterial({color:'#9aa39a',roughness:1,transparent:true,opacity:0.55});
+const veils=bedObjs.map(b=>{const v=new THREE.Mesh(new THREE.BoxGeometry(BED.w+0.4,3.2,BED.d+0.4),greyMat);v.position.y=1.6;v.visible=false;b.group.add(v);return v});
+function sceneData(){
+  if(view==='current')return bedObjs.map((_,i)=>({k:CUR.crops[i%3],irr:CUR.irr[i%3],grey:i>2,tag:i>2?'২য় বছর: একই':null}));
+  const s=S(strat);if(s.missing)return null;
+  if(view==='updated'&&replanApplied){const u=updatedYr();return u.crops.map((k,i)=>({k,irr:u.irr[i],done:i<finished.length,chg:result.plan[i].changed}))}
+  return s.crops.map((k,i)=>({k,irr:s.irr[i]}));
+}
+function refresh3D(){
+  const d=sceneData();
+  bedObjs.forEach((b,i)=>{const r=d?d[i]:{k:'fallow',irr:0,grey:true};const sig=r.k+'1';if(b.crop!==sig)plantParts(i,[{k:r.k,share:1}]);
+    veils[i].visible=!!r.grey;
+    statusLines[i].material.color.set(r.done?'#46c46f':r.chg?'#f08a24':'#ffffff');statusLines[i].material.opacity=r.done||r.chg?0.95:0;
+    const el=labelEls[i];el.className='lbl'+(r.done?' done':r.chg?' chg':'')+(r.grey?' grey':'');
+    el.innerHTML=r.tag?r.tag:`${r.done?'✓ ':r.chg?'⟳ ':''}${CROPS[r.k].bn}${r.irr?` · 💧${bn(r.irr)}`:''}`});
+  const yr=view==='current'?CUR.yr.irr:view==='updated'&&replanApplied?updatedYr().yr.irr:(S(strat).yr||{}).irr;
+  if(yr!=null){setTank(yr);document.getElementById('tankcap').textContent=`💧 বছরে সেচ: ${bn(yr)} মিমি`}
+  document.querySelectorAll('#vseg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===view?'true':'false'));
+  document.querySelector('#vseg [data-v="updated"]').disabled=!replanApplied;
+}
+function placeLabels(){const w=stage.clientWidth,h=stage.clientHeight;
+  bedObjs.forEach((b,i)=>{const p=b.group.position.clone();p.y=4.2;p.z-=BED.d/2-1;p.project(camera);const el=labelEls[i];
+    el.style.display=p.z<1?'flex':'none';el.style.left=((p.x+1)/2*w)+'px';el.style.top=((1-p.y)/2*h)+'px'})}
+
+/* ---------- UI ---------- */
+const chip=k=>`<span class="cc"><i class="dot" style="background:${CROPS[k].color}"></i>${CROPS[k].bn}</span>`;
+function nums(yr,base){const row=(lab,v,u,b,good)=>{const d=b==null?null:v-b;const cls=d==null||d===0?'':(good(d)?'pos':'neg');
+    return `<div><span>${lab}</span><strong>${u==='টাকা'?tk(v):bn(v)}</strong> <small>${u}</small>${d?`<em class="${cls}">${d>0?'+':'−'}${u==='টাকা'?tk(Math.abs(d)):bn(Math.abs(d))}</em>`:''}</div>`};
+  return `<div class="n4">${row('সেচ/বছর',yr.irr,'মিমি',base&&base.irr,d=>d<0)}${row('খালি দিন',yr.bare,'দিন',base&&base.bare,d=>d<0)}${row('নাইট্রোজেন',yr.n,'কেজি/হে',base&&base.n,d=>d>0)}${row('লাভ/বছর',yr.profit,'টাকা',base&&base.profit,d=>d>0)}</div>`}
+function renderCols(){
+  const s=S(strat);
+  const c1=`<button class="col${view==='current'?' on':''}" data-v="current"><div class="ch"><b>১</b> আপনার এখনকার চাষ <small>প্রতি বছর একই</small></div>
+    <div class="strip">${CUR.crops.map(chip).join('<em>→</em>')}</div>${nums(CUR.yr)}</button>`;
+  const c2=s.missing?`<div class="col empty"><div class="ch"><b>২</b> মূল পরামর্শ · ${s.bn}</div><p class="ex">এই নমুনায় এই কৌশলের সংখ্যা নেই; অ্যাপ /api/planning থেকে আনবে।</p></div>`
+    :`<button class="col${view==='plan'?' on':''}" data-v="plan"><div class="ch"><b>২</b> মূল পরামর্শ · ${s.bn}${strat===BEST?' ⭐':''} <small>MILP · ২ বছর</small></div>
+    <div class="strip">${s.crops.map(chip).join('<em>→</em>')}</div>${nums(s.yr,CUR.yr)}${s.isSame?'<p class="ex">এই জমিতে সুষম আর পানি সাশ্রয় একই পরিকল্পনা দেয়।</p>':''}</button>`;
+  let c3;
+  if(strat!=='balanced')c3=`<div class="col empty"><div class="ch"><b>৩</b> মাঠ থেকে শেখার পর</div><p class="ex">এই কৌশলে কোনো হালনাগাদ নেই। নমুনায় হালনাগাদ শুধু "সুষম"-এ।</p></div>`;
+  else if(!replanApplied)c3=`<div class="col empty"><div class="ch"><b>৩</b> মাঠ থেকে শেখার পর</div><p>মৌসুম শেষ হলে আসল ফলন ও দাম দিন — পরিকল্পনা নিজেকে মানিয়ে নেবে।</p><button class="btn" type="button" onclick="this.textContent='নমুনা: অভিযোজিত পুনঃপরিকল্পনা খুলবে'">🔄 অভিযোজিত পুনঃপরিকল্পনা →</button></div>`;
+  else{const u=updatedYr();c3=`<button class="col upd${view==='updated'?' on':''}" data-v="updated"><div class="ch"><b>৩</b> মাঠ থেকে শেখার পর <small>${bn(finished.length)}টা মৌসুম শেষ · ১০ নভে</small></div>
+    <div class="strip">${u.crops.map((k,i)=>`<span class="cc${i<finished.length?' done':result.plan[i].changed?' chg':''}"><i class="dot" style="background:${CROPS[k].color}"></i>${i<finished.length?'✓ ':''}${CROPS[k].bn}</span>`).join('<em>→</em>')}</div>
+    ${nums(u.yr,CUR.yr)}<p class="ex">২ বছরে মোট = এ পর্যন্ত আসল ${tk(result.soFar)} + বাকি আনুমানিক ${tk(result.remain)} টাকা</p></button>`}
+  document.getElementById('cols').innerHTML=c1+c2+c3;
+  document.querySelectorAll('#cols [data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;renderAll()});
+}
+function renderTable(){
+  const s=S(strat),u=replanApplied&&strat==='balanced'?updatedYr():null;
+  if(s.missing){document.getElementById('tbl').innerHTML='<p class="ex">এই কৌশলের সংখ্যা অ্যাপ থেকে আসবে।</p>';return}
+  const names=['রবি (নভে–এপ্রি)','খরিফ-১ (এপ্রি–জুন)','খরিফ-২ (জুলা–অক্টো)'];
+  const why=(c,p,ci,pi)=>{if(c===p)return 'একই থাকল';const r=[];const dw=CUR.irr[ci]-FACT[p].irr;
+    if(c==='fallow')r.push('খালি জমিতে আয়');if(dw>50)r.push(`${bn(dw)} মিমি পানি বাঁচল`);else if(dw<-50)r.push(`${bn(-dw)} মিমি বেশি পানি`);if(LEG.has(p))r.push('নাইট্রোজেন যোগ');return r.join(', ')||'ফসল বদলাল'};
+  document.getElementById('tbl').innerHTML=`<table><thead><tr><th>মৌসুম</th><th>আপনার চাষ</th><th>পরামর্শ ১ম বছর</th><th>পরামর্শ ২য় বছর</th>${u?'<th>হালনাগাদ (২য় বছর)</th>':''}<th>কী বদলাল (১ম বছর)</th></tr></thead><tbody>
+  ${[0,1,2].map(i=>`<tr><td>${names[i]}</td><td>${chip(CUR.crops[i])}<small>${bn(CUR.irr[i])} মিমি</small></td><td>${chip(s.crops[i])}<small>${bn(s.irr[i])} মিমি</small></td><td>${chip(s.crops[i+3])}<small>${bn(s.irr[i+3])} মিমি</small></td>
+    ${u?`<td>${result.plan[i+3].changed?`<s>${CROPS[s.crops[i+3]].bn}</s> → `:''}${chip(u.crops[i+3])}</td>`:''}<td>${why(CUR.crops[i],s.crops[i],i,i)}</td></tr>`).join('')}</tbody></table>`;
+}
+function renderBars(){
+  const rows=[['আপনার চাষ',CUR.yr],...['balanced','profit','water','soil'].map(k=>[S(k).bn+(k===BEST?' ⭐':''),S(k).yr||null])];
+  const maxP=Math.max(...rows.filter(r=>r[1]).map(r=>r[1].profit)),maxI=Math.max(...rows.filter(r=>r[1]).map(r=>r[1].irr));
+  const bar=(v,max,cls,txt)=>v==null?'<div class="bar na">তথ্য আসবে</div>':`<div class="bar"><i class="${cls}" style="width:${v/max*100}%"></i><span>${txt}</span></div>`;
+  document.getElementById('bars').innerHTML=`<div class="bh"><span></span><span>লাভ/বছর (৫ বিঘা)</span><span>সেচ/বছর</span></div>`+rows.map((r,i)=>`<div class="br${i===0?' cur':''}"><span>${r[0]}</span>${bar(r[1]&&r[1].profit,maxP,'p',r[1]?tk(r[1].profit)+' টাকা':'')}${bar(r[1]&&r[1].irr,maxI,'w',r[1]?bn(r[1].irr)+' মিমি':'')}</div>`).join('');
+}
+function renderSummary(){
+  const s=S(strat);if(s.missing){document.getElementById('sum').textContent='';return}
+  const dI=CUR.yr.irr-s.yr.irr,dP=s.yr.profit-CUR.yr.profit;
+  const swaps=[0,1,2].filter(i=>CUR.crops[i]!==s.crops[i]).map(i=>CUR.crops[i]==='fallow'?`খালি ${['রবি','খরিফ-১','খরিফ-২'][i]}-এ ${CROPS[s.crops[i]].bn}`:`${poss(CROPS[CUR.crops[i]].bn)} বদলে ${CROPS[s.crops[i]].bn}`);
+  document.getElementById('sum').innerHTML=`💡 ${swaps.join(' আর ')} লাগালে বছরে <b>${dI>=0?bn(dI)+' মিমি পানি কম':bn(-dI)+' মিমি পানি বেশি'}</b> লাগবে আর <b>প্রায় ${tk(dP)} টাকা বেশি লাভ</b> হবে।${dI<0?' (লাভ বেশি, কিন্তু পানি বেশি লাগে।)':''}`;
+}
+function renderAll(){
+  document.querySelectorAll('#seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===strat?'true':'false'));
+  if(view==='updated'&&(!replanApplied||strat!=='balanced'))view='plan';
+  renderCols();renderTable();renderBars();renderSummary();refresh3D();
+}
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>{strat=b.dataset.s;renderAll()});
+document.querySelectorAll('#vseg button').forEach(b=>b.onclick=()=>{view=b.dataset.v;renderAll()});
+document.getElementById('demoToggle').onchange=e=>{replanApplied=e.target.checked;renderAll()};
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+
+size();renderAll();bedObjs.forEach(b=>{b.grow=1;setGrowth(b,1)});tankLevel=tankTarget;
+const clock=new THREE.Clock();
+renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),0.05),t=clock.elapsedTime;
+  bedObjs.forEach((b,i)=>{if(b.grow<1){b.grow=Math.min(1,b.grow+dt*1.1);setGrowth(b,b.grow)}
+    if(view==='updated'&&result.plan[i].changed&&i>=finished.length)statusLines[i].material.opacity=0.55+0.4*Math.sin(t*3)});
+  if(Math.abs(tankLevel-tankTarget)>0.002)tankLevel+=(tankTarget-tankLevel)*Math.min(1,dt*3);
+  drawTank();controls.update();renderer.render(scene,camera);placeLabels()});
+</script>

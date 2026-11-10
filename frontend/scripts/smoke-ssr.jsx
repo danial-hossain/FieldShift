@@ -70,6 +70,7 @@ import { NasaWeatherStation3D } from '../src/NasaWeatherStation3D.jsx';
 import { FarmPlanningView } from '../src/FarmPlanningView.jsx';
 import { SixSeasonRecommendationView } from '../src/SixSeasonRecommendationView.jsx';
 import { ClimateStressTestView } from '../src/ClimateStressTestView.jsx';
+import { YourFarmingVsPlanView } from '../src/YourFarmingVsPlanView.jsx';
 import { WaterIrrigationView } from '../src/WaterIrrigationView.jsx';
 import { ResearchWorkspaceView } from '../src/ResearchWorkspaceView.jsx';
 import { DigitalTwin3DView } from '../src/DigitalTwin3DView.jsx';
@@ -153,6 +154,12 @@ const destinations = [
   {
     name: '05c. ClimateStressTestView (Climate Stress Test Sub-Lab)',
     component: ClimateStressTestView,
+    noDataProps: {},
+    fixtureProps: { activeField: fixtureField, lang: 'bn' }
+  },
+  {
+    name: '05d. YourFarmingVsPlanView (Your Farming vs Plan)',
+    component: YourFarmingVsPlanView,
     noDataProps: {},
     fixtureProps: { activeField: fixtureField, lang: 'bn' }
   },

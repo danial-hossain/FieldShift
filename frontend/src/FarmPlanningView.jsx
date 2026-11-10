@@ -7,6 +7,7 @@ import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { ClimateStressTestView } from './ClimateStressTestView.jsx';
 import { ComparisonLabView } from './ComparisonLabView.jsx';
+import { YourFarmingVsPlanView } from './YourFarmingVsPlanView.jsx';
 import { ExperimentSimulator3DView } from './ExperimentSimulator3DView.jsx';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { formatNumber } from './marketUtils.js';
@@ -39,7 +40,7 @@ export function FarmPlanningView({
     { id: 'milp', label: lang === 'bn' ? '১. ৬-মৌসুম পরিকল্পনা (6-Season Plan)' : '1. 6-Season Rotation Plan', icon: '🌾' },
     { id: 'replan', label: lang === 'bn' ? '২. অভিযোজিত পুনঃপরিকল্পনা (Adaptive Replan)' : '2. Adaptive Next-Season Replan', icon: '🔄' },
     { id: 'stress', label: lang === 'bn' ? '৩. জলবায়ু চাপ পরীক্ষা (Stress Test)' : '3. Climate Stress Test', icon: '⚡' },
-    { id: 'comparison', label: lang === 'bn' ? '৪. কৌশল তুলনা (Compare Strategies)' : '4. Compare Strategies', icon: '🔬' },
+    { id: 'comparison', label: lang === 'bn' ? '৪. আপনার চাষ বনাম পরামর্শ' : '4. Your farming vs plan', icon: '🔬' },
   ];
 
   return (
@@ -165,11 +166,22 @@ export function FarmPlanningView({
       )}
 
       {subTab === 'comparison' && (
-        <ComparisonLabView
+        <YourFarmingVsPlanView
           activeField={activeField}
           user={user}
           lang={lang}
+          theme={theme}
           onBack={() => setSubTab('milp')}
+          onNavigateTab={(t, extra) => {
+            if (typeof t === 'string' && ['milp', 'advisory', 'replan', 'stress', 'comparison', 'simulation'].includes(t)) {
+              if (extra?.strategy && activeField?.id) {
+                setFieldSelectedStrategy(activeField.id, extra.strategy);
+              }
+              setSubTab(t);
+            } else if (onNavigate) {
+              onNavigate(t, extra);
+            }
+          }}
         />
       )}
 
