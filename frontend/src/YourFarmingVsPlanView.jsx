@@ -169,13 +169,15 @@ export function YourFarmingVsPlanView({
     let changedMap = [];
 
     if (Array.isArray(sc) && sc.length === 6) {
-      planCrops = sc.map((item) => item.crop_after || item.crop || 'Fallow');
-      seasonIrrigs = sc.map((item) => (
-        item.irrigation_mm != null
-          ? Number(item.irrigation_mm)
-          : (item.water_mm != null ? Number(item.water_mm) : 0)
+      planCrops = sc.map((item) => (
+        item.actual_or_replanned_crop || item.crop_after || item.crop || 'Fallow'
       ));
-      changedMap = sc.map((item) => Boolean(item.changed));
+      seasonIrrigs = sc.map((item) => (
+        item.water_mm != null
+          ? Number(item.water_mm)
+          : (item.irrigation_mm != null ? Number(item.irrigation_mm) : 0)
+      ));
+      changedMap = sc.map((item) => Boolean(item.is_modified ?? item.changed));
     } else if (Array.isArray(appliedReplan.new_plan)) {
       planCrops = appliedReplan.new_plan;
       seasonIrrigs = currentPlanMetrics?.seasonIrrigs || [0, 0, 0, 0, 0, 0];
@@ -189,20 +191,32 @@ export function YourFarmingVsPlanView({
     const totals = appliedReplan.totals || {};
     const soFar = totals.actual_so_far_profit_bdt != null
       ? Number(totals.actual_so_far_profit_bdt)
-      : (appliedReplan.soFarProfit || 0);
+      : (totals.profit_so_far_actual_bdt != null
+          ? Number(totals.profit_so_far_actual_bdt)
+          : (appliedReplan.soFarProfit || 0));
     const remain = totals.projected_remaining_profit_bdt != null
       ? Number(totals.projected_remaining_profit_bdt)
-      : (appliedReplan.remainProfit || 0);
-    const totalProfit = totals.new_profit_bdt != null ? Number(totals.new_profit_bdt) : (soFar + remain);
+      : (totals.profit_remaining_projected_bdt != null
+          ? Number(totals.profit_remaining_projected_bdt)
+          : (appliedReplan.remainProfit || 0));
+    const totalProfit = totals.new_profit_bdt != null
+      ? Number(totals.new_profit_bdt)
+      : (totals.total_2year_profit_bdt != null
+          ? Number(totals.total_2year_profit_bdt)
+          : (soFar + remain));
     const profitBdt = Math.round(totalProfit / 2.0);
 
     const irrigationMm = totals.new_irrigation_mm != null
       ? Number(totals.new_irrigation_mm)
-      : Math.round((seasonIrrigs.reduce((a, b) => a + b, 0) / 2.0) * 10) / 10;
+      : (totals.annual_irrigation_new_mm != null
+          ? Number(totals.annual_irrigation_new_mm)
+          : Math.round((seasonIrrigs.reduce((a, b) => a + b, 0) / 2.0) * 10) / 10);
 
     const bareDays = totals.new_bare_soil_days != null
       ? Number(totals.new_bare_soil_days)
-      : (currentPlanMetrics?.bareDays || 60);
+      : (totals.bare_days_new != null
+          ? Math.round(Number(totals.bare_days_new) / 2.0)
+          : (currentPlanMetrics?.bareDays || 60));
 
     const nitrogenKg = totals.new_nitrogen_kg != null
       ? Number(totals.new_nitrogen_kg)

@@ -197,6 +197,37 @@ def run_consistency_audit():
             if abs(round(p_nitrogen_delta, 1) - expected_n_delta) > 0.5:
                 discrepancies.append(f"[{f['name']}] MF7 Nitrogen delta discrepancy: nitrogen_delta_kg={p_nitrogen_delta} vs plan-base delta={expected_n_delta}")
 
+        # f) CV6: Comparison View Integrity
+        # Column 2 numbers (Plan: profit, irrigation, bare days, nitrogen) must strictly equal
+        # planner Key Benefits for that strategy.
+        # Column 1 numbers (Baseline: profit, irrigation, bare days, nitrogen) must strictly equal
+        # planner's Current/Baseline numbers.
+        bc = p_plan.get("baseline_comparison", {})
+        col2_profit = round(float(bc.get("plan_profit_bdt", p_plan_profit or 0)))
+        planner_profit = round(float(p_plan_profit or 0))
+        if abs(col2_profit - planner_profit) > 1:
+            discrepancies.append(f"[{f['name']}] CV6 Col 2 profit ({col2_profit}) != Planner plan_profit_bdt ({planner_profit})")
+
+        col2_irrig = round(float(bc.get("plan_irrigation_mm", p_plan_irrig or 0)), 1)
+        planner_irrig = round(float(p_plan_irrig or 0), 1)
+        if abs(col2_irrig - planner_irrig) > 0.5:
+            discrepancies.append(f"[{f['name']}] CV6 Col 2 irrigation ({col2_irrig}) != Planner plan_irrigation_mm ({planner_irrig})")
+
+        col2_bare = round(float(bc.get("plan_bare_days", p_plan.get("plan_bare_days") or 60)))
+        planner_bare = round(float(p_plan.get("plan_bare_days") or 60))
+        if abs(col2_bare - planner_bare) > 1:
+            discrepancies.append(f"[{f['name']}] CV6 Col 2 bare days ({col2_bare}) != Planner bare days ({planner_bare})")
+
+        col1_profit = round(float(bc.get("baseline_profit_bdt", p_base_profit or 0)))
+        planner_base_profit = round(float(p_base_profit or 0))
+        if abs(col1_profit - planner_base_profit) > 1:
+            discrepancies.append(f"[{f['name']}] CV6 Col 1 profit ({col1_profit}) != Planner baseline_profit_bdt ({planner_base_profit})")
+
+        col1_irrig = round(float(bc.get("baseline_irrigation_mm", p_base_irrig or 0)), 1)
+        planner_base_irrig = round(float(p_base_irrig or 0), 1)
+        if abs(col1_irrig - planner_base_irrig) > 0.5:
+            discrepancies.append(f"[{f['name']}] CV6 Col 1 irrigation ({col1_irrig}) != Planner baseline_irrigation_mm ({planner_base_irrig})")
+
         audit_table.append({
             "name": f["name"],
             "district": dist.capitalize(),
