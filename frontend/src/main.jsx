@@ -1988,7 +1988,7 @@ export function App() {
   const currentMode = isResearchMode ? 'research' : 'farmer';
 
   return (
-    <div className="app-shell" data-mode={currentMode}>
+    <div className="app-shell" data-mode={currentMode} data-nav={activeNav}>
       {/* Fixed NASA VIIRS Background Layer */}
       <div className="nasa-bg-layer" aria-hidden="true">
         <div className="nasa-bg-image" />

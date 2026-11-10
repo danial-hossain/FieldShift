@@ -14114,46 +14114,83 @@ h2, h3, .card-title, .panel-title {
   --text-muted: var(--text-2);
 }
 
-/* Background Layer (NASA VIIRS TrueColor on Farmer Mode, Grid on Research Mode) */
+/* ============================================================
+   Global Atmospheric Farm Background
+   Applied to all pages. Hidden on the Overview page (dashboard)
+   where OrbitToFieldCanvas provides its own full-screen scene.
+   ============================================================ */
 .nasa-bg-layer {
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  background-color: var(--bg-deep);
+  background-color: #05080c;
   will-change: transform;
   contain: strict;
 }
 
+/* Deep navy-to-amber atmospheric gradient — the sky layer */
 .nasa-bg-image {
   position: absolute;
-  inset: -30px;
-  background-image: linear-gradient(180deg, rgba(7, 18, 13, 0.55), rgba(7, 18, 13, 0.85)), var(--nasa-bg, url('/bg/nasa_rajshahi_aerial_bg.webp'));
-  background-size: cover;
-  background-position: center;
-  filter: none;
+  inset: 0;
+  background:
+    /* Warm amber horizon glow (bottom 30 %) */
+    radial-gradient(ellipse 120% 40% at 50% 100%, rgba(160, 90, 20, 0.38) 0%, rgba(100, 55, 10, 0.18) 45%, transparent 70%),
+    /* Deep green-navy sky gradient */
+    linear-gradient(
+      180deg,
+      #05080c 0%,
+      #060d0a 18%,
+      #081209 35%,
+      #0a1a0c 55%,
+      #0d1e0e 72%,
+      #111809 85%,
+      #1a1808 94%,
+      #221a06 100%
+    );
   transform: translateZ(0);
 }
 
+/* Farm silhouette strip — trees, hut, palm shapes at the very bottom */
 .nasa-bg-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 35%, transparent 20%, rgba(7, 18, 13, 0.75) 70%, rgba(7, 18, 13, 0.96) 100%);
+  /* Top vignette darkens the sky edges */
+  background:
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(5, 8, 12, 0.55) 0%, transparent 60%),
+    /* Bottom farm silhouette via inline SVG */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 220' preserveAspectRatio='xMidYMax meet'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%231a1808' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%230d1206' stop-opacity='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3C!-- ground strip --%3E%3Crect x='0' y='160' width='1440' height='60' fill='%230a0e06'/%3E%3C!-- paddy field rows faint --%3E%3Crect x='0' y='158' width='1440' height='2' fill='%230f1808' opacity='.7'/%3E%3Crect x='0' y='154' width='1440' height='2' fill='%230c1407' opacity='.4'/%3E%3C!-- hut body --%3E%3Crect x='1180' y='118' width='52' height='42' fill='%23080d06'/%3E%3C!-- hut roof --%3E%3Cpolygon points='1170,118 1206,90 1242,118' fill='%23060a04'/%3E%3C!-- hut door --%3E%3Crect x='1198' y='138' width='16' height='22' fill='%23050806' rx='2'/%3E%3C!-- tall palm left --%3E%3Crect x='105' y='52' width='6' height='108' rx='3' fill='%23080d06'/%3E%3Cpath d='M108 60 Q90 44 68 50 Q90 56 108 68 Q126 56 148 50 Q126 44 108 60Z' fill='%230a1007'/%3E%3Cpath d='M108 72 Q88 60 64 68 Q88 72 108 82 Q128 72 152 68 Q128 60 108 72Z' fill='%230a1007'/%3E%3Cpath d='M108 84 Q92 76 76 82 Q92 86 108 94 Q124 86 140 82 Q124 76 108 84Z' fill='%230a1007'/%3E%3C!-- medium palm right --%3E%3Crect x='1340' y='80' width='5' height='80' rx='2.5' fill='%23080d06'/%3E%3Cpath d='M1342 88 Q1328 76 1314 82 Q1328 86 1342 96 Q1356 86 1370 82 Q1356 76 1342 88Z' fill='%230a1007'/%3E%3Cpath d='M1342 100 Q1330 92 1318 98 Q1330 102 1342 110 Q1354 102 1366 98 Q1354 92 1342 100Z' fill='%230a1007'/%3E%3C!-- short tree cluster center-left --%3E%3Crect x='540' y='100' width='5' height='60' rx='2' fill='%23080d06'/%3E%3Ccircle cx='542' cy='100' r='22' fill='%230c1308'/%3E%3Crect x='570' y='108' width='4' height='52' rx='2' fill='%23080d06'/%3E%3Ccircle cx='572' cy='108' r='18' fill='%230b1207'/%3E%3Crect x='514' y='112' width='4' height='48' rx='2' fill='%23080d06'/%3E%3Ccircle cx='516' cy='112' r='16' fill='%230b1207'/%3E%3C!-- short tree cluster right of center --%3E%3Crect x='900' y='106' width='5' height='54' rx='2' fill='%23080d06'/%3E%3Ccircle cx='902' cy='106' r='20' fill='%230c1308'/%3E%3Crect x='928' y='114' width='4' height='46' rx='2' fill='%23080d06'/%3E%3Ccircle cx='930' cy='114' r='16' fill='%230b1207'/%3E%3C!-- faint field furrow lines --%3E%3Cline x1='0' y1='168' x2='1440' y2='168' stroke='%23131a0a' stroke-width='1.5' opacity='.5'/%3E%3Cline x1='0' y1='174' x2='1440' y2='174' stroke='%23131a0a' stroke-width='1' opacity='.35'/%3E%3Cline x1='0' y1='180' x2='1440' y2='180' stroke='%23131a0a' stroke-width='1' opacity='.2'/%3E%3C!-- overlay gradient to blend into bg --%3E%3Crect x='0' y='0' width='1440' height='220' fill='url(%23sky)'/%3E%3C/svg%3E")
+    center bottom / 100% auto no-repeat;
 }
 
+/* ---- Overview / dashboard page: hide the farm bg (canvas does it) ---- */
+[data-nav="dashboard"] .nasa-bg-layer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Research mode: dark blue-tinted sky ---- */
 [data-mode="research"] .nasa-bg-image {
-  display: block;
+  background:
+    radial-gradient(ellipse 120% 40% at 50% 100%, rgba(20, 60, 100, 0.22) 0%, transparent 60%),
+    linear-gradient(
+      180deg,
+      #04070d 0%,
+      #050b12 20%,
+      #060e14 45%,
+      #080f12 70%,
+      #0a1210 90%,
+      #0c1310 100%
+    );
 }
 
 [data-mode="research"] .nasa-bg-vignette {
-  display: block;
-  background: radial-gradient(circle at 50% 35%, transparent 20%, rgba(5, 11, 16, 0.78) 70%, rgba(5, 11, 16, 0.96) 100%);
+  background: radial-gradient(ellipse 100% 50% at 50% 0%, rgba(4, 7, 13, 0.6) 0%, transparent 55%);
 }
 
 [data-mode="research"] .nasa-bg-layer {
   background-color: #050b10;
-  background-image: none;
 }
 
 /* UI Cards */
