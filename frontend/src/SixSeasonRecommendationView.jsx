@@ -1560,6 +1560,7 @@ export function SixSeasonRecommendationView({
                   key={k}
                   type="button"
                   className="sc"
+                  aria-label={`${lang === 'bn' ? (s?.bn || k) : (s?.en || k)}: ${translateCropName(c, lang)}`}
                   aria-current={isSelected ? 'true' : 'false'}
                   onClick={() => setSelectedPeriodKey(k)}
                   style={{

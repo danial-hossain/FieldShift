@@ -930,6 +930,12 @@ export function App() {
       window.__fs_navigate = (nav, tab = null) => {
         handleNavigate(nav, tab);
       };
+      window.__fs_setLang = (newLang) => {
+        setLang(newLang);
+      };
+      window.__fs_setTheme = (newTheme) => {
+        setTheme(newTheme);
+      };
       window.__fs_selectField = (fieldId) => {
         if (fieldId === 'demo' || String(fieldId) === '304') {
           const found = userFields.find(f => String(f.id) === String(fieldId));

@@ -922,16 +922,16 @@ export function AdaptiveReplanningView({
           <span style={{ fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
             {lang === 'bn' ? 'উদাহরণ চালান:' : 'Run Example:'}
           </span>
-          <button onClick={() => applyExample('good')} style={{ background: 'var(--surface-2, rgba(0,0,0,0.04))', border: '1px solid var(--line)', borderRadius: 7, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+          <button type="button" onClick={() => applyExample('good')} className="ui-btn ui-btn-secondary ui-btn-xs">
             {lang === 'bn' ? 'সরিষা ভালো হয়েছে' : 'Mustard Harvest Good'}
           </button>
-          <button onClick={() => applyExample('bad')} style={{ background: 'var(--surface-2, rgba(0,0,0,0.04))', border: '1px solid var(--line)', borderRadius: 7, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+          <button type="button" onClick={() => applyExample('bad')} className="ui-btn ui-btn-secondary ui-btn-xs">
             {lang === 'bn' ? 'সরিষা খারাপ হয়েছে' : 'Mustard Yield Poor'}
           </button>
-          <button onClick={() => applyExample('split')} style={{ background: 'var(--surface-2, rgba(0,0,0,0.04))', border: '1px solid var(--line)', borderRadius: 7, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+          <button type="button" onClick={() => applyExample('split')} className="ui-btn ui-btn-secondary ui-btn-xs">
             {lang === 'bn' ? 'জমি ভাগ করে চাষ' : 'Split Plot Planting'}
           </button>
-          <button onClick={() => applyExample('dry')} style={{ background: 'var(--surface-2, rgba(0,0,0,0.04))', border: '1px solid var(--line)', borderRadius: 7, padding: '4px 10px', fontSize: 12, cursor: 'pointer' }}>
+          <button type="button" onClick={() => applyExample('dry')} className="ui-btn ui-btn-secondary ui-btn-xs">
             {lang === 'bn' ? 'সেচ নেই হলে' : 'No Irrigation Available'}
           </button>
         </div>
