@@ -1,239 +1,24 @@
 // frontend/src/overview/OrbitToFieldCanvas.jsx
-// Final Version (OS0-OS6): Full-screen continuous 3D world: Space → Bangladesh → Farm
-// Driven by scrollProgress (0.0 to 1.0).
-// Performance: DPR ≤ 1.5, particles ≤ 2000, draw calls ≤ 150, pauses when tab hidden.
-// 100% compliant with Three.js property semantics: NO read-only assignments, NO Object.assign on Mesh/Group.
+// Final Version (OS0-OS7 / SH1-SH6):
+// Continuous 3D flight from Space (Earth) -> Bangladesh 3D Map -> Village Farm Diorama
+// Driven strictly by scrollProgress [0, 1] through the 10-shot camera trajectory in shots.js.
 
 import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
+import { getInterpolatedShot, checkCameraClearance } from './shots.js';
 import bdGeoData from '../../../data/geo/bd_districts.json';
 
-// ── 10 Camera spline keypoints (one per scene 0-9) ──────────────────────────
-const CAM_POS = [
-  new THREE.Vector3(0.0, 1.4, 25.0),   // 0: Space / Earth hook
-  new THREE.Vector3(1.4, 0.9, 11.5),   // 1: Cloud dive
-  new THREE.Vector3(0.0, 4.4, -2.0),   // 2: Bangladesh district map
-  new THREE.Vector3(-0.6, 1.3, -9.2),  // 3: Groundwater cutaway & aquifer
-  new THREE.Vector3(-1.5, 1.5, -11.0), // 4: Climate risk calendar & rain
-  new THREE.Vector3(-0.8, 1.0, -11.8), // 5: Soil health & legumes (+N)
-  new THREE.Vector3(0.0, 2.0, -11.5),  // 6: MILP 6-bed rotation strategies
-  new THREE.Vector3(1.2, 1.3, -11.2),  // 7: Climate stress test
-  new THREE.Vector3(0.5, 0.85, -11.8), // 8: Harvest adaptive learning
-  new THREE.Vector3(0.0, 2.6, -7.5),   // 9: Dawn closing wide shot
-];
-
-const CAM_LOOK = [
-  new THREE.Vector3(2.4, 0.0, 0.0),    // 0
-  new THREE.Vector3(2.2, 0.0, 0.0),    // 1
-  new THREE.Vector3(0.0, 0.0, -4.5),   // 2
-  new THREE.Vector3(-1.4, -0.4, -10.5),// 3
-  new THREE.Vector3(0.0, 0.2, -12.5),  // 4
-  new THREE.Vector3(-0.5, 0.2, -12.8), // 5
-  new THREE.Vector3(0.0, 0.0, -13.0),  // 6
-  new THREE.Vector3(0.0, 0.2, -12.5),  // 7
-  new THREE.Vector3(0.7, 0.1, -12.5),  // 8
-  new THREE.Vector3(0.0, 0.4, -12.0),  // 9
-];
-
-// District region classifications for Bangladesh
+// District region classifications
 const BARIND_DISTRICTS = new Set(['Rajshahi', 'Chapainawabganj', 'Naogaon', 'Natore', 'Joypurhat']);
 const HAOR_DISTRICTS = new Set(['Sunamganj', 'Kishoreganj', 'Netrokona', 'Habiganj', 'Sylhet']);
 const COAST_DISTRICTS = new Set(['Satkhira', 'Khulna', 'Bagerhat', 'Barguna', 'Patuakhali']);
 
 function latLonToMap(lat, lon) {
-  return { x: (lon - 90.35) * 1.5, y: (lat - 23.68) * 1.5 };
-}
-
-// Procedural NASA Blue Marble texture on in-memory Canvas (guarantees offline 0-latency texture)
-function createEarthTexture() {
-  const c = document.createElement('canvas');
-  c.width = 2048;
-  c.height = 1024;
-  const ctx = c.getContext('2d');
-
-  // Ocean base gradient
-  const grad = ctx.createLinearGradient(0, 0, 0, 1024);
-  grad.addColorStop(0, '#103050');
-  grad.addColorStop(0.5, '#124874');
-  grad.addColorStop(1, '#0e2c48');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 2048, 1024);
-
-  // Continent masses
-  ctx.fillStyle = '#265432';
-  // Eurasia & South Asia
-  ctx.beginPath();
-  ctx.ellipse(1500, 380, 480, 240, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Africa
-  ctx.beginPath();
-  ctx.ellipse(1180, 580, 220, 280, 0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Americas
-  ctx.beginPath();
-  ctx.ellipse(420, 360, 260, 200, -0.3, 0, Math.PI * 2);
-  ctx.ellipse(600, 700, 200, 260, 0.3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Australia
-  ctx.beginPath();
-  ctx.ellipse(1780, 750, 160, 120, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Vegetation & Topo tones
-  ctx.fillStyle = '#4a7d3c';
-  ctx.beginPath();
-  ctx.ellipse(1540, 420, 180, 100, 0, 0, Math.PI * 2); // South Asia / Bangladesh region
-  ctx.fill();
-
-  // Arid Sahara / Middle East
-  ctx.fillStyle = '#a68a52';
-  ctx.beginPath();
-  ctx.ellipse(1200, 420, 200, 90, 0.1, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Polar ice caps
-  ctx.fillStyle = '#dbebf5';
-  ctx.fillRect(0, 0, 2048, 80);
-  ctx.fillRect(0, 950, 2048, 74);
-
-  // Cloud swirls
-  ctx.fillStyle = 'rgba(240, 248, 255, 0.35)';
-  for (let i = 0; i < 40; i++) {
-    ctx.beginPath();
-    const cx = (i * 53) % 2048;
-    const cy = 200 + ((i * 71) % 620);
-    ctx.ellipse(cx, cy, 140, 32, (i * 0.4), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  return tex;
-}
-
-// ── Farm Primitives ──────────────────────────────────────────────────────────
-function createHut() {
-  const g = new THREE.Group();
-  const walls = new THREE.Mesh(
-    new THREE.BoxGeometry(1.6, 1.0, 1.1),
-    new THREE.MeshLambertMaterial({ color: 0xd2b17a })
-  );
-  walls.position.set(0, 0.5, 0);
-  g.add(walls);
-
-  const door = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.52, 0.04),
-    new THREE.MeshLambertMaterial({ color: 0x5a3418 })
-  );
-  door.position.set(0, 0.26, 0.57);
-  g.add(door);
-
-  const roofMat = new THREE.MeshLambertMaterial({ color: 0x96784d, side: THREE.DoubleSide });
-  const roofL = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 1.8), roofMat);
-  roofL.position.set(-0.42, 1.08, 0);
-  roofL.rotation.set(0, 0, 0.42);
-  g.add(roofL);
-
-  const roofR = new THREE.Mesh(new THREE.PlaneGeometry(1.05, 1.8), roofMat);
-  roofR.position.set(0.42, 1.08, 0);
-  roofR.rotation.set(0, 0, -0.42);
-  g.add(roofR);
-
-  return g;
-}
-
-function createTree(height = 2.4, color = 0x225828) {
-  const g = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.09, 0.13, height, 6),
-    new THREE.MeshLambertMaterial({ color: 0x5c4228 })
-  );
-  trunk.position.set(0, height / 2, 0);
-  g.add(trunk);
-
-  const crown = new THREE.Mesh(
-    new THREE.ConeGeometry(0.9, 1.6, 7),
-    new THREE.MeshLambertMaterial({ color })
-  );
-  crown.position.set(0, height + 0.6, 0);
-  g.add(crown);
-  return g;
-}
-
-function createCow() {
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.65, 0.38, 0.32),
-    new THREE.MeshLambertMaterial({ color: 0xe6e2d8 })
-  );
-  body.position.set(0, 0.28, 0);
-  g.add(body);
-
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.24, 0.2),
-    new THREE.MeshLambertMaterial({ color: 0x3d352e })
-  );
-  head.position.set(0.38, 0.38, 0);
-  g.add(head);
-
-  const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.22, 4);
-  const legMat = new THREE.MeshLambertMaterial({ color: 0x28201a });
-  [[-0.22, -0.1], [-0.22, 0.1], [0.22, -0.1], [0.22, 0.1]].forEach(([lx, lz]) => {
-    const leg = new THREE.Mesh(legGeo, legMat);
-    leg.position.set(lx, 0.11, lz);
-    g.add(leg);
-  });
-  return g;
-}
-
-function createFarmBed(cropColor = 0x48a832, hasWater = false) {
-  const g = new THREE.Group();
-  // Soil bed base
-  const soil = new THREE.Mesh(
-    new THREE.BoxGeometry(1.6, 0.14, 1.1),
-    new THREE.MeshLambertMaterial({ color: 0x3e2b1c })
-  );
-  soil.position.set(0, 0.07, 0);
-  g.add(soil);
-
-  // Water film if rice bed
-  if (hasWater) {
-    const water = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.5, 1.0),
-      new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.15, transparent: true, opacity: 0.75 })
-    );
-    water.rotation.set(-Math.PI / 2, 0, 0);
-    water.position.set(0, 0.145, 0);
-    g.add(water);
-  }
-
-  // Crop plants
-  const plantGeo = new THREE.ConeGeometry(0.06, 0.28, 4);
-  const plantMat = new THREE.MeshLambertMaterial({ color: cropColor });
-  for (let r = -0.36; r <= 0.36; r += 0.24) {
-    for (let c = -0.55; c <= 0.55; c += 0.22) {
-      const p = new THREE.Mesh(plantGeo, plantMat);
-      p.position.set(c, 0.24, r);
-      g.add(p);
-    }
-  }
-
-  // Bunds (আইল)
-  const bundMat = new THREE.MeshLambertMaterial({ color: 0x4a3a2a });
-  const b1 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.18, 0.08), bundMat);
-  b1.position.set(0, 0.09, 0.58);
-  const b2 = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.18, 0.08), bundMat);
-  b2.position.set(0, 0.09, -0.58);
-  const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 1.2), bundMat);
-  b3.position.set(0.84, 0.09, 0);
-  const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.18, 1.2), bundMat);
-  b4.position.set(-0.84, 0.09, 0);
-  g.add(b1, b2, b3, b4);
-
-  return g;
+  // Center roughly at 23.7°N, 90.4°E, scaled for 3D map
+  return {
+    x: (lon - 90.35) * 1.6,
+    z: -(lat - 23.68) * 1.6
+  };
 }
 
 export function OrbitToFieldCanvas({
@@ -243,26 +28,27 @@ export function OrbitToFieldCanvas({
   onsetComparison = null,
 }) {
   const mountRef = useRef(null);
-  const animRef = useRef(null);
   const scrollProgRef = useRef(scrollProgress);
   scrollProgRef.current = scrollProgress;
+  const overlayLabelsRef = useRef(null);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // ── Three.js Scene Setup ───────────────────────────────────────────────
+    // ── Renderer & Camera Setup ──────────────────────────────────────────
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x284260);
-    scene.fog = new THREE.FogExp2(0x284260, 0.003);
+    scene.background = new THREE.Color(0x040810);
+    const fog = new THREE.FogExp2(0x040810, 0.0006);
+    scene.fog = fog;
 
     const camera = new THREE.PerspectiveCamera(
       45,
       window.innerWidth / window.innerHeight,
       0.1,
-      250
+      350
     );
-    camera.position.set(0, 1.4, 25);
+    camera.position.set(0, 2, 32);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -272,42 +58,38 @@ export function OrbitToFieldCanvas({
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.2;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
     mount.appendChild(renderer.domElement);
+
     if (typeof window !== 'undefined') window.__FS_STORY_RENDERER__ = renderer;
 
-    // ── Lighting ───────────────────────────────────────────────────────────
-    const ambientLight = new THREE.AmbientLight(0x425866, 1.2);
+    // ── Lighting ─────────────────────────────────────────────────────────
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfff8ea, 2.2);
-    sunLight.position.set(15, 12, 10);
+    const sunLight = new THREE.DirectionalLight(0xfff6e8, 2.2);
+    sunLight.position.set(15, 8, 12);
     scene.add(sunLight);
 
-    const warmFill = new THREE.PointLight(0xffd59e, 1.4, 30);
-    warmFill.position.set(0, 4, -10);
-    scene.add(warmFill);
+    const pointFill = new THREE.PointLight(0xffd59e, 1.2, 40);
+    pointFill.position.set(0, 6, -14);
+    scene.add(pointFill);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ZONE 0: SPACE (Earth, clouds, starfield, satellite)
-    // ════════════════════════════════════════════════════════════════════════
+    const registeredMeshes = [];
+
+    // ══════════════════════════════════════════════════════════════════════
+    // WORLD 0: SPACE & EARTH (Shots 01 - 02)
+    // ══════════════════════════════════════════════════════════════════════
     const spaceGroup = new THREE.Group();
     scene.add(spaceGroup);
 
-    // Cosmic atmospheric nebula backdrop plane (ensures beautiful deep space glow & lum > 0.14)
-    const spaceBackdrop = new THREE.Mesh(
-      new THREE.PlaneGeometry(260, 160),
-      new THREE.MeshBasicMaterial({ color: 0x284464, depthWrite: false })
-    );
-    spaceBackdrop.position.set(0, 0, -30);
-    spaceGroup.add(spaceBackdrop);
-
-    // 1400 Stars
-    const STAR_COUNT = 1400;
+    // Deep space starfield
+    const STAR_COUNT = 1600;
     const starGeo = new THREE.BufferGeometry();
     const starPos = new Float32Array(STAR_COUNT * 3);
     for (let i = 0; i < STAR_COUNT; i++) {
-      const r = 50 + Math.random() * 80;
+      const r = 80 + Math.random() * 120;
       const th = Math.random() * Math.PI * 2;
       const ph = Math.acos(2 * Math.random() - 1);
       starPos[i * 3]     = r * Math.sin(ph) * Math.cos(th);
@@ -315,470 +97,806 @@ export function OrbitToFieldCanvas({
       starPos[i * 3 + 2] = r * Math.cos(ph);
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    const starPoints = new THREE.Points(
+    const stars = new THREE.Points(
       starGeo,
-      new THREE.PointsMaterial({ color: 0xd8e8f8, size: 0.35, transparent: true, opacity: 0.85 })
+      new THREE.PointsMaterial({ color: 0xe0f2fe, size: 0.4, transparent: true, opacity: 0.9 })
     );
-    spaceGroup.add(starPoints);
+    spaceGroup.add(stars);
 
-    // Earth globe with procedural Blue Marble texture
-    const earthGeo = new THREE.SphereGeometry(7.0, 64, 32);
-    const earthMat = new THREE.MeshStandardMaterial({
-      map: createEarthTexture(),
-      roughness: 0.7,
-      metalness: 0.05,
-    });
-    const earthMesh = new THREE.Mesh(earthGeo, earthMat);
-    earthMesh.position.set(3.2, -0.4, 0);
-    // Align Bangladesh (90.4°E) towards camera
-    earthMesh.rotation.set(0, THREE.MathUtils.degToRad(90.4 - 90), 0);
-    spaceGroup.add(earthMesh);
+    // Texture Loader for Earth Day & Clouds
+    const texLoader = new THREE.TextureLoader();
+    const earthDayTex = texLoader.load('/textures/earth_day_2048.jpg');
+    earthDayTex.colorSpace = THREE.SRGBColorSpace;
+    const earthCloudsTex = texLoader.load('/textures/earth_clouds_2048.jpg');
+    earthCloudsTex.colorSpace = THREE.SRGBColorSpace;
 
-    // Cloud sphere
-    const cloudMat = new THREE.MeshStandardMaterial({
-      color: 0xeef6fc,
-      transparent: true,
-      opacity: 0.3,
-      roughness: 0.9,
-      depthWrite: false,
-    });
-    const cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(7.1, 48, 24), cloudMat);
-    cloudMesh.position.copy(earthMesh.position);
-    spaceGroup.add(cloudMesh);
-
-    // Atmosphere halo glow
-    const atmMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(7.45, 36, 18),
+    // Earth Sphere (radius 6.0)
+    const earthRadius = 6.0;
+    const earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(earthRadius, 64, 48),
       new THREE.MeshStandardMaterial({
+        map: earthDayTex,
+        roughness: 0.75,
+        metalness: 0.05,
+      })
+    );
+    earthMesh.name = 'EarthDaySphere';
+    earthMesh.position.set(0, 0, 0);
+    // Align Bangladesh (long ~90.4°E) facing camera
+    const bangladeshRotY = THREE.MathUtils.degToRad(-90.4 + 90);
+    earthMesh.rotation.set(0, bangladeshRotY, 0);
+    spaceGroup.add(earthMesh);
+    registeredMeshes.push(earthMesh);
+
+    // Clouds Sphere (radius 6.08)
+    const cloudsMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(earthRadius * 1.013, 64, 48),
+      new THREE.MeshStandardMaterial({
+        map: earthCloudsTex,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      })
+    );
+    cloudsMesh.position.copy(earthMesh.position);
+    cloudsMesh.rotation.set(0, bangladeshRotY, 0);
+    spaceGroup.add(cloudsMesh);
+
+    // Atmosphere Fresnel Glow (radius 6.36)
+    const atmMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(earthRadius * 1.06, 48, 32),
+      new THREE.MeshBasicMaterial({
         color: 0x38d9f5,
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.22,
         side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
         depthWrite: false,
       })
     );
     atmMesh.position.copy(earthMesh.position);
     spaceGroup.add(atmMesh);
 
-    // Satellite (orbiting low Earth orbit)
+    // Orbiting Satellite (NASA GPM / GRACE-FO)
     const satGroup = new THREE.Group();
     const satBody = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.3, 0.3),
-      new THREE.MeshStandardMaterial({ color: 0xe0e8f0, metalness: 0.8, roughness: 0.25 })
+      new THREE.BoxGeometry(0.35, 0.25, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0xcedee9, metalness: 0.8, roughness: 0.2 })
     );
     satGroup.add(satBody);
 
-    const satPanelMat = new THREE.MeshStandardMaterial({ color: 0x16428c, metalness: 0.6, roughness: 0.3 });
-    [-0.75, 0.75].forEach(px => {
-      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.04, 0.35), satPanelMat);
+    const solarPanelMat = new THREE.MeshStandardMaterial({ color: 0x1b4480, metalness: 0.7, roughness: 0.2 });
+    [-0.6, 0.6].forEach(px => {
+      const panel = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, 0.3), solarPanelMat);
       panel.position.set(px, 0, 0);
       satGroup.add(panel);
     });
 
-    const satScan = new THREE.Mesh(
-      new THREE.ConeGeometry(0.6, 2.4, 12, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0xc8f169, transparent: true, opacity: 0.1, side: THREE.DoubleSide })
+    const satRadar = new THREE.Mesh(
+      new THREE.ConeGeometry(0.5, 2.0, 16, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0x38d9f5, transparent: true, opacity: 0.15, side: THREE.DoubleSide, depthWrite: false })
     );
-    satScan.rotation.set(Math.PI, 0, 0);
-    satScan.position.set(0, -1.2, 0);
-    satGroup.add(satScan);
+    satRadar.rotation.set(Math.PI, 0, 0);
+    satRadar.position.set(0, -1.0, 0);
+    satGroup.add(satRadar);
+    satGroup.position.set(3.2, 3.8, 12);
     spaceGroup.add(satGroup);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ZONE 1: BANGLADESH MAP (64 districts, extruded pillars, region glow)
-    // ════════════════════════════════════════════════════════════════════════
+    // Cloud dive rush sprites (30 sprites for Shot 02)
+    const cloudDiveGroup = new THREE.Group();
+    const diveCloudGeo = new THREE.PlaneGeometry(1.6, 1.2);
+    const diveCloudMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.45,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    for (let i = 0; i < 30; i++) {
+      const sprite = new THREE.Mesh(diveCloudGeo, diveCloudMat);
+      sprite.position.set(
+        (Math.random() - 0.5) * 6,
+        (Math.random() - 0.5) * 4,
+        8.0 + Math.random() * 8
+      );
+      cloudDiveGroup.add(sprite);
+    }
+    cloudDiveGroup.visible = false;
+    spaceGroup.add(cloudDiveGroup);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // WORLD 1: BANGLADESH 3D DISTRICT MAP (Shots 03 - 04)
+    // ══════════════════════════════════════════════════════════════════════
     const mapGroup = new THREE.Group();
-    mapGroup.position.set(0, 0, -4.5);
-    mapGroup.rotation.set(-0.25, 0, 0);
-    mapGroup.visible = false;
+    mapGroup.position.set(0, 0, -4.0);
     scene.add(mapGroup);
 
-    // Sea / Bay of Bengal base plane
-    const seaFloor = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 40),
-      new THREE.MeshLambertMaterial({ color: 0x265242 })
+    // Ground plane extending to horizon with soft atmospheric fog (NOT floating in space!)
+    const mapGround = new THREE.Mesh(
+      new THREE.PlaneGeometry(80, 80),
+      new THREE.MeshLambertMaterial({ color: 0x08160f })
     );
-    seaFloor.rotation.set(-Math.PI / 2, 0, 0);
-    seaFloor.position.set(0, -0.05, 0);
-    mapGroup.add(seaFloor);
+    mapGround.rotation.set(-Math.PI / 2, 0, 0);
+    mapGround.position.set(0, -0.05, 0);
+    mapGround.receiveShadow = true;
+    mapGroup.add(mapGround);
 
-    // 64 Extruded District Blocks from bd_districts.json
+    // Districts extruded geometries
     const districts = bdGeoData?.districts || [];
-    const distPillarGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.35, 6);
-    const defDistMat = new THREE.MeshLambertMaterial({ color: 0x1c4d2d });
-    const barindMat = new THREE.MeshLambertMaterial({ color: 0xc8f169, emissive: 0x4a6e14, emissiveIntensity: 0.45 });
-    const haorMat   = new THREE.MeshLambertMaterial({ color: 0x38d9f5, emissive: 0x0d5872, emissiveIntensity: 0.45 });
-    const coastMat  = new THREE.MeshLambertMaterial({ color: 0xf5b04c, emissive: 0x6e400f, emissiveIntensity: 0.45 });
-
-    districts.forEach(d => {
-      let mat = defDistMat;
-      if (BARIND_DISTRICTS.has(d.name)) mat = barindMat;
-      else if (HAOR_DISTRICTS.has(d.name)) mat = haorMat;
-      else if (COAST_DISTRICTS.has(d.name)) mat = coastMat;
-
-      const m = new THREE.Mesh(distPillarGeo, mat);
-      const { x, y } = latLonToMap(d.lat, d.lon);
-      m.position.set(x, 0.18, -y);
-      mapGroup.add(m);
+    const distMeshes = [];
+    const defaultDistMat = new THREE.MeshStandardMaterial({
+      color: 0x143420,
+      roughness: 0.7,
+      metalness: 0.1,
+    });
+    const barindDistMat = new THREE.MeshStandardMaterial({
+      color: 0x2e6618,
+      emissive: 0xc8f169,
+      emissiveIntensity: 0.45,
+      roughness: 0.5,
+    });
+    const haorDistMat = new THREE.MeshStandardMaterial({
+      color: 0x104d5e,
+      emissive: 0x38d9f5,
+      emissiveIntensity: 0.45,
+      roughness: 0.5,
+    });
+    const coastDistMat = new THREE.MeshStandardMaterial({
+      color: 0x5e3a10,
+      emissive: 0xf5b04c,
+      emissiveIntensity: 0.45,
+      roughness: 0.5,
     });
 
-    // Active field pin & light beam
-    const activePinGroup = new THREE.Group();
+    const hexRadius = 0.26;
+    const hexHeight = 0.08;
+    const hexGeo = new THREE.CylinderGeometry(hexRadius, hexRadius * 1.05, hexHeight, 6);
+    const borderMat = new THREE.LineBasicMaterial({ color: 0x529a68, transparent: true, opacity: 0.6 });
+
+    districts.forEach(d => {
+      let mat = defaultDistMat;
+      if (BARIND_DISTRICTS.has(d.name)) mat = barindDistMat;
+      else if (HAOR_DISTRICTS.has(d.name)) mat = haorDistMat;
+      else if (COAST_DISTRICTS.has(d.name)) mat = coastDistMat;
+
+      const m = new THREE.Mesh(hexGeo, mat);
+      const { x, z } = latLonToMap(d.lat, d.lon);
+      m.position.set(x, hexHeight / 2, z);
+      m.name = `District_${d.name}`;
+
+      // Thin light border line per district
+      const edges = new THREE.EdgesGeometry(hexGeo);
+      const line = new THREE.LineSegments(edges, borderMat);
+      m.add(line);
+
+      mapGroup.add(m);
+      distMeshes.push(m);
+    });
+
+    // Active Field Thin Light Pillar
     const activeLat = Number(activeField?.latitude || 24.85);
     const activeLon = Number(activeField?.longitude || 89.37);
-    const activeMapPos = latLonToMap(activeLat, activeLon);
-    activePinGroup.position.set(activeMapPos.x, 0, -activeMapPos.y);
+    const activePos = latLonToMap(activeLat, activeLon);
 
-    const pinCone = new THREE.Mesh(
-      new THREE.ConeGeometry(0.16, 0.45, 8),
-      new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0xc8f169, emissiveIntensity: 0.8 })
+    const activePillar = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.025, 0.025, 4.0, 12),
+      new THREE.MeshBasicMaterial({ color: 0xc8f169 })
     );
-    pinCone.rotation.set(Math.PI, 0, 0);
-    pinCone.position.set(0, 0.45, 0);
-    activePinGroup.add(pinCone);
+    activePillar.position.set(activePos.x, 2.0, activePos.z);
+    mapGroup.add(activePillar);
 
-    // Vertical light beam
-    const beam = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.04, 0.28, 5.0, 12, 1, true),
-      new THREE.MeshBasicMaterial({ color: 0xc8f169, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+    const pillarGlow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.28, 4.0, 12, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xc8f169, transparent: true, opacity: 0.25, side: THREE.DoubleSide })
     );
-    beam.position.set(0, 2.5, 0);
-    activePinGroup.add(beam);
-    mapGroup.add(activePinGroup);
+    pillarGlow.position.set(activePos.x, 2.0, activePos.z);
+    mapGroup.add(pillarGlow);
 
-    // ════════════════════════════════════════════════════════════════════════
-    // ZONE 2: FARM WORLD (Scenes 3-9) — One living, breathing farm
-    // ════════════════════════════════════════════════════════════════════════
+    // Shot 04: Soil Cutaway Block under active field
+    const cutawayGroup = new THREE.Group();
+    cutawayGroup.position.set(activePos.x, 0, activePos.z);
+    cutawayGroup.visible = false;
+
+    // 3 Soil layers: topsoil (0.3m), vadose zone (0.8m), bedrock (1.5m)
+    const topsoilMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.3, 1.8),
+      new THREE.MeshLambertMaterial({ color: 0x3d2716 })
+    );
+    topsoilMesh.position.set(0, -0.15, 0);
+    cutawayGroup.add(topsoilMesh);
+
+    const vadoseMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 0.8, 1.8),
+      new THREE.MeshLambertMaterial({ color: 0x5a3b22 })
+    );
+    vadoseMesh.position.set(0, -0.7, 0);
+    cutawayGroup.add(vadoseMesh);
+
+    const bedrockMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.8, 1.4, 1.8),
+      new THREE.MeshLambertMaterial({ color: 0x222a30 })
+    );
+    bedrockMesh.position.set(0, -1.8, 0);
+    cutawayGroup.add(bedrockMesh);
+
+    // Cyan Aquifer / Groundwater Layer
+    const aquiferMesh = new THREE.Mesh(
+      new THREE.BoxGeometry(1.76, 0.6, 1.76),
+      new THREE.MeshStandardMaterial({
+        color: 0x38d9f5,
+        transparent: true,
+        opacity: 0.8,
+        roughness: 0.2,
+      })
+    );
+    aquiferMesh.position.set(0, -1.5, 0);
+    cutawayGroup.add(aquiferMesh);
+
+    mapGroup.add(cutawayGroup);
+
+    // ══════════════════════════════════════════════════════════════════════
+    // WORLD 2: COMPLETE VILLAGE FARM DIORAMA (Shots 05 - 10)
+    // ══════════════════════════════════════════════════════════════════════
     const farmGroup = new THREE.Group();
-    farmGroup.position.set(0, 0, -12.5);
-    farmGroup.visible = false;
+    farmGroup.position.set(0, 0, -18.0);
     scene.add(farmGroup);
 
-    // Vast lush ground
+    // Ground plane reaching horizon
     const farmGround = new THREE.Mesh(
-      new THREE.PlaneGeometry(60, 44),
-      new THREE.MeshLambertMaterial({ color: 0x366848 })
+      new THREE.PlaneGeometry(120, 100),
+      new THREE.MeshLambertMaterial({ color: 0x2b5435 })
     );
     farmGround.rotation.set(-Math.PI / 2, 0, 0);
     farmGround.position.set(0, 0, 0);
+    farmGround.receiveShadow = true;
     farmGroup.add(farmGround);
 
-    // 6 Beds arranged in 2 rows of 3
-    const bedConfigs = [
-      { x: -1.8, z: -1.2, crop: 0x48a832, water: true },  // Bed 1: Boro Rice
-      { x:  0.0, z: -1.2, crop: 0x3e8a2a, water: false }, // Bed 2: Fallow / Legume
-      { x:  1.8, z: -1.2, crop: 0x58b83a, water: true },  // Bed 3: Aman Rice
-      { x: -1.8, z:  0.8, crop: 0xd4b840, water: false }, // Bed 4: Mustard
-      { x:  0.0, z:  0.8, crop: 0x36a048, water: true },  // Bed 5: Aus / Water
-      { x:  1.8, z:  0.8, crop: 0x2e8032, water: false }, // Bed 6: Vegetables
+    // 6 Beds (2 rows x 3) with raised bunds (আইল)
+    const bedCenters = [
+      { x: -3.2, z: -2.0, name: 'Bed 1 (Rabi)' },
+      { x:  0.0, z: -2.0, name: 'Bed 2 (Kharif-1)' },
+      { x:  3.2, z: -2.0, name: 'Bed 3 (Kharif-2)' },
+      { x: -3.2, z:  1.8, name: 'Bed 4 (Year 2 Rabi)' },
+      { x:  0.0, z:  1.8, name: 'Bed 5 (Year 2 K1)' },
+      { x:  3.2, z:  1.8, name: 'Bed 6 (Year 2 K2)' },
     ];
-    const farmBeds = bedConfigs.map(c => {
-      const b = createFarmBed(c.crop, c.water);
-      b.position.set(c.x, 0, c.z);
-      farmGroup.add(b);
-      return b;
+
+    const bedMeshes = bedCenters.map(bc => {
+      const bg = new THREE.Group();
+      bg.position.set(bc.x, 0, bc.z);
+
+      // Soil bed
+      const soil = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 0.18, 2.2),
+        new THREE.MeshLambertMaterial({ color: 0x3d2b1c })
+      );
+      soil.position.set(0, 0.09, 0);
+      bg.add(soil);
+
+      // Bunds around bed
+      const bundMat = new THREE.MeshLambertMaterial({ color: 0x4a3725 });
+      const bNorth = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 0.12), bundMat);
+      bNorth.position.set(0, 0.11, -1.1);
+      const bSouth = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.22, 0.12), bundMat);
+      bSouth.position.set(0, 0.11, 1.1);
+      const bEast = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 2.3), bundMat);
+      bEast.position.set(1.35, 0.11, 0);
+      const bWest = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.22, 2.3), bundMat);
+      bWest.position.set(-1.35, 0.11, 0);
+      bg.add(bNorth, bSouth, bEast, bWest);
+
+      // Crop plants container
+      const cropGroup = new THREE.Group();
+      cropGroup.name = 'CropsContainer';
+      bg.add(cropGroup);
+
+      // Water film layer for flooded rice
+      const waterLayer = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.5, 2.1),
+        new THREE.MeshStandardMaterial({
+          color: 0x38bdf8,
+          metalness: 0.8,
+          roughness: 0.1,
+          transparent: true,
+          opacity: 0.75,
+        })
+      );
+      waterLayer.rotation.set(-Math.PI / 2, 0, 0);
+      waterLayer.position.set(0, 0.19, 0);
+      waterLayer.visible = false;
+      bg.add(waterLayer);
+
+      // Drought cracked soil layer
+      const droughtLayer = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.55, 2.15),
+        new THREE.MeshLambertMaterial({ color: 0x8a6f4d })
+      );
+      droughtLayer.rotation.set(-Math.PI / 2, 0, 0);
+      droughtLayer.position.set(0, 0.185, 0);
+      droughtLayer.visible = false;
+      bg.add(droughtLayer);
+
+      farmGroup.add(bg);
+      return { group: bg, soil, cropGroup, waterLayer, droughtLayer, center: bc };
     });
 
-    // Recommended Best Strategy Star on Bed 2 (Scene 6)
-    const starMesh = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.35),
-      new THREE.MeshStandardMaterial({ color: 0xffd700, emissive: 0xffb700, emissiveIntensity: 0.9 })
+    // Helper to populate plants on a bed
+    function setBedPlants(bedObj, colorHex = 0x48a832, count = 28) {
+      const cg = bedObj.cropGroup;
+      while (cg.children.length > 0) {
+        cg.remove(cg.children[0]);
+      }
+      if (colorHex === 0) return; // Fallow / bare
+
+      const plantGeo = new THREE.ConeGeometry(0.08, 0.38, 5);
+      const plantMat = new THREE.MeshLambertMaterial({ color: colorHex });
+      for (let i = 0; i < count; i++) {
+        const p = new THREE.Mesh(plantGeo, plantMat);
+        const rx = (Math.random() - 0.5) * 2.2;
+        const rz = (Math.random() - 0.5) * 1.8;
+        p.position.set(rx, 0.36, rz);
+        cg.add(p);
+      }
+    }
+
+    // Initial plant state: Healthy Boro rice, mustard, Aman rice
+    setBedPlants(bedMeshes[0], 0x48a832); // Rice
+    setBedPlants(bedMeshes[1], 0x3e8a2a); // Legume / Mungbean
+    setBedPlants(bedMeshes[2], 0x58b83a); // Aman Rice
+    setBedPlants(bedMeshes[3], 0xd4b840); // Mustard
+    setBedPlants(bedMeshes[4], 0x36a048); // Crop
+    setBedPlants(bedMeshes[5], 0x2e8032); // Crop
+
+    // Traditional Do-Chala Bengali Farmhouse (tin roof, veranda, wooden posts)
+    const houseGroup = new THREE.Group();
+    houseGroup.position.set(6.2, 0, -2.5);
+
+    const houseWalls = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 1.4, 1.6),
+      new THREE.MeshLambertMaterial({ color: 0xd8c8b0 })
     );
-    starMesh.position.set(0.0, 1.1, -1.2);
-    starMesh.visible = false;
-    farmGroup.add(starMesh);
+    houseWalls.position.set(0, 0.7, 0);
+    houseGroup.add(houseWalls);
 
-    // Do-chala Farmhouse
-    const farmhouse = createHut();
-    farmhouse.position.set(-3.2, 0, 0.4);
-    farmGroup.add(farmhouse);
+    // Pitched tin roof
+    const roofMat = new THREE.MeshLambertMaterial({ color: 0x7a8a94, side: THREE.DoubleSide });
+    const roofLeft = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.5), roofMat);
+    roofLeft.position.set(-0.55, 1.7, 0);
+    roofLeft.rotation.set(0, 0, 0.55);
+    const roofRight = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 2.5), roofMat);
+    roofRight.position.set(0.55, 1.7, 0);
+    roofRight.rotation.set(0, 0, -0.55);
+    houseGroup.add(roofLeft, roofRight);
 
-    // Speech bubble over farmhouse for Scene 9
-    const speechBubble = new THREE.Mesh(
-      new THREE.SphereGeometry(0.35, 16, 12),
-      new THREE.MeshBasicMaterial({ color: 0xc8f169, transparent: true, opacity: 0.9 })
-    );
-    speechBubble.position.set(-3.2, 2.1, 0.4);
-    speechBubble.visible = false;
-    farmGroup.add(speechBubble);
+    // Front veranda posts
+    const postMat = new THREE.MeshLambertMaterial({ color: 0x5a3d24 });
+    [-0.8, 0.8].forEach(px => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.3, 6), postMat);
+      post.position.set(px, 0.65, 0.9);
+      houseGroup.add(post);
+    });
+    farmGroup.add(houseGroup);
 
-    // Haystack
+    // Golden Haystack (খড়ের গাদা)
     const haystack = new THREE.Mesh(
-      new THREE.ConeGeometry(0.7, 1.2, 8),
-      new THREE.MeshLambertMaterial({ color: 0xb5924a })
+      new THREE.ConeGeometry(0.85, 1.6, 12),
+      new THREE.MeshLambertMaterial({ color: 0xd8b548 })
     );
-    haystack.position.set(-3.8, 0.6, -1.4);
+    haystack.position.set(5.2, 0.8, 1.4);
     farmGroup.add(haystack);
 
-    // Pond (ellipse: CircleGeometry rotated flat, scale 1, 0.65, 1)
-    const pondGeo = new THREE.CircleGeometry(1.2, 24);
-    const pondMat = new THREE.MeshStandardMaterial({
-      color: 0x2078a8,
-      metalness: 0.85,
-      roughness: 0.18,
-      transparent: true,
-      opacity: 0.85,
-    });
-    const pondMesh = new THREE.Mesh(pondGeo, pondMat);
-    pondMesh.rotation.set(-Math.PI / 2, 0, 0);
-    pondMesh.scale.set(1.0, 0.65, 1.0);
-    pondMesh.position.set(3.4, 0.015, 0.5);
-    farmGroup.add(pondMesh);
+    // Tube-well (টিউবওয়েল / নলকূপ)
+    const tubewellGroup = new THREE.Group();
+    tubewellGroup.position.set(-5.6, 0, 1.2);
+    const twBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.6, 0.65, 0.12, 12),
+      new THREE.MeshLambertMaterial({ color: 0x8a949a })
+    );
+    twBase.position.set(0, 0.06, 0);
+    tubewellGroup.add(twBase);
+    const twPipe = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.7, 6),
+      new THREE.MeshLambertMaterial({ color: 0x184c30 })
+    );
+    twPipe.position.set(0, 0.42, 0);
+    tubewellGroup.add(twPipe);
+    farmGroup.add(tubewellGroup);
 
-    // Tubewell pump
-    const tubeGroup = new THREE.Group();
-    const tubeBase = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.7, 6), new THREE.MeshLambertMaterial({ color: 0x446070 }));
-    tubeBase.position.set(0, 0.35, 0);
-    const tubeHead = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.28), new THREE.MeshLambertMaterial({ color: 0x1e3a48 }));
-    tubeHead.position.set(0, 0.75, 0);
-    tubeGroup.add(tubeBase, tubeHead);
-    tubeGroup.position.set(2.8, 0, -1.2);
-    farmGroup.add(tubeGroup);
+    // Rural Pond (পুকুর)
+    const pond = new THREE.Mesh(
+      new THREE.CircleGeometry(2.4, 32),
+      new THREE.MeshStandardMaterial({ color: 0x1e6878, roughness: 0.15, metalness: 0.85 })
+    );
+    pond.rotation.set(-Math.PI / 2, 0, 0);
+    pond.position.set(-6.8, 0.02, -2.8);
+    pond.scale.set(1.4, 1, 1);
+    farmGroup.add(pond);
 
-    // Banana & Palm Trees
-    [[-4.2, 2.0], [-2.8, -2.2], [3.6, -2.4], [4.2, 1.8]].forEach(([tx, tz], i) => {
-      const tree = createTree(2.2 + (i % 2) * 0.5, 0x1e5424);
-      tree.position.set(tx, 0, tz);
-      farmGroup.add(tree);
-    });
-
-    // 2 Grazing Cows
+    // 2 Cows grazing (গরু)
+    function createCow() {
+      const cg = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.5, 0.45),
+        new THREE.MeshLambertMaterial({ color: 0xf4f0e6 })
+      );
+      body.position.set(0, 0.38, 0);
+      cg.add(body);
+      const head = new THREE.Mesh(
+        new THREE.BoxGeometry(0.32, 0.3, 0.26),
+        new THREE.MeshLambertMaterial({ color: 0x3d2b1f })
+      );
+      head.position.set(0.52, 0.52, 0);
+      cg.add(head);
+      const legMat = new THREE.MeshLambertMaterial({ color: 0x322216 });
+      const legGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 6);
+      [[-0.3, -0.15], [-0.3, 0.15], [0.3, -0.15], [0.3, 0.15]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, 0.15, lz);
+        cg.add(leg);
+      });
+      return cg;
+    }
     const cow1 = createCow();
-    cow1.position.set(-1.8, 0, 2.2);
+    cow1.position.set(4.2, 0, -4.5);
     cow1.rotation.set(0, 0.4, 0);
     const cow2 = createCow();
-    cow2.position.set(-0.8, 0, 2.6);
-    cow2.rotation.set(0, -0.6, 0);
+    cow2.position.set(5.5, 0, -5.2);
+    cow2.rotation.set(0, -0.8, 0);
     farmGroup.add(cow1, cow2);
 
-    // Soil Strata Cutaway (Scene 3 Groundwater)
-    const cutawayGroup = new THREE.Group();
-    cutawayGroup.position.set(-1.4, -0.5, 0.4);
-    cutawayGroup.visible = false;
-    farmGroup.add(cutawayGroup);
-
-    const soilLayers = [
-      { y:  0.0,  h: 0.38, color: 0x3d281a }, // Topsoil
-      { y: -0.4,  h: 0.45, color: 0x6e4e32 }, // Subsoil
-      { y: -0.92, h: 0.38, color: 0x2892b8, transparent: true, opacity: 0.8 }, // Aquifer
-      { y: -1.35, h: 0.38, color: 0x221a14 }, // Bedrock
-    ];
-    let aquiferMesh = null;
-    soilLayers.forEach((s, idx) => {
-      const m = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, s.h, 1.2),
-        new THREE.MeshLambertMaterial({ color: s.color, transparent: !!s.transparent, opacity: s.opacity || 1 })
+    // Coconut palms and Banana trees along the farm perimeter
+    function createPalm(height = 3.6, rotY = 0) {
+      const pg = new THREE.Group();
+      const trunk = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.08, 0.14, height, 7),
+        new THREE.MeshLambertMaterial({ color: 0x5a422a })
       );
-      m.position.set(0, s.y, 0);
-      cutawayGroup.add(m);
-      if (idx === 2) aquiferMesh = m;
-    });
+      trunk.position.set(0, height / 2, 0);
+      trunk.rotation.set(0.08, 0, 0.08);
+      pg.add(trunk);
 
-    // Rain Particles (200 pts)
-    const RAIN_COUNT = 200;
+      const crown = new THREE.Mesh(
+        new THREE.ConeGeometry(1.4, 1.2, 8),
+        new THREE.MeshLambertMaterial({ color: 0x2e6b28 })
+      );
+      crown.position.set(0.2, height + 0.3, 0.2);
+      pg.add(crown);
+      pg.rotation.set(0, rotY, 0);
+      return pg;
+    }
+
+    farmGroup.add(createPalm(4.2, 0.5));
+    farmGroup.children[farmGroup.children.length - 1].position.set(-6.5, 0, -6.0);
+    farmGroup.add(createPalm(3.8, 1.8));
+    farmGroup.children[farmGroup.children.length - 1].position.set(-5.5, 0, -7.5);
+    farmGroup.add(createPalm(4.5, -0.6));
+    farmGroup.children[farmGroup.children.length - 1].position.set(7.5, 0, -5.5);
+    farmGroup.add(createPalm(3.9, 2.2));
+    farmGroup.children[farmGroup.children.length - 1].position.set(8.2, 0, -3.5);
+
+    // Recommended ⭐ Star Aura over Bed 1 (Shot 07)
+    const starGlowGroup = new THREE.Group();
+    starGlowGroup.position.set(bedCenters[0].x, 0.8, bedCenters[0].z);
+    const starMesh = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.42),
+      new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        emissive: 0xffb700,
+        emissiveIntensity: 1.2,
+      })
+    );
+    starGlowGroup.add(starMesh);
+    starGlowGroup.visible = false;
+    farmGroup.add(starGlowGroup);
+
+    // Rain Particle System for Shot 05
+    const RAIN_COUNT = 600;
     const rainGeo = new THREE.BufferGeometry();
     const rainPos = new Float32Array(RAIN_COUNT * 3);
     for (let i = 0; i < RAIN_COUNT; i++) {
-      rainPos[i * 3]     = (Math.random() - 0.5) * 12;
-      rainPos[i * 3 + 1] = Math.random() * 5.0;
-      rainPos[i * 3 + 2] = (Math.random() - 0.5) * 10;
+      rainPos[i * 3]     = (Math.random() - 0.5) * 20;
+      rainPos[i * 3 + 1] = Math.random() * 12;
+      rainPos[i * 3 + 2] = (Math.random() - 0.5) * 16;
     }
     rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
-    const rainMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.12, transparent: true, opacity: 0 });
-    const rainPoints = new THREE.Points(rainGeo, rainMat);
+    const rainPoints = new THREE.Points(
+      rainGeo,
+      new THREE.PointsMaterial({ color: 0x93c5fd, size: 0.15, transparent: true, opacity: 0.65 })
+    );
+    rainPoints.visible = false;
     farmGroup.add(rainPoints);
 
-    // +N Legume Particles (80 pts)
-    const N_COUNT = 80;
+    // Biological Nitrogen (+N) Particle System for Shot 06
+    const N_COUNT = 150;
     const nGeo = new THREE.BufferGeometry();
     const nPos = new Float32Array(N_COUNT * 3);
     for (let i = 0; i < N_COUNT; i++) {
-      nPos[i * 3]     = (Math.random() - 0.5) * 3.5;
-      nPos[i * 3 + 1] = Math.random() * 1.5;
-      nPos[i * 3 + 2] = (Math.random() - 0.5) * 3.5;
+      nPos[i * 3]     = (Math.random() - 0.5) * 10;
+      nPos[i * 3 + 1] = 0.2 + Math.random() * 2.5;
+      nPos[i * 3 + 2] = (Math.random() - 0.5) * 8;
     }
     nGeo.setAttribute('position', new THREE.BufferAttribute(nPos, 3));
-    const nMat = new THREE.PointsMaterial({ color: 0xc8f169, size: 0.14, transparent: true, opacity: 0 });
-    const nPoints = new THREE.Points(nGeo, nMat);
+    const nPoints = new THREE.Points(
+      nGeo,
+      new THREE.PointsMaterial({ color: 0xc8f169, size: 0.22, transparent: true, opacity: 0.8 })
+    );
+    nPoints.visible = false;
     farmGroup.add(nPoints);
 
-    // Horizon glow backdrop
-    const horizonGeo = new THREE.PlaneGeometry(60, 20);
-    const horizonMat = new THREE.MeshBasicMaterial({ color: 0x2e563e });
-    const horizonMesh = new THREE.Mesh(horizonGeo, horizonMat);
-    horizonMesh.position.set(0, 3.0, -10.5);
-    farmGroup.add(horizonMesh);
+    // Adaptive Learning Replan Pulse Ring for Shot 09
+    const pulseRing = new THREE.Mesh(
+      new THREE.RingGeometry(0.8, 1.2, 32),
+      new THREE.MeshBasicMaterial({ color: 0x38d9f5, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
+    );
+    pulseRing.rotation.set(-Math.PI / 2, 0, 0);
+    pulseRing.position.set(bedCenters[1].x, 0.25, bedCenters[1].z);
+    pulseRing.visible = false;
+    farmGroup.add(pulseRing);
 
-    // ── CatmullRomCurve3 Camera Path ───────────────────────────────────────
-    const camCurve = new THREE.CatmullRomCurve3(CAM_POS);
-    const lookCurve = new THREE.CatmullRomCurve3(CAM_LOOK);
+    // ── HTML Overlay Labels Manager ──────────────────────────────────────
+    const labelContainer = document.createElement('div');
+    labelContainer.className = 'story-3d-labels-layer';
+    labelContainer.style.cssText = 'position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;';
+    mount.appendChild(labelContainer);
+    overlayLabelsRef.current = labelContainer;
 
-    const tmpPos = new THREE.Vector3();
-    const tmpLook = new THREE.Vector3();
-    let satAngle = 0;
+    function createHtmlPill(text) {
+      const el = document.createElement('div');
+      el.style.cssText = `
+        position: absolute;
+        transform: translate(-50%, -50%);
+        background: rgba(10, 22, 16, 0.88);
+        border: 1px solid rgba(200, 241, 105, 0.35);
+        color: #EAF2EC;
+        padding: 4px 10px;
+        border-radius: 99px;
+        font-family: "Space Grotesk", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      `;
+      el.innerText = text;
+      labelContainer.appendChild(el);
+      return el;
+    }
 
-    // Visibility change handler (pauses rendering when tab hidden)
-    let isTabVisible = !document.hidden;
-    const onVisibilityChange = () => {
-      isTabVisible = !document.hidden;
+    const labels = {
+      barind: createHtmlPill('Barind · বরেন্দ্র'),
+      haor: createHtmlPill('Haor · হাওর'),
+      coast: createHtmlPill('Coast · উপকূল'),
+      field: createHtmlPill(`Active Field: ${activeField?.name || 'Your Field'}`),
+      waterTrend: createHtmlPill('Barind region trend: −1.07 cm/yr'),
+      starBed: createHtmlPill('Balanced Plan ⭐ Best Across 6 Seasons'),
+      harvestDone: createHtmlPill('✓ Harvest Logged · Model Updated'),
     };
-    document.addEventListener('visibilitychange', onVisibilityChange);
 
-    // ── Main Render Loop ───────────────────────────────────────────────────
-    const animate = () => {
-      animRef.current = requestAnimationFrame(animate);
-      if (!isTabVisible) return;
+    function projectToScreen(pos3D) {
+      const p = pos3D.clone().project(camera);
+      return {
+        x: (p.x * 0.5 + 0.5) * window.innerWidth,
+        y: (-p.y * 0.5 + 0.5) * window.innerHeight,
+        visible: p.z < 1,
+      };
+    }
 
-      const p = Math.max(0, Math.min(1, scrollProgRef.current));
-      const now = performance.now();
+    // ── Animation & Scroll Render Loop ───────────────────────────────────
+    let isMounted = true;
+    let animId = null;
 
-      // Camera spline interpolation
-      camCurve.getPoint(p, tmpPos);
-      lookCurve.getPoint(p, tmpLook);
+    function renderFrame() {
+      if (!isMounted) return;
+      const t = scrollProgRef.current;
+      const shot = getInterpolatedShot(t);
 
-      camera.position.lerp(tmpPos, 0.1);
-      camera.lookAt(tmpLook);
+      // 1. Update Camera
+      camera.position.copy(shot.pos);
+      camera.lookAt(shot.lookAt);
+      camera.fov = shot.fov;
+      camera.updateProjectionMatrix();
 
-      // Section visibility gating
-      spaceGroup.visible = p < 0.28;
-      mapGroup.visible   = p >= 0.18 && p < 0.42;
-      farmGroup.visible  = p >= 0.32;
+      // Check clearance guard (SH2 rule: >= 3.0 units)
+      checkCameraClearance(shot.pos, registeredMeshes);
 
-      // Space Zone animations
-      if (spaceGroup.visible) {
-        earthMesh.rotation.y += 0.0008;
-        cloudMesh.rotation.y += 0.0011;
+      // 2. Update Lighting & Fog
+      sunLight.position.set(...shot.sun.dir);
+      sunLight.color.copy(shot.sun.color);
+      sunLight.intensity = shot.sun.intensity;
+      fog.color.copy(shot.fog.color);
+      fog.density = shot.fog.density;
+      scene.background.copy(shot.fog.color);
 
-        satAngle += 0.012;
-        satGroup.position.set(
-          earthMesh.position.x + Math.cos(satAngle) * 9.5,
-          earthMesh.position.y + Math.sin(satAngle * 0.4) * 2.5,
-          earthMesh.position.z + Math.sin(satAngle) * 4.5
-        );
-        satGroup.lookAt(earthMesh.position);
-      }
+      // 3. World Transitions based on scroll t
+      // t in [0.0, 0.24]: Space & Earth
+      // t in [0.20, 0.44]: Bangladesh Map
+      // t in [0.40, 1.00]: Farm Diorama
+      if (t < 0.22) {
+        spaceGroup.visible = true;
+        mapGroup.visible = false;
+        farmGroup.visible = false;
 
-      // Map Zone animations
-      if (mapGroup.visible) {
-        activePinGroup.position.y = Math.sin(now * 0.003) * 0.08;
-      }
+        // Rotate Earth slightly with scroll
+        earthMesh.rotation.y = bangladeshRotY + (t * 1.5);
+        cloudsMesh.rotation.y = bangladeshRotY + (t * 1.8);
 
-      // Farm Zone animations
-      if (farmGroup.visible) {
-        // Cutaway in Scene 3 (p ~ 0.30 to 0.45)
-        cutawayGroup.visible = p >= 0.30 && p < 0.44;
-        if (cutawayGroup.visible && aquiferMesh) {
-          const trend = graceTrends?.trends_cm_per_year?.northwest_barind ?? -1.07;
-          aquiferMesh.position.y = -0.92 + Math.sin(now * 0.002) * 0.05 + (trend < 0 ? -0.06 : 0.06);
+        // Shot 02 cloud dive rush
+        cloudDiveGroup.visible = t > 0.08;
+        if (cloudDiveGroup.visible) {
+          cloudDiveGroup.children.forEach(c => {
+            c.position.z -= 0.12;
+            if (c.position.z < 6.0) c.position.z = 16.0;
+          });
         }
+      } else if (t < 0.42) {
+        spaceGroup.visible = false;
+        mapGroup.visible = true;
+        farmGroup.visible = false;
 
-        // Rain in Scene 4 & 7 (p ~ 0.44 to 0.54 and 0.75 to 0.85)
-        const isRaining = (p >= 0.44 && p < 0.54) || (p >= 0.75 && p < 0.85);
-        rainMat.opacity = isRaining ? 0.75 : 0;
-        if (isRaining) {
-          const arr = rainGeo.attributes.position.array;
-          for (let i = 1; i < arr.length; i += 3) {
-            arr[i] -= 0.14;
-            if (arr[i] < 0) arr[i] = 4.8;
-          }
-          rainGeo.attributes.position.needsUpdate = true;
+        // Shot 04 Aquifer Cutaway Block
+        const isCutaway = t > 0.31;
+        cutawayGroup.visible = isCutaway;
+        if (isCutaway) {
+          // Animate water layer downward
+          const trendSign = -1;
+          aquiferMesh.position.y = -1.5 + Math.sin(Date.now() * 0.003) * 0.08 * trendSign;
         }
-
-        // +N Legumes in Scene 5 (p ~ 0.54 to 0.65)
-        const isLegume = p >= 0.54 && p < 0.65;
-        nMat.opacity = isLegume ? 0.8 : 0;
-        if (isLegume) {
-          const arr = nGeo.attributes.position.array;
-          for (let i = 1; i < arr.length; i += 3) {
-            arr[i] += 0.02;
-            if (arr[i] > 1.8) arr[i] = 0.2;
-          }
-          nGeo.attributes.position.needsUpdate = true;
-        }
-
-        // Best Strategy Star in Scene 6 (p ~ 0.65 to 0.76)
-        starMesh.visible = p >= 0.64 && p < 0.76;
-        if (starMesh.visible) {
-          starMesh.rotation.y += 0.03;
-          starMesh.position.y = 1.1 + Math.sin(now * 0.004) * 0.08;
-        }
-
-        // Speech bubble in Scene 9 (p >= 0.92)
-        speechBubble.visible = p >= 0.92;
-        if (speechBubble.visible) {
-          speechBubble.position.y = 2.1 + Math.sin(now * 0.003) * 0.06;
-        }
-
-        // Crop plants gentle sway
-        const sway = Math.sin(now * 0.0025) * 0.06;
-        farmBeds.forEach((bed, bi) => {
-          bed.rotation.z = sway * ((bi % 2 === 0) ? 1 : -1);
-        });
-
-        // Dawn lighting in Scene 9 vs dusk lighting in 3-8
-        if (p >= 0.90) {
-          sunLight.color.set(0xffe2b0);
-          sunLight.intensity = 2.4;
-          horizonMat.color.set(0x383020);
-        } else {
-          sunLight.color.set(0xfff8ea);
-          sunLight.intensity = 2.0;
-          horizonMat.color.set(0x163424);
-        }
-      }
-
-      // Background color & fog per zone (lum > 0.16 across all zones)
-      if (spaceGroup.visible) {
-        scene.background.set(0x284260);
-        scene.fog.color.set(0x284260);
-        scene.fog.density = 0.003;
-      } else if (mapGroup.visible) {
-        scene.background.set(0x284e3a);
-        scene.fog.color.set(0x284e3a);
-        scene.fog.density = 0.005;
       } else {
-        scene.background.set(0x305540);
-        scene.fog.color.set(0x305540);
-        scene.fog.density = 0.007;
+        spaceGroup.visible = false;
+        mapGroup.visible = false;
+        farmGroup.visible = true;
+
+        // Shot 05: Rain & Heat
+        const isRain = t >= 0.40 && t < 0.52;
+        rainPoints.visible = isRain;
+        if (isRain) {
+          const posAttr = rainGeo.attributes.position;
+          for (let i = 0; i < RAIN_COUNT; i++) {
+            let y = posAttr.getY(i) - 0.28;
+            if (y < 0) y = 10;
+            posAttr.setY(i, y);
+          }
+          posAttr.needsUpdate = true;
+        }
+
+        // Shot 06: Nitrogen particles & Legumes
+        const isLegumes = t >= 0.50 && t < 0.62;
+        nPoints.visible = isLegumes;
+        if (isLegumes) {
+          const nAttr = nGeo.attributes.position;
+          for (let i = 0; i < N_COUNT; i++) {
+            let y = nAttr.getY(i) + 0.02;
+            if (y > 3.0) y = 0.2;
+            nAttr.setY(i, y);
+          }
+          nAttr.needsUpdate = true;
+        }
+
+        // Shot 07: 6 Beds Strategy Switch & Star Glow
+        const isPlanner = t >= 0.60 && t < 0.72;
+        starGlowGroup.visible = isPlanner;
+        if (isPlanner) {
+          starMesh.rotation.y += 0.03;
+          // Strategy switch every 25% of this section
+          const subT = (t - 0.60) / 0.12;
+          if (subT < 0.25) {
+            // Balanced ⭐
+            setBedPlants(bedMeshes[0], 0x48a832);
+            setBedPlants(bedMeshes[1], 0x3e8a2a);
+          } else if (subT < 0.50) {
+            // Profit
+            setBedPlants(bedMeshes[0], 0xe24a32); // Tomato
+            setBedPlants(bedMeshes[1], 0xd4b840); // Sunflower
+          } else if (subT < 0.75) {
+            // Water Saving
+            setBedPlants(bedMeshes[0], 0xd4b840); // Mustard
+            setBedPlants(bedMeshes[1], 0x3e8a2a); // Chickpea
+          } else {
+            // Soil Health
+            setBedPlants(bedMeshes[0], 0x3e8a2a); // Legumes
+            setBedPlants(bedMeshes[1], 0x2e8032);
+          }
+        }
+
+        // Shot 08: Climate Stress Test (Flood water on 2 beds, drought cracks on 2 beds)
+        const isStress = t >= 0.70 && t < 0.82;
+        bedMeshes[0].waterLayer.visible = isStress;
+        bedMeshes[2].waterLayer.visible = isStress;
+        bedMeshes[3].droughtLayer.visible = isStress;
+        bedMeshes[4].droughtLayer.visible = isStress;
+
+        // Shot 09: Adaptive Replan Learning Pulse
+        const isLearning = t >= 0.80 && t < 0.92;
+        pulseRing.visible = isLearning;
+        if (isLearning) {
+          const s = 1.0 + Math.sin(Date.now() * 0.005) * 0.25;
+          pulseRing.scale.set(s, s, 1);
+        }
+      }
+
+      // 4. Update 3D Projecting HTML Labels (max 3 on screen, hide non-active)
+      Object.values(labels).forEach(l => { l.style.opacity = '0'; });
+
+      if (mapGroup.visible && t < 0.32) {
+        // Show regional map labels
+        const pBarind = projectToScreen(new THREE.Vector3(-1.8, 0.4, -4.8));
+        if (pBarind.visible) {
+          labels.barind.style.left = `${pBarind.x}px`;
+          labels.barind.style.top = `${pBarind.y}px`;
+          labels.barind.style.opacity = '1';
+        }
+        const pHaor = projectToScreen(new THREE.Vector3(1.6, 0.4, -4.5));
+        if (pHaor.visible) {
+          labels.haor.style.left = `${pHaor.x}px`;
+          labels.haor.style.top = `${pHaor.y}px`;
+          labels.haor.style.opacity = '1';
+        }
+        const pCoast = projectToScreen(new THREE.Vector3(-0.4, 0.4, -2.2));
+        if (pCoast.visible) {
+          labels.coast.style.left = `${pCoast.x}px`;
+          labels.coast.style.top = `${pCoast.y}px`;
+          labels.coast.style.opacity = '1';
+        }
+      } else if (mapGroup.visible && t >= 0.32) {
+        // Shot 04: Aquifer trend tag
+        const pWater = projectToScreen(new THREE.Vector3(activePos.x, -1.2, activePos.z));
+        if (pWater.visible) {
+          labels.waterTrend.style.left = `${pWater.x}px`;
+          labels.waterTrend.style.top = `${pWater.y}px`;
+          labels.waterTrend.style.opacity = '1';
+        }
+      } else if (farmGroup.visible && t >= 0.60 && t < 0.72) {
+        // Shot 07: Star Bed tag
+        const pStar = projectToScreen(new THREE.Vector3(bedCenters[0].x, 1.4, bedCenters[0].z - 18.0));
+        if (pStar.visible) {
+          labels.starBed.style.left = `${pStar.x}px`;
+          labels.starBed.style.top = `${pStar.y}px`;
+          labels.starBed.style.opacity = '1';
+        }
+      } else if (farmGroup.visible && t >= 0.80 && t < 0.92) {
+        // Shot 09: Harvest Logged tag
+        const pLearn = projectToScreen(new THREE.Vector3(bedCenters[1].x, 1.2, bedCenters[1].z - 18.0));
+        if (pLearn.visible) {
+          labels.harvestDone.style.left = `${pLearn.x}px`;
+          labels.harvestDone.style.top = `${pLearn.y}px`;
+          labels.harvestDone.style.opacity = '1';
+        }
       }
 
       renderer.render(scene, camera);
-    };
+      animId = requestAnimationFrame(renderFrame);
+    }
 
-    animate();
+    animId = requestAnimationFrame(renderFrame);
 
     // Resize handler
-    const onResize = () => {
+    const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', handleResize);
 
-    // ── Clean disposal on unmount ──────────────────────────────────────────
     return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('resize', onResize);
-      if (animRef.current) cancelAnimationFrame(animRef.current);
-
-      renderer.dispose();
-      scene.traverse(obj => {
-        if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
-          else obj.material.dispose();
-        }
-      });
-
-      if (mount && renderer.domElement && mount.contains(renderer.domElement)) {
+      isMounted = false;
+      if (animId) cancelAnimationFrame(animId);
+      window.removeEventListener('resize', handleResize);
+      if (mount && renderer.domElement) {
         mount.removeChild(renderer.domElement);
       }
+      if (labelContainer && labelContainer.parentNode) {
+        labelContainer.parentNode.removeChild(labelContainer);
+      }
+      renderer.dispose();
     };
   }, [activeField, graceTrends, onsetComparison]);
 
   return (
     <div
       ref={mountRef}
+      className="orbit-to-field-canvas-mount"
       style={{
         position: 'fixed',
         inset: 0,
