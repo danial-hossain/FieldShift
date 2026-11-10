@@ -1109,9 +1109,11 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     excluded_crops=([c for c in data.get("excluded_crops", []) if c] + (["Potato"] if data.get("no_power_tiller") and "Potato" not in data.get("excluded_crops", []) else [])) or None,
                 )
 
+        f_area = float(getattr(f_state, "field_size_ha", None) or getattr(f_state, "area_ha", None) or data.get("area_ha") or data.get("field_size_ha") or 1.0)
         strategy_ranking = score_and_rank_strategies(
             all_strat_plans,
             irrigation_capacity_mm=data.get("irrigation_capacity_mm"),
+            field_area_ha=f_area,
         )
         milp_res["best_strategy"] = strategy_ranking["best_strategy"]
         milp_res["best_reason"] = strategy_ranking["best_reason_bn"]

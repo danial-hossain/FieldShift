@@ -180,3 +180,32 @@ def test_rahim_field_star_changes_with_irrigation_ample_vs_none():
 
     # Star changes from profit to balanced
     assert res_ample["best_strategy"] != res_none["best_strategy"]
+
+
+def test_rd5_profit_banner_reconciles_field_basis_and_cards():
+    """RD5: Profit banner explicitly labels and uses field-level profit BDT/yr matching cards."""
+    plans = {
+        "balanced": {
+            "plan_profit_bdt": 127785.0,  # ~127k / ha
+            "plan_irrigation_mm": 718.0,
+            "plan_nitrogen_kg": 35.0,
+            "plan_bare_days": 60,
+            "selected_crop_by_period": {"Y1_S1": "Mustard", "Y1_S2": "Mungbean", "Y1_S3": "Rice", "Y2_S1": "Chickpea", "Y2_S2": "Sesame", "Y2_S3": "Rice"},
+        },
+        "profit": {
+            "plan_profit_bdt": 188877.0,  # ~188k / ha
+            "plan_irrigation_mm": 950.0,
+            "plan_nitrogen_kg": 35.0,
+            "plan_bare_days": 60,
+            "selected_crop_by_period": {"Y1_S1": "Tomato", "Y1_S2": "Soybean", "Y1_S3": "Rice", "Y2_S1": "Sunflower", "Y2_S2": "Mungbean", "Y2_S3": "Rice"},
+        },
+    }
+    # For a 5-bigha field (0.67 ha)
+    res = score_and_rank_strategies(plans, irrigation_capacity_mm=1200.0, field_area_ha=0.67)
+    assert res["best_strategy"] == "profit"
+    # 188,877 * 0.67 = 126,548
+    assert "126,548" in res["best_reason_en"]
+    assert "5-bigha field" in res["best_reason_en"]
+    assert "১২৬,৫৪৮" in res["best_reason_bn"]
+    assert "৫ বিঘা" in res["best_reason_bn"]
+

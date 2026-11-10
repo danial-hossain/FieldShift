@@ -64,6 +64,7 @@ def resolve_irrigation_class(irrigation_capacity_mm: float | None) -> str:
 def score_and_rank_strategies(
     plans_by_strategy: Dict[str, Dict[str, Any]],
     irrigation_capacity_mm: float | None = 1200.0,
+    field_area_ha: float | None = None,
 ) -> Dict[str, Any]:
     """
     Scores all 4 plans on ONE common scale:
@@ -74,6 +75,36 @@ def score_and_rank_strategies(
     """
     irrig_class = resolve_irrigation_class(irrigation_capacity_mm)
     weights = IRRIGATION_PRIORITY_WEIGHTS[irrig_class]
+
+    # Auto-detect field_area_ha if not provided
+    if field_area_ha is None:
+        for pl in plans_by_strategy.values():
+            fa = pl.get("field_area_ha") or pl.get("field_size_ha") or pl.get("area_ha")
+            if not fa and isinstance(pl.get("field_state"), dict):
+                fa = pl["field_state"].get("field_size_ha") or pl["field_state"].get("area_ha")
+            if not fa and hasattr(pl.get("field_state"), "field_size_ha"):
+                fa = getattr(pl["field_state"], "field_size_ha", None) or getattr(pl["field_state"], "area_ha", None)
+            if not fa and isinstance(pl.get("summary"), dict):
+                fs = pl["summary"].get("field_state") or {}
+                fa = fs.get("field_size_ha") or fs.get("area_ha")
+            if fa and float(fa) > 0:
+                field_area_ha = float(fa)
+                break
+
+    area_mult = float(field_area_ha) if field_area_ha and float(field_area_ha) > 0 else 1.0
+    if field_area_ha and float(field_area_ha) > 0:
+        bigha_num = float(field_area_ha) / 0.13378
+        if abs(bigha_num - round(bigha_num)) < 0.15:
+            b_count = int(round(bigha_num))
+            basis_label_en = f"BDT/yr for this {b_count}-bigha field"
+            basis_label_bn = f"টাকা/বছর, এই {to_bn_digits(b_count)} বিঘা জমির জন্য"
+        else:
+            ha_disp = round(float(field_area_ha), 2)
+            basis_label_en = f"BDT/yr for this {ha_disp} ha field"
+            basis_label_bn = f"টাকা/বছর, এই {to_bn_digits(ha_disp)} হেক্টর জমির জন্য"
+    else:
+        basis_label_en = "BDT/ha/yr"
+        basis_label_bn = "টাকা/হেক্টর/বছর"
 
     # Extract metrics for available strategies
     available_keys = [k for k in STRATEGY_KEYS if k in plans_by_strategy]
@@ -197,46 +228,49 @@ def score_and_rank_strategies(
     p_bal = profits.get("balanced", p_best)
     w_bal = int(round(waters.get("balanced", w_best)))
 
+    p_best_disp = int(round(p_best * area_mult))
+    p_bal_disp = int(round(p_bal * area_mult))
+
     if best_key == "water":
         diff_pct = int(round(abs(p_best - p_bal) / p_bal * 100)) if p_bal > 0 else 0
         diff_bn = "কম" if p_best < p_bal else "বেশি"
         diff_en = "lower" if p_best < p_bal else "higher"
         best_reason_bn = (
             f"⭐ পানি সাশ্রয়: আপনার সেচ সুবিধা {irrig_bn}, এই কৌশলে বছরে সেচ সবচেয়ে কম "
-            f"({to_bn_digits(w_best)} মিমি), লাভ সুষমের চেয়ে {to_bn_digits(diff_pct)}% {diff_bn}"
+            f"({to_bn_digits(w_best)} মিমি), লাভ ৳{to_bn_digits(f'{p_best_disp:,}')} ({basis_label_bn}), সুষমের চেয়ে {to_bn_digits(diff_pct)}% {diff_bn}"
         )
         best_reason_en = (
             f"⭐ Water Saving: Your irrigation capacity is {irrig_en}, this strategy uses the lowest yearly "
-            f"irrigation ({w_best} mm), profit is {diff_pct}% {diff_en} than Balanced"
+            f"irrigation ({w_best} mm), profit is BDT {p_best_disp:,} ({basis_label_en}), {diff_pct}% {diff_en} than Balanced"
         )
     elif best_key == "profit":
         diff_pct = int(round((p_best - p_bal) / p_bal * 100)) if p_bal > 0 else 0
         best_reason_bn = (
             f"⭐ লাভ: আপনার সেচ সুবিধা {irrig_bn}, এই কৌশলে সম্ভাব্য লাভ সবচেয়ে বেশি "
-            f"(৳{to_bn_digits(f'{int(round(p_best)):,}')}), সুষমের চেয়ে {to_bn_digits(diff_pct)}% বেশি লাভ"
+            f"(৳{to_bn_digits(f'{p_best_disp:,}')}, {basis_label_bn}), সুষমের চেয়ে {to_bn_digits(diff_pct)}% বেশি লাভ"
         )
         best_reason_en = (
             f"⭐ Profit: Your irrigation capacity is {irrig_en}, this strategy achieves the highest profit "
-            f"(BDT {int(round(p_best)):,}), {diff_pct}% higher than Balanced"
+            f"(BDT {p_best_disp:,}, {basis_label_en}), {diff_pct}% higher than Balanced"
         )
     elif best_key == "balanced":
         if water_equals_balanced:
             best_reason_bn = (
                 f"⭐ সুষম: আপনার সেচ সুবিধা {irrig_bn}; এই জমিতে সুষম আর পানি সাশ্রয় একই পরিকল্পনা দেয় "
-                f"(বছরে সেচ {to_bn_digits(w_best)} মিমি, সম্ভাব্য লাভ ৳{to_bn_digits(f'{int(round(p_best)):,}')})"
+                f"(বছরে সেচ {to_bn_digits(w_best)} মিমি, সম্ভাব্য লাভ ৳{to_bn_digits(f'{p_best_disp:,}')}, {basis_label_bn})"
             )
             best_reason_en = (
                 f"⭐ Balanced: Your irrigation capacity is {irrig_en}; Balanced and Water-Saving strategies yield "
-                f"the identical plan for this field ({w_best} mm/yr, BDT {int(round(p_best)):,})"
+                f"the identical plan for this field ({w_best} mm/yr, BDT {p_best_disp:,}, {basis_label_en})"
             )
         else:
             best_reason_bn = (
-                f"⭐ সুষম: আপনার সেচ সুবিধা {irrig_bn}, লাভ (৳{to_bn_digits(f'{int(round(p_best)):,}')}) ও "
+                f"⭐ সুষম: আপনার সেচ সুবিধা {irrig_bn}, লাভ (৳{to_bn_digits(f'{p_best_disp:,}')}, {basis_label_bn}) ও "
                 f"পানি সাশ্রয়ের ({to_bn_digits(w_best)} মিমি) মধ্যে শ্রেষ্ঠ ভারসাম্য"
             )
             best_reason_en = (
                 f"⭐ Balanced: Your irrigation capacity is {irrig_en}, optimal multi-criteria trade-off between "
-                f"profit (BDT {int(round(p_best)):,}) and water conservation ({w_best} mm)"
+                f"profit (BDT {p_best_disp:,}, {basis_label_en}) and water conservation ({w_best} mm)"
             )
     else:  # soil
         best_reason_bn = (
@@ -253,6 +287,9 @@ def score_and_rank_strategies(
         "best_reason_bn": best_reason_bn,
         "best_reason_en": best_reason_en,
         "best_reason": best_reason_bn,
+        "profit_basis": basis_label_en,
+        "profit_basis_bn": basis_label_bn,
+        "field_area_ha": field_area_ha,
         "irrigation_class": irrig_class,
         "weights_used": weights,
         "scores": scores,
