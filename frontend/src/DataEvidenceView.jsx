@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SystemMap3D } from './SystemMap3D.jsx';
+import { NasaDataCardsSection } from './NasaDataCardsSection.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
 import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
@@ -189,6 +190,11 @@ export function DataEvidenceView({
         {/* 3D System Map: Space -> Data -> Science -> Decision -> Farmer UI */}
         <div style={{ marginTop: 20 }}>
           <SystemMap3D lang={lang} onNavigate={onNavigate} activeField={activeField} height="70vh" />
+        </div>
+
+        {/* Section EV3: NASA তথ্য (Datasets Used, Planned Datasets, Harmonisation) */}
+        <div style={{ marginTop: 28 }}>
+          <NasaDataCardsSection lang={lang} activeField={activeField} onNavigate={onNavigate} />
         </div>
 
         {/* Sub-Navigation Pills */}
