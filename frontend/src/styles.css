@@ -16554,3 +16554,376 @@ span[style*="197, 232, 108"] {
     justify-content: center;
   }
 }
+
+/* ==============================================================================
+   Water & Irrigation Planner (পানি ও সেচ)
+   Layout reference: docs/water_layout_reference.html
+   ============================================================================== */
+.water-planner-view {
+  --bg-wp: #f1f4ee;
+  --surface-wp: #ffffff;
+  --surface-2-wp: #f4f7f1;
+  --line-wp: #dde5da;
+  --fg-wp: #18231b;
+  --muted-wp: #5b6a5e;
+  --faint-wp: #8a988d;
+  --accent-wp: #2f8a4d;
+  --accent-ink-wp: #ffffff;
+  --green-wp: #24834f;
+  --amber-wp: #b5761a;
+  --red-wp: #b9472f;
+  --blue-wp: #2d78b5;
+  --grid-wp: #e3e9e0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-block: 8px 32px;
+  color: var(--fg-wp);
+  font-family: var(--font-bangla, 'Hind Siliguri', 'Outfit', system-ui, sans-serif);
+}
+
+[data-theme="dark"] .water-planner-view,
+.theme-dark .water-planner-view {
+  --bg-wp: #0c120e;
+  --surface-wp: #131b16;
+  --surface-2-wp: #18221c;
+  --line-wp: #243029;
+  --fg-wp: #e7efe8;
+  --muted-wp: #93a597;
+  --faint-wp: #5f7064;
+  --accent-wp: #c8e46a;
+  --accent-ink-wp: #0f1a07;
+  --green-wp: #3ecf8e;
+  --amber-wp: #f2b24c;
+  --red-wp: #f07a6a;
+  --blue-wp: #4fb3f0;
+  --grid-wp: #223028;
+}
+
+.water-planner-view .wp-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.water-planner-view h1.wp-title {
+  font-size: 23px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--fg-wp);
+}
+.water-planner-view h2.wp-h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: var(--fg-wp);
+}
+.water-planner-view .wp-sub,
+.water-planner-view .wp-muted {
+  color: var(--muted-wp);
+  font-size: 13px;
+}
+.water-planner-view .wp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+.water-planner-view .wp-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  background: var(--surface-wp);
+  border: 1px solid var(--line-wp);
+  border-radius: 12px;
+  padding: 3px;
+}
+.water-planner-view .wp-seg button {
+  font: 600 13px inherit;
+  border: 0;
+  background: transparent;
+  color: var(--fg-wp);
+  padding: 7px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+.water-planner-view .wp-seg button[aria-pressed="true"] {
+  background: var(--accent-wp);
+  color: var(--accent-ink-wp);
+}
+.water-planner-view .wp-card {
+  background: var(--surface-wp);
+  border: 1px solid var(--line-wp);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 0;
+}
+.water-planner-view .wp-scards {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 6), minmax(0, 1fr));
+  gap: 10px;
+}
+.water-planner-view .wp-sc {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--surface-wp);
+  border: 1px solid var(--line-wp);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+.water-planner-view .wp-sc::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--c, var(--accent-wp));
+}
+.water-planner-view .wp-sc[aria-pressed="true"] {
+  border-color: var(--accent-wp);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-wp) 25%, transparent);
+}
+.water-planner-view .wp-sc small {
+  color: var(--muted-wp);
+  font-size: 11.5px;
+}
+.water-planner-view .wp-sc b.crop {
+  font-size: 15px;
+  font-weight: 700;
+}
+.water-planner-view .wp-sc .wp-big {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--blue-wp);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.water-planner-view .wp-sc .wp-big.wp-none {
+  color: var(--green-wp);
+  font-size: 15px;
+}
+.water-planner-view .wp-sc .wp-l {
+  font-size: 12.5px;
+}
+.water-planner-view .wp-sc .wp-dry {
+  font-size: 11.5px;
+  color: var(--amber-wp);
+}
+.water-planner-view .wp-yb {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.water-planner-view .wp-yb div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 120px;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+.water-planner-view .wp-yb i {
+  display: block;
+  height: 16px;
+  border-radius: 0 5px 5px 0;
+  background: var(--blue-wp);
+  transition: width 0.3s ease;
+}
+.water-planner-view .wp-yb span:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.water-planner-view .wp-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.water-planner-view .wp-viz {
+  position: relative;
+  background: linear-gradient(180deg, #0e1b24, #132a1d);
+  border-radius: 14px;
+  overflow: hidden;
+  aspect-ratio: 16/10;
+}
+.water-planner-view .wp-viz svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.water-planner-view .wp-state {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.water-planner-view .wp-pill {
+  font-size: 12.5px;
+  font-weight: 600;
+  background: rgba(8, 14, 10, 0.72);
+  color: #eaf2ec;
+  border-radius: 99px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.water-planner-view .wp-pill.w {
+  background: rgba(30, 110, 170, 0.85);
+}
+.water-planner-view .wp-pill.s {
+  background: rgba(160, 110, 30, 0.85);
+}
+.water-planner-view .wp-ctrl {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 10px;
+}
+.water-planner-view .wp-ctrl input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent-wp);
+}
+.water-planner-view .wp-ctrl button {
+  font: 600 13px inherit;
+  border: 1px solid var(--line-wp);
+  background: var(--surface-2-wp);
+  color: var(--fg-wp);
+  border-radius: 9px;
+  padding: 6px 12px;
+  cursor: pointer;
+  min-height: 44px;
+}
+.water-planner-view .wp-day h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.water-planner-view .wp-kv {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.water-planner-view .wp-kv div {
+  background: var(--surface-2-wp);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.water-planner-view .wp-kv span {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted-wp);
+}
+.water-planner-view .wp-kv strong {
+  font-size: 17px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.water-planner-view .wp-say {
+  background: color-mix(in srgb, var(--blue-wp) 12%, var(--surface-wp));
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.water-planner-view .wp-next {
+  margin-top: 10px;
+  background: color-mix(in srgb, var(--accent-wp) 12%, var(--surface-wp));
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.water-planner-view .wp-pump {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--muted-wp);
+}
+.water-planner-view .wp-pump input {
+  width: 90px;
+  font: 500 13px inherit;
+  background: var(--surface-2-wp);
+  color: var(--fg-wp);
+  border: 1px solid var(--line-wp);
+  border-radius: 8px;
+  padding: 5px 8px;
+}
+.water-planner-view .wp-chart {
+  position: relative;
+}
+.water-planner-view .wp-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.water-planner-view .wp-chart text {
+  font-family: inherit;
+  fill: var(--muted-wp);
+  font-size: 11px;
+}
+.water-planner-view .wp-lg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--muted-wp);
+  margin-top: 6px;
+}
+.water-planner-view .wp-lg i {
+  display: inline-block;
+  width: 12px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: -1px;
+}
+.water-planner-view .wp-note {
+  font-size: 12px;
+  color: var(--faint-wp);
+  margin: 0;
+}
+.water-planner-view .wp-expert-details {
+  border: 1px solid var(--line-wp);
+  border-radius: 16px;
+  background: var(--surface-wp);
+  padding: 12px 16px;
+  margin-top: 8px;
+}
+.water-planner-view .wp-expert-summary {
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--muted-wp);
+  outline: none;
+}
+.water-planner-view .wp-expert-summary:hover {
+  color: var(--fg-wp);
+}
+
+@media (max-width: 900px) {
+  .water-planner-view .wp-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .water-planner-view .wp-scards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .water-planner-view .wp-yb div {
+    grid-template-columns: 100px minmax(0, 1fr) 90px;
+  }
+}
+
