@@ -972,8 +972,8 @@ export function FarmScene3D({
     const soilMat = new THREE.MeshStandardMaterial({ color: '#6b4f36', roughness: 1 });
     const wetSoilMat = new THREE.MeshStandardMaterial({ color: '#4a3626', roughness: 0.7 });
     const greySoilMat = new THREE.MeshStandardMaterial({ color: '#323a35', roughness: 0.95 });
-    const drySoilMat = new THREE.MeshStandardMaterial({ color: '#9c8971', roughness: 1 });
-    const salineSoilMat = new THREE.MeshStandardMaterial({ color: '#cad3db', roughness: 0.9 });
+    const drySoilMat = new THREE.MeshStandardMaterial({ color: '#bba88e', roughness: 1 });
+    const salineSoilMat = new THREE.MeshStandardMaterial({ color: '#e5ecf0', roughness: 0.92 });
     const cropMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, side: THREE.DoubleSide });
     disposables.push(soilMat, wetSoilMat, greySoilMat, cropMat, drySoilMat, salineSoilMat);
 
@@ -1088,6 +1088,33 @@ export function FarmScene3D({
     rainPoints.visible = false;
     scene.add(rainPoints);
     disposables.push(rainGeo, rainMat);
+
+    const dustCount = 450;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPos = new Float32Array(dustCount * 3);
+    for (let dIdx = 0; dIdx < dustCount; dIdx++) {
+      dustPos[dIdx * 3] = (rnd() - 0.5) * (FARM.w + 12);
+      dustPos[dIdx * 3 + 1] = rnd() * 16 + 0.5;
+      dustPos[dIdx * 3 + 2] = (rnd() - 0.5) * (FARM.d + 12) + 6;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    const dustMat = new THREE.PointsMaterial({
+      color: 0xd2b48c,
+      size: 0.32,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+    });
+    const dustPoints = new THREE.Points(dustGeo, dustMat);
+    dustPoints.visible = false;
+    scene.add(dustPoints);
+    disposables.push(dustGeo, dustMat);
+
+    const stressTransition = {
+      active: false,
+      elapsed: 0,
+      duration: 0.6,
+    };
 
     // 7. Planting & Animation Helpers
     const _m = new THREE.Matrix4();
@@ -1359,11 +1386,27 @@ export function FarmScene3D({
           if (isDone) prefix = '<span style="color:#6fd28f;font-weight:800;margin-right:2px">✓</span> ';
           else if (isChg) prefix = '<span style="color:#f0a14a;font-weight:800;margin-right:2px">⟳</span> ';
 
-          const yieldStr = bedData.yieldLabel ? ` · ${bedData.yieldLabel}` : '';
-          const waterStr = isDone
-            ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : '')
-            : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : (currentLang === 'bn' ? ' · সেচ নেই' : ' · 0 mm'));
-          const detailStr = isDone ? (yieldStr || waterStr) : waterStr;
+          let detailStr = '';
+          if (weatherRef.current?.event) {
+            // Climate Stress Test visualizer mode
+            if (weatherRef.current?.isPostStress) {
+              const lVal = Number(bedLossPctsRef.current?.[i] || 0);
+              if (lVal > 0) {
+                const lossDigits = currentLang === 'bn' ? toBanglaDigits(Math.round(lVal)) : Math.round(lVal);
+                detailStr = ` · −${lossDigits}%`;
+              } else {
+                detailStr = currentLang === 'bn' ? ' · ঠিক আছে' : ' · OK';
+              }
+            } else {
+              detailStr = currentLang === 'bn' ? ' · ঠিক আছে' : ' · OK';
+            }
+          } else {
+            const yieldStr = bedData.yieldLabel ? ` · ${bedData.yieldLabel}` : '';
+            const waterStr = isDone
+              ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : '')
+              : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : (currentLang === 'bn' ? ' · বৃষ্টি-নির্ভর' : ' · Rainfed'));
+            detailStr = isDone ? (yieldStr || waterStr) : waterStr;
+          }
 
           el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span class="crop-name-label">${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
         }
@@ -1411,6 +1454,46 @@ export function FarmScene3D({
         }
         rainGeo.attributes.position.needsUpdate = true;
         needsRender = true;
+      }
+
+      // Dust animation when drought stress is visible
+      if (dustPoints.visible) {
+        const dArr = dustGeo.attributes.position.array;
+        for (let dI = 0; dI < dustCount; dI++) {
+          dArr[dI * 3] += dt * 4;
+          if (dArr[dI * 3] > (FARM.w / 2 + 12)) dArr[dI * 3] = -(FARM.w / 2 + 12);
+        }
+        dustGeo.attributes.position.needsUpdate = true;
+        needsRender = true;
+      }
+
+      // Smooth 0.6s stress transition interpolation
+      if (stressTransition.active) {
+        stressTransition.elapsed += dt;
+        const progress = Math.min(1.0, stressTransition.elapsed / stressTransition.duration);
+        const ease = progress * (2 - progress); // Ease-out
+
+        bedObjects.forEach((b) => {
+          if (b.__targetScaleY != null && b.__startScaleY != null) {
+            b.group.scale.y = b.__startScaleY + (b.__targetScaleY - b.__startScaleY) * ease;
+          }
+          if (b.__targetRotZ != null && b.__startRotZ != null) {
+            b.group.rotation.z = b.__startRotZ + (b.__targetRotZ - b.__startRotZ) * ease;
+          }
+        });
+
+        if (floodWaterMesh.visible && floodWaterMesh.__targetY != null && floodWaterMesh.__startY != null) {
+          floodWaterMesh.position.y = floodWaterMesh.__startY + (floodWaterMesh.__targetY - floodWaterMesh.__startY) * ease;
+        }
+
+        if (pond && pond.__targetY != null && pond.__startY != null) {
+          pond.position.y = pond.__startY + (pond.__targetY - pond.__startY) * ease;
+        }
+
+        needsRender = true;
+        if (progress >= 1.0) {
+          stressTransition.active = false;
+        }
       }
 
       controls.update();
@@ -1478,7 +1561,7 @@ export function FarmScene3D({
     };
     window.addEventListener('resize', onResize);
 
-    // ST4: Physical Weather & Hazard Stress Application
+    // ST4: Physical Weather & Hazard Stress Application (SF3)
     function applyWeatherStress(w, lossPcts) {
       const isPost = Boolean(w && w.isPostStress);
       const event = w?.event || 'heatwave';
@@ -1491,30 +1574,55 @@ export function FarmScene3D({
         scene.fog.color.set('#d7e3dc');
         floodWaterMesh.visible = false;
         rainPoints.visible = false;
+        dustPoints.visible = false;
+        if (pond) {
+          pond.__startY = pond.position.y;
+          pond.__targetY = 0.06;
+          pond.scale.set(1.5, 1, 1);
+        }
       } else {
         if (event === 'heatwave') {
-          hemi.color.set('#ffb066');
+          hemi.color.set('#ff9e42');
           hemi.groundColor.set('#8c5e32');
-          sun.color.set('#ff8c3b');
-          scene.fog.color.set('#ecd8c5');
+          sun.color.set('#ff7728');
+          scene.fog.color.set('#f4dfce');
           floodWaterMesh.visible = false;
           rainPoints.visible = false;
+          dustPoints.visible = false;
+          if (pond) {
+            pond.__startY = pond.position.y;
+            pond.__targetY = 0.06;
+            pond.scale.set(1.5, 1, 1);
+          }
         } else if (event === 'coldwave') {
-          hemi.color.set('#b4d7ff');
+          hemi.color.set('#b0d0f5');
           hemi.groundColor.set('#485b6e');
-          sun.color.set('#d1e7ff');
-          scene.fog.color.set('#c8daf0');
+          sun.color.set('#d8ebff');
+          scene.fog.color.set('#c4d9ee');
           floodWaterMesh.visible = false;
           rainPoints.visible = false;
+          dustPoints.visible = false;
+          if (pond) {
+            pond.__startY = pond.position.y;
+            pond.__targetY = 0.06;
+            pond.scale.set(1.5, 1, 1);
+          }
         } else if (event === 'flood') {
-          hemi.color.set('#8fa19a');
+          hemi.color.set('#6a7872');
           hemi.groundColor.set('#4a5246');
-          sun.color.set('#cfd6c7');
-          scene.fog.color.set('#9ca89f');
+          sun.color.set('#8fa194');
+          scene.fog.color.set('#68756e');
           floodWaterMesh.visible = true;
-          const targetY = intensity === 'severe' ? 1.25 : intensity === 'mild' ? 0.55 : 0.85;
-          floodWaterMesh.position.y = targetY;
+          const targetY = intensity === 'severe' ? 1.35 : intensity === 'mild' ? 0.58 : 0.95;
+          floodWaterMesh.__startY = floodWaterMesh.position.y;
+          floodWaterMesh.__targetY = targetY;
           rainPoints.visible = true;
+          dustPoints.visible = false;
+          if (pond) {
+            pond.__startY = pond.position.y;
+            pond.__targetY = 0.06;
+            pond.scale.set(1.5, 1, 1);
+          }
         } else if (event === 'drought') {
           hemi.color.set('#c9beaa');
           hemi.groundColor.set('#7a6e5a');
@@ -1522,6 +1630,12 @@ export function FarmScene3D({
           scene.fog.color.set('#ded7c5');
           floodWaterMesh.visible = false;
           rainPoints.visible = false;
+          dustPoints.visible = true;
+          if (pond) {
+            pond.__startY = pond.position.y;
+            pond.__targetY = -0.22;
+            pond.scale.set(1.05, 1, 0.7);
+          }
         } else if (event === 'salinity') {
           hemi.color.set('#b0c0c7');
           hemi.groundColor.set('#596366');
@@ -1529,41 +1643,81 @@ export function FarmScene3D({
           scene.fog.color.set('#d4dee0');
           floodWaterMesh.visible = false;
           rainPoints.visible = false;
+          dustPoints.visible = false;
+          if (pond) {
+            pond.__startY = pond.position.y;
+            pond.__targetY = 0.06;
+            pond.scale.set(1.5, 1, 1);
+          }
         }
       }
 
       bedObjects.forEach((b, i) => {
         const loss = Array.isArray(lossPcts) ? Number(lossPcts[i] || 0) : 0;
         const isHit = isPost && loss > 0;
+        const lossFrac = Math.min(1.0, loss / 100.0);
 
-        b.group.scale.set(1, 1, 1);
-        b.soil.material = (selectedStrategyRef.current === 'baseline' && i >= 3) ? greySoilMat : soilMat;
+        b.__startScaleY = b.group.scale.y;
+        b.__startRotZ = b.group.rotation.z;
 
         if (!isPost || !isHit) {
+          b.__targetScaleY = 1.0;
+          b.__targetRotZ = 0.0;
+          b.soil.material = (selectedStrategyRef.current === 'baseline' && i >= 3) ? greySoilMat : soilMat;
           if (b.cropKey === 'rice' || b.cropKey === 'riceRipe') {
             b.water.visible = true;
+          }
+          if (b.edges && b.edges.material) {
+            if (i === activeIndexRef.current) {
+              b.edges.material.color.set('#ffe680');
+              b.edges.material.opacity = 0.95;
+            } else {
+              b.edges.material.opacity = 0;
+            }
           }
           return;
         }
 
-        const lossFrac = Math.min(1.0, loss / 100.0);
+        // Stressed Hit Bed
         if (event === 'heatwave') {
-          b.group.scale.y = Math.max(0.65, 1.0 - 0.25 * lossFrac);
+          b.__targetScaleY = Math.max(0.65, 1.0 - 0.25 * lossFrac);
+          b.__targetRotZ = 0.0;
         } else if (event === 'drought') {
           b.soil.material = drySoilMat;
           b.water.visible = false;
-          b.group.scale.y = Math.max(0.60, 1.0 - 0.35 * lossFrac);
+          b.__targetScaleY = Math.max(0.55, 1.0 - 0.38 * lossFrac);
+          b.__targetRotZ = 0.07; // wilting tilt
         } else if (event === 'coldwave') {
-          b.group.scale.y = Math.max(0.68, 1.0 - 0.30 * lossFrac);
+          b.__targetScaleY = Math.max(0.68, 1.0 - 0.30 * lossFrac);
+          b.__targetRotZ = 0.0;
         } else if (event === 'salinity') {
           b.soil.material = salineSoilMat;
-          b.group.scale.y = Math.max(0.75, 1.0 - 0.20 * lossFrac);
+          b.__targetScaleY = Math.max(0.72, 1.0 - 0.22 * lossFrac);
+          b.__targetRotZ = 0.0;
         } else if (event === 'flood') {
           if (b.cropKey !== 'rice' && b.cropKey !== 'riceRipe') {
-            b.group.scale.y = Math.max(0.40, 1.0 - 0.50 * lossFrac);
+            b.__targetScaleY = Math.max(0.40, 1.0 - 0.50 * lossFrac);
+          } else {
+            b.__targetScaleY = 1.0;
+          }
+          b.__targetRotZ = 0.0;
+        }
+
+        // Severity Color Ring
+        if (b.edges && b.edges.material) {
+          b.edges.material.opacity = 0.95;
+          if (loss > 30) {
+            b.edges.material.color.set('#ef4444'); // Red ring
+          } else if (loss > 10) {
+            b.edges.material.color.set('#f59e0b'); // Amber ring
+          } else {
+            b.edges.material.color.set('#22c55e'); // Green ring
           }
         }
       });
+
+      stressTransition.active = true;
+      stressTransition.elapsed = 0;
 
       updateLabels();
       renderer.shadowMap.needsUpdate = true;
