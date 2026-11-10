@@ -415,7 +415,7 @@ export function cropLabel(crop, lang = 'bn', seasonCode = null) {
         return lang === 'bn' ? 'আমন ধান' : 'T. Aman Rice';
       }
     }
-    return lang === 'bn' ? 'আমন ধান' : 'Rice';
+    return lang === 'bn' ? 'আমন ধান' : 'Aman Rice';
   }
 
   const match = CROP_LABELS[k];

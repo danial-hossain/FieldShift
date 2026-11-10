@@ -65,32 +65,36 @@ export function VerificationLimitationsSection({
           className="muted"
           style={{
             color: 'var(--muted, #93a597)',
-            fontSize: 13,
-            lineHeight: 1.5,
-            marginBottom: 8,
+            fontSize: 12.5,
+            marginBottom: 6,
           }}
         >
           {isBn
-            ? 'স্বয়ংক্রিয় মান যাচাই ও যেখানে স্থানীয় বিশেষজ্ঞের পরামর্শ প্রয়োজন'
-            : 'Automated quality test guards and areas requiring local agronomic verification'}
+            ? 'স্বয়ংক্রিয় মান যাচাই ও সীমাবদ্ধতা।'
+            : 'Automated test guards and model limitations.'}
         </div>
 
-        {/* 5 Concise Bullets */}
-        <ul
-          style={{
-            margin: '8px 0 0',
-            paddingLeft: 20,
-            fontSize: 13,
-            color: '#e7efe8',
-            lineHeight: 1.6,
-          }}
-        >
-          {BULLETS.map((b, idx) => (
-            <li key={idx} style={{ marginBottom: 6 }}>
-              {isBn ? b.bn : b.en}
-            </li>
-          ))}
-        </ul>
+        {/* 5 Bullets in Details expander */}
+        <details style={{ margin: '6px 0', fontSize: 12.5 }}>
+          <summary style={{ cursor: 'pointer', color: 'var(--accent, #C8F169)', fontWeight: 600 }}>
+            {isBn ? '৫টি যাচাই ও সীমাবদ্ধতা (দেখুন)' : '5 Verification Details & Limits'}
+          </summary>
+          <ul
+            style={{
+              margin: '8px 0 0',
+              paddingLeft: 20,
+              fontSize: 12.5,
+              color: '#e7efe8',
+              lineHeight: 1.5,
+            }}
+          >
+            {BULLETS.map((b, idx) => (
+              <li key={idx} style={{ marginBottom: 4 }}>
+                {isBn ? b.bn : b.en}
+              </li>
+            ))}
+          </ul>
+        </details>
       </div>
 
       <div

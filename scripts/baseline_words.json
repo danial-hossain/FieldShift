@@ -1,0 +1,14 @@
+{
+  "results": {
+    "dashboard": 537,
+    "field": 161,
+    "crop_advice": 161,
+    "weather": 613,
+    "farm_planning": 496,
+    "water_irrigation": 502,
+    "research": 502,
+    "harvest_profit": 436,
+    "data_evidence": 554
+  },
+  "total": 3962
+}

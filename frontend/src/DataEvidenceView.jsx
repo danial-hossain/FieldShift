@@ -95,12 +95,12 @@ export function DataEvidenceView({
             </div>
 
             <h1 style={{ margin: '0 0 4px', fontSize: 21, fontWeight: 800, color: 'var(--text)' }}>
-              {isBn ? 'তথ্য প্রমাণ ও বৈজ্ঞানিক পদ্ধতি (Evidence & Method)' : 'Data Evidence & Scientific Provenance'}
+              {isBn ? 'তথ্য প্রমাণ ও বৈজ্ঞানিক পদ্ধতি' : 'Data Evidence & Scientific Method'}
             </h1>
-            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)', lineHeight: 1.45, maxWidth: 860 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>
               {isBn
-                ? 'নাসা উপগ্রহ থেকে কৃষকের মাঠ: পূর্ণাঙ্গ ৩ডি সিস্টেম আর্কিটেকচার, বৈজ্ঞানিক প্রোভেন্যান্স, এবং বিআরআরআই ও এফএও অনুমোদিত পদ্ধতির প্রমাণ্য দলিল।'
-                : 'From Orbit to Field: Traceable NASA Earth Observations, mathematical MILP formulation, and validated agro-meteorological calibration methodologies.'}
+                ? 'নাসা উপগ্রহ থেকে কৃষকের মাঠ: ৩ডি সিস্টেম ও প্রোভেন্যান্স।'
+                : 'NASA Earth observations, mathematical models, and agronomic calibration.'}
             </p>
           </div>
         </div>

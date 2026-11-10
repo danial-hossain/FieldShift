@@ -224,32 +224,10 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--r-full, 9999px)',
-                  background: 'rgba(200, 241, 105, 0.15)',
-                  color: 'var(--accent, #C8F169)',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {isBn ? 'বাজার ও মুনাফা অর্থনীতি' : 'Market & Profit Economics'}
-              </span>
-              <span style={{ fontSize: 13, color: 'var(--text-muted, #8C9B90)' }}>
-                {isBn ? 'এক নজরে আয়-ব্যয় ও ব্রেক-ইভেন দর' : 'Integrated Revenue, Costs & Break-Even Analysis'}
-              </span>
-            </div>
-
             <h1
               style={{
-                margin: 0,
-                fontSize: 'clamp(22px, 3vw, 30px)',
+                margin: '0 0 4px',
+                fontSize: 'clamp(22px, 3vw, 28px)',
                 fontWeight: 700,
                 color: 'var(--text, #F4F7F4)',
                 letterSpacing: '-0.02em',
@@ -257,6 +235,9 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
             >
               {fieldSummary.name} · {districtLabel}
             </h1>
+            <div style={{ fontSize: 13, color: 'var(--text-muted, #8C9B90)', marginBottom: 6 }}>
+              {isBn ? 'ফসল আবর্তনের আয়-ব্যয় ও ব্রেক-ইভেন বাজারদর।' : 'Crop rotation revenue, costs, and break-even market economics.'}
+            </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted, #8C9B90)' }}>
               <span>
@@ -594,7 +575,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                         <span>
                           <strong>{formatNum(s.yield_maund_bigha, 1, lang)}</strong>{' '}
                           <span style={{ fontSize: 11, color: 'var(--text-muted, #8C9B90)' }}>
-                            {isBn ? 'মণ' : 'mnd'}
+                            {isBn ? 'মণ' : 'maund'}
                           </span>
                         </span>
                       )}
@@ -686,7 +667,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                             {formatMoney(s.break_even_price_maund, lang)}
                           </strong>
                           <span style={{ color: 'var(--text-muted, #8C9B90)' }}>
-                            {isBn ? '/মণ-এর নিচে নামে' : '/mnd'}
+                            {isBn ? '/মণ-এর নিচে নামে' : '/maund'}
                           </span>
                         </div>
                       )}

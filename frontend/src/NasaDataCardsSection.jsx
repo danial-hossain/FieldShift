@@ -217,14 +217,13 @@ export function NasaDataCardsSection({
         className="muted"
         style={{
           color: 'var(--muted, #93a597)',
-          fontSize: 13,
-          lineHeight: 1.5,
-          marginBottom: 12,
+          fontSize: 12.5,
+          marginBottom: 10,
         }}
       >
         {isBn
-          ? 'প্রতিটা তথ্য জমির নিজের বিন্দু বা ঘর থেকে নেওয়া হয়, তারপর দৈনিক তথ্য মৌসুমে যোগ করা হয়। কোনো সারিতে click করলে উপরের মানচিত্রে তার পথ জ্বলে ওঠে।'
-          : 'Every dataset is sampled at the field point or grid cell, then daily telemetry is aggregated to seasons. Clicking any row lights up its path on the map above.'}
+          ? 'জমির স্থানাঙ্কভিত্তিক স্যাটেলাইট ও গ্রিড উপাত্ত।'
+          : 'Point and grid satellite telemetry calibrated for your field.'}
       </div>
 
       {/* Interactive Compact Table */}

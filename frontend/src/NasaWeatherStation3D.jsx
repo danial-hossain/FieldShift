@@ -430,123 +430,10 @@ export function NasaWeatherStation3D({
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
             {lang === 'bn'
-              ? `অক্ষাংশ ${bn(lat, 2)}°, দ্রাঘিমাংশ ${bn(lon, 2)}° · জমির স্থানাঙ্কের নিজস্ব জলবায়ু উপাত্ত`
-              : `Lat ${lat.toFixed(2)}°, Lon ${lon.toFixed(2)}° · Point-specific satellite & reanalysis telemetry`}
+              ? `স্থানাঙ্ক ${bn(lat, 2)}°উ, ${bn(lon, 2)}°পূ · স্যাটেলাইট ও আবহাওয়া উপাত্ত বিশ্লেষণ`
+              : `Lat ${lat.toFixed(2)}°, Lon ${lon.toFixed(2)}° · Point-specific satellite & climate telemetry`}
           </div>
         </div>
-      </div>
-
-      {/* CL6: "তথ্য কোথা থেকে" Always-Visible Provenance Strip */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          gap: '8px 12px',
-          padding: '10px 14px',
-          background: 'var(--surface, #131b16)',
-          border: '1px solid var(--line, rgba(255,255,255,0.1))',
-          borderRadius: 12,
-          marginBottom: 16,
-          fontSize: '12.5px',
-        }}
-      >
-        <span style={{ fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
-          🔍 {lang === 'bn' ? 'তথ্য কোথা থেকে:' : 'Data Provenance:'}
-        </span>
-
-        {/* 1. Rain Provenance */}
-        {(() => {
-          const rProv = provenance.rain;
-          const isFallback = rProv?.method === 'fallback_power' || rProv?.method === 'fallback_power_model';
-          return (
-            <span
-              style={{
-                borderRadius: 99,
-                padding: '3px 10px',
-                fontSize: '12px',
-                fontWeight: isFallback ? 600 : 500,
-                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
-                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
-                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
-              }}
-            >
-              {isFallback
-                ? (lang === 'bn' ? 'বৃষ্টি: NASA POWER (মডেলভিত্তিক বৃষ্টি, IMERG নয়)' : 'Rain: NASA POWER (Model-based rain, not IMERG)')
-                : (lang === 'bn' ? 'বৃষ্টি: GPM IMERG, আপনার জমির ১০ কিমি ঘর (২০০১–২০২৪)' : 'Rain: GPM IMERG, 10km grid cell (2001–2024)')}
-            </span>
-          );
-        })()}
-
-        {/* 2. Temperature Provenance */}
-        {(() => {
-          const tProv = provenance.temperature;
-          const isFallback = tProv?.method === 'nearest_district';
-          const dist = tProv?.fallback_distance_km ?? tProv?.distance_km;
-          return (
-            <span
-              style={{
-                borderRadius: 99,
-                padding: '3px 10px',
-                fontSize: '12px',
-                fontWeight: isFallback ? 600 : 500,
-                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
-                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
-                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
-              }}
-            >
-              {isFallback
-                ? (lang === 'bn' ? `তাপমাত্রা: NASA POWER (নিকটতম জেলা-কেন্দ্র ${bn(dist, 1)} কিমি)` : `Temp: NASA POWER (Nearest district center ${dist != null ? dist.toFixed(1) : ''} km)`)
-                : (lang === 'bn' ? 'তাপমাত্রা: NASA POWER, আপনার জমির বিন্দু (১৯৮১–২০২৬)' : 'Temp: NASA POWER, Field point coordinates (1981–2026)')}
-            </span>
-          );
-        })()}
-
-        {/* 3. GRACE Provenance */}
-        {(() => {
-          const gProv = provenance.grace;
-          const isFallback = gProv?.method === 'region';
-          return (
-            <span
-              style={{
-                borderRadius: 99,
-                padding: '3px 10px',
-                fontSize: '12px',
-                fontWeight: isFallback ? 600 : 500,
-                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
-                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
-                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
-              }}
-            >
-              {isFallback
-                ? (lang === 'bn' ? 'পানি সঞ্চয়: GRACE-FO (অঞ্চলের গড়, জমির নিজস্ব নয়)' : 'Storage: GRACE-FO (Regional average, not plot-specific)')
-                : (lang === 'bn' ? 'পানি সঞ্চয়: GRACE-FO, ~৫০ কিমি ঘর (২০০২–২০২৬)' : 'Storage: GRACE-FO, ~50km cell (2002–2026)')}
-            </span>
-          );
-        })()}
-
-        {/* 4. Onset Provenance */}
-        {(() => {
-          const oProv = provenance.onset;
-          const isFallback = oProv?.method === 'district_fallback';
-          return (
-            <span
-              style={{
-                borderRadius: 99,
-                padding: '3px 10px',
-                fontSize: '12px',
-                fontWeight: isFallback ? 600 : 500,
-                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
-                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
-                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
-              }}
-            >
-              {isFallback
-                ? (lang === 'bn' ? 'আমন বৃষ্টি শুরু: জেলা তথ্য-বিন্দু' : 'Monsoon Onset: District reference point')
-                : (lang === 'bn' ? 'আমন বৃষ্টি শুরু: GPM IMERG বিশ্লেষণ (২০০১–২০২৪)' : 'Monsoon Onset: GPM IMERG Analysis (2001–2024)')}
-            </span>
-          );
-        })()}
       </div>
 
       {loading && (
@@ -653,12 +540,10 @@ export function NasaWeatherStation3D({
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '6px 12px', alignItems: 'baseline', marginBottom: 14 }}>
               <div>
                 <h2 style={{ fontSize: '18px', margin: '0 0 4px', fontWeight: 700 }}>
-                  {lang === 'bn' ? '১. আপনার জমির জলবায়ু কীভাবে বদলেছে' : '1. How Your Land Climate Has Changed'}
+                  {lang === 'bn' ? '১. জমির জলবায়ু পরিবর্তন' : '1. Land Climate Trend'}
                 </h2>
                 <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
-                  {lang === 'bn'
-                    ? '২৪ বছরের তথ্য। "নিশ্চিত" মানে পরিসংখ্যানে প্রমাণিত (p < ০.০৫)।'
-                    : '24-year satellite era. "Confirmed" denotes statistical significance (p < 0.05).'}
+                  {lang === 'bn' ? '২৪ বছরের স্যাটেলাইট উপাত্ত বিশ্লেষণ।' : '24-year satellite observation telemetry.'}
                 </div>
               </div>
             </div>
@@ -728,15 +613,11 @@ export function NasaWeatherStation3D({
                   );
                 })}
 
-                <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: 'var(--muted, #93a597)' }}>
+                <div style={{ margin: '4px 0 0', fontSize: '12px', color: 'var(--muted, #93a597)' }}>
                   {lang === 'bn'
-                    ? (clearestSignal
-                        ? `মানে: সবচেয়ে পরিষ্কার পরিবর্তন ${clearestSignal.name_bn}-এ (p < ০.০৫)।`
-                        : 'মানে: তাপমাত্রা ও বৃষ্টিতে ওঠানামা আছে, কিন্তু ২৪ বছরের রেকর্ডে তা পরিসংখ্যানগতভাবে নিশ্চিত নয়।')
-                    : (clearestSignal
-                        ? `Summary: The clearest statistically significant trend is in ${clearestSignal.name_en} (p < 0.05).`
-                        : 'Summary: Interannual weather variations exist, but trends are not statistically significant over the 24-year satellite record.')}
-                </p>
+                    ? (clearestSignal ? `প্রধান ধারা: ${clearestSignal.name_bn}` : '২৪ বছরের উপাত্তে পরিবর্তন পর্যবেক্ষণাধীন।')
+                    : (clearestSignal ? `Key trend: ${clearestSignal.name_en}` : 'Trends monitored over 24-year satellite record.')}
+                </div>
               </div>
 
               {/* Right Column: GRACE Aquifer Depletion Card */}
@@ -776,11 +657,9 @@ export function NasaWeatherStation3D({
                       {lang === 'bn' ? 'সেমি / বছর' : 'cm / yr'}
                     </small>
                   </div>
-                  <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: 'var(--muted, #93a597)', lineHeight: 1.4 }}>
-                    {lang === 'bn'
-                      ? 'মোট পানি সঞ্চয় (ভূগর্ভস্থ + ভূপৃষ্ঠ + মাটির পানি), ২০০২–২০২৬। শুকনো মৌসুমে গভীর নলকূপে বোরোর সেচ এর মূল কারণ।'
-                      : 'Total water storage anomaly (groundwater, surface, soil moisture), 2002–2026. Intensive dry-season Boro irrigation is primary driver.'}
-                  </p>
+                  <div style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--muted, #93a597)' }}>
+                    {lang === 'bn' ? '২০০২–২০২৬ পানি সঞ্চয় পরিবর্তন ধারা।' : '2002–2026 water storage anomaly trend.'}
+                  </div>
                 </div>
 
                 {/* Regional comparison bar chart */}
@@ -1014,12 +893,12 @@ export function NasaWeatherStation3D({
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '8px 12px', alignItems: 'center', marginBottom: 16 }}>
               <div>
                 <h2 style={{ fontSize: '18px', margin: '0 0 4px', fontWeight: 700 }}>
-                  {lang === 'bn' ? '২. আপনার পরিকল্পনার ঝুঁকি ক্যালেন্ডার' : '2. Your Plan Risk Calendar'}
+                  {lang === 'bn' ? '২. পরিকল্পনার ঝুঁকি ক্যালেন্ডার' : '2. Plan Risk Calendar'}
                 </h2>
                 <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
                   {lang === 'bn'
-                    ? 'নভেম্বর থেকে অক্টোবর। নির্বাচিত আবর্তন পরিকল্পনার কোন ফসলে কখন জলবায়ুর চাপ পড়ার ঝুঁকি আছে।'
-                    : 'November to October. Highlights empirical climate stress windows for your chosen rotation plan.'}
+                    ? 'পরিকল্পিত ফসলের মৌসুমভিত্তিক জলবায়ু ঝুঁকি।'
+                    : 'Seasonal climate stress windows for rotation plan.'}
                 </div>
               </div>
 
@@ -1298,19 +1177,17 @@ export function NasaWeatherStation3D({
                   let advice_en = '';
 
                   if (w.hz.name_en.includes('Heat')) {
-                    advice_bn = 'ফুল ঝরে, দানা কম হয় — বীজ বোনার তারিখ কিছুটা এগিয়ে আনুন বা তাপ-সহনশীল জাত বাছুন';
-                    advice_en = 'Risks floret sterility and poor grain fill — advance sowing date or choose heat-tolerant cultivars';
+                    advice_bn = 'তাপ-সহনশীল জাত বাছুন';
+                    advice_en = 'Select heat-tolerant variety';
                   } else if (w.hz.name_en.includes('Dry')) {
-                    advice_bn = w.crop.name.includes('ছোলা')
-                      ? 'ছোলা মাটির রসে বাঁচে, তবে ফুলের সময় একটা হালকা সেচ নিশ্চিত ফলন বাঁচায়'
-                      : 'এই মৌসুমে বৃষ্টি প্রায় হয় না, তাই ফুলের স্পর্শকাতর সময়ে সেচ নিশ্চিত করুন';
-                    advice_en = 'Negligible rainfall during this window — ensure timely supplemental irrigation during flowering';
+                    advice_bn = 'ফুলের সময় সেচ দিন';
+                    advice_en = 'Irrigate during flowering';
                   } else if (w.hz.name_en.includes('Heavy')) {
-                    advice_bn = 'ভারী বৃষ্টি ও ঝড়ে পরাগায়ন ধুয়ে যায় ও গাছ হেলে পড়তে পারে — পানি নিষ্কাশনের নালা পরিষ্কার রাখুন';
-                    advice_en = 'Heavy rain risks washing pollen and crop lodging — maintain clean field drainage';
+                    advice_bn = 'নিষ্কাশন নালা পরিষ্কার রাখুন';
+                    advice_en = 'Keep drainage clear';
                   } else {
-                    advice_bn = 'অতিরিক্ত ঠান্ডায় পরাগায়ন বিঘ্নিত হতে পারে — হালকা সেচ মাটির তাপমাত্রা বজায় রাখতে সহায়ক';
-                    advice_en = 'Cold nights can impair pollination — light evening irrigation helps buffer soil temperature';
+                    advice_bn = 'হালকা সেচ দিন';
+                    advice_en = 'Light irrigation';
                   }
 
                   return (
@@ -1341,8 +1218,8 @@ export function NasaWeatherStation3D({
                       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
                         ⚠ <b>{w.crop.name}</b>{' '}
                         {lang === 'bn'
-                          ? `ফুল আসে ${MLOC_BN[w.fIdx]} — ${w.hz.name_bn} ২৪ বছরে ${bn(yearsCount)} বছর (${bn(Math.round(w.v * 100))}%)। ${advice_bn}।`
-                          : `flowers ${MLOC_EN[w.fIdx]} — ${w.hz.name_en} occurs in ${yearsCount} of 24 years (${Math.round(w.v * 100)}%). ${advice_en}.`}
+                          ? `ফুল ${MLOC_BN[w.fIdx]} (${bn(Math.round(w.v * 100))}% ঝুঁকি) — ${advice_bn}।`
+                          : `Flowers ${MLOC_EN[w.fIdx]} (${Math.round(w.v * 100)}% risk) — ${advice_en}.`}
                       </div>
                       <button
                         type="button"
@@ -1562,6 +1439,12 @@ export function NasaWeatherStation3D({
               </div>
             </section>
           )}
+
+          {/* Footnotes & Data Sources in muted 11px */}
+          <footer style={{ marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line, rgba(255,255,255,0.08))', fontSize: 11, color: 'var(--muted, #93a597)', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
+            <span>🔍 {lang === 'bn' ? 'উৎস: NASA POWER (১৯৮১–২০২৬), GPM IMERG (২০০১–২০২৪), GRACE/GRACE-FO JPL RL06.3M mascon' : 'Sources: NASA POWER (1981–2026), GPM IMERG (2001–2024), GRACE/GRACE-FO JPL RL06.3M mascon'}</span>
+            <span>{lang === 'bn' ? 'মডেল ও অ্যানালাইসিস: FAO-56 Penman-Monteith, Mann-Kendall Trend' : 'Models: FAO-56 Penman-Monteith, Mann-Kendall Trend'}</span>
+          </footer>
         </div>
       )}
     </div>

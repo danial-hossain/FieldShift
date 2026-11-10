@@ -1201,9 +1201,7 @@ export function SixSeasonRecommendationView({
               : `Rotation Planner · ${activeField?.name || 'Select a field'} (${fieldAreaHa != null ? `${formatNumber(haToBigha(fieldAreaHa), lang, 1)} ${unitLabel('bigha', lang)}` : 'No data'})`}
           </h1>
           <div style={{ color: 'var(--text-muted, #94a3b8)', fontSize: 13, marginTop: 4 }}>
-            {activeField?.district
-              ? districtLabel(activeField.district, lang)
-              : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} · {fieldAreaHa != null ? `${formatNumber(haToBigha(fieldAreaHa), lang, 1)} ${unitLabel('bigha', lang)}` : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} · {activeField?.soil_texture ? soilLabel(activeField.soil_texture, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')} · NASA POWER + GPM IMERG
+            {lang === 'bn' ? 'নাসার উপাত্তে ৬-মৌসুমের টেকসই ও লাভজনক ফসল আবর্তন।' : '6-season crop rotation optimization powered by NASA agro-telemetry.'}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1738,24 +1736,27 @@ export function SixSeasonRecommendationView({
               </div>
             </div>
 
-            {/* Pros */}
-            {currentProsCons.pros.length > 0 && (
-              <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--leaf)', margin: '4px 0 2px' }}>✅ {lang === 'bn' ? 'সুবিধা' : 'Benefits'}</div>
-                <ul style={{ margin: 0, paddingLeft: 18, listStyleType: 'disc', fontSize: 13, lineHeight: 1.45, color: 'var(--text)' }}>
-                  {currentProsCons.pros.map((p, idx) => <li key={idx}>{p}</li>)}
-                </ul>
-              </div>
-            )}
-
-            {/* Cons */}
-            {currentProsCons.cons.length > 0 && (
-              <div style={{ marginBottom: 6 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--alert)', margin: '4px 0 2px' }}>⚠️ {lang === 'bn' ? 'অসুবিধা / ঝুঁকি' : 'Drawbacks / Risks'}</div>
-                <ul style={{ margin: 0, paddingLeft: 18, listStyleType: 'disc', fontSize: 13, lineHeight: 1.45, color: 'var(--text)' }}>
-                  {currentProsCons.cons.map((c, idx) => <li key={idx}>{c}</li>)}
-                </ul>
-              </div>
+            {/* Pros & Cons in Details Expander */}
+            {(currentProsCons.pros.length > 0 || currentProsCons.cons.length > 0) && (
+              <details style={{ margin: '6px 0', fontSize: 12.5 }}>
+                <summary style={{ cursor: 'pointer', color: 'var(--accent, #C8F169)', fontWeight: 600 }}>
+                  {lang === 'bn' ? 'বিস্তারিত সুবিধা ও ঝুঁকি' : 'Details: Benefits & Risks'}
+                </summary>
+                <div style={{ padding: '6px 0' }}>
+                  {currentProsCons.pros.length > 0 && (
+                    <div style={{ marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, color: 'var(--leaf)' }}>✅ {lang === 'bn' ? 'সুবিধা: ' : 'Benefits: '}</span>
+                      {currentProsCons.pros.join(' · ')}
+                    </div>
+                  )}
+                  {currentProsCons.cons.length > 0 && (
+                    <div>
+                      <span style={{ fontWeight: 700, color: 'var(--alert)' }}>⚠️ {lang === 'bn' ? 'ঝুঁকি: ' : 'Risks: '}</span>
+                      {currentProsCons.cons.join(' · ')}
+                    </div>
+                  )}
+                </div>
+              </details>
             )}
 
             {/* Baseline Comparison Slot */}
@@ -1772,8 +1773,8 @@ export function SixSeasonRecommendationView({
                 {candidateAlternatives[0]?.score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
                   <div style={{ marginTop: 4, color: 'var(--sun)' }}>
                     {lang === 'bn'
-                      ? `পুরো ৬ মৌসুমে সেরা: এই মৌসুমে একা ${translateCropName(candidateAlternatives[0].crop, 'bn')}-র স্কোর বেশি, কিন্তু পানি / রোগচক্র / ডাল নিয়মে ${translateCropName(selectedCropName, 'bn')} ভালো`
-                      : `Best across all 6 seasons: ${translateCropName(candidateAlternatives[0].crop, 'en')} scores higher in this isolated season, but ${translateCropName(selectedCropName, 'en')} is superior for water conservation, disease break, and legume rules`}
+                      ? `৬ মৌসুমে সেরা: পানি ও রোগচক্র নিয়মে ${translateCropName(selectedCropName, 'bn')} এগিয়ে`
+                      : `Multi-season optimum: ${translateCropName(selectedCropName, 'en')} balances water & rotation`}
                   </div>
                 )}
               </div>
@@ -1843,7 +1844,7 @@ export function SixSeasonRecommendationView({
         {/* Card 2: Risk Summary */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
-            🛡️ {lang === 'bn' ? 'ঝুঁকি (NASA IMERG ও POWER, ২০০১–২০২৪)' : 'Agro-Climatic Risk (2001-2024)'}
+            🛡️ {lang === 'bn' ? 'আবহাওয়া ঝুঁকি' : 'Agro-Climatic Risk'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
@@ -1864,14 +1865,14 @@ export function SixSeasonRecommendationView({
             </div>
           </div>
           <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-muted)' }}>
-            {lang === 'bn' ? 'বরেন্দ্রের বিপদ খরা আর গরম, বন্যা না। তাই কম পানির, গরম সহ্য করা ফসল।' : 'Barind primary risks are drought and heat, not flood.'}
+            {lang === 'bn' ? 'বরেন্দ্রের প্রধান বিপদ খরা ও গরম।' : 'Barind primary risks: drought & heat.'}
           </p>
         </div>
 
         {/* Card 3: Compact Strategy Comparison Table */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
-            🎯 {lang === 'bn' ? 'কৌশল তুলনা (প্রতি বছর)' : 'Strategy Comparison (annual)'}
+            🎯 {lang === 'bn' ? 'কৌশল তুলনা' : 'Strategy Comparison'}
           </h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, fontVariantNumeric: 'tabular-nums' }}>
             <thead>

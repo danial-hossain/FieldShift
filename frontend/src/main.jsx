@@ -20,7 +20,7 @@ import { MyFarmWorkspaceView } from './MyFarmWorkspaceView.jsx';
 import { FarmPlanningView } from './FarmPlanningView.jsx';
 import { WaterIrrigationView } from './WaterIrrigationView.jsx';
 import { DataEvidenceView } from './DataEvidenceView.jsx';
-import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber } from './i18n.js';
+import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber, seasonLabel, cropLabel } from './i18n.js';
 import {
   buildCounterfactualPayload,
   runCounterfactualRequest,
@@ -2532,43 +2532,6 @@ export function App() {
           </div>
         </header>
 
-        {/* Global Active Field Context Strip on Every Page (P1 Architecture) */}
-        <div className="active-field-context-strip" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '8px 24px',
-          background: 'var(--bg-card, rgba(16, 28, 22, 0.86))',
-          borderBottom: '1px solid var(--border-medium, rgba(255,255,255,0.08))',
-          fontSize: '13px',
-          color: 'var(--text-2, #94a3b8)',
-          gap: 12,
-          flexWrap: 'wrap'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 16 }}>📍</span>
-            <strong style={{ color: 'var(--text, #f8fafc)', fontSize: 14 }}>
-              {activeField?.name || (lang === 'bn' ? 'বগুড়া পরীক্ষামূলক খামার' : 'Bogura Demo Field')}
-            </strong>
-            <span style={{ color: 'var(--border-medium)' }}>•</span>
-            <span>{activeField?.district ? districtLabel(activeField.district, lang) : (lang === 'bn' ? 'বগুড়া' : 'Bogura')}{lang === 'bn' ? ', বাংলাদেশ' : ', Bangladesh'}</span>
-            <span style={{ color: 'var(--border-medium)' }}>•</span>
-            <span style={{ fontFamily: 'monospace' }}>
-              {formatI18nNumber(Number(activeField?.latitude || 24.85), lang, 4)}°{lang === 'bn' ? 'উ' : 'N'}, {formatI18nNumber(Number(activeField?.longitude || 89.37), lang, 4)}°{lang === 'bn' ? 'পূ' : 'E'}
-            </span>
-            <span style={{ color: 'var(--border-medium)' }}>•</span>
-            <span>{formatI18nNumber(Number(activeField?.area_ha || 10), lang, 1)} {unitLabel('ha', lang)} ({formatI18nNumber((Number(activeField?.area_ha || 10)) * 7.47, lang, 1)} {unitLabel('bigha', lang)})</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <span>{lang === 'bn' ? 'মাটি:' : 'Soil:'} <strong style={{ color: 'var(--text, #f8fafc)' }}>{soilLabel(activeField?.soil_texture, lang)}</strong></span>
-            <span>{lang === 'bn' ? 'সেচ ধারণক্ষমতা:' : 'Irrigation:'} <strong style={{ color: 'var(--text, #f8fafc)' }}>{formatI18nNumber(activeField?.irrigation_capacity_mm || 90, lang)} {unitLabel('mm', lang)}</strong></span>
-            <span style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}>
-              <span className="live-pulse-dot" style={{ width: 7, height: 7, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-              NASA POWER + IMERG {lang === 'bn' ? 'সংযুক্ত' : 'Connected'}
-            </span>
-          </div>
-        </div>
-
         {/* Workflow Alert Banner (suppressed for honest inline notifications) */}
 
         {/* -------------------- VIEW: CROP ADVICE (FARMER FRIENDLY) -------------------- */}
@@ -3345,38 +3308,38 @@ export function App() {
                         </thead>
                         <tbody>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y1_S1</strong></td>
-                            <td>{rotationPeriods.Y1_S1 || 'Mustard'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y1_s1', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y1_S1 || 'Mustard', lang, 'y1_s1')}</td>
                             <td>1.90 t/ha</td>
                             <td>19.0 t</td>
                           </tr>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y1_S2</strong></td>
-                            <td>{rotationPeriods.Y1_S2 || 'Groundnut'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y1_s2', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y1_S2 || 'Groundnut', lang, 'y1_s2')}</td>
                             <td>2.80 t/ha</td>
                             <td>28.0 t</td>
                           </tr>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y1_S3</strong></td>
-                            <td>{rotationPeriods.Y1_S3 || 'Rice'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y1_s3', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y1_S3 || 'T. Aman Rice', lang, 'y1_s3')}</td>
                             <td>5.50 t/ha</td>
                             <td>55.0 t</td>
                           </tr>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y2_S1</strong></td>
-                            <td>{rotationPeriods.Y2_S1 || 'Lentil'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y2_s1', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y2_S1 || 'Lentil', lang, 'y2_s1')}</td>
                             <td>1.80 t/ha</td>
                             <td>18.0 t</td>
                           </tr>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y2_S2</strong></td>
-                            <td>{rotationPeriods.Y2_S2 || 'Maize'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y2_s2', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y2_S2 || 'Maize', lang, 'y2_s2')}</td>
                             <td>8.50 t/ha</td>
                             <td>85.0 t</td>
                           </tr>
                           <tr>
-                            <td><strong style={{ color: 'var(--primary)' }}>Y2_S3</strong></td>
-                            <td>{rotationPeriods.Y2_S3 || 'Mungbean'}</td>
+                            <td><strong style={{ color: 'var(--primary)' }}>{seasonLabel('y2_s3', lang)}</strong></td>
+                            <td>{cropLabel(rotationPeriods.Y2_S3 || 'Mungbean', lang, 'y2_s3')}</td>
                             <td>1.60 t/ha</td>
                             <td>16.0 t</td>
                           </tr>
