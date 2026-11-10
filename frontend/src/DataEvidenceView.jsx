@@ -7,6 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { SystemMap3D } from './SystemMap3D.jsx';
 import { NasaDataCardsSection } from './NasaDataCardsSection.jsx';
+import { MilpDecisionSection } from './MilpDecisionSection.jsx';
 import { SyntheticDataLabView } from './SyntheticDataLabView.jsx';
 import { JudgeChecklistView } from './JudgeChecklistView.jsx';
 import { SatelliteReadinessView } from './SatelliteReadinessView.jsx';
@@ -195,6 +196,11 @@ export function DataEvidenceView({
         {/* Section EV3: NASA তথ্য (Datasets Used, Planned Datasets, Harmonisation) */}
         <div style={{ marginTop: 28 }}>
           <NasaDataCardsSection lang={lang} activeField={activeField} onNavigate={onNavigate} />
+        </div>
+
+        {/* Section EV4: সিদ্ধান্ত কীভাবে হয় (MILP 4-Step Strip, Formula, Weights & Rules) */}
+        <div style={{ marginTop: 28 }}>
+          <MilpDecisionSection lang={lang} onNavigate={onNavigate} />
         </div>
 
         {/* Sub-Navigation Pills */}
