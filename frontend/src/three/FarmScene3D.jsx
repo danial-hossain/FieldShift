@@ -28,6 +28,12 @@ import {
 
 export { FARM_PALETTE, CROPS_META, mapCropToGeoKey, getCropCategory, haToBigha, isWebGLAvailable };
 
+function toBanglaDigits(val) {
+  if (val == null) return '';
+  const digits = { '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪', '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯' };
+  return String(val).replace(/[0-9]/g, (c) => digits[c] || c);
+}
+
 /* ---------- Procedural Helpers & Shaders (Reference 1:1) ---------- */
 const createRnd = () => {
   let s = 7;
@@ -463,6 +469,8 @@ export function FarmScene3D({
   annualIrrigationMm = null,
   onRendererInfo = null,
   selectedStrategy = 'balanced',
+  weather = null,
+  bedLossPcts = null,
 }) {
   const containerRef = useRef(null);
   const labelsContainerRef = useRef(null);
@@ -472,6 +480,10 @@ export function FarmScene3D({
   langRef.current = lang;
   const selectedStrategyRef = useRef(selectedStrategy);
   selectedStrategyRef.current = selectedStrategy;
+  const weatherRef = useRef(weather);
+  weatherRef.current = weather;
+  const bedLossPctsRef = useRef(bedLossPcts);
+  bedLossPctsRef.current = bedLossPcts;
   const [hasWebGL, setHasWebGL] = useState(true);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
   const [infoStats, setInfoStats] = useState({ calls: 0, triangles: 0, fps: 60 });
@@ -960,8 +972,10 @@ export function FarmScene3D({
     const soilMat = new THREE.MeshStandardMaterial({ color: '#6b4f36', roughness: 1 });
     const wetSoilMat = new THREE.MeshStandardMaterial({ color: '#4a3626', roughness: 0.7 });
     const greySoilMat = new THREE.MeshStandardMaterial({ color: '#323a35', roughness: 0.95 });
+    const drySoilMat = new THREE.MeshStandardMaterial({ color: '#9c8971', roughness: 1 });
+    const salineSoilMat = new THREE.MeshStandardMaterial({ color: '#cad3db', roughness: 0.9 });
     const cropMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, side: THREE.DoubleSide });
-    disposables.push(soilMat, wetSoilMat, greySoilMat, cropMat);
+    disposables.push(soilMat, wetSoilMat, greySoilMat, cropMat, drySoilMat, salineSoilMat);
 
     // Compile crop geometries
     const G = buildCropGeometries();
@@ -1037,6 +1051,43 @@ export function FarmScene3D({
         grow: 1,
       };
     });
+
+    // ST4: Flood Water Mesh & Rain Particles for Weather Stress Simulation
+    const floodGeo = new THREE.PlaneGeometry(FARM.w + 14, FARM.d + 14);
+    floodGeo.rotateX(-Math.PI / 2);
+    const floodMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#44523d'),
+      roughness: 0.18,
+      metalness: 0.08,
+      transparent: true,
+      opacity: 0.88,
+      depthWrite: false,
+    });
+    const floodWaterMesh = new THREE.Mesh(floodGeo, floodMat);
+    floodWaterMesh.position.set(0, 0.85, 6);
+    floodWaterMesh.visible = false;
+    scene.add(floodWaterMesh);
+    disposables.push(floodGeo, floodMat);
+
+    const rainCount = 1200;
+    const rainGeo = new THREE.BufferGeometry();
+    const rainPos = new Float32Array(rainCount * 3);
+    for (let rIdx = 0; rIdx < rainCount; rIdx++) {
+      rainPos[rIdx * 3] = (rnd() - 0.5) * (FARM.w + 24);
+      rainPos[rIdx * 3 + 1] = rnd() * 45;
+      rainPos[rIdx * 3 + 2] = (rnd() - 0.5) * (FARM.d + 24) + 6;
+    }
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+    const rainMat = new THREE.PointsMaterial({
+      color: 0x9dc0e8,
+      size: 0.35,
+      transparent: true,
+      opacity: 0.65,
+    });
+    const rainPoints = new THREE.Points(rainGeo, rainMat);
+    rainPoints.visible = false;
+    scene.add(rainPoints);
+    disposables.push(rainGeo, rainMat);
 
     // 7. Planting & Animation Helpers
     const _m = new THREE.Matrix4();
@@ -1269,6 +1320,16 @@ export function FarmScene3D({
             symbolsHtml += `<span title="${currentLang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
           }
 
+          if (weatherRef.current?.isPostStress && bedLossPctsRef.current) {
+            const lossVal = Number(bedLossPctsRef.current[i] || 0);
+            if (lossVal > 0) {
+              const bColor = lossVal > 30 ? '#ef4444' : lossVal > 10 ? '#f59e0b' : '#22c55e';
+              const bBg = lossVal > 30 ? 'rgba(239, 68, 68, 0.28)' : lossVal > 10 ? 'rgba(245, 158, 11, 0.28)' : 'rgba(34, 197, 94, 0.28)';
+              const lossDigits = currentLang === 'bn' ? toBanglaDigits(Math.round(lossVal)) : Math.round(lossVal);
+              symbolsHtml += `<span style="background:${bBg};color:${bColor};border:1px solid ${bColor};border-radius:4px;padding:1px 5px;font-size:10px;font-weight:800;margin-left:4px">−${lossDigits}%</span>`;
+            }
+          }
+
           const isDone = Boolean(bedData.isCompleted);
           const isChg = Boolean(bedData.isChanged);
           if (isDone) {
@@ -1277,6 +1338,18 @@ export function FarmScene3D({
           } else if (isChg) {
             el.style.background = 'rgba(196, 104, 24, 0.92)';
             el.style.border = '1px solid #f0a14a';
+          } else if (weatherRef.current?.isPostStress && bedLossPctsRef.current && bedLossPctsRef.current[i] > 0) {
+            const lVal = Number(bedLossPctsRef.current[i] || 0);
+            if (lVal > 30) {
+              el.style.background = 'rgba(70, 20, 20, 0.94)';
+              el.style.border = '1px solid #ef4444';
+            } else if (lVal > 10) {
+              el.style.background = 'rgba(65, 45, 15, 0.94)';
+              el.style.border = '1px solid #f59e0b';
+            } else {
+              el.style.background = 'rgba(20, 30, 22, 0.88)';
+              el.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            }
           } else {
             el.style.background = 'rgba(20, 30, 22, 0.88)';
             el.style.border = '1px solid rgba(255, 255, 255, 0.15)';
@@ -1328,6 +1401,17 @@ export function FarmScene3D({
           isAnimatingGrowth = true;
         }
       });
+
+      // Rain animation when flood stress is visible
+      if (rainPoints.visible) {
+        const pArr = rainGeo.attributes.position.array;
+        for (let rI = 0; rI < rainCount; rI++) {
+          pArr[rI * 3 + 1] -= dt * 38;
+          if (pArr[rI * 3 + 1] < 0) pArr[rI * 3 + 1] = 42;
+        }
+        rainGeo.attributes.position.needsUpdate = true;
+        needsRender = true;
+      }
 
       controls.update();
       renderer.render(scene, camera);
@@ -1394,9 +1478,102 @@ export function FarmScene3D({
     };
     window.addEventListener('resize', onResize);
 
+    // ST4: Physical Weather & Hazard Stress Application
+    function applyWeatherStress(w, lossPcts) {
+      const isPost = Boolean(w && w.isPostStress);
+      const event = w?.event || 'heatwave';
+      const intensity = w?.intensity || 'moderate';
+
+      if (!isPost) {
+        hemi.color.set('#a8d5ff');
+        hemi.groundColor.set('#594833');
+        sun.color.set('#fff3d1');
+        scene.fog.color.set('#d7e3dc');
+        floodWaterMesh.visible = false;
+        rainPoints.visible = false;
+      } else {
+        if (event === 'heatwave') {
+          hemi.color.set('#ffb066');
+          hemi.groundColor.set('#8c5e32');
+          sun.color.set('#ff8c3b');
+          scene.fog.color.set('#ecd8c5');
+          floodWaterMesh.visible = false;
+          rainPoints.visible = false;
+        } else if (event === 'coldwave') {
+          hemi.color.set('#b4d7ff');
+          hemi.groundColor.set('#485b6e');
+          sun.color.set('#d1e7ff');
+          scene.fog.color.set('#c8daf0');
+          floodWaterMesh.visible = false;
+          rainPoints.visible = false;
+        } else if (event === 'flood') {
+          hemi.color.set('#8fa19a');
+          hemi.groundColor.set('#4a5246');
+          sun.color.set('#cfd6c7');
+          scene.fog.color.set('#9ca89f');
+          floodWaterMesh.visible = true;
+          const targetY = intensity === 'severe' ? 1.25 : intensity === 'mild' ? 0.55 : 0.85;
+          floodWaterMesh.position.y = targetY;
+          rainPoints.visible = true;
+        } else if (event === 'drought') {
+          hemi.color.set('#c9beaa');
+          hemi.groundColor.set('#7a6e5a');
+          sun.color.set('#fff5db');
+          scene.fog.color.set('#ded7c5');
+          floodWaterMesh.visible = false;
+          rainPoints.visible = false;
+        } else if (event === 'salinity') {
+          hemi.color.set('#b0c0c7');
+          hemi.groundColor.set('#596366');
+          sun.color.set('#f0f5f7');
+          scene.fog.color.set('#d4dee0');
+          floodWaterMesh.visible = false;
+          rainPoints.visible = false;
+        }
+      }
+
+      bedObjects.forEach((b, i) => {
+        const loss = Array.isArray(lossPcts) ? Number(lossPcts[i] || 0) : 0;
+        const isHit = isPost && loss > 0;
+
+        b.group.scale.set(1, 1, 1);
+        b.soil.material = (selectedStrategyRef.current === 'baseline' && i >= 3) ? greySoilMat : soilMat;
+
+        if (!isPost || !isHit) {
+          if (b.cropKey === 'rice' || b.cropKey === 'riceRipe') {
+            b.water.visible = true;
+          }
+          return;
+        }
+
+        const lossFrac = Math.min(1.0, loss / 100.0);
+        if (event === 'heatwave') {
+          b.group.scale.y = Math.max(0.65, 1.0 - 0.25 * lossFrac);
+        } else if (event === 'drought') {
+          b.soil.material = drySoilMat;
+          b.water.visible = false;
+          b.group.scale.y = Math.max(0.60, 1.0 - 0.35 * lossFrac);
+        } else if (event === 'coldwave') {
+          b.group.scale.y = Math.max(0.68, 1.0 - 0.30 * lossFrac);
+        } else if (event === 'salinity') {
+          b.soil.material = salineSoilMat;
+          b.group.scale.y = Math.max(0.75, 1.0 - 0.20 * lossFrac);
+        } else if (event === 'flood') {
+          if (b.cropKey !== 'rice' && b.cropKey !== 'riceRipe') {
+            b.group.scale.y = Math.max(0.40, 1.0 - 0.50 * lossFrac);
+          }
+        }
+      });
+
+      updateLabels();
+      renderer.shadowMap.needsUpdate = true;
+      requestRender();
+    }
+
     // Save references to update on prop changes
     container.__farm3d = {
       bedObjects,
+      applyWeatherStress,
       plantBed: (idx, crop) => {
         plantBed(idx, crop);
         renderer.shadowMap.needsUpdate = true;
@@ -1510,6 +1687,10 @@ export function FarmScene3D({
       }
     });
 
+    if (containerRef.current.__farm3d.applyWeatherStress) {
+      containerRef.current.__farm3d.applyWeatherStress(weather, bedLossPcts);
+    }
+
     if (updateLabels) {
       updateLabels();
     }
@@ -1519,7 +1700,7 @@ export function FarmScene3D({
     if (containerRef.current.__farm3d.requestRender) {
       containerRef.current.__farm3d.requestRender();
     }
-  }, [beds, activeIndex, isLowLod, selectedStrategy, lang]);
+  }, [beds, activeIndex, isLowLod, selectedStrategy, lang, weather, bedLossPcts]);
 
   // -------------------------------------------------------------
   // WebGL Fallback (Graceful 2D Bed Matrix)
