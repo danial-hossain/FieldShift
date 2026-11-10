@@ -23,3 +23,4 @@ Audited against: `master` branch codebase
 | **Decision & Optimization** | Adaptive Re-plan (Running Mean) | **ব্যবহৃত (Used)** | `src/optimizer/adaptive_replan.py:140` | Adaptive Replan, Farmer Harvest | Yield/price running-mean calibration loop triggering replan of remaining seasons. |
 | **Decision & Optimization** | Q-learning (RL) | **পরীক্ষামূলক (Experimental)** | `src/rl/synthetic_q_learning.py:22` | Comparison Lab (Experimental) | Trained in synthetic gym simulation environment; benchmark comparison only, not optimizer. |
 | **Decision & Optimization** | Gemini AI Assistant | **ব্যবহৃত (Used)** | `backend/app/main.py:2910` | AI Assistant | Real agronomist prompt grounded with active field environmental context. |
+

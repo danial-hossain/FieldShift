@@ -16,7 +16,7 @@ export function AdaptiveLearningSection({
         background: 'var(--surface, #121a17)',
         border: '1px solid var(--line, #243029)',
         borderRadius: 16,
-        padding: '16px 20px',
+        padding: '12px 18px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',

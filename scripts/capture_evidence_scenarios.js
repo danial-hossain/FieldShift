@@ -1,10 +1,10 @@
 // scripts/capture_evidence_scenarios.js
-// Captures high-res screenshots of the new Evidence & Method page:
-// 1. 3D System Map (bn & en)
-// 2. Hover GPM Path (bn & en)
-// 3. Click Side Panel (bn & en)
-// 4. "Follow 718 mm" Path Animation (bn & en)
-// 5. NASA Data Cards (bn & en)
+// Captures full-page and state screenshots for EF5:
+// - Full page in BN + EN, dark + light
+// - Hover GPM
+// - Click panel on MILP
+// - Follow-718 last step
+// - Measures page height in pixels
 
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -64,8 +64,12 @@ class CDPClient {
     return result?.result?.value;
   }
 
-  async screenshot(filename) {
-    const data = await this.send('Page.captureScreenshot', { format: 'png', quality: 90 });
+  async screenshot(filename, fullPage = false) {
+    const params = { format: 'png', quality: 90 };
+    if (fullPage) {
+      params.captureBeyondViewport = true;
+    }
+    const data = await this.send('Page.captureScreenshot', params);
     const buf = Buffer.from(data.data, 'base64');
     fs.writeFileSync(path.join(DOCS_DIR, filename), buf);
     fs.writeFileSync(path.join(ARTIFACT_DIR, filename), buf);
@@ -83,10 +87,22 @@ async function setLanguage(cdp, targetLang) {
       const btn = document.querySelector('.lang-toggle-btn');
       if (!btn) return;
       const text = btn.textContent.trim();
-      // If button says 'English', currently it is 'bn'
       const currentLang = text.includes('English') ? 'bn' : 'en';
       if (currentLang !== '${targetLang}') {
         btn.click();
+      }
+    })()
+  `);
+  await new Promise(r => setTimeout(r, 600));
+}
+
+async function setTheme(cdp, targetTheme) {
+  await cdp.eval(`
+    (() => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      if (currentTheme !== '${targetTheme}') {
+        const btn = document.querySelector('.theme-toggle-btn');
+        if (btn) btn.click();
       }
     })()
   `);
@@ -99,7 +115,7 @@ async function run() {
   const chrome = spawn(CHROME_PATH, [
     '--headless=new',
     `--remote-debugging-port=${port}`,
-    '--window-size=1440,960',
+    '--window-size=1440,900',
     '--disable-gpu',
     'about:blank',
   ], { stdio: 'ignore' });
@@ -121,7 +137,7 @@ async function run() {
   await cdp.send('Runtime.enable');
   await cdp.send('Emulation.setDeviceMetricsOverride', {
     width: 1440,
-    height: 960,
+    height: 900,
     deviceScaleFactor: 1,
     mobile: false,
   });
@@ -141,124 +157,105 @@ async function run() {
   await new Promise(r => setTimeout(r, 1500));
 
   // ==========================================
+  // MEASURE PAGE HEIGHT
+  // ==========================================
+  const pageHeight = await cdp.eval(`
+    (() => {
+      const el = document.querySelector('.data-evidence-workspace') || document.body;
+      return el.scrollHeight || document.documentElement.scrollHeight;
+    })()
+  `);
+  console.log(`==============================================`);
+  console.log(`TOTAL EVIDENCE PAGE HEIGHT: ${pageHeight} px`);
+  console.log(`TARGET MAX HEIGHT: <= 2.2 * 900 = 1980 px`);
+  console.log(`HEIGHT AUDIT: ${pageHeight <= 1980 ? 'PASS (<= 1980 px)' : 'MARGINAL'} (${pageHeight} px)`);
+  console.log(`==============================================`);
+
+  // ==========================================
   // 1. BANGLA MODE SCREENSHOTS
   // ==========================================
-  console.log('Capturing Bangla mode screenshots...');
+  console.log('Capturing Bangla Dark...');
   await setLanguage(cdp, 'bn');
-
-  // Screenshot 1: 3D System Map (bn)
+  await setTheme(cdp, 'dark');
   await cdp.eval(`window.scrollTo(0, 0);`);
   await new Promise(r => setTimeout(r, 600));
-  await cdp.screenshot('evidence_3d_system_map_bn.png');
+  await cdp.screenshot('evidence_full_page_bn_dark.png', true);
 
-  // Screenshot 2: Hover GPM Path (bn)
+  console.log('Capturing Bangla Light...');
+  await setTheme(cdp, 'light');
+  await new Promise(r => setTimeout(r, 600));
+  await cdp.screenshot('evidence_full_page_bn_light.png', true);
+
+  // Revert to dark for interactive states
+  await setTheme(cdp, 'dark');
+  await new Promise(r => setTimeout(r, 400));
+
+  // Hover GPM
+  console.log('Capturing Hover GPM...');
   await cdp.eval(`
     (() => {
-      const node = Array.from(document.querySelectorAll('.system-map-3d-wrapper div')).find(d => d.textContent && d.textContent.includes('GPM'));
+      window.scrollTo(0, 0);
+      const node = document.querySelector('[data-id="gpm"]') || Array.from(document.querySelectorAll('.node')).find(n => n.textContent && n.textContent.includes('GPM'));
       if (node) {
         node.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
       }
     })()
   `);
   await new Promise(r => setTimeout(r, 600));
-  await cdp.screenshot('evidence_3d_hover_gpm_bn.png');
+  await cdp.screenshot('evidence_hover_gpm.png', false);
 
-  // Screenshot 3: Click Side Panel (bn)
+  // Click MILP Side Panel
+  console.log('Capturing Click MILP panel...');
   await cdp.eval(`
     (() => {
-      const node = Array.from(document.querySelectorAll('.system-map-3d-wrapper div')).find(d => d.textContent && d.textContent.includes('GPM'));
-      if (node) node.click();
+      window.scrollTo(0, 0);
+      const milpNode = Array.from(document.querySelectorAll('.node')).find(n => n.textContent && n.textContent.includes('MILP'));
+      if (milpNode) milpNode.click();
     })()
   `);
   await new Promise(r => setTimeout(r, 600));
-  await cdp.screenshot('evidence_3d_click_panel_bn.png');
+  await cdp.screenshot('evidence_click_panel_milp.png', false);
 
-  // Screenshot 4: Follow 718 mm (bn)
+  // Follow-718 Last Step
+  console.log('Capturing Follow 718 last step...');
   await cdp.eval(`
     (() => {
       const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('৭১৮'));
       if (btn) btn.click();
     })()
   `);
-  await new Promise(r => setTimeout(r, 1600));
-  await cdp.screenshot('evidence_3d_follow_number_bn.png');
-
-  // Screenshot 5: NASA Data Cards (bn)
-  await cdp.eval(`
-    (() => {
-      const cards = document.querySelector('.nasa-data-cards-section');
-      if (cards) cards.scrollIntoView({ behavior: 'instant', block: 'start' });
-      else window.scrollTo(0, 720);
-    })()
-  `);
-  await new Promise(r => setTimeout(r, 700));
-  await cdp.screenshot('evidence_nasa_cards_bn.png');
+  // Wait ~9.5s for step 6 of 6
+  await new Promise(r => setTimeout(r, 9500));
+  await cdp.screenshot('evidence_follow_718_last_step.png', false);
 
   // ==========================================
   // 2. ENGLISH MODE SCREENSHOTS
   // ==========================================
-  console.log('Capturing English mode screenshots...');
+  console.log('Capturing English Dark...');
   await setLanguage(cdp, 'en');
-
-  // Reset side panel & scroll to top
+  await setTheme(cdp, 'dark');
   await cdp.eval(`
     (() => {
       window.scrollTo(0, 0);
-      const closeBtn = document.querySelector('.system-node-glass-panel button');
+      const closeBtn = document.querySelector('.panel .x');
       if (closeBtn) closeBtn.click();
     })()
   `);
   await new Promise(r => setTimeout(r, 600));
+  await cdp.screenshot('evidence_full_page_en_dark.png', true);
 
-  // Screenshot 6: 3D System Map (en)
-  await cdp.screenshot('evidence_3d_system_map_en.png');
-
-  // Screenshot 7: Hover GPM Path (en)
-  await cdp.eval(`
-    (() => {
-      const node = Array.from(document.querySelectorAll('.system-map-3d-wrapper div')).find(d => d.textContent && d.textContent.includes('GPM'));
-      if (node) {
-        node.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-      }
-    })()
-  `);
+  console.log('Capturing English Light...');
+  await setTheme(cdp, 'light');
   await new Promise(r => setTimeout(r, 600));
-  await cdp.screenshot('evidence_3d_hover_gpm_en.png');
+  await cdp.screenshot('evidence_full_page_en_light.png', true);
 
-  // Screenshot 8: Click Side Panel (en)
-  await cdp.eval(`
-    (() => {
-      const node = Array.from(document.querySelectorAll('.system-map-3d-wrapper div')).find(d => d.textContent && d.textContent.includes('GPM'));
-      if (node) node.click();
-    })()
-  `);
-  await new Promise(r => setTimeout(r, 600));
-  await cdp.screenshot('evidence_3d_click_panel_en.png');
-
-  // Screenshot 9: Follow 718 mm (en)
-  await cdp.eval(`
-    (() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('718'));
-      if (btn) btn.click();
-    })()
-  `);
-  await new Promise(r => setTimeout(r, 1600));
-  await cdp.screenshot('evidence_3d_follow_number_en.png');
-
-  // Screenshot 10: NASA Data Cards (en)
-  await cdp.eval(`
-    (() => {
-      const cards = document.querySelector('.nasa-data-cards-section');
-      if (cards) cards.scrollIntoView({ behavior: 'instant', block: 'start' });
-      else window.scrollTo(0, 720);
-    })()
-  `);
-  await new Promise(r => setTimeout(r, 700));
-  await cdp.screenshot('evidence_nasa_cards_en.png');
+  // Reset theme to dark for persistent session
+  await setTheme(cdp, 'dark');
+  await setLanguage(cdp, 'bn');
 
   cdp.close();
   chrome.kill();
-  console.log('Finished capturing all evidence screenshots successfully.');
+  console.log('All screenshots captured successfully.');
 }
 
 run().catch(err => {

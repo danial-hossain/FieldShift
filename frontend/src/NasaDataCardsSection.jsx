@@ -191,8 +191,8 @@ export function NasaDataCardsSection({
         background: 'var(--surface, #121a17)',
         border: '1px solid var(--line, #243029)',
         borderRadius: 16,
-        padding: '18px 20px',
-        marginBottom: 16,
+        padding: '12px 18px',
+        marginBottom: 12,
       }}
     >
       {/* Header */}
@@ -283,20 +283,20 @@ export function NasaDataCardsSection({
                     if (!isSelected) e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  <td style={{ padding: '9px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle' }}>
                     <b style={{ fontFamily: 'var(--display, "Space Grotesk", sans-serif)', color: isPlanned ? '#94a3b8' : '#e7efe8' }}>
                       {isBn ? row.nameBn : row.nameEn}
                     </b>
                   </td>
-                  <td style={{ padding: '9px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: '#cbd5e1' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: '#cbd5e1' }}>
                     {isBn ? row.measuresBn : row.measuresEn}
                   </td>
-                  <td style={{ padding: '9px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: 'var(--muted, #93a597)' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: 'var(--muted, #93a597)' }}>
                     {isBn ? row.resPeriodBn : row.resPeriodEn}
                   </td>
                   <td
                     style={{
-                      padding: '9px 8px',
+                      padding: '6px 8px',
                       borderBottom: '1px solid var(--line, #243029)',
                       verticalAlign: 'middle',
                       fontVariantNumeric: 'tabular-nums',
@@ -306,10 +306,10 @@ export function NasaDataCardsSection({
                   >
                     {row.liveValue}
                   </td>
-                  <td style={{ padding: '9px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: '#cbd5e1' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle', color: '#cbd5e1' }}>
                     {isBn ? row.pagesBn : row.pagesEn}
                   </td>
-                  <td style={{ padding: '9px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle' }}>
+                  <td style={{ padding: '6px 8px', borderBottom: '1px solid var(--line, #243029)', verticalAlign: 'middle' }}>
                     <span
                       style={{
                         fontSize: 11,

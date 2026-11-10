@@ -44,8 +44,8 @@ export function MilpDecisionSection({
         background: 'var(--surface, #121a17)',
         border: '1px solid var(--line, #243029)',
         borderRadius: 16,
-        padding: '16px 20px',
-        marginBottom: 14,
+        padding: '12px 18px',
+        marginBottom: 12,
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 4 }}>

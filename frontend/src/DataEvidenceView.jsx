@@ -31,7 +31,7 @@ export function DataEvidenceView({
     <div
       className="data-evidence-workspace"
       style={{
-        padding: '16px 0 40px 0',
+        padding: '4px 0 14px 0',
         maxWidth: 1260,
         margin: '0 auto',
       }}
@@ -42,9 +42,9 @@ export function DataEvidenceView({
         style={{
           background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)',
           border: '1px solid rgba(56, 189, 248, 0.3)',
-          borderRadius: 16,
-          padding: '18px 22px',
-          marginBottom: 16,
+          borderRadius: 14,
+          padding: '10px 16px',
+          marginBottom: 10,
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
@@ -135,8 +135,8 @@ export function DataEvidenceView({
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-          gap: 14,
-          marginBottom: 14,
+          gap: 12,
+          marginBottom: 10,
         }}
       >
         <AdaptiveLearningSection
@@ -154,7 +154,7 @@ export function DataEvidenceView({
           fontSize: 12,
           color: 'var(--muted, #7f9186)',
           textAlign: 'center',
-          margin: '16px 0 0',
+          margin: '8px 0 0',
         }}
       >
         {isBn

@@ -674,7 +674,7 @@ export function SystemMap3D({
         overflow: 'hidden',
         background: 'radial-gradient(120% 90% at 15% 50%, #0d1f33 0%, #070d14 45%, #08130e 100%)',
         border: '1px solid #1b2a24',
-        marginBottom: 20,
+        marginBottom: 12,
         boxShadow: '0 25px 50px -15px rgba(0, 0, 0, 0.85)',
       }}
     >
@@ -1129,7 +1129,6 @@ export function SystemMap3D({
             zIndex: 25,
             whiteSpace: 'nowrap',
             boxShadow: '0 0 24px rgba(200, 241, 105, 0.3)',
-            backdropFilter: 'blur(8px)',
           }}
         >
           <span style={{ color: 'var(--lime, #C8F169)', fontWeight: 700, marginRight: 8 }}>
@@ -1183,9 +1182,7 @@ export function SystemMap3D({
             top: 64,
             width: 320,
             maxWidth: 'calc(100% - 32px)',
-            background: 'rgba(14, 24, 20, 0.92)',
-            backdropFilter: 'blur(14px)',
-            WebkitBackdropFilter: 'blur(14px)',
+            background: 'rgba(14, 24, 20, 0.96)',
             border: '1px solid rgba(255, 255, 255, 0.18)',
             borderRadius: 16,
             padding: '14px 16px',
