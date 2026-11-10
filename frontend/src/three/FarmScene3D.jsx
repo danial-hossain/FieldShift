@@ -16,6 +16,7 @@ import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react'
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { cropLabel } from '../i18n.js';
 import {
   FARM_PALETTE,
   CROPS_META,
@@ -461,9 +462,14 @@ export function FarmScene3D({
   height = 440,
   annualIrrigationMm = null,
   onRendererInfo = null,
+  selectedStrategy = 'balanced',
 }) {
   const containerRef = useRef(null);
   const labelsContainerRef = useRef(null);
+  const bedsRef = useRef(beds);
+  bedsRef.current = beds;
+  const langRef = useRef(lang);
+  langRef.current = lang;
   const [hasWebGL, setHasWebGL] = useState(true);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
   const [infoStats, setInfoStats] = useState({ calls: 0, triangles: 0, fps: 60 });
@@ -1200,6 +1206,9 @@ export function FarmScene3D({
       const w = rect.width;
       const h = rect.height;
 
+      const currentBeds = bedsRef.current || [];
+      const currentLang = langRef.current || 'bn';
+
       bedObjects.forEach((b, i) => {
         const labelPos = b.group.position.clone();
         labelPos.y = 4.2;
@@ -1215,32 +1224,32 @@ export function FarmScene3D({
           el.style.left = `${((labelPos.x + 1) / 2) * w}px`;
           el.style.top = `${((1 - labelPos.y) / 2) * h}px`;
 
-          const bedData = beds[i] || {};
-          let cp = bedData.crop || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][lang === 'bn' ? 'bn' : 'en'] : b.cropKey);
+          const bedData = currentBeds[i] || {};
+          let cp = bedData.cropLabel || (bedData.crop ? cropLabel(bedData.crop, currentLang) : null) || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][currentLang === 'bn' ? 'bn' : 'en'] : b.cropKey);
           if (i % 3 === 2 && (String(cp).toLowerCase().includes('rice') || String(cp).includes('ধান'))) {
-            cp = lang === 'bn' ? 'আমন ধান' : 'Aman Rice';
+            cp = currentLang === 'bn' ? 'আমন ধান' : 'Aman Rice';
           }
           const irrigVal = bedData.irrigation_mm != null ? bedData.irrigation_mm : (bedData.waterDepthMm != null ? Math.round(bedData.waterDepthMm) : null);
 
           let symbolsHtml = '';
           if (irrigVal != null && irrigVal > 0) {
             const dropSize = Math.max(10, Math.min(15, 10 + Math.round(irrigVal / 70)));
-            symbolsHtml += `<span title="${lang === 'bn' ? `সেচ ${irrigVal} মিমি` : `Irrigation ${irrigVal} mm`}" style="font-size:${dropSize}px;line-height:1">💧</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? `সেচ ${irrigVal} মিমি` : `Irrigation ${irrigVal} mm`}" style="font-size:${dropSize}px;line-height:1">💧</span>`;
           }
           if (bedData.isLegume || CROPS_META[b.cropKey]?.isLegume) {
-            symbolsHtml += `<span title="${lang === 'bn' ? 'মাটিতে নাইট্রোজেন দেয়' : 'Biological Nitrogen Fixer'}" style="color:#4ade80;font-size:11px;font-weight:800">🌱N</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'মাটিতে নাইট্রোজেন দেয়' : 'Biological Nitrogen Fixer'}" style="color:#4ade80;font-size:11px;font-weight:800">🌱N</span>`;
           }
           if (bedData.stress?.heat || bedData.heatRisk === 'high') {
-            symbolsHtml += `<span title="${lang === 'bn' ? 'ফুল আসার সময় ৩৫°C+ গরম ঝুঁকি' : 'Heat stress risk'}" style="font-size:12px">☀️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'ফুল আসার সময় ৩৫°C+ গরম ঝুঁকি' : 'Heat stress risk'}" style="font-size:12px">☀️</span>`;
           }
           if (bedData.stress?.drought || bedData.droughtRisk === 'high') {
-            symbolsHtml += `<span title="${lang === 'bn' ? 'খরা ঝুঁকি' : 'Drought risk'}" style="font-size:12px">🏜️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'খরা ঝুঁকি' : 'Drought risk'}" style="font-size:12px">🏜️</span>`;
           }
           if (bedData.stress?.rain || bedData.rainRisk === 'high') {
-            symbolsHtml += `<span title="${lang === 'bn' ? 'অতিবৃষ্টি ঝুঁকি' : 'Heavy rain risk'}" style="font-size:12px">🌧️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'অতিবৃষ্টি ঝুঁকি' : 'Heavy rain risk'}" style="font-size:12px">🌧️</span>`;
           }
           if (bedData.stress?.cold || bedData.coldRisk === 'high') {
-            symbolsHtml += `<span title="${lang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
           }
 
           const isDone = Boolean(bedData.isCompleted);
@@ -1262,11 +1271,11 @@ export function FarmScene3D({
 
           const yieldStr = bedData.yieldLabel ? ` · ${bedData.yieldLabel}` : '';
           const waterStr = isDone
-            ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${lang === 'bn' ? 'মিমি' : 'mm'}` : '')
-            : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${lang === 'bn' ? 'মিমি' : 'mm'}` : (lang === 'bn' ? ' · সেচ নেই' : ' · 0 mm'));
+            ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : '')
+            : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : (currentLang === 'bn' ? ' · সেচ নেই' : ' · 0 mm'));
           const detailStr = isDone ? (yieldStr || waterStr) : waterStr;
 
-          el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span>${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
+          el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span class="crop-name-label">${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
         }
       });
     };
@@ -1371,6 +1380,7 @@ export function FarmScene3D({
       controls,
       renderer,
       requestRender,
+      updateLabels,
     };
     if (typeof window !== 'undefined') {
       window.__farm3dRenderer = renderer;
@@ -1411,22 +1421,33 @@ export function FarmScene3D({
       }
       delete container.__farm3d;
     };
-  }, [hasWebGL, height, lang]);
+  }, [hasWebGL, height]);
 
   // -------------------------------------------------------------
   // Dynamic updates for Bed Crops, Selection, and Camera Presets
   // -------------------------------------------------------------
   useEffect(() => {
     if (!containerRef.current || !containerRef.current.__farm3d) return;
-    const { bedObjects, plantBed } = containerRef.current.__farm3d;
+    const { bedObjects, plantBed, updateLabels } = containerRef.current.__farm3d;
 
     // Update beds if crops changed or LOD adjusted
     if (Array.isArray(beds)) {
+      const cropNames = [];
+      const geoKeys = [];
       beds.slice(0, 6).forEach((bedData, i) => {
         const cropName = bedData.crop || bedData.crop_name || bedData.name;
+        cropNames.push(cropName);
         if (cropName && bedObjects[i]) {
           plantBed(i, cropName, isLowLod);
+          geoKeys.push(bedObjects[i].cropKey);
+        } else {
+          geoKeys.push('fallow');
         }
+      });
+      console.log('[FarmScene3D] Replanting beds:', {
+        strategy: selectedStrategy || 'custom',
+        cropNames,
+        geoKeys,
       });
     }
 
@@ -1445,10 +1466,14 @@ export function FarmScene3D({
         }
       }
     });
+
+    if (updateLabels) {
+      updateLabels();
+    }
     if (containerRef.current.__farm3d.requestRender) {
       containerRef.current.__farm3d.requestRender();
     }
-  }, [beds, activeIndex, isLowLod]);
+  }, [beds, activeIndex, isLowLod, selectedStrategy, lang]);
 
   // Apply Camera Presets when currentPreset changes
   useEffect(() => {

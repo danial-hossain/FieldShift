@@ -1596,6 +1596,7 @@ export function SixSeasonRecommendationView({
         <div className="stagebox" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 460 }}>
           <FarmScene3D
             beds={farm3dBeds}
+            selectedStrategy={selectedStrategy}
             selectedBedIndex={periodKeys.indexOf(activeSelectedPeriod)}
             selectedBedId={activeSelectedPeriod}
             onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
