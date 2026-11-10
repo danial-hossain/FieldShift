@@ -1,0 +1,163 @@
+/* ==============================================================================
+   FieldShift Unified Glass Design Tokens (U2)
+   Coherent design tokens for both Dark and Light themes.
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  /* Dark Theme Tokens (Default) */
+  --bg: #0A0F0D;
+  --surface: #121A15;
+  --surface-2: #18231C;
+  --glass: rgba(18, 26, 21, 0.75);
+  --glass-border: rgba(200, 241, 105, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.04);
+
+  --text: #F4F7F4;
+  --text-muted: #8C9B90;
+  --text-subtle: #556559;
+
+  --accent: #C8F169;
+  --accent-ink: #0A0F0D;
+  --accent-hover: #D6F685;
+
+  --water: #38BDF8;
+  --warn: #F59E0B;
+  --danger: #EF4444;
+  --success: #10B981;
+
+  /* Radius Scale */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  --r-full: 9999px;
+
+  /* Backward-compatible radius names */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-full: var(--r-full);
+
+  /* Spacing Scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 var(--glass-highlight);
+  --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  /* Typography Scales */
+  --font-heading: 'Space Grotesk', 'Hind Siliguri', sans-serif;
+  --font-body: 'Inter', 'Hind Siliguri', sans-serif;
+  --font-bangla: 'Hind Siliguri', 'Noto Sans Bengali', sans-serif;
+
+  /* Size Scale */
+  --fs-micro: 11px;
+  --fs-label: 12px;
+  --fs-body-sm: 13px;
+  --fs-body: 14px;
+  --fs-subhead: 16px;
+  --fs-title: 18px;
+  --fs-section: 22px;
+  --fs-hero: 28px;
+  --fs-page: 36px;
+
+  /* Backward Compatibility Aliases */
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --bg-app: var(--bg);
+  --bg-card: var(--surface);
+  --bg-card-subtle: var(--surface-2);
+  --border-light: var(--glass-border);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --line: var(--glass-border);
+  --fg: var(--text);
+  --text-main: var(--text);
+  --leaf: var(--accent);
+}
+
+/* Light Theme Tokens */
+html[data-theme="light"],
+[data-theme="light"] {
+  --bg: #F4F6F2;
+  --surface: #FFFFFF;
+  --surface-2: #E9EEE6;
+  --glass: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(20, 45, 25, 0.10);
+  --glass-highlight: rgba(255, 255, 255, 0.80);
+
+  --text: #121A15;
+  --text-muted: #4F6154;
+  --text-subtle: #7B8D80;
+
+  --accent: #2D6A4F;
+  --accent-ink: #FFFFFF;
+  --accent-hover: #22533D;
+
+  --water: #0284C7;
+  --warn: #D97706;
+  --danger: #DC2626;
+  --success: #059669;
+
+  --shadow-sm: 0 1px 3px rgba(16, 40, 26, 0.06);
+  --shadow-md: 0 4px 14px rgba(16, 40, 26, 0.08);
+  --shadow-lg: 0 8px 24px rgba(16, 40, 26, 0.12);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 var(--glass-highlight);
+  --shadow-elevated: 0 16px 48px rgba(0, 0, 0, 0.12);
+
+  /* Backward Compatibility Aliases in Light Mode */
+  --primary: var(--accent);
+  --primary-hover: var(--accent-hover);
+  --bg-app: var(--bg);
+  --bg-card: var(--surface);
+  --bg-card-subtle: var(--surface-2);
+  --border-light: var(--glass-border);
+  --border-medium: rgba(20, 45, 25, 0.16);
+  --line: var(--glass-border);
+  --fg: var(--text);
+  --text-main: var(--text);
+  --leaf: var(--accent);
+}
+
+/* Global Typography & Tabular Numbers */
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--bg);
+}
+
+h1, h2, h3, h4, h5, h6, .page-header-title {
+  font-family: var(--font-heading);
+}
+
+html[lang="bn"] body,
+html[lang="bn"] h1,
+html[lang="bn"] h2,
+html[lang="bn"] h3,
+html[lang="bn"] h4,
+html[lang="bn"] h5,
+html[lang="bn"] h6 {
+  font-family: var(--font-bangla);
+}
+
+/* Tabular Numbers for all numerical data displays */
+.tabular-nums,
+.num-stat,
+.stat-value,
+.data-table td,
+.metric-value,
+.profit-value,
+.key-number,
+.price-tag {
+  font-variant-numeric: tabular-nums;
+}
