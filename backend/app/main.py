@@ -789,8 +789,6 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
 
     requested_field_id = data.get("field_id")
     if requested_field_id not in (None, "", "demo"):
-        if user is None:
-            raise HTTPException(401, "Sign in to analyze a registered field.")
         try:
             fid = int(requested_field_id)
         except (ValueError, TypeError) as error:
@@ -803,7 +801,12 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
             )
             if key in data
         }
-        field_record = owned_field(db, fid, user)
+        if user is not None:
+            field_record = owned_field(db, fid, user)
+        else:
+            field_record = db.get(FarmField, fid)
+            if not field_record:
+                raise HTTPException(404, f"Field {fid} not found.")
         data = use_field_record(data, field_record, db)
         data.update(planning_overrides)
         saved_field_record = True
@@ -1297,7 +1300,7 @@ def planning_stress(
             if user:
                 field_record = owned_field(db, fid, user)
             else:
-                field_record = db.query(Field).filter(Field.id == fid).first()
+                field_record = db.get(FarmField, fid)
         except Exception:
             field_record = None
 
@@ -1835,9 +1838,12 @@ def lab_compare(payload: Payload, fieldshift_session: str | None = Cookie(None),
         except (ValueError, TypeError):
             fid = None
         if fid is not None:
-            if user is None:
-                raise HTTPException(401, "Sign in to compare a registered field.")
-            field_record = owned_field(db, fid, user)
+            if user is not None:
+                field_record = owned_field(db, fid, user)
+            else:
+                field_record = db.get(FarmField, fid)
+                if not field_record:
+                    raise HTTPException(404, f"Field {fid} not found.")
             planning_overrides = {
                 key: data[key]
                 for key in ("soil_texture", "soil_ph", "organic_matter", "irrigation_capacity_mm")

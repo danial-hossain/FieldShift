@@ -153,6 +153,10 @@ def generate_rotation_strategies(
     profiles = _profiles(priority_profiles)
     legume_interval = _legume_interval(agronomic_config)
     options = _optimizer_arguments(optimizer_options)
+    is_haor = bool(getattr(field_state, "seasonally_flooded", False))
+    if is_haor:
+        options.setdefault("allow_kharif2_fallow", True)
+        options.setdefault("seasonally_flooded", True)
     if planning_periods is not None:
         options["planning_periods"] = planning_periods
     if legume_interval is not None:
