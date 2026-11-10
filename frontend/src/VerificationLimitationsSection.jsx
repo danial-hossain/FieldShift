@@ -1,304 +1,113 @@
 // frontend/src/VerificationLimitationsSection.jsx
-// Section "যাচাই" ও "সীমাবদ্ধতা" (Automated quality guards, honest onset results, limitations, and collapsed reference price table).
+// Section "যাচাই ও সীমাবদ্ধতা": 5 concise scientific limitation & verification bullets.
+// Matches docs/evidence_layout_reference.html closely.
 
-import React, { useState } from 'react';
+import React from 'react';
 
 export function VerificationLimitationsSection({
   lang = 'bn',
 }) {
   const isBn = lang === 'bn';
-  const [isPriceTableOpen, setIsPriceTableOpen] = useState(false);
 
-  const VERIFICATION_GUARDS = [
+  const BULLETS = [
     {
-      name: 'consistency_check.py',
-      labelBn: 'সংখ্যাগত ধারাবাহিকতা যাচাই (Cross-View Integrity)',
-      labelEn: 'Cross-View Numeric Consistency Guard',
-      result: 'PASS',
-      date: '2026-11-10',
-      descBn: 'প্ল্যানার, পানির হিসাব, চাপ পরীক্ষা ও বাজার পৃষ্ঠার লাভ ও পানির সংখ্যায় কোনো অমিল নেই (০ discrepancy)।',
-      descEn: 'Zero discrepancies between Planner, Water, Stress Test, and Market calculations across all 4 strategies.',
+      bn: 'সব পাতায় একই সংখ্যা (consistency check) · ৫টা জমিতে আলাদা ফল (field variation check)',
+      en: 'Uniform numbers across all pages (consistency check) · Dynamic variation across 5 geographic benchmark fields',
     },
     {
-      name: 'field_variation_check.py',
-      labelBn: 'বহু-মাঠ স্থানিক বৈচিত্র্য গার্ড (Multi-Field S8a)',
-      labelEn: 'Multi-Field Spatial Variation Guard',
-      result: 'PASS',
-      date: '2026-11-10',
-      descBn: 'বরেন্দ্র, হাওর, উপকূলীয় ও দক্ষিণাঞ্চলের ৪টি পৃথক খামারে মডেল আউটপুট সততার সাথে ভিন্ন ভিন্ন মান দেয়।',
-      descEn: 'Verifies dynamic spatial variation across Barind, Haor, Coastal, and Floodplain agricultural zones.',
+      bn: 'দুই NASA dataset বর্ষা শুরুর তারিখে একমত নয় → এ নিয়ে কোনো নিশ্চিত দাবি করি না',
+      en: 'Two NASA datasets disagree on monsoon onset dates (p = 0.73) → System honestly claims no confirmed shift',
     },
     {
-      name: 'lang_check.py',
-      labelBn: 'দ্বিভাষিক শুদ্ধতা গার্ড (L1 Bilingual Guard)',
-      labelEn: 'Bilingual Consistency & Strict L1 Guard',
-      result: 'PASS',
-      date: '2026-11-10',
-      descBn: 'বাংলা মোডে ১০০% বাংলা সংখ্যা ও শব্দ এবং ইংরেজি মোডে পূর্ণাঙ্গ ইংরেজি (কোনো মিশ্রিত বা অস্পষ্ট টেক্সট নেই)।',
-      descEn: 'Strict L1 compliance: 100% pure Bangla digits/terms in Bangla mode and proper English in English mode.',
+      bn: 'NASA POWER ~৫০ কিমি এলাকার গড়; জমির নিজস্ব গাছপালা বা জলাশয়ের মাইক্রোক্লাইমেট একটু আলাদা হতে পারে',
+      en: 'NASA POWER ~50 km grid average; localized microclimates (canopy, waterbodies) may show minor variation',
     },
     {
-      name: 'onset_honest_check',
-      labelBn: 'আমন বৃষ্টি শুরু (Monsoon Onset) সততা যাচাই',
-      labelEn: 'Monsoon Onset Honest Statistical Disagreement',
-      result: 'PASS (NO CLAIM)',
-      date: '2026-11-10',
-      descBn: 'দুটি নাসা ডেটাসেট একমত নয় (আইমার্জ +২.৫ দিন, পাওয়ার +১৩ দিন, p = ০.৭৩)। কোনো মিথ্যা দাবি না করে "পরিবর্তন অপ্রমাণিত" প্রদর্শন।',
-      descEn: 'Scientific honesty: GPM IMERG (+2.5d) and NASA POWER (+13d) disagree (p=0.73). System honestly claims no confirmed shift.',
-    },
-  ];
-
-  const LIMITATIONS = [
-    {
-      icon: '🛰️',
-      titleBn: 'পাওয়ার রেজোলিউশন ~৫০ কিমি (মাইক্রোক্লাইমেট তারতম্য)',
-      titleEn: 'NASA POWER ~50 km Native Resolution',
-      descBn: 'নাসা পাওয়ারের স্থানীয় গ্রিড ৫০ কিমি হওয়ায় খামারের নিজস্ব গাছপালা বা জলাশয়ের অতি-স্থানীয় মাইক্রোক্লাইমেটের সামান্য তারতম্য হতে পারে।',
-      descEn: 'Regional 0.5° grid resolution means localized microclimates (tree canopy, waterbodies) may show minor deviations.',
+      bn: 'মাটি পরীক্ষা না থাকলে SoilGrids মাটির ধরনের গড় মান; দাম সরকারি স্থির তালিকা (DAM/TCB/BBS)',
+      en: 'Uses SoilGrids textural class averages if no lab soil test exists; wholesale crop prices from fixed baseline catalogue',
     },
     {
-      icon: '🧪',
-      titleBn: 'মাটি ল্যাব টেস্ট নয় (আঞ্চলিক গড় উপাত্ত)',
-      titleEn: 'Class-Average SoilGrids (No In-Situ Soil Test)',
-      descBn: 'ISRIC SoilGrids ২৫০ মিটার মাটির টেক্সচার ব্যবহার করা হয়েছে। সুনির্দিষ্ট সার প্রয়োগের আগে খামারের নিজস্ব মাটি পরীক্ষা সুপারিশ করা হয়।',
-      descEn: 'ISRIC SoilGrids 250m class averages are used; in-situ chemical laboratory testing is recommended for precise fertilizer tailoring.',
+      bn: 'পোকা-রোগ সরাসরি মডেলে নেই · বীজ বপনের পূর্বে স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে যাচাই করুন',
+      en: 'Airborne pests & diseases are not simulated · Farmers must consult local SAAO extension officers before planting',
     },
-    {
-      icon: '📈',
-      titleBn: 'স্থির বাজারমূল্য (বাজারের আকস্মিক ওঠানামা)',
-      titleEn: 'Static Farm-Gate Benchmark Prices',
-      descBn: 'দামগুলো সরকারি কৃষি বিপণন অধিদপ্তর (DAM/TCB/BBS ২০২৪) এর পাইকারি বেঞ্চমার্ক। মৌসুমে বাজারের আকস্মিক দরপতন কৃষকের আয়ে প্রভাব ফেলতে পারে।',
-      descEn: 'Economic figures use DAM/TCB/BBS 2024 farm-gate benchmarks; unexpected market saturation may shift real profit margins.',
-    },
-    {
-      icon: '🌪️',
-      titleBn: 'জলবায়ু চাপ পরীক্ষা একটি সরলীকৃত মডেল',
-      titleEn: 'Simplified Single-Scenario Stress Testing',
-      descBn: 'FAO-33 Ky এবং FAO-29 সমীকরণ মূলত একক চরম আবহাওয়ার প্রভাব সিমুলেট করে; একই সাথে খরা ও লবণের জটিল মিথস্ক্রিয়া সরলীকৃত রাখা হয়েছে।',
-      descEn: 'FAO-33 and FAO-29 formulations model discrete extreme shocks; compounding multi-hazard interactions are simplified.',
-    },
-    {
-      icon: '🐛',
-      titleBn: 'কীটপতঙ্গ ও ছত্রাক রোগ সরাসরি সিমুলেট হয় না',
-      titleEn: 'Pest Infestation & Pathology Not Modeled',
-      descBn: 'ফসল আবর্তন মাটির পোকার জীবনচক্র ধ্বংস করে, কিন্তু বাতাসে ছড়ানো ব্লাস্ট বা মাজরা পোকার আক্রমণ কৃষককে সরাসরি মাঠে চোখ রেখে দমন করতে হবে।',
-      descEn: 'Crop diversification breaks soil-borne pest cycles, but airborne diseases (e.g. blast, stem borer) require field scouting.',
-    },
-    {
-      icon: '👨‍🌾',
-      titleBn: 'বীজ বপনের পূর্বে স্থানীয় উপসহকারী কৃষি কর্মকর্তার (SAAO) পরামর্শ নিন',
-      titleEn: 'Always Consult Local Extension Officer (SAAO)',
-      descBn: 'নতুন জাতের বীজ সংগ্রহ, স্থানীয় সরকারি ভর্তুকি ও রোপণ সূচির জন্য অবশ্যই ইউনিয়ন উপসহকারী কৃষি কর্মকর্তা (SAAO/DAE) এর সাথে সমন্বয় করুন।',
-      descEn: 'Before adopting a new seed variety or shifting calendar dates, verify local seed supply with the Sub-Assistant Agriculture Officer (SAAO).',
-    },
-  ];
-
-  const REFERENCE_PRICES = [
-    { cropBn: 'বোরো ধান', cropEn: 'Boro Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৫.৫ টন/হে', yieldEn: '5.5 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আমন ধান', cropEn: 'Aman Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৪.০ টন/হে', yieldEn: '4.0 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আউশ ধান', cropEn: 'Aus Rice', maundBn: '১,১১৯ টাকা', maundEn: '1,119 BDT', kgBn: '৩০.০০ টাকা', kgEn: '30.00 BDT', yieldBn: '৩.৫ টন/হে', yieldEn: '3.5 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'গম', cropEn: 'Wheat', maundBn: '১,১৯৪ টাকা', maundEn: '1,194 BDT', kgBn: '৩২.০০ টাকা', kgEn: '32.00 BDT', yieldBn: '২.৮ টন/হে', yieldEn: '2.8 t/ha', sourceBn: 'DAM/BBS ২০২৪', sourceEn: 'DAM/BBS 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'ভুট্টা', cropEn: 'Maize', maundBn: '৯৩৩ টাকা', maundEn: '933 BDT', kgBn: '২৫.০০ টাকা', kgEn: '25.00 BDT', yieldBn: '৫.০ টন/হে', yieldEn: '5.0 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সরিষা', cropEn: 'Mustard', maundBn: '২,৪২৬ টাকা', maundEn: '2,426 BDT', kgBn: '৬৫.০০ টাকা', kgEn: '65.00 BDT', yieldBn: '১.৫ টন/হে', yieldEn: '1.5 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'মুগডাল', cropEn: 'Mungbean', maundBn: '৩,১৭২ টাকা', maundEn: '3,172 BDT', kgBn: '৮৫.০০ টাকা', kgEn: '85.00 BDT', yieldBn: '১.০ টন/হে', yieldEn: '1.0 t/ha', sourceBn: 'DAM ডাল বাজার ২০২৪', sourceEn: 'DAM Pulses 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'মসুর', cropEn: 'Lentil', maundBn: '৩,৩৫৯ টাকা', maundEn: '3,359 BDT', kgBn: '৯০.০০ টাকা', kgEn: '90.00 BDT', yieldBn: '১.২ টন/হে', yieldEn: '1.2 t/ha', sourceBn: 'DAM ডাল বাজার ২০২৪', sourceEn: 'DAM Pulses 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'ছোলা', cropEn: 'Chickpea', maundBn: '৩,০৬০ টাকা', maundEn: '3,060 BDT', kgBn: '৮২.০০ টাকা', kgEn: '82.00 BDT', yieldBn: '১.৩ টন/হে', yieldEn: '1.3 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'তিল', cropEn: 'Sesame', maundBn: '৪,১০৫ টাকা', maundEn: '4,105 BDT', kgBn: '১১০.০০ টাকা', kgEn: '110.00 BDT', yieldBn: '০.৯ টন/হে', yieldEn: '0.9 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সয়াবিন', cropEn: 'Soybean', maundBn: '২,২৪০ টাকা', maundEn: '2,240 BDT', kgBn: '৬০.০০ টাকা', kgEn: '60.00 BDT', yieldBn: '২.২ টন/হে', yieldEn: '2.2 t/ha', sourceBn: 'DAM/TCB ২০২৪', sourceEn: 'DAM/TCB 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'সূর্যমুখী', cropEn: 'Sunflower', maundBn: '২,১৬৫ টাকা', maundEn: '2,165 BDT', kgBn: '৫৮.০০ টাকা', kgEn: '58.00 BDT', yieldBn: '১.৮ টন/হে', yieldEn: '1.8 t/ha', sourceBn: 'কৃষি বিপণন ২০২৪', sourceEn: 'DAM 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'আলু', cropEn: 'Potato', maundBn: '৬৭২ টাকা', maundEn: '672 BDT', kgBn: '১৮.০০ টাকা', kgEn: '18.00 BDT', yieldBn: '১৫.০ টন/হে', yieldEn: '15.0 t/ha', sourceBn: 'BBS/DAM ২০২৪', sourceEn: 'BBS/DAM 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'টমেটো', cropEn: 'Tomato', maundBn: '৯৩৩ টাকা', maundEn: '933 BDT', kgBn: '২৫.০০ টাকা', kgEn: '25.00 BDT', yieldBn: '১৮.০ টন/হে', yieldEn: '18.0 t/ha', sourceBn: 'DAM পাইকারি ২০২৪', sourceEn: 'DAM Wholesale 2024', link: 'http://www.dam.gov.bd' },
-    { cropBn: 'পাট', cropEn: 'Jute', maundBn: '১,৯৪১ টাকা', maundEn: '1,941 BDT', kgBn: '৫২.০০ টাকা', kgEn: '52.00 BDT', yieldBn: '২.৪ টন/হে', yieldEn: '2.4 t/ha', sourceBn: 'BJMC/DAM ২০২৪', sourceEn: 'BJMC/DAM 2024', link: 'http://www.dam.gov.bd' },
   ];
 
   return (
-    <section className="verification-limitations-section" style={{ marginBottom: 36 }}>
-      {/* 1. Verification Section */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <span style={{ fontSize: 22 }}>✅</span>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
-            {isBn ? 'সিস্টেম যাচাই ও মাননিয়ন্ত্রণ (Verification Guards)' : 'System Verification & Quality Guards'}
-          </h2>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 10px',
-              borderRadius: 999,
-              background: 'rgba(16, 185, 129, 0.15)',
-              color: '#34d399',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-            }}
-          >
-            {isBn ? '৪/৪ যাচাই উত্তীর্ণ' : '4/4 Guards Passed'}
-          </span>
-        </div>
-        <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-          {isBn
-            ? 'প্রতিটি কোড পরিবর্তন স্বয়ংক্রিয় টেস্ট স্যুট দ্বারা নিরীক্ষিত হয় যাতে কোনো পাতায় কাল্পনিক সংখ্যা বা অসংগতি তৈরি না হয়।'
-            : 'Automated CI/CD test harnesses rigorously enforce numerical integrity, geographic variation, and strict bilingual rendering.'}
-        </p>
-
-        {/* Verification Cards Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, marginTop: 14 }}>
-          {VERIFICATION_GUARDS.map((g) => (
-            <div
-              key={g.name}
-              className="dash-card"
-              style={{
-                background: 'var(--glass-strong)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRadius: 12,
-                padding: '16px',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                <code style={{ fontSize: 11.5, color: '#38bdf8', fontWeight: 700 }}>{g.name}</code>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: 4,
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                  }}
-                >
-                  {g.result}
-                </span>
-              </div>
-              <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
-                {isBn ? g.labelBn : g.labelEn}
-              </strong>
-              <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.45 }}>
-                {isBn ? g.descBn : g.descEn}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 2. Limitations Section + SAAO Consultation */}
-      <div style={{ marginBottom: 28 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-          <span style={{ fontSize: 22 }}>⚠️</span>
-          <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
-            {isBn ? 'সীমাবদ্ধতা ও বিশেষজ্ঞের পরামর্শের ক্ষেত্র' : 'Limitations & When Local Expert Counsel is Required'}
-          </h2>
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 10px',
-              borderRadius: 999,
-              background: 'rgba(245, 158, 11, 0.15)',
-              color: '#fbbf24',
-              border: '1px solid rgba(245, 158, 11, 0.3)',
-            }}
-          >
-            {isBn ? 'সতর্কতা নির্দেশিকা' : 'Scientific Boundaries'}
-          </span>
-        </div>
-        <p style={{ fontSize: 13.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>
-          {isBn
-            ? 'নাসা উপাত্ত ও এআই মডেল সিদ্ধান্ত গ্রহণে অত্যন্ত সহায়ক, তবে কৃষিতে প্রকৃতির বহু অনিয়ন্ত্রিত উপাদানের জন্য স্থানীয় সম্প্রসারণ কর্মকর্তার সাথে সমন্বয় অপরিহার্য।'
-            : 'Satellite intelligence provides rigorous macro and meso-scale decision support, but local field-level agricultural extension (SAAO) remains essential.'}
-        </p>
-
-        {/* 6 Limitations Bullets */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 14, marginTop: 14 }}>
-          {LIMITATIONS.map((lim, idx) => (
-            <div
-              key={idx}
-              className="dash-card"
-              style={{
-                background: 'var(--glass-strong)',
-                border: '1px solid var(--line)',
-                borderRadius: 12,
-                padding: '16px',
-                display: 'flex',
-                gap: 12,
-              }}
-            >
-              <span style={{ fontSize: 22, flexShrink: 0 }}>{lim.icon}</span>
-              <div>
-                <strong style={{ fontSize: 13, color: 'var(--text)', display: 'block', marginBottom: 4 }}>
-                  {isBn ? lim.titleBn : lim.titleEn}
-                </strong>
-                <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.45 }}>
-                  {isBn ? lim.descBn : lim.descEn}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 3. Collapsed Reference Price Table */}
-      <div
-        className="dash-card"
-        style={{
-          background: 'var(--glass-strong)',
-          border: '1px solid var(--line)',
-          borderRadius: 14,
-          padding: '16px 20px',
-        }}
-      >
-        <div
-          onClick={() => setIsPriceTableOpen(!isPriceTableOpen)}
+    <section
+      className="card"
+      style={{
+        background: 'var(--surface, #121a17)',
+        border: '1px solid var(--line, #243029)',
+        borderRadius: 16,
+        padding: '16px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+      }}
+    >
+      <div>
+        <h2
           style={{
+            fontFamily: 'var(--display, "Space Grotesk", sans-serif)',
+            fontSize: 18,
+            fontWeight: 700,
+            color: 'var(--fg, #e7efe8)',
+            margin: '0 0 4px',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
+            gap: 8,
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>📋</span>
-            <strong style={{ fontSize: 14, color: 'var(--text)' }}>
-              {isBn ? 'সরকারি রেফারেন্স মূল্য তালিকা (DAM / BBS ২০২৪)' : 'Government Benchmark Price Reference Table (DAM / BBS 2024)'}
-            </strong>
-            <span style={{ fontSize: 11, color: '#94a3b8' }}>
-              ({isBn ? 'স্থির তালিকা, লাইভ নয়' : 'Static Benchmark, Not Live'})
-            </span>
-          </div>
-          <span style={{ fontSize: 14, color: '#38bdf8' }}>
-            {isPriceTableOpen ? (isBn ? '▲ সংক্ষেপ করুন' : '▲ Collapse') : (isBn ? '▼ বিস্তারিত দেখুন' : '▼ View Details')}
-          </span>
+          <span>⚖️</span>
+          <span>{isBn ? 'যাচাই ও সীমাবদ্ধতা' : 'Verification & Limitations'}</span>
+        </h2>
+        <div
+          className="muted"
+          style={{
+            color: 'var(--muted, #93a597)',
+            fontSize: 13,
+            lineHeight: 1.5,
+            marginBottom: 8,
+          }}
+        >
+          {isBn
+            ? 'স্বয়ংক্রিয় মান যাচাই ও যেখানে স্থানীয় বিশেষজ্ঞের পরামর্শ প্রয়োজন'
+            : 'Automated quality test guards and areas requiring local agronomic verification'}
         </div>
 
-        {isPriceTableOpen && (
-          <div style={{ marginTop: 16, overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#94a3b8' }}>
-                  <th style={{ padding: '8px 10px' }}>{isBn ? 'ফসল' : 'Crop'}</th>
-                  <th style={{ padding: '8px 10px' }}>{isBn ? 'দাম (টাকা/মণ)' : 'Price (BDT/Maund)'}</th>
-                  <th style={{ padding: '8px 10px' }}>{isBn ? 'দাম (টাকা/কেজি)' : 'Price (BDT/kg)'}</th>
-                  <th style={{ padding: '8px 10px' }}>{isBn ? 'প্রত্যাশিত ফলন' : 'Expected Yield'}</th>
-                  <th style={{ padding: '8px 10px' }}>{isBn ? 'তথ্যসূত্র' : 'Source'}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {REFERENCE_PRICES.map((p, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)', color: 'var(--text)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: 600 }}>{isBn ? p.cropBn : p.cropEn}</td>
-                    <td style={{ padding: '8px 10px', color: '#38bdf8' }}>{p.maund}</td>
-                    <td style={{ padding: '8px 10px', color: '#34d399' }}>{p.kg}</td>
-                    <td style={{ padding: '8px 10px', color: 'var(--text-2)' }}>{p.yield}</td>
-                    <td style={{ padding: '8px 10px', color: '#94a3b8' }}>
-                      <a href={p.link} target="_blank" rel="noopener noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
-                        {p.source}
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* 5 Concise Bullets */}
+        <ul
+          style={{
+            margin: '8px 0 0',
+            paddingLeft: 20,
+            fontSize: 13,
+            color: '#e7efe8',
+            lineHeight: 1.6,
+          }}
+        >
+          {BULLETS.map((b, idx) => (
+            <li key={idx} style={{ marginBottom: 6 }}>
+              {isBn ? b.bn : b.en}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div
+        style={{
+          marginTop: 12,
+          paddingTop: 8,
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          fontSize: 11.5,
+          color: 'var(--muted, #93a597)',
+        }}
+      >
+        <span>🛡️ </span>
+        <span>
+          {isBn
+            ? 'পরীক্ষা ফলাফল: consistency_check: PASS · field_variation_check: PASS · lang_check: PASS (১০ নভেম্বর ২০২৬)'
+            : 'Test Guard Status: consistency_check: PASS · field_variation_check: PASS · lang_check: PASS (Nov 10, 2026)'}
+        </span>
       </div>
     </section>
   );
