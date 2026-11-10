@@ -23,6 +23,9 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
             return 'react-vendor';
           }
+          if (id.includes('/overview/') || id.includes('OrbitToField')) {
+            return 'overview-story-3d';
+          }
           if (id.includes('/research3d/') || id.includes('RealFarmCanvas3D') || id.includes('NasaWeatherStation3D')) {
             return 'research-3d-views';
           }

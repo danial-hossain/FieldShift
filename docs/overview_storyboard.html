@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orbit to Field Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Noto+Sans+Bengali:wght@400;600;700&display=swap">
+<style>
+/* Storyboard: 7 full-width 16:9 frames of the Overview scroll story, each = 3D scene still + glass text card. */
+:root{--navy:#05080F;--green:#0c1a12;--lime:#C8F169;--cyan:#38D9F5;--amber:#F5B04C;--fg:#EAF2EC;--muted:#9fb3a5;
+  --body:"Noto Sans Bengali","Space Grotesk",system-ui,sans-serif;--display:"Space Grotesk","Noto Sans Bengali",system-ui,sans-serif}
+:root{color-scheme:dark}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--pagebg:#e9eee8;--pagefg:#14201a}}
+:root[data-theme="light"]{--pagebg:#e9eee8;--pagefg:#14201a}
+body{margin:0;background:var(--pagebg,#03060b);color:var(--pagefg,var(--fg));font-family:var(--body)}
+.wrap{max-width:1280px;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:22px}
+header h1{font-family:var(--display);font-size:24px;margin:0}
+header p{margin:4px 0 0;opacity:.75;font-size:14px}
+.frame{position:relative;border-radius:18px;overflow:hidden;aspect-ratio:16/9;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.frame svg{position:absolute;inset:0;width:100%;height:100%}
+.card{position:absolute;left:5%;top:50%;transform:translateY(-50%);width:min(36%,420px);padding:clamp(12px,2.2vw,26px);border-radius:20px;
+  background:rgba(14,24,20,.42);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border:1px solid rgba(255,255,255,.14);color:var(--fg)}
+.card .k{font-family:var(--display);font-size:clamp(10px,1.1vw,13px);letter-spacing:.14em;text-transform:uppercase;color:var(--lime);opacity:.9}
+.card h2{font-family:var(--body);font-weight:700;font-size:clamp(17px,2.9vw,40px);line-height:1.15;margin:6px 0 8px;text-wrap:balance}
+.card h2.en{font-family:var(--display)}
+.card p{margin:0;font-size:clamp(11px,1.35vw,17px);color:#cfe0d4;line-height:1.45}
+.card .num{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.card .num span{font-size:clamp(10px,1.15vw,14px);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:4px 10px}
+.card .num b{color:var(--lime)} .card .num b.c{color:var(--cyan)} .card .num b.a{color:var(--amber)}
+.cta{display:inline-block;margin-top:14px;background:var(--lime);color:#10200a;font-weight:700;border-radius:14px;padding:clamp(8px,1vw,12px) clamp(12px,1.6vw,20px);font-size:clamp(12px,1.4vw,17px);box-shadow:0 0 30px rgba(200,241,105,.45)}
+.chip{display:inline-block;margin-top:12px;font-size:clamp(10px,1.1vw,13px);color:var(--lime);border:1px solid rgba(200,241,105,.4);border-radius:99px;padding:3px 10px}
+.idx{position:absolute;right:18px;top:14px;font-family:var(--display);font-size:13px;color:rgba(255,255,255,.55);letter-spacing:.1em}
+.play{position:absolute;right:18px;bottom:14px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:5px 12px}
+.prog{position:absolute;right:22px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
+.prog i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3)} .prog i.on{background:var(--lime);box-shadow:0 0 10px var(--lime);height:18px;border-radius:4px}
+.note{font-size:12.5px;opacity:.7}
+@media (max-width:700px){.card{left:4%;width:56%;padding:10px}.card p{display:none}.card .num{display:none}.prog{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Overview · "From Orbit to Field" — 7 scenes</h1><p>Scroll and the camera flies from space down to the farmer's own field. Each frame is a still of one scene.</p></header>
+  <div id="frames"></div>
+  <p class="note">Design storyboard (stills). In the app each scene runs in three.js; the map pins, rotations and numbers come from the real NASA data, and scene 2 uses the real Bangladesh border instead of this simplified shape.</p>
+</div>
+<script>
+const NS='http://www.w3.org/2000/svg';
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const W=1600,H=900;
+function stars(n,glow){let s='';for(let i=0;i<n;i++){const x=rnd()*W,y=rnd()*H,r=rnd()<.06?1.8:rnd()*1.1+.3;s+=`<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${.3+rnd()*.7}"/>`}return s}
+/* iso projection */
+const ISO=(x,y,z,ox,oy,s)=>[ox+(x-y)*s*0.866,oy+(x+y)*s*0.5-z*s];
+function box(x,y,w,d,h,col,ox,oy,s,shade=[1,.78,.62]){const p=(a,b,c)=>ISO(a,b,c,ox,oy,s).join(',');
+  const top=`${p(x,y,h)} ${p(x+w,y,h)} ${p(x+w,y+d,h)} ${p(x,y+d,h)}`;
+  const left=`${p(x,y+d,h)} ${p(x+w,y+d,h)} ${p(x+w,y+d,0)} ${p(x,y+d,0)}`;
+  const right=`${p(x+w,y,h)} ${p(x+w,y+d,h)} ${p(x+w,y+d,0)} ${p(x+w,y,0)}`;
+  const sh=(c,k)=>{const n=parseInt(c.slice(1),16);const r=Math.round((n>>16)*k),g=Math.round((n>>8&255)*k),b=Math.round((n&255)*k);return `rgb(${r},${g},${b})`};
+  return `<polygon points="${left}" fill="${sh(col,shade[1])}"/><polygon points="${right}" fill="${sh(col,shade[2])}"/><polygon points="${top}" fill="${sh(col,shade[0])}"/>`}
+function plants(x,y,w,d,h,kind,ox,oy,s,n=70){let g='';const pts=[];for(let i=0;i<n;i++)pts.push([x+0.15+rnd()*(w-0.3),y+0.15+rnd()*(d-0.3)]);
+  pts.sort((a,b)=>(a[0]+a[1])-(b[0]+b[1]));
+  pts.forEach(([px,py])=>{const [bx,by]=ISO(px,py,h,ox,oy,s);
+    if(kind==='rice'){g+=`<path d="M${bx},${by} l-4,-18 M${bx},${by} l0,-22 M${bx},${by} l5,-17" stroke="${rnd()<.5?'#6fc24a':'#88d65a'}" stroke-width="2.2" stroke-linecap="round"/>`}
+    else if(kind==='ripe'){g+=`<path d="M${bx},${by} l-3,-16 M${bx},${by} l1,-19 M${bx},${by} l5,-15" stroke="#cdb24a" stroke-width="2.2" stroke-linecap="round"/><circle cx="${bx+1}" cy="${by-19}" r="2.6" fill="#e3c65a"/>`}
+    else if(kind==='mustard'){g+=`<path d="M${bx},${by} l0,-20" stroke="#5f9134" stroke-width="2"/><circle cx="${bx}" cy="${by-22}" r="4.5" fill="${rnd()<.5?'#f5d02a':'#f0b915'}"/>`}
+    else if(kind==='stub'){if(rnd()<.35)g+=`<path d="M${bx},${by} l-1,-5 M${bx},${by} l2,-4" stroke="#9c8a5a" stroke-width="1.6"/>`}
+  });return g}
+function tree(x,y,ox,oy,s,sc=1){const [bx,by]=ISO(x,y,0,ox,oy,s);return `<rect x="${bx-3*sc}" y="${by-22*sc}" width="${6*sc}" height="${22*sc}" fill="#6b4a2c"/><circle cx="${bx}" cy="${by-34*sc}" r="${20*sc}" fill="#2f7d3c"/><circle cx="${bx-9*sc}" cy="${by-28*sc}" r="${13*sc}" fill="#3b9147"/><circle cx="${bx+8*sc}" cy="${by-40*sc}" r="${11*sc}" fill="#46a352"/>`}
+function house(x,y,ox,oy,s){return box(x,y,1.3,1.1,0.9,'#e9e4d6',ox,oy,s)+(()=>{const p=(a,b,c)=>ISO(a,b,c,ox,oy,s).join(',');return `<polygon points="${p(x-.1,y-.1,.9)} ${p(x+1.4,y-.1,.9)} ${p(x+.65,y+.55,1.6)}" fill="#3e6fa8"/><polygon points="${p(x+1.4,y-.1,.9)} ${p(x+1.4,y+1.2,.9)} ${p(x+.65,y+.55,1.6)}" fill="#2f5a8c"/>`})()}
+/* the farm: ground + 3 beds of the current rotation */
+function farm(ox,oy,s,beds,opts={}){let g='';
+  g+=box(-0.6,-0.6,9.2,4.6,0.35,'#5d8f3e',ox,oy,s,[1,.7,.55]);
+  beds.forEach((b,i)=>{const x=i*3;g+=box(x,0,2.6,3.4,0.55,b.wet?'#4c3a28':'#8a6a45',ox,oy,s,[1,.8,.62]);
+    if(b.wet){const p=(a,c,d)=>ISO(a,c,d,ox,oy,s).join(',');g+=`<polygon points="${p(x+.1,.1,.57)} ${p(x+2.5,.1,.57)} ${p(x+2.5,3.3,.57)} ${p(x+.1,3.3,.57)}" fill="#4aa3d6" opacity=".55"/>`}
+    g+=plants(x,0,2.6,3.4,0.57,b.kind,ox,oy,s,b.kind==='stub'?40:80);
+    if(b.label){const [lx,ly]=ISO(x+1.3,0.2,2.4,ox,oy,s);g+=`<g font-family="Noto Sans Bengali" font-size="20" font-weight="700"><rect x="${lx-58}" y="${ly-26}" width="116" height="34" rx="10" fill="rgba(10,18,14,.78)"/><text x="${lx}" y="${ly-3}" fill="#fff" text-anchor="middle">${b.label}</text></g>`}});
+  g+=house(9.4,0.6,ox,oy,s);g+=tree(-1.5,2,ox,oy,s,1.2)+tree(9.8,3.6,ox,oy,s)+tree(-1.2,4.4,ox,oy,s,.9);return g}
+function bdShape(cx,cy,sc){/* stylised outline, not to scale */const pts=[[0,0],[40,-8],[70,8],[95,0],[120,18],[150,22],[160,50],[175,72],[168,100],[182,130],[176,170],[190,215],[180,250],[160,232],[150,262],[128,250],[110,272],[86,256],[60,268],[45,240],[30,200],[48,170],[20,140],[28,110],[5,80],[18,45]];
+  return pts.map(([x,y])=>`${cx+(x-90)*sc},${cy+(y-130)*sc}`).join(' ')}
+const SC=[
+ {k:'01 · Orbit',h:'FieldShift',p:'NASA watches every field on Earth from orbit.',svg:()=>{let g=`<defs><radialGradient id="e1" cx="40%" cy="35%"><stop offset="0" stop-color="#5bb4f0"/><stop offset=".55" stop-color="#1f5fa6"/><stop offset="1" stop-color="#0a2550"/></radialGradient><radialGradient id="glo"><stop offset=".72" stop-color="#38D9F5" stop-opacity=".0"/><stop offset=".8" stop-color="#38D9F5" stop-opacity=".35"/><stop offset="1" stop-color="#38D9F5" stop-opacity="0"/></radialGradient></defs>
+   <rect width="${W}" height="${H}" fill="#05080F"/>${stars(260)}<circle cx="1060" cy="470" r="380" fill="url(#glo)"/><circle cx="1060" cy="470" r="300" fill="url(#e1)"/>
+   <path d="M930,330 q60,-40 120,-10 q50,30 30,80 q-40,40 -90,20 q-70,-20 -60,-90z M1120,520 q70,-30 110,20 q20,60 -40,80 q-60,10 -80,-40z M980,600 q40,-10 60,20 q-10,40 -50,30z" fill="#3f9a57" opacity=".9"/>
+   <path d="M1100,430 l18,-6 l10,14 l-6,14 l-16,2z" fill="#C8F169"/>
+   <ellipse cx="1060" cy="470" rx="420" ry="120" fill="none" stroke="#9fd8ff" stroke-opacity=".35" stroke-dasharray="4 8" transform="rotate(-18 1060 470)"/>
+   <g transform="translate(1400 300) rotate(-18)"><rect x="-16" y="-10" width="32" height="20" rx="3" fill="#d9e2ea"/><rect x="-62" y="-6" width="40" height="12" fill="#3a7bd5"/><rect x="22" y="-6" width="40" height="12" fill="#3a7bd5"/><path d="M0,10 l-30,120 l60,0z" fill="#38D9F5" opacity=".12"/></g>`;return g}},
+ {k:'02 · Bangladesh',h:'But every farmer knows only his own field.',p:'The camera dives to Bangladesh. Each region farms in its own way.',svg:()=>{const P=(x,y)=>[1040+(x-90)*2.2,500+(y-130)*2.2];
+   let g=`<defs><radialGradient id="e2" cx="50%" cy="120%" r="120%"><stop offset="0" stop-color="#1d6b45"/><stop offset=".6" stop-color="#103b2a"/><stop offset="1" stop-color="#071a14"/></radialGradient></defs>
+   <rect width="${W}" height="${H}" fill="#06100e"/>${stars(90)}<ellipse cx="1000" cy="1500" rx="1400" ry="1050" fill="url(#e2)"/>
+   <polygon points="${bdShape(1040,500,2.2)}" fill="#2c7a4a" stroke="#7fd39a" stroke-width="3" opacity=".95"/>`;
+   [[30,62,'#C8F169','Barind'],[150,70,'#38D9F5','Haor'],[72,238,'#F5B04C','Coast'],[95,150,'#e7efe8','…your field']].forEach(([x,y,c,t],i)=>{const [px,py]=P(x,y);
+     g+=`<g transform="translate(${px} ${py})"><circle r="40" fill="${c}" opacity=".14"/><circle r="22" fill="${c}" opacity=".3"/><path d="M0,0 c-14,-18 -14,-34 0,-40 c14,6 14,22 0,40z" fill="${c}"/><circle cy="-26" r="6" fill="#0c1a12"/>
+     <text x="${i===1?-18:20}" y="${i===1?-50:6}" text-anchor="${i===1?'end':'start'}" font-family="Space Grotesk" font-size="24" font-weight="700" fill="${c}">${t}</text></g>`});return g}},
+ {k:'03 · Today',h:'Every field farms differently.',p:'FieldShift starts from what YOU grow now, not from a template.',chip:'See My Fields →',svg:()=>{let g=`<defs><linearGradient id="sk3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a1a14"/><stop offset="1" stop-color="#173b26"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sk3)"/>`;
+   const F3=[[820,'Barind','#C8F169',[{kind:'ripe',wet:true},{kind:'stub'},{kind:'rice',wet:true}],'Boro → Fallow → Aman'],
+             [1070,'Haor','#38D9F5',[{kind:'ripe',wet:true},{kind:'none',wet:true},{kind:'none',wet:true}],'Boro → Flood → Flood'],
+             [1320,'Coast','#F5B04C',[{kind:'stub'},{kind:'stub'},{kind:'rice',wet:true}],'Fallow → Fallow → Aman']];
+   F3.forEach(([ox,t,c,b,r])=>{g+=farm(ox,360,19,b);g+=`<g font-family="Space Grotesk" text-anchor="middle"><text x="${ox+40}" y="620" font-size="26" font-weight="700" fill="${c}">${t}</text><text x="${ox+40}" y="652" font-size="19" fill="#cfe0d4">${r}</text></g>`});
+   g+=`<text x="1110" y="740" text-anchor="middle" font-family="Space Grotesk" font-size="20" fill="#9fb3a5">winter → summer → monsoon</text>`;return g}},
+ {k:'04 · Underground',h:'Underground, the water is changing.',p:'GRACE-FO sees it from orbit: falling under Barind, rising under the haor.',num:'<span>Barind <b class="a">−1.07 cm/yr</b></span><span>Haor <b class="c">+0.44 cm/yr</b></span><span>GRACE-FO 2002–2026</span>',chip:'See Water →',svg:()=>{let g=`<rect width="${W}" height="${H}" fill="#08140f"/>`;
+   const cut=(ox,oy,s,wz,up,name,val,c)=>{let o=box(0,0,5,3,0.5,'#5d8f3e',ox,oy,s,[1,.7,.55]);
+     const p=(a,b,z)=>ISO(a,b,z,ox,oy,s),pp=(a,b,z)=>p(a,b,z).join(',');
+     const layer=(z0,h,col,op=1)=>`<polygon points="${pp(0,3,z0)} ${pp(5,3,z0)} ${pp(5,3,z0-h)} ${pp(0,3,z0-h)}" fill="${col}" opacity="${op}"/><polygon points="${pp(5,0,z0)} ${pp(5,3,z0)} ${pp(5,3,z0-h)} ${pp(5,0,z0-h)}" fill="${col}" opacity="${op*.8}"/>`;
+     o+=layer(0,wz,'#7a5a3a')+layer(-wz,1.0,'#38D9F5',.85)+layer(-wz-1,4.6-wz,'#3a2b1d');
+     const [ax,ay]=p(5.6,3,-wz-.5);const d=up?-1:1;
+     o+=`<path d="M${ax},${ay-d*40} L${ax},${ay+d*40}" stroke="${c}" stroke-width="5" stroke-dasharray="2 9" stroke-linecap="round"/><path d="M${ax-12},${ay+d*28} L${ax},${ay+d*42} L${ax+12},${ay+d*28}" fill="none" stroke="${c}" stroke-width="5" stroke-linecap="round"/>`;
+     const [tx,ty]=p(0,0,0.5);o+=`<g font-family="Space Grotesk" text-anchor="middle"><text x="${tx}" y="${ty-60}" font-size="28" font-weight="700" fill="${c}">${name}</text><text x="${tx}" y="${ty-28}" font-size="22" fill="#e7efe8">${val}</text></g>`;return o};
+   g+=cut(800,250,48,2.6,false,'Barind','−1.07 cm / yr','#F5B04C')+cut(1220,250,48,0.8,true,'Haor','+0.44 cm / yr','#38D9F5');return g}},
+ {k:'05 · Sky',h:'Even the sky is uncertain.',p:'Two NASA datasets disagree on when the monsoon starts here, so FieldShift only advises on what is confirmed.',num:'<span><b class="a">POWER</b> +13 days</span><span><b class="c">IMERG</b> +2.5 days</span><span>p &gt; 0.1</span>',chip:'See Climate &amp; Risk →',svg:()=>{let g=`<defs><linearGradient id="sk5" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1622"/><stop offset="1" stop-color="#10261b"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sk5)"/>`;
+   const cloud=(x,y,s,o)=>`<g opacity="${o}" fill="#c9d6e2"><circle cx="${x}" cy="${y}" r="${44*s}"/><circle cx="${x+50*s}" cy="${y-20*s}" r="${56*s}"/><circle cx="${x+110*s}" cy="${y}" r="${44*s}"/><rect x="${x-10*s}" y="${y}" width="${130*s}" height="${40*s}" rx="${20*s}"/></g>`;
+   g+=cloud(820,170,1.3,.85)+cloud(1180,130,1.1,.7)+cloud(1350,230,.8,.55);
+   for(let i=0;i<70;i++){const x=780+rnd()*720,y=240+rnd()*220;g+=`<path d="M${x},${y} l-6,22" stroke="${i%2?'#F5B04C':'#38D9F5'}" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>`}
+   const X=d=>760+(d-120)/(220-120)*760,base=780;let a='',b='';for(let d=120;d<=220;d+=2){const ya=base-150/(1+Math.exp(-(d-162)/6))-10*Math.sin(d/5),yb=base-150/(1+Math.exp(-(d-154)/6))-8*Math.sin(d/4+1);a+=`${X(d)},${ya} `;b+=`${X(d)},${yb} `}
+   g+=`<line x1="760" x2="1520" y1="${base}" y2="${base}" stroke="#ffffff" stroke-opacity=".15"/><polyline points="${a}" fill="none" stroke="#F5B04C" stroke-width="4"/><polyline points="${b}" fill="none" stroke="#38D9F5" stroke-width="4"/>
+   <line x1="${X(167.5)}" x2="${X(167.5)}" y1="590" y2="${base}" stroke="#F5B04C" stroke-dasharray="6 6"/><line x1="${X(158)}" x2="${X(158)}" y1="590" y2="${base}" stroke="#38D9F5" stroke-dasharray="6 6"/>
+   <g font-family="Space Grotesk" font-size="18"><text x="${X(167.5)+8}" y="606" fill="#F5B04C">POWER</text><text x="${X(158)-82}" y="606" fill="#38D9F5">IMERG</text><text x="760" y="${base+30}" fill="#9fb3a5" font-family="Space Grotesk">May → Jun → Jul · when the Aman planting rains begin</text></g>`;return g}},
+ {k:'06 · The question',h:'What should your field grow next?',p:'One field, many options. The answer depends on its water, soil, climate and the farmer.',svg:()=>{let g=`<defs><radialGradient id="q6"><stop offset="0" stop-color="#C8F169" stop-opacity=".55"/><stop offset="1" stop-color="#C8F169" stop-opacity="0"/></radialGradient><linearGradient id="sk6" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07130d"/><stop offset="1" stop-color="#173b26"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sk6)"/>`;
+   g+=farm(930,380,54,[{kind:'stub'},{kind:'stub'},{kind:'stub'}]);
+   g+=`<circle cx="1130" cy="250" r="190" fill="url(#q6)"/><text x="1130" y="330" text-anchor="middle" font-family="Space Grotesk" font-weight="700" font-size="230" fill="#C8F169" style="filter:drop-shadow(0 0 30px rgba(200,241,105,.8))">?</text>`;
+   ['Mustard','Mungbean','Chickpea','Sesame'].forEach((t,i)=>{const a=-2.4+i*0.55,x=1130+Math.cos(a)*300,y=260+Math.sin(a)*160+(i%2?40:0);g+=`<g font-family="Space Grotesk" font-size="20" font-weight="600"><rect x="${x-62}" y="${y-22}" width="124" height="34" rx="17" fill="rgba(200,241,105,.12)" stroke="rgba(200,241,105,.5)"/><text x="${x}" y="${y+2}" text-anchor="middle" fill="#e8f7c8">${t}?</text></g>`});return g}},
+ {k:'07 · Start',h:'Start with your field.',p:'Pin it on the map and tell us what you grow. FieldShift does the rest with NASA data.',cta:'Start with my field →',svg:()=>{let g=`<defs><linearGradient id="sk7" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1a12"/><stop offset="1" stop-color="#14301f"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sk7)"/>`;
+   g+=`<g transform="translate(860 150)"><rect width="600" height="600" rx="28" fill="#131f18" stroke="#2a3b31"/>
+     <rect x="24" y="24" width="552" height="220" rx="18" fill="#17301f"/>`;
+   for(let i=0;i<9;i++)g+=`<path d="M${24+i*69},24 v220" stroke="#21402b" stroke-width="2"/>`;for(let j=0;j<4;j++)g+=`<path d="M24,${24+j*55} h552" stroke="#21402b" stroke-width="2"/>`;
+   g+=`<path d="M60,200 C160,120 260,180 340,110 S520,90 560,60" stroke="#2d6a8a" stroke-width="10" fill="none" opacity=".7"/>
+     <g transform="translate(300 150)"><circle r="46" fill="#C8F169" opacity=".18"/><path d="M0,0 c-18,-24 -18,-46 0,-54 c18,8 18,30 0,54z" fill="#C8F169"/><circle cy="-35" r="8" fill="#0c1a12"/></g>
+     <g font-family="Space Grotesk"><text x="32" y="290" font-size="30" font-weight="700" fill="#EAF2EC">Your field</text>`;
+   [['📍','Location','pin it on the map'],['🌾','What you grow now','e.g. Boro → Fallow → Aman'],['💧','Water access','ample / limited / none'],['📐','Area','in bigha']].forEach(([ic,a,b],i)=>{const y=318+i*62;
+     g+=`<rect x="32" y="${y}" width="536" height="50" rx="12" fill="#1a2a21" stroke="#26372d"/><text x="50" y="${y+32}" font-size="20">${ic}</text><text x="84" y="${y+31}" font-size="19" font-weight="600" fill="#EAF2EC">${a}</text><text x="552" y="${y+31}" font-size="16" fill="#8fa596" text-anchor="end">${b}</text>`});
+   g+=`</g></g>`;return g}}
+];
+const F=document.getElementById('frames');
+SC.forEach((s,i)=>{const f=document.createElement('section');f.className='frame';f.id='f'+(i+1);
+  f.innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Scene ${i+1}">${s.svg()}</svg>
+  <div class="card"><div class="k">${s.k}</div><h2 class="en">${s.h}</h2><p>${s.p}</p>${s.num?`<div class="num">${s.num}</div>`:''}${s.chip?`<span class="chip">${s.chip}</span>`:''}${s.cta?`<span class="cta">${s.cta}</span>`:''}</div>
+  <div class="idx">${String(i+1).padStart(2,'0')} / 07</div><div class="prog">${SC.map((_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div>${i===0?'<div class="play">▶ Play story</div>':''}`;
+  F.appendChild(f)});
+F.style.cssText='display:flex;flex-direction:column;gap:22px';
+</script>
+</body>
+</html>
