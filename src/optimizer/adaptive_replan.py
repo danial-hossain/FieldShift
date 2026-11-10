@@ -276,12 +276,13 @@ def run_adaptive_replan(
             model_y_tha = safe_num(c_info.get("expected_yield"), 1.0)
             model_y_mb = t_ha_to_maund_bigha(model_y_tha)
 
-            if y_mb > 0 and model_y_mb > 0:
+            is_failed = (outcome == "failed") or (y_mb <= 0)
+            if is_failed:
+                crop_failure_flags.add(c_low)
+                crop_yield_ratios.setdefault(c_low, []).append(0.0)
+            elif y_mb > 0 and model_y_mb > 0:
                 ratio = y_mb / model_y_mb
                 crop_yield_ratios.setdefault(c_low, []).append(ratio)
-
-            if outcome == "failed":
-                crop_failure_flags.add(c_low)
 
         completed_records_parsed.append({
             "period": p_id,
@@ -296,10 +297,16 @@ def run_adaptive_replan(
     # 3. APPLY CALIBRATION TO CROPS FOR REMAINING SEASONS
     calibration_table = []
     for c_low, r_list in crop_yield_ratios.items():
-        mean_ratio = float(np.mean(r_list))
-        clamped_ratio = max(0.5, min(1.5, mean_ratio))
-        if c_low in crop_failure_flags:
-            clamped_ratio = clamped_ratio * 0.7  # Crop failure penalty factor
+        is_failed = (c_low in crop_failure_flags) or all(r <= 0 for r in r_list)
+        if is_failed:
+            mean_ratio = 0.0
+            clamped_ratio = 0.7  # Crop failure penalty factor: learned yield < expected yield (ratio 0.7)
+        else:
+            pos_r = [r for r in r_list if r > 0]
+            mean_ratio = float(np.mean(pos_r)) if pos_r else 1.0
+            clamped_ratio = max(0.5, min(1.5, mean_ratio))
+            if c_low in crop_failure_flags:
+                clamped_ratio = clamped_ratio * 0.7  # Crop failure penalty factor
 
         c_name = crop_canonical.get(c_low, c_low.capitalize())
         c_info = crop_lookup.get(c_low, {})
@@ -320,16 +327,17 @@ def run_adaptive_replan(
         calibration_table.append({
             "crop": c_name,
             "model_yield_maund_bigha": round(model_y_mb, 2),
-            "actual_yield_maund_bigha": round(model_y_mb * mean_ratio, 2),
+            "actual_yield_maund_bigha": 0.0 if is_failed else round(model_y_mb * mean_ratio, 2),
             "ratio": round(clamped_ratio, 2),
             "raw_ratio": round(mean_ratio, 2),
+            "outcome": "failed" if is_failed else "normal",
             "price_bdt_maund": round(pr_used, 1),
             "price_source": pr_source,
             "price_source_en": pr_source_en,
             "record_count": len(r_list),
             "is_uncertain": len(r_list) == 1,
-            "uncertainty_badge_bn": "১ মৌসুমের তথ্য, অনিশ্চিত" if len(r_list) == 1 else "যাচাইকৃত",
-            "uncertainty_badge_en": "1 season data, uncertain" if len(r_list) == 1 else "verified",
+            "uncertainty_badge_bn": "১ মৌসুমের তথ্য, ফসলহানি" if is_failed else ("১ মৌসুমের তথ্য, অনিশ্চিত" if len(r_list) == 1 else "যাচাইকৃত"),
+            "uncertainty_badge_en": "1 season data, crop failure" if is_failed else ("1 season data, uncertain" if len(r_list) == 1 else "verified"),
         })
 
     # Apply prices to crops_replan
@@ -421,12 +429,31 @@ def run_adaptive_replan(
         actual_water_mm = c_parsed["actual_water_mm"]
         calc_water_mm = 0.0
 
+        season_outcome = str(c_parsed.get("outcome", "normal")).lower()
+
         for pt in c_parts:
             pt_crop = pt["crop"]
             pt_crop_bn = CROP_NAMES_BN.get(pt_crop, pt_crop)
             pt_share = pt["area_share"]
             pt_info = crop_lookup.get(pt_crop.strip().lower(), {})
-            pt_y_tha = pt["yield_t_ha"] if pt["yield_t_ha"] > 0 else safe_num(pt_info.get("expected_yield"), 1.0)
+
+            is_part_failed = (
+                season_outcome == "failed"
+                or (
+                    ("yield_maund_bigha" in pt or "yield_t_ha" in pt)
+                    and pt.get("yield_maund_bigha", 0) <= 0
+                    and pt.get("yield_t_ha", 0) <= 0
+                )
+            )
+            if is_part_failed:
+                pt_y_tha = 0.0
+                pt["yield_t_ha"] = 0.0
+                pt["yield_maund_bigha"] = 0.0
+            elif pt.get("yield_t_ha", 0) > 0:
+                pt_y_tha = pt["yield_t_ha"]
+            else:
+                pt_y_tha = safe_num(pt_info.get("expected_yield"), 1.0)
+
             pt_pr_mb = pt["price_bdt_maund"]
             if pt_pr_mb > 0:
                 pt_pr_ton = pt_pr_mb / TON_PER_MAUND

@@ -301,3 +301,67 @@ def test_r3_replan_output_payload_structure():
     assert cal["crop"] == "Mustard"
     assert "ratio" in cal
     assert "price_source" in cal
+
+
+def test_rd1_failed_crop_loss_and_calibration():
+    """RD1: Failed crop or 0 yield must count as negative profit (loss),
+    total(failed) < total(poor) < total(normal) < total(great),
+    and calibration table must record the failure with ratio=0.7 (learned < expected)."""
+    crops_df = load_crop_knowledge()
+    power, _ = load_district_climate_data("chapainawabganj", offline=True)
+    if "date" in power.columns:
+        power["date"] = pd.to_datetime(power["date"])
+
+    state = build_field_state(
+        "rahim_field",
+        24.62,
+        88.55,
+        power["date"].max(),
+        power.tail(60),
+        crop_knowledge=crops_df,
+    )
+    state.field_size_ha = 0.67
+    state.area_ha = 0.67
+    state.texture = "clay_loam"
+    state.district = "chapainawabganj"
+
+    res_failed = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=[{"crop": "Mustard", "yield_maund_bigha": 0.0, "sale_price_bdt_maund": 3200, "outcome": "failed"}],
+        priority="balanced",
+    )
+    res_poor = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=[{"crop": "Mustard", "yield_maund_bigha": 2.0, "sale_price_bdt_maund": 3200, "outcome": "poor"}],
+        priority="balanced",
+    )
+    res_normal = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=[{"crop": "Mustard", "yield_maund_bigha": 5.0, "sale_price_bdt_maund": 3200, "outcome": "normal"}],
+        priority="balanced",
+    )
+    res_great = run_adaptive_replan(
+        field_state=state,
+        environmental_history=power,
+        completed_seasons=[{"crop": "Mustard", "yield_maund_bigha": 7.0, "sale_price_bdt_maund": 3200, "outcome": "great"}],
+        priority="balanced",
+    )
+
+    p_failed = res_failed["new_plan"]["total_profit_bdt"]
+    p_poor = res_poor["new_plan"]["total_profit_bdt"]
+    p_normal = res_normal["new_plan"]["total_profit_bdt"]
+    p_great = res_great["new_plan"]["total_profit_bdt"]
+
+    assert p_failed < p_poor < p_normal < p_great, f"Expected {p_failed} < {p_poor} < {p_normal} < {p_great}"
+
+    fs_failed = res_failed["finished_seasons"][0]
+    assert fs_failed["actual_profit_bdt"] < 0, f"Expected negative profit for failed crop, got {fs_failed['actual_profit_bdt']}"
+
+    cal = res_failed["calibration_table"][0]
+    assert cal["crop"] == "Mustard"
+    assert cal["ratio"] <= 0.7
+    assert cal["outcome"] == "failed"
+
