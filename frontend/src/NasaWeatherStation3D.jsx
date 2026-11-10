@@ -422,30 +422,130 @@ export function NasaWeatherStation3D({
   return (
     <div className="climate-risk-view" style={{ maxWidth: 1180, margin: '0 auto', padding: '16px 16px 48px', color: 'var(--fg, #e7efe8)' }}>
       {/* Top Header & Field Context */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 14 }}>
         <div>
           <h1 style={{ fontSize: '23px', margin: '0 0 4px', fontWeight: 700 }}>
             {lang === 'bn' ? `আবহাওয়া ও ঝুঁকি · ${fieldName}` : `Climate & Risk · ${fieldName}`}
           </h1>
           <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
             {lang === 'bn'
-              ? `অক্ষাংশ ${bn(lat, 2)}°, দ্রাঘিমাংশ ${bn(lon, 2)}° · ঐতিহাসিক তথ্য ও দীর্ঘমেয়াদী প্রবণতা`
-              : `Lat ${lat.toFixed(2)}°, Lon ${lon.toFixed(2)}° · Point-specific climate trends`}
+              ? `অক্ষাংশ ${bn(lat, 2)}°, দ্রাঘিমাংশ ${bn(lon, 2)}° · জমির স্থানাঙ্কের নিজস্ব জলবায়ু উপাত্ত`
+              : `Lat ${lat.toFixed(2)}°, Lon ${lon.toFixed(2)}° · Point-specific satellite & reanalysis telemetry`}
           </div>
         </div>
+      </div>
 
-        {/* Provenance Badges (CL6 Strip) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          <span style={{ fontSize: '12px', border: '1px solid var(--line, rgba(255,255,255,0.1))', background: 'var(--surface, #131b16)', borderRadius: 99, padding: '3px 10px', color: 'var(--muted, #93a597)' }}>
-            <b style={{ color: 'var(--fg, #e7efe8)' }}>NASA POWER</b> {provenance.temperature?.period || '1981–2026'}
-          </span>
-          <span style={{ fontSize: '12px', border: '1px solid var(--line, rgba(255,255,255,0.1))', background: 'var(--surface, #131b16)', borderRadius: 99, padding: '3px 10px', color: 'var(--muted, #93a597)' }}>
-            <b style={{ color: 'var(--fg, #e7efe8)' }}>GPM IMERG</b> {provenance.rain?.period || '2001–2024'}
-          </span>
-          <span style={{ fontSize: '12px', border: '1px solid var(--line, rgba(255,255,255,0.1))', background: 'var(--surface, #131b16)', borderRadius: 99, padding: '3px 10px', color: 'var(--muted, #93a597)' }}>
-            <b style={{ color: 'var(--fg, #e7efe8)' }}>GRACE-FO</b> {provenance.grace?.period || '2002–2026'}
-          </span>
-        </div>
+      {/* CL6: "তথ্য কোথা থেকে" Always-Visible Provenance Strip */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: '8px 12px',
+          padding: '10px 14px',
+          background: 'var(--surface, #131b16)',
+          border: '1px solid var(--line, rgba(255,255,255,0.1))',
+          borderRadius: 12,
+          marginBottom: 16,
+          fontSize: '12.5px',
+        }}
+      >
+        <span style={{ fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
+          🔍 {lang === 'bn' ? 'তথ্য কোথা থেকে:' : 'Data Provenance:'}
+        </span>
+
+        {/* 1. Rain Provenance */}
+        {(() => {
+          const rProv = provenance.rain;
+          const isFallback = rProv?.method === 'fallback_power' || rProv?.method === 'fallback_power_model';
+          return (
+            <span
+              style={{
+                borderRadius: 99,
+                padding: '3px 10px',
+                fontSize: '12px',
+                fontWeight: isFallback ? 600 : 500,
+                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
+                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
+                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
+              }}
+            >
+              {isFallback
+                ? (lang === 'bn' ? 'বৃষ্টি: NASA POWER (মডেলভিত্তিক বৃষ্টি, IMERG নয়)' : 'Rain: NASA POWER (Model-based rain, not IMERG)')
+                : (lang === 'bn' ? 'বৃষ্টি: GPM IMERG, আপনার জমির ১০ কিমি ঘর (২০০১–২০২৪)' : 'Rain: GPM IMERG, 10km grid cell (2001–2024)')}
+            </span>
+          );
+        })()}
+
+        {/* 2. Temperature Provenance */}
+        {(() => {
+          const tProv = provenance.temperature;
+          const isFallback = tProv?.method === 'nearest_district';
+          const dist = tProv?.fallback_distance_km ?? tProv?.distance_km;
+          return (
+            <span
+              style={{
+                borderRadius: 99,
+                padding: '3px 10px',
+                fontSize: '12px',
+                fontWeight: isFallback ? 600 : 500,
+                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
+                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
+                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
+              }}
+            >
+              {isFallback
+                ? (lang === 'bn' ? `তাপমাত্রা: NASA POWER (নিকটতম জেলা-কেন্দ্র ${bn(dist, 1)} কিমি)` : `Temp: NASA POWER (Nearest district center ${dist != null ? dist.toFixed(1) : ''} km)`)
+                : (lang === 'bn' ? 'তাপমাত্রা: NASA POWER, আপনার জমির বিন্দু (১৯৮১–২০২৬)' : 'Temp: NASA POWER, Field point coordinates (1981–2026)')}
+            </span>
+          );
+        })()}
+
+        {/* 3. GRACE Provenance */}
+        {(() => {
+          const gProv = provenance.grace;
+          const isFallback = gProv?.method === 'region';
+          return (
+            <span
+              style={{
+                borderRadius: 99,
+                padding: '3px 10px',
+                fontSize: '12px',
+                fontWeight: isFallback ? 600 : 500,
+                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
+                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
+                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
+              }}
+            >
+              {isFallback
+                ? (lang === 'bn' ? 'পানি সঞ্চয়: GRACE-FO (অঞ্চলের গড়, জমির নিজস্ব নয়)' : 'Storage: GRACE-FO (Regional average, not plot-specific)')
+                : (lang === 'bn' ? 'পানি সঞ্চয়: GRACE-FO, ~৫০ কিমি ঘর (২০০২–২০২৬)' : 'Storage: GRACE-FO, ~50km cell (2002–2026)')}
+            </span>
+          );
+        })()}
+
+        {/* 4. Onset Provenance */}
+        {(() => {
+          const oProv = provenance.onset;
+          const isFallback = oProv?.method === 'district_fallback';
+          return (
+            <span
+              style={{
+                borderRadius: 99,
+                padding: '3px 10px',
+                fontSize: '12px',
+                fontWeight: isFallback ? 600 : 500,
+                color: isFallback ? 'var(--amber, #f2b24c)' : 'var(--muted, #93a597)',
+                background: isFallback ? 'rgba(242, 178, 76, 0.15)' : 'var(--surface-2, #18221c)',
+                border: isFallback ? '1px solid var(--amber, #f2b24c)' : '1px solid var(--line, rgba(255,255,255,0.08))',
+              }}
+            >
+              {isFallback
+                ? (lang === 'bn' ? 'আমন বৃষ্টি শুরু: জেলা তথ্য-বিন্দু' : 'Monsoon Onset: District reference point')
+                : (lang === 'bn' ? 'আমন বৃষ্টি শুরু: GPM IMERG বিশ্লেষণ (২০০১–২০২৪)' : 'Monsoon Onset: GPM IMERG Analysis (2001–2024)')}
+            </span>
+          );
+        })()}
       </div>
 
       {loading && (
