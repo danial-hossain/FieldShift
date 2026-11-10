@@ -1198,6 +1198,189 @@ export function NasaWeatherStation3D({
                 : 'These represent empirical historical frequencies over 24 years, not forecasts. NASA POWER (~50 km) and IMERG (~10 km) reflect regional grid averages; local microclimate may vary.'}
             </p>
           </section>
+
+          {/* ==============================================================
+              SECTION 3: সাম্প্রতিক আবহাওয়া
+          ============================================================== */}
+          {summary.recent && (
+            <section
+              className="card"
+              style={{
+                background: 'var(--surface, #131b16)',
+                border: '1px solid var(--line, rgba(255,255,255,0.1))',
+                borderRadius: 16,
+                padding: 20,
+              }}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: '6px 12px', alignItems: 'baseline', marginBottom: 14 }}>
+                <div>
+                  <h2 style={{ fontSize: '18px', margin: '0 0 4px', fontWeight: 700 }}>
+                    {lang === 'bn' ? '৩. সাম্প্রতিক আবহাওয়া' : '3. Recent Weather Observations'}
+                  </h2>
+                  <div style={{ fontSize: '13px', color: 'var(--muted, #93a597)' }}>
+                    {lang === 'bn'
+                      ? `শেষ ৩০ দিন বনাম একই সময়ের ২৪ বছরের গড় (${summary.recent.baseline_period || '২০০১–২০২৪'})`
+                      : `Last 30 days vs 24-year historical normal (${summary.recent.baseline_period || '2001–2024'})`}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stale data notice if newest observation > 60 days old */}
+              {summary.recent.stale && summary.recent.stale_reason && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 10,
+                    alignItems: 'center',
+                    fontSize: '13px',
+                    color: 'var(--amber, #f2b24c)',
+                    background: 'rgba(242, 178, 76, 0.12)',
+                    border: '1px solid rgba(242, 178, 76, 0.25)',
+                    borderRadius: 10,
+                    padding: '10px 14px',
+                    marginBottom: 14,
+                  }}
+                >
+                  <span>⚠</span>
+                  <div>{summary.recent.stale_reason}</div>
+                </div>
+              )}
+
+              {/* 4 Readouts Grid + Meaning Card */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                  gap: 12,
+                }}
+              >
+                {/* 1. Day Max */}
+                {(() => {
+                  const df = summary.recent.tmax - summary.recent.norm_tmax;
+                  return (
+                    <div style={{ background: 'var(--surface-2, #18221c)', borderRadius: 12, padding: '12px 14px' }}>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted, #93a597)', marginBottom: 2 }}>
+                        {lang === 'bn' ? 'দিনের গড় সর্বোচ্চ' : 'Average Day Max'}
+                      </span>
+                      <strong style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
+                        {bn(summary.recent.tmax, 1)}°C
+                      </strong>
+                      <em
+                        style={{
+                          fontStyle: 'normal',
+                          fontSize: '12px',
+                          display: 'block',
+                          marginTop: 4,
+                          color: Math.abs(df) < 0.5 ? 'var(--muted, #93a597)' : (df > 0 ? 'var(--amber, #f2b24c)' : 'var(--blue, #5fb0ef)'),
+                        }}
+                      >
+                        {lang === 'bn'
+                          ? `স্বাভাবিক ${bn(summary.recent.norm_tmax, 1)}°C (${df >= 0 ? '+' : ''}${bn(df, 1)})`
+                          : `Normal ${summary.recent.norm_tmax.toFixed(1)}°C (${df >= 0 ? '+' : ''}${df.toFixed(1)})`}
+                      </em>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Night Min */}
+                {(() => {
+                  const df = summary.recent.tmin - summary.recent.norm_tmin;
+                  return (
+                    <div style={{ background: 'var(--surface-2, #18221c)', borderRadius: 12, padding: '12px 14px' }}>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted, #93a597)', marginBottom: 2 }}>
+                        {lang === 'bn' ? 'রাতের গড় সর্বনিম্ন' : 'Average Night Min'}
+                      </span>
+                      <strong style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
+                        {bn(summary.recent.tmin, 1)}°C
+                      </strong>
+                      <em
+                        style={{
+                          fontStyle: 'normal',
+                          fontSize: '12px',
+                          display: 'block',
+                          marginTop: 4,
+                          color: Math.abs(df) < 0.5 ? 'var(--muted, #93a597)' : (df > 0 ? 'var(--amber, #f2b24c)' : 'var(--blue, #5fb0ef)'),
+                        }}
+                      >
+                        {lang === 'bn'
+                          ? `স্বাভাবিক ${bn(summary.recent.norm_tmin, 1)}°C (${df >= 0 ? '+' : ''}${bn(df, 1)})`
+                          : `Normal ${summary.recent.norm_tmin.toFixed(1)}°C (${df >= 0 ? '+' : ''}${df.toFixed(1)})`}
+                      </em>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. 30-day Rain */}
+                {(() => {
+                  const df = summary.recent.rain - summary.recent.norm_rain;
+                  return (
+                    <div style={{ background: 'var(--surface-2, #18221c)', borderRadius: 12, padding: '12px 14px' }}>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted, #93a597)', marginBottom: 2 }}>
+                        {lang === 'bn' ? '৩০ দিনের মোট বৃষ্টি' : '30-Day Rainfall'}
+                      </span>
+                      <strong style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
+                        {bn(summary.recent.rain, 1)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                      </strong>
+                      <em
+                        style={{
+                          fontStyle: 'normal',
+                          fontSize: '12px',
+                          display: 'block',
+                          marginTop: 4,
+                          color: Math.abs(df) < 5 ? 'var(--muted, #93a597)' : (df > 0 ? 'var(--blue, #5fb0ef)' : 'var(--amber, #f2b24c)'),
+                        }}
+                      >
+                        {lang === 'bn'
+                          ? `স্বাভাবিক ${bn(summary.recent.norm_rain, 1)} মিমি (${df >= 0 ? '+' : ''}${bn(df, 1)})`
+                          : `Normal ${summary.recent.norm_rain.toFixed(1)} mm (${df >= 0 ? '+' : ''}${df.toFixed(1)})`}
+                      </em>
+                    </div>
+                  );
+                })()}
+
+                {/* 4. 30-day ET0 (FAO-56 Penman-Monteith) */}
+                {(() => {
+                  const df = summary.recent.et0 - summary.recent.norm_et0;
+                  return (
+                    <div style={{ background: 'var(--surface-2, #18221c)', borderRadius: 12, padding: '12px 14px' }}>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted, #93a597)', marginBottom: 2 }}>
+                        {lang === 'bn' ? 'বাষ্পীভবন (FAO-56 ET0)' : 'Evapotranspiration (ET0)'}
+                      </span>
+                      <strong style={{ fontSize: '22px', fontWeight: 700, color: 'var(--fg, #e7efe8)' }}>
+                        {bn(summary.recent.et0, 1)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                      </strong>
+                      <em
+                        style={{
+                          fontStyle: 'normal',
+                          fontSize: '12px',
+                          display: 'block',
+                          marginTop: 4,
+                          color: Math.abs(df) < 5 ? 'var(--muted, #93a597)' : (df > 0 ? 'var(--amber, #f2b24c)' : 'var(--blue, #5fb0ef)'),
+                        }}
+                      >
+                        {lang === 'bn'
+                          ? `স্বাভাবিক ${bn(summary.recent.norm_et0, 1)} মিমি (${df >= 0 ? '+' : ''}${bn(df, 1)})`
+                          : `Normal ${summary.recent.norm_et0.toFixed(1)} mm (${df >= 0 ? '+' : ''}${df.toFixed(1)})`}
+                      </em>
+                    </div>
+                  );
+                })()}
+
+                {/* 5. Meaning & Advisory */}
+                <div style={{ background: 'var(--surface-2, #18221c)', borderRadius: 12, padding: '12px 14px', borderLeft: '3px solid var(--accent, #c8e46a)' }}>
+                  <span style={{ display: 'block', fontSize: '12px', color: 'var(--muted, #93a597)', marginBottom: 2 }}>
+                    {lang === 'bn' ? 'মানে ও কৃষিতাত্ত্বিক পরামর্শ' : 'Meaning & Agronomic Advice'}
+                  </span>
+                  <strong style={{ fontSize: '15px', fontWeight: 700, color: 'var(--fg, #e7efe8)', display: 'block' }}>
+                    {lang === 'bn' ? summary.recent.summary_bn : summary.recent.summary_en}
+                  </strong>
+                  <em style={{ fontStyle: 'normal', fontSize: '12px', display: 'block', marginTop: 4, color: 'var(--muted, #93a597)' }}>
+                    {lang === 'bn' ? summary.recent.sub_advice_bn : summary.recent.sub_advice_en}
+                  </em>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>
