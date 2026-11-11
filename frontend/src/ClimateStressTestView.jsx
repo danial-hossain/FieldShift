@@ -8,6 +8,7 @@ import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skelet
 import { GlassPanel, GlassCard, GlassButton, GlassBadge } from './GlassComponents.jsx';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { useRotationPlans, extractPlanCrops, CANONICAL_PERIOD_KEYS } from './store/rotationPlansStore.js';
+import { CalculationLoadingOverlay } from './CalculationLoadingOverlay.jsx';
 import { request as defaultRequest } from './apiClient.js';
 import { toBengaliNumber, formatCurrency, formatNumber } from './i18n.js';
 import { translateCropName } from './SixSeasonRecommendationView.jsx';
@@ -568,6 +569,14 @@ export function ClimateStressTestView({
 
         {/* 3D Scene Container */}
         <div className="stress-test-3d-stage" style={{ position: 'relative', width: '100%', height: 560, borderRadius: 16, overflow: 'hidden' }}>
+          <CalculationLoadingOverlay
+            active={simLoading}
+            isInitialOpen={false}
+            mode="stress"
+            lang={lang}
+            error={simError}
+            onRetry={fetchStressSimulation}
+          />
           <FarmScene3D
             beds={farm3dBeds}
             selectedBedIndex={selectedBedIndex}

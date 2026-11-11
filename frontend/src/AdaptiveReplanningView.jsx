@@ -7,6 +7,7 @@ import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
 import { formatCurrency, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel, formatNumber } from './i18n.js';
 import { useRotationPlans, extractPlanCrops, setAppliedReplan } from './store/rotationPlansStore.js';
+import { CalculationLoadingOverlay } from './CalculationLoadingOverlay.jsx';
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 export function toBnDigits(val) {
@@ -1026,6 +1027,14 @@ export function AdaptiveReplanningView({
           marginBottom: 20,
         }}
       >
+        <CalculationLoadingOverlay
+          active={loading}
+          isInitialOpen={false}
+          mode="replan"
+          lang={lang}
+          error={errorMsg}
+          onRetry={handleRunReplan}
+        />
         <FarmScene3D
           beds={sceneBeds}
           selectedBedIndex={selectedBed}

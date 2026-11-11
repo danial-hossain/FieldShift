@@ -66,6 +66,7 @@ import { soilLabel, districtLabel, unitLabel, formatNumber } from './i18n.js';
 import { formatSoilTextureLabel } from './utils/soilClasses.js';
 import { formatDistrictLabel } from './utils/districtLabels.js';
 import { useRotationPlans, setFieldSelectedStrategy } from './store/rotationPlansStore.js';
+import { CalculationLoadingOverlay, CountUpNumber } from './CalculationLoadingOverlay.jsx';
 
 
 const PRIORITIES = ['balanced', 'profit', 'water', 'soil'];
@@ -180,6 +181,15 @@ export function SixSeasonRecommendationView({
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationSuccessMsg, setSimulationSuccessMsg] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSolving, setIsSolving] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [planRenderKey, setPlanRenderKey] = useState(0);
+
+  const handleCalculationComplete = useCallback(() => {
+    setIsSolving(false);
+    setIsInitialLoad(false);
+    setPlanRenderKey((k) => k + 1);
+  }, []);
 
   // A5: Farmer Priorities and Resource Constraints State
   const defaultWaterAvailability = useMemo(() => {
@@ -290,6 +300,7 @@ export function SixSeasonRecommendationView({
   const selectedStrategy = selectedStrategyLocal || storeSelectedStrategy || 'balanced';
 
   const setSelectedStrategy = useCallback((strat) => {
+    setIsSolving(true);
     if (strat === 'baseline') {
       setSelectedStrategyLocal('baseline');
     } else {
@@ -1071,7 +1082,7 @@ export function SixSeasonRecommendationView({
 
   if (loading) {
     return (
-      <div className="six-season-recommendation-workspace" style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
+      <div className="six-season-recommendation-workspace" style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22, borderBottom: '1px solid var(--glass-border)', paddingBottom: 18 }}>
           <div>
             <div className="ui-skeleton" style={{ width: 220, height: 24, borderRadius: 999, marginBottom: 8 }} />
@@ -1079,10 +1090,21 @@ export function SixSeasonRecommendationView({
             <div className="ui-skeleton" style={{ width: 600, height: 16, borderRadius: 6 }} />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginTop: 24 }}>
-          {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={i} className="ui-skeleton" style={{ height: 220, borderRadius: 16 }} />
-          ))}
+        <div style={{ position: 'relative', minHeight: 480 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginTop: 24 }}>
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="ui-skeleton" style={{ height: 220, borderRadius: 16 }} />
+            ))}
+          </div>
+          <CalculationLoadingOverlay
+            active={true}
+            isInitialOpen={true}
+            mode="planner"
+            nOptions={18}
+            lang={lang}
+            error={fetchError}
+            onRetry={refetch}
+          />
         </div>
       </div>
     );
@@ -1362,7 +1384,10 @@ export function SixSeasonRecommendationView({
               type="button"
               className="pb"
               aria-pressed={waterAvailability === wOpt.id ? 'true' : 'false'}
-              onClick={() => setWaterAvailability(wOpt.id)}
+              onClick={() => {
+                setIsSolving(true);
+                setWaterAvailability(wOpt.id);
+              }}
               style={{
                 font: '500 12.5px var(--body)',
                 border: waterAvailability === wOpt.id ? '1px solid var(--accent)' : '1px solid var(--line)',
@@ -1391,7 +1416,10 @@ export function SixSeasonRecommendationView({
               type="checkbox"
               id="tiller"
               checked={noPowerTiller}
-              onChange={(e) => setNoPowerTiller(e.target.checked)}
+              onChange={(e) => {
+                setIsSolving(true);
+                setNoPowerTiller(e.target.checked);
+              }}
             />
             <span>🚜 {lang === 'bn' ? 'পাওয়ার টিলার নেই' : 'No power tiller'}</span>
           </label>
@@ -1415,6 +1443,7 @@ export function SixSeasonRecommendationView({
                 aria-pressed={isExcluded ? 'true' : 'false'}
                 onClick={() => {
                   if (noPowerTiller && cOpt.id === 'Potato') return;
+                  setIsSolving(true);
                   setExcludedCrops(prev => prev.includes(cOpt.id) ? prev.filter(c => c !== cOpt.id) : [...prev, cOpt.id]);
                 }}
                 style={{
@@ -1445,110 +1474,138 @@ export function SixSeasonRecommendationView({
         </div>
       </div>
 
-      {/* 4. Before -> After Strip (.ba) */}
-      <div className="ba" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ (বছরে)' : 'Annual Irrigation'}</span>
-          {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              {baseIrrigVal != null ? `${formatNumber(baseIrrigVal, lang)} ${unitLabel('mm', lang)}` : '…'}
-            </strong>
-          ) : (
-            <div>
+      {/* Plan Area Container with Calculation Loading Overlay (G5) */}
+      <div className="rotation-plan-area" style={{ position: 'relative', width: '100%' }}>
+        <CalculationLoadingOverlay
+          active={loading || isSolving}
+          isInitialOpen={isInitialLoad}
+          mode="planner"
+          nOptions={18}
+          lang={lang}
+          error={fetchError}
+          onRetry={refetch}
+          onComplete={handleCalculationComplete}
+        />
+
+        {/* 4. Before -> After Strip (.ba) */}
+        <div className="ba" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
+          <div className="calc-card-fly-in" key={`kpi-0-${planRenderKey}`} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px', animationDelay: '0ms' }}>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'সেচ (বছরে)' : 'Annual Irrigation'}</span>
+            {selectedStrategy === 'baseline' ? (
               <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                {baseIrrigVal != null ? `${formatNumber(baseIrrigVal, lang)} → ` : ''}{formatNumber(avgIrrig, lang)} {unitLabel('mm', lang)}
-              </strong>{' '}
-              {savingsVal != null && (
-                <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                  ({savingsVal >= 0 ? `−${formatNumber(savingsVal, lang)}` : `+${formatNumber(Math.abs(savingsVal), lang)}`})
-                </em>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন (বছরে)' : 'Bare Days (annual)'}</span>
-          {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              {activePlanData.baselineBareDays != null ? `${formatNumber(Math.round(activePlanData.baselineBareDays), lang)} ${lang === 'bn' ? 'দিন' : 'days'}` : '…'}
-            </strong>
-          ) : (
-            <div>
-              {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null ? (
-                <>
-                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                    {formatNumber(Math.round(activePlanData.baselineBareDays), lang)} → {formatNumber(Math.round(activePlanData.planBareDays), lang)} {lang === 'bn' ? 'দিন' : 'days'}
-                  </strong>{' '}
+                {baseIrrigVal != null ? (
+                  <>
+                    <CountUpNumber value={baseIrrigVal} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('mm', lang)}
+                  </>
+                ) : '…'}
+              </strong>
+            ) : (
+              <div>
+                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                  {baseIrrigVal != null ? `${formatNumber(baseIrrigVal, lang)} → ` : ''}
+                  <CountUpNumber value={avgIrrig} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('mm', lang)}
+                </strong>{' '}
+                {savingsVal != null && (
                   <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                    (−{formatNumber(Math.max(0, Math.round(activePlanData.baselineBareDays - activePlanData.planBareDays)), lang)})
+                    ({savingsVal >= 0 ? `−${formatNumber(savingsVal, lang)}` : `+${formatNumber(Math.abs(savingsVal), lang)}`})
                   </em>
-                </>
-              ) : (
-                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            )}
+          </div>
 
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন' : 'Soil Nitrogen'}</span>
-          {selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              {activePlanData.baselineNitrogenKg != null ? `${formatNumber(Math.round(activePlanData.baselineNitrogenKg), lang)} ${unitLabel('kg/ha', lang)}` : '…'}
-            </strong>
-          ) : (
-            <div>
-              {activePlanData.baselineNitrogenKg != null && activePlanData.planNitrogenKg != null ? (
-                <>
-                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                    {formatNumber(Math.round(activePlanData.baselineNitrogenKg), lang)} → {formatNumber(Math.round(activePlanData.planNitrogenKg), lang)} {unitLabel('kg/ha', lang)}
-                  </strong>{' '}
-                  <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                    (+{formatNumber(Math.round(activePlanData.planNitrogenKg - activePlanData.baselineNitrogenKg), lang)})
-                  </em>
-                </>
-              ) : (
-                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
-              )}
-            </div>
-          )}
-        </div>
+          <div className="calc-card-fly-in" key={`kpi-1-${planRenderKey}`} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px', animationDelay: '60ms' }}>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'ফাঁকা দিন (বছরে)' : 'Bare Days (annual)'}</span>
+            {selectedStrategy === 'baseline' ? (
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {activePlanData.baselineBareDays != null ? (
+                  <>
+                    <CountUpNumber value={Math.round(activePlanData.baselineBareDays)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {lang === 'bn' ? 'দিন' : 'days'}
+                  </>
+                ) : '…'}
+              </strong>
+            ) : (
+              <div>
+                {activePlanData.baselineBareDays != null && activePlanData.planBareDays != null ? (
+                  <>
+                    <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                      {formatNumber(Math.round(activePlanData.baselineBareDays), lang)} → <CountUpNumber value={Math.round(activePlanData.planBareDays)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {lang === 'bn' ? 'দিন' : 'days'}
+                    </strong>{' '}
+                    <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                      (−{formatNumber(Math.max(0, Math.round(activePlanData.baselineBareDays - activePlanData.planBareDays)), lang)})
+                    </em>
+                  </>
+                ) : (
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+                )}
+              </div>
+            )}
+          </div>
 
-        <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px' }}>
-          <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
-            {lang === 'bn'
-              ? `লাভ${fieldAreaHa != null ? `, আপনার ${formatNumber(haToBigha(fieldAreaHa), lang, 1)} বিঘায়` : ''}`
-              : `Profit${fieldAreaHa != null ? `, for ${formatNumber(haToBigha(fieldAreaHa), lang, 1)} bigha` : ''}`}
-          </span>
-          {fieldAreaHa == null ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              {lang === 'bn' ? 'তথ্য নেই' : 'No data'}
-            </strong>
-          ) : selectedStrategy === 'baseline' ? (
-            <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-              {activePlanData.baselineProfitBdt != null
-                ? `~${formatNumber(Math.round(activePlanData.baselineProfitBdt * fieldAreaHa), lang)} ${unitLabel('bdt', lang)}`
-                : '…'}
-            </strong>
-          ) : (
-            <div>
-              {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null ? (
-                <>
-                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
-                    ~{formatNumber(Math.round(activePlanData.baselineProfitBdt * fieldAreaHa), lang)} → ~{formatNumber(Math.round(activePlanData.planProfitBdt * fieldAreaHa), lang)} {unitLabel('bdt', lang)}
-                  </strong>{' '}
-                  <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
-                    (+{formatNumber(Math.round((activePlanData.planProfitBdt - activePlanData.baselineProfitBdt) * fieldAreaHa), lang)})
-                  </em>
-                </>
-              ) : (
-                <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
-              )}
-            </div>
-          )}
+          <div className="calc-card-fly-in" key={`kpi-2-${planRenderKey}`} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px', animationDelay: '120ms' }}>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>{lang === 'bn' ? 'নাইট্রোজেন' : 'Soil Nitrogen'}</span>
+            {selectedStrategy === 'baseline' ? (
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {activePlanData.baselineNitrogenKg != null ? (
+                  <>
+                    <CountUpNumber value={Math.round(activePlanData.baselineNitrogenKg)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('kg/ha', lang)}
+                  </>
+                ) : '…'}
+              </strong>
+            ) : (
+              <div>
+                {activePlanData.baselineNitrogenKg != null && activePlanData.planNitrogenKg != null ? (
+                  <>
+                    <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                      {formatNumber(Math.round(activePlanData.baselineNitrogenKg), lang)} → <CountUpNumber value={Math.round(activePlanData.planNitrogenKg)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('kg/ha', lang)}
+                    </strong>{' '}
+                    <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                      (+{formatNumber(Math.round(activePlanData.planNitrogenKg - activePlanData.baselineNitrogenKg), lang)})
+                    </em>
+                  </>
+                ) : (
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="calc-card-fly-in" key={`kpi-3-${planRenderKey}`} style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '10px 12px', animationDelay: '180ms' }}>
+            <span style={{ display: 'block', fontSize: 12, color: 'var(--text-muted)' }}>
+              {lang === 'bn'
+                ? `লাভ${fieldAreaHa != null ? `, আপনার ${formatNumber(haToBigha(fieldAreaHa), lang, 1)} বিঘায়` : ''}`
+                : `Profit${fieldAreaHa != null ? `, for ${formatNumber(haToBigha(fieldAreaHa), lang, 1)} bigha` : ''}`}
+            </span>
+            {fieldAreaHa == null ? (
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {lang === 'bn' ? 'তথ্য নেই' : 'No data'}
+              </strong>
+            ) : selectedStrategy === 'baseline' ? (
+              <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                {activePlanData.baselineProfitBdt != null ? (
+                  <>
+                    ~<CountUpNumber value={Math.round(activePlanData.baselineProfitBdt * fieldAreaHa)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('bdt', lang)}
+                  </>
+                ) : '…'}
+              </strong>
+            ) : (
+              <div>
+                {activePlanData.baselineProfitBdt != null && activePlanData.planProfitBdt != null ? (
+                  <>
+                    <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>
+                      ~{formatNumber(Math.round(activePlanData.baselineProfitBdt * fieldAreaHa), lang)} → ~<CountUpNumber value={Math.round(activePlanData.planProfitBdt * fieldAreaHa)} duration={600} lang={lang} triggerKey={planRenderKey} formatFn={(v) => formatNumber(v, lang)} /> {unitLabel('bdt', lang)}
+                    </strong>{' '}
+                    <em style={{ fontStyle: 'normal', fontSize: 12.5, fontWeight: 600, color: 'var(--leaf)' }}>
+                      (+{formatNumber(Math.round((activePlanData.planProfitBdt - activePlanData.baselineProfitBdt) * fieldAreaHa), lang)})
+                    </em>
+                  </>
+                ) : (
+                  <strong style={{ fontSize: 16, fontVariantNumeric: 'tabular-nums', color: 'var(--text)' }}>…</strong>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
       {/* 5. Season Strip (.strip) + Totals (.totals) */}
       {selectedStrategy === 'baseline' && !hasSavedRotation ? (
@@ -1578,9 +1635,9 @@ export function SixSeasonRecommendationView({
               const irrig = seasonIrrigMap[k] || 0;
               return (
                 <button
-                  key={k}
+                  key={`${k}-${planRenderKey}`}
                   type="button"
-                  className="sc"
+                  className="sc calc-card-fly-in"
                   aria-label={`${lang === 'bn' ? (s?.bn || k) : (s?.en || k)}: ${translateCropName(c, lang)}`}
                   aria-current={isSelected ? 'true' : 'false'}
                   onClick={() => setSelectedPeriodKey(k)}
@@ -1591,7 +1648,8 @@ export function SixSeasonRecommendationView({
                     borderRadius: 12,
                     padding: '8px 10px',
                     cursor: 'pointer',
-                    boxShadow: isSelected ? '0 0 0 2px rgba(44, 138, 75, 0.25)' : 'none'
+                    boxShadow: isSelected ? '0 0 0 2px rgba(44, 138, 75, 0.25)' : 'none',
+                    animationDelay: `${(4 + i) * 60}ms`,
                   }}
                 >
                   <small style={{ display: 'block', color: 'var(--text-muted)', fontSize: 11 }}>
@@ -1831,6 +1889,7 @@ export function SixSeasonRecommendationView({
           </details>
         </aside>
       </div>
+    </div>
 
       {/* 7. Row of 3 Cards: Key Benefits | Risk Summary | Strategy Comparison Table */}
       <div className="row3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
