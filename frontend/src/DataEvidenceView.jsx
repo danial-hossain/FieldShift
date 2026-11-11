@@ -171,9 +171,17 @@ export function DataEvidenceView({
           textAlign: 'center',
           marginTop: 6,
           letterSpacing: '0.02em',
+          display: 'flex',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
         }}
       >
-        Earth imagery: NASA Visible Earth (Blue Marble)
+        <span>Earth imagery: NASA Visible Earth (Blue Marble)</span>
+        <span>•</span>
+        <span>District boundaries: geoBoundaries gbOpen (CC BY 4.0)</span>
+        <span>•</span>
+        <span>Village illustration: FieldShift</span>
       </div>
     </div>
   );

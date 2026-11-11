@@ -566,7 +566,12 @@ export function FieldParcelManagerView({
               const latestCropYear = fld.previous_crop_year || (fld.history && fld.history[0]?.year) || 'year unavailable';
 
               return (
-                <div key={fld.id} className="field-card-item">
+                <div
+                  key={fld.id}
+                  id={`field-card-${fld.id}`}
+                  data-field-id={fld.id}
+                  className={`field-card-item ${isActive ? 'active' : ''}`}
+                >
                   {/* 1. Google Maps Location Preview at Top of Card */}
                   <GoogleFieldMapThumbnail
                     latitude={fld.latitude}

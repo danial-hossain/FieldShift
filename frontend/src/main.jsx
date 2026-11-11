@@ -948,6 +948,7 @@ export function App() {
     return null;
   });
   const [fieldsLoaded, setFieldsLoaded] = useState(false);
+  const [activeFieldOverride, setActiveFieldOverride] = useState(null);
   const [fieldsError, setFieldsError] = useState('');
   const [userAnalyses, setUserAnalyses] = useState([]);
   const [authMode, setAuthMode] = useState('login');
@@ -1059,10 +1060,13 @@ export function App() {
   // Registered fields always resolve by the shared selectedFieldId.
   // Explicit demo option maps consistently to demoField across all views.
   const activeField = useMemo(() => {
+    if (activeFieldOverride && String(activeFieldOverride.id) === String(selectedFieldId)) {
+      return activeFieldOverride;
+    }
     if (selectedFieldId === 'demo') return demoField;
     if (selectedFieldId == null) return null;
     return userFields.find(field => String(field.id) === String(selectedFieldId)) || null;
-  }, [userFields, selectedFieldId, demoField]);
+  }, [userFields, selectedFieldId, demoField, activeFieldOverride]);
 
   // Real Alerts computed for the ACTIVE field (UP1)
   const activeFieldAlerts = useMemo(() => {
@@ -1155,6 +1159,32 @@ export function App() {
     return list;
   }, [activeField, lang]);
 
+  const handleOverviewNavigate = useCallback((page) => {
+    if (page === 'myfields') {
+      handleNavigate('field');
+      setTimeout(() => {
+        const activeEl = document.querySelector(`.field-card-item.active, [data-field-id="${activeField?.id}"]`)
+          || document.getElementById(`field-card-${activeField?.id}`)
+          || document.querySelector('.parcel-hero-banner');
+        if (activeEl) {
+          activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          activeEl.classList.add('pulse-highlight');
+          setTimeout(() => activeEl.classList.remove('pulse-highlight'), 2000);
+        }
+      }, 150);
+    } else if (page === 'planner') {
+      handleNavigate('farm_planning', 'milp');
+    } else if (page === 'water') {
+      handleNavigate('water_irrigation');
+    } else if (page === 'climate') {
+      handleNavigate('weather');
+    } else if (page === 'stress') {
+      handleNavigate('farm_planning', 'stress');
+    } else if (page === 'adaptive') {
+      handleNavigate('farm_planning', 'replan');
+    }
+  }, [activeField, handleNavigate]);
+
   const workflowPayload = (controls = form, field = activeField) => {
     const payload = {
       ...controls,
@@ -1171,7 +1201,8 @@ export function App() {
     delete payload.irrigation_capacity_mm;
     delete payload.previous_crop;
     delete payload.previous_crop_year;
-    if (field?.id === 'demo') {
+    const isNumericId = field?.id != null && /^\d+$/.test(String(field.id));
+    if (field?.id === 'demo' || (field && !isNumericId)) {
       return {
         ...payload,
         field_id: 'demo',
@@ -1191,7 +1222,7 @@ export function App() {
     if (field) {
       return {
         ...payload,
-        field_id: field.id,
+        field_id: Number(field.id),
         district: field.district || undefined,
         seasonally_flooded: field.seasonally_flooded,
         field_size_ha: field.area_ha,
@@ -1210,6 +1241,11 @@ export function App() {
   const handleSelectActiveField = (fld, navigateToDashboard = false, ownerId = user?.id) => {
     if (!fld) return;
     setSelectedFieldId(fld.id);
+    if (fld.id !== 'demo' && !userFields.some(field => String(field.id) === String(fld.id))) {
+      setActiveFieldOverride(fld);
+    } else {
+      setActiveFieldOverride(null);
+    }
     setCounterfactualSimulation({ running: false, result: null, error: '' });
     try {
       localStorage.setItem('fs_selected_field_id', String(fld.id));
@@ -1261,6 +1297,7 @@ export function App() {
   
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      window.__FS_SELECT_FIELD__ = handleSelectActiveField;
       window.__fs_navigate = (nav, tab = null) => {
         handleNavigate(nav, tab);
       };
@@ -2811,22 +2848,13 @@ export function App() {
           />
         )}
 
-        {/* -------------------- VIEW 1: OVERVIEW 3D STORY (DEFAULT) -------------------- */}
-        {activeNav === 'dashboard' && dashboardMode === 'farmer' && (
-          <StoryErrorBoundary lang={lang}>
-            <FarmerHomeView
-              activeField={activeField}
-              userFields={userFields}
-              nasa={nasa}
-              lang={lang}
-              onNavigate={handleNavigate}
-              onSelectField={handleSelectActiveField}
-              onOpenVoice={() => {
-                const fab = document.querySelector('.farmer-voice-fab');
-                if (fab) fab.click();
-              }}
-            />
-          </StoryErrorBoundary>
+        {/* -------------------- VIEW 1: OVERVIEW STORY PACK -------------------- */}
+        {activeNav === 'dashboard' && (
+          <FarmerHomeView
+            activeField={activeField}
+            lang={lang}
+            onNavigate={handleOverviewNavigate}
+          />
         )}
 
         {/* -------------------- VIEW 1: ADVANCED OVERVIEW DASHBOARD -------------------- */}

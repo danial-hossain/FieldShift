@@ -1090,7 +1090,7 @@ export function ClayFarmScene({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <Wheat size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
+          <Wheat size={16} strokeWidth={1.75} stroke="var(--lime, #c8f169)" />
           <strong style={{ fontSize: 13, color: '#c5e86c' }}>{selectedPlot?.name || 'Plot'}</strong>
           {selectedPlot?.hasAlert && (
             <span style={{ color: CLAY_PALETTE.alert, fontWeight: 700, fontSize: 11 }}>

@@ -81,3 +81,8 @@
 @media (max-width:900px){.fsx-card{left:4%!important;right:4%!important;width:auto;top:auto;bottom:4%}.fsx-ribbon{top:8%}}
 @media (prefers-reduced-motion:reduce){.fsx *{animation:none!important;transition:none!important}}
 .fsx-dawn{background:linear-gradient(180deg,#ff9e7a 0%,#ffc58f 30%,#ffd9a0 48%,rgba(255,217,160,0) 62%);mix-blend-mode:screen}
+.fsx-play{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:12px 22px 12px 16px;border-radius:999px;border:1px solid rgba(200,241,105,.45);background:rgba(7,14,10,.72);backdrop-filter:blur(12px);color:#e9f8cf;font:700 14px Inter,"Hind Siliguri",sans-serif;cursor:pointer;pointer-events:auto;z-index:6;box-shadow:0 0 18px rgba(200,241,105,.25);transition:box-shadow .2s,transform .15s}
+.fsx-play:hover{box-shadow:0 0 30px rgba(200,241,105,.5);transform:translateX(-50%) translateY(-1px)}
+.fsx-play .ic{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#D7F78A,#A8E04A);color:#10230f;font-size:11px}
+.fsx-play.on{bottom:22px;padding:8px 16px 8px 10px;opacity:.85}
+.fsx-play:focus-visible{outline:2px solid var(--lime);outline-offset:3px}

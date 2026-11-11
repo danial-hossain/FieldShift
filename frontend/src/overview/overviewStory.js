@@ -132,8 +132,8 @@ function copy(d, lang) {
   return [
     { side: 'l', kick: 'FieldShift', g: true,
       h: L('Every field, seen from <em>orbit.</em>', 'প্রতিটি জমি, <em>কক্ষপথ</em> থেকে দেখা।'),
-      p: L(`NASA satellites measure rain, heat and water over all of Bangladesh. FieldShift turns them into a plan for one field: <b>${esc(F.name)}</b>, ${esc(F.district)}.`,
-           `NASA-র স্যাটেলাইট পুরো বাংলাদেশের বৃষ্টি, তাপ আর পানি মাপে। FieldShift সেগুলোকে একটি জমির পরিকল্পনায় বদলায়: <b>${esc(F.name)}</b>, ${esc(F.district)}।`),
+      p: L('NASA satellites measure rain, heat and water over all of Bangladesh every day. FieldShift turns that data into a crop plan for each farmer\'s own field.',
+           'NASA-র স্যাটেলাইট প্রতিদিন পুরো বাংলাদেশের বৃষ্টি, তাপ আর পানি মাপে। FieldShift সেই ডেটাকে প্রতিটি কৃষকের নিজের জমির ফসল-পরিকল্পনায় বদলায়।'),
       src: 'GPM IMERG · NASA POWER · GRACE-FO' },
     { side: 'r', kick: L('Problem: farms plan by habit while the climate shifts', 'সমস্যা: জলবায়ু বদলাচ্ছে, চাষ চলছে অভ্যাসে'),
       h: L('Decades of NASA data, <em>for one field.</em>', 'এক জমির জন্য <em>কয়েক দশকের</em> NASA ডেটা।'),
@@ -210,6 +210,7 @@ export function mountOverviewStory(root, data, opts = {}) {
       <div class="fsx-layer fsx-cards"></div>
       <nav class="fsx-rail" aria-label="Story sections"></nav>
       <div class="fsx-hint">${lang === 'bn' ? 'নিচে স্ক্রল করুন' : 'Scroll'}</div>
+      <button class="fsx-play" type="button" aria-label="Play story"><span class="ic">▶</span><span class="tx">${lang === 'bn' ? 'গল্পটি চালান' : 'Play story'}</span></button>
     </div>
   </div>`;
   const $ = (s) => root.querySelector(s);
@@ -219,7 +220,7 @@ export function mountOverviewStory(root, data, opts = {}) {
     cloud: $('.fsx-cloudfly'), mapU: $('.fsx-map-under'), map: $('.fsx-map'), mapbox: $('.fsx-mapbox'),
     scene: $('.fsx-scene'), village: $('.fsx-village'), beds: $('.fsx-beds'), rain: $('.fsx-rain'), shimmer: $('.fsx-shimmer'),
     tint: $('.fsx-tint'), dawn: $('.fsx-dawn'), tags: $('.fsx-tags'), under: $('.fsx-under'), overlay: $('.fsx-overlay'), flash: $('.fsx-flash'),
-    cards: $('.fsx-cards'), rail: $('.fsx-rail'), hint: $('.fsx-hint'),
+    cards: $('.fsx-cards'), rail: $('.fsx-rail'), hint: $('.fsx-hint'), play: $('.fsx-play'),
   };
   let D = data, alive = true, raf = 0;
 
@@ -269,7 +270,7 @@ export function mountOverviewStory(root, data, opts = {}) {
       if (cl) {
         let cu = ((cloudLon + dl) / TAU + 0.5) % 1; if (cu < 0) cu += 1;
         const ci = ((Math.min(ch - 1, (v * ch) | 0) * cw + ((cu * cw) | 0)) * 4);
-        const a0 = cl[ci] / 255, a = a0 < 0.18 ? 0 : (a0 - 0.18) * 0.7; r += (255 - r) * a; g += (255 - g) * a; b += (255 - b) * a;
+        const a0 = cl[ci + 3] / 255, a = a0 * 0.85; r += (255 - r) * a; g += (255 - g) * a; b += (255 - b) * a;
       }
       out[idx] = r * sh; out[idx + 1] = g * sh; out[idx + 2] = b * sh * 1.04; out[idx + 3] = 255 * e;
     }
@@ -419,6 +420,34 @@ export function mountOverviewStory(root, data, opts = {}) {
     x.stroke();
   }
 
+  /* auto play: scrolls the real scroll container, ~7 s per section; any user input pauses */
+  const PLAY = { on: false, sp: null, last: 0 };
+  const SEC_SECONDS = opts.secondsPerSection || 7;
+  function setPlay(on) {
+    PLAY.on = on; PLAY.last = performance.now(); PLAY.sp = scrollParent(root); PLAY.pos = null;
+    L.play.classList.toggle('on', on);
+    L.play.querySelector('.ic').textContent = on ? '❚❚' : '▶';
+    L.play.querySelector('.tx').textContent = on ? (lang === 'bn' ? 'থামান' : 'Pause') : (lang === 'bn' ? 'গল্পটি চালান' : 'Play story');
+  }
+  function playStep(now) {
+    if (!PLAY.on) return;
+    const dt = clamp((now - PLAY.last) / 1000, 0, 0.05); PLAY.last = now;
+    const vh = stage.clientHeight, el = PLAY.sp || document.scrollingElement;
+    if (PLAY.pos == null) PLAY.pos = el.scrollTop;
+    PLAY.pos += (vh / SEC_SECONDS) * dt;
+    el.scrollTop = PLAY.pos;
+    const top = root.getBoundingClientRect().top;
+    if (-top / vh >= N - 0.35) setPlay(false);
+  }
+  L.play.addEventListener('click', () => {
+    if (!PLAY.on) { const top = root.getBoundingClientRect().top; if (-top / stage.clientHeight >= N - 0.4) { const el = scrollParent(root) || document.scrollingElement; el.scrollTop += top; } }
+    setPlay(!PLAY.on);
+  });
+  const stopPlay = () => { if (PLAY.on) setPlay(false); };
+  window.addEventListener('wheel', stopPlay, { passive: true });
+  window.addEventListener('touchstart', stopPlay, { passive: true });
+  window.addEventListener('keydown', stopPlay);
+
   /* main loop */
   let pS = 0, mx = 0, my = 0, smx = 0, smy = 0, tPrev = performance.now();
   const onMouse = (e) => { const r = stage.getBoundingClientRect(); mx = (e.clientX - r.left) / r.width - 0.5; my = (e.clientY - r.top) / r.height - 0.5; };
@@ -429,6 +458,7 @@ export function mountOverviewStory(root, data, opts = {}) {
 
   function frame(now) {
     if (!alive) return;
+    playStep(now);
     const dt = Math.min(0.05, (now - tPrev) / 1000); tPrev = now;
     const vh = stage.clientHeight, top = root.getBoundingClientRect().top;
     const pT = clamp(-top / vh, 0, N - 0.001);
@@ -543,8 +573,9 @@ export function mountOverviewStory(root, data, opts = {}) {
   drawStars(); buildOverlay(); buildCards(); buildMap();
   raf = requestAnimationFrame(frame);
   return {
+    play() { setPlay(true); }, pause() { setPlay(false); },
     update(nd) { D = nd; bedState.forEach((s) => { s.key = null; }); buildOverlay(); buildCards(); if (MAP) buildMap(); },
-    destroy() { alive = false; cancelAnimationFrame(raf); window.removeEventListener('mousemove', onMouse); window.removeEventListener('resize', onResize); root.innerHTML = ''; root.classList.remove('fsx'); },
+    destroy() { alive = false; cancelAnimationFrame(raf); window.removeEventListener('mousemove', onMouse); window.removeEventListener('wheel', stopPlay); window.removeEventListener('touchstart', stopPlay); window.removeEventListener('keydown', stopPlay); window.removeEventListener('resize', onResize); root.innerHTML = ''; root.classList.remove('fsx'); },
   };
 }
 export default mountOverviewStory;
