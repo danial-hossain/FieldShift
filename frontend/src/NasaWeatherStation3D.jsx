@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { request } from './apiClient.js';
 import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
 import { toEnglishNumber } from './i18n.js';
+import { getChartTheme, CHART_PALETTE, computeTrendTakeaway, ChartTooltip } from './ui/chartTheme.js';
 
 export function NasaWeatherStation3D({
   nasa = {},
@@ -208,7 +209,7 @@ export function NasaWeatherStation3D({
     ];
   }, [summary, onset, bn]);
 
-  // Chart SVG rendering helper
+  // Chart SVG rendering helper (LA3: Unified Chart Theme)
   const renderChart = ({
     id,
     title,
@@ -216,13 +217,15 @@ export function NasaWeatherStation3D({
     src,
     vals = [],
     kind = 'line',
-    color = 'var(--amber, #f2b24c)',
+    color = null,
     unit = '',
     trend = null,
     dec = 0,
     ymin = null,
   }) => {
     if (!vals || vals.length === 0) return null;
+    const themeColors = getChartTheme('dark');
+    const seriesColor = color || (kind === 'bar' ? themeColors.cyan : themeColors.lime);
     const W = 520;
     const H = 170;
     const L = 38;
@@ -261,12 +264,20 @@ export function NasaWeatherStation3D({
     }
 
     const polyPoints = vals.map((v, i) => `${getX(i).toFixed(1)},${getY(v).toFixed(1)}`).join(' ');
+    const areaPoints = `${polyPoints} ${getX(n - 1).toFixed(1)},${(H - B).toFixed(1)} ${getX(0).toFixed(1)},${(H - B).toFixed(1)}`;
+
+    // Data-driven takeaway above chart
+    const dynamicTakeaway = computeTrendTakeaway(vals, unit, lang) || say;
 
     return (
       <div className="ch" key={id} style={{ position: 'relative' }}>
-        <h3 style={{ fontSize: '14.5px', margin: '0 0 2px 0', color: 'var(--fg, #e7efe8)' }}>{title}</h3>
-        <p className="say" style={{ fontSize: '13px', margin: '0 0 6px 0', color: 'var(--fg, #e7efe8)', minHeight: 20 }}>
-          {say}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
+          <h3 style={{ fontSize: '14.5px', margin: 0, color: '#EAF6E6', fontWeight: 700 }}>
+            {title} {unit && <span style={{ fontSize: 11.5, color: themeColors.axisText, fontWeight: 500 }}>({unit})</span>}
+          </h3>
+        </div>
+        <p className="say" style={{ fontSize: '12.5px', margin: '0 0 8px 0', color: themeColors.lime, minHeight: 18, fontWeight: 600 }}>
+          {dynamicTakeaway}
         </p>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
           {/* Ticks and grid lines */}
@@ -277,15 +288,16 @@ export function NasaWeatherStation3D({
                 x2={W - R}
                 y1={getY(t)}
                 y2={getY(t)}
-                stroke="var(--line, rgba(255,255,255,0.08))"
+                stroke={themeColors.grid}
                 strokeWidth="1"
               />
               <text
                 x={L - 6}
                 y={getY(t) + 4}
                 textAnchor="end"
-                fill="var(--muted, #93a597)"
+                fill={themeColors.axisText}
                 fontSize="11"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {bn(t, dec)}
               </text>
@@ -301,13 +313,27 @@ export function NasaWeatherStation3D({
                 x={getX(idx)}
                 y={H - 6}
                 textAnchor="middle"
-                fill="var(--muted, #93a597)"
+                fill={themeColors.axisText}
                 fontSize="11"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
               >
                 {by(yrs[idx])}
               </text>
             );
           })}
+
+          {/* Vertical Crosshair Line on hover */}
+          {hoveredChartPoint?.chartId === id && (
+            <line
+              x1={hoveredChartPoint.x}
+              x2={hoveredChartPoint.x}
+              y1={T}
+              y2={H - B}
+              stroke={themeColors.crosshair}
+              strokeWidth="1.5"
+              strokeDasharray="3 3"
+            />
+          )}
 
           {/* Bars or Line */}
           {kind === 'bar' ? (
@@ -316,24 +342,37 @@ export function NasaWeatherStation3D({
               return (
                 <rect
                   key={i}
+                  className="chart-bar-animated"
                   x={getX(i) - bw / 2}
                   y={getY(v)}
                   width={bw}
                   height={barHeight}
-                  rx="3"
-                  fill={color}
+                  rx="4"
+                  ry="4"
+                  fill={seriesColor}
                   opacity="0.85"
+                  style={{ animationDelay: `${i * 30}ms` }}
                 />
               );
             })
           ) : (
-            <polyline
-              points={polyPoints}
-              fill="none"
-              stroke={color}
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
+            <g>
+              {/* 15% Area fill */}
+              <polygon
+                points={areaPoints}
+                fill={seriesColor}
+                opacity="0.15"
+              />
+              <polyline
+                className="chart-line-animated"
+                points={polyPoints}
+                fill="none"
+                stroke={seriesColor}
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </g>
           )}
 
           {/* Dashed trend line */}
@@ -343,10 +382,10 @@ export function NasaWeatherStation3D({
               y1={trendLine.y1}
               x2={trendLine.x2}
               y2={trendLine.y2}
-              stroke="var(--fg, #e7efe8)"
+              stroke="#EAF6E6"
               strokeWidth="1.5"
-              strokeDasharray="5 4"
-              opacity="0.6"
+              strokeDasharray="4 4"
+              opacity="0.65"
             />
           )}
 
@@ -381,37 +420,23 @@ export function NasaWeatherStation3D({
               cx={hoveredChartPoint.x}
               cy={hoveredChartPoint.y}
               r="4.5"
-              fill={color}
-              stroke="var(--surface, #131b16)"
+              fill={seriesColor}
+              stroke="#07140D"
               strokeWidth="2"
             />
           )}
         </svg>
 
-        {/* Hover tooltip */}
-        {hoveredChartPoint?.chartId === id && (
-          <div
-            className="tip"
-            style={{
-              position: 'absolute',
-              left: `${(hoveredChartPoint.x / W) * 100}%`,
-              top: `${(hoveredChartPoint.y / H) * 100}%`,
-              transform: 'translate(-50%, -125%)',
-              background: 'var(--fg, #e7efe8)',
-              color: 'var(--bg, #0c120e)',
-              padding: '4px 8px',
-              borderRadius: '6px',
-              fontSize: '11.5px',
-              fontWeight: 600,
-              pointerEvents: 'none',
-              zIndex: 10,
-              whiteSpace: 'nowrap',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-            }}
-          >
-            {by(hoveredChartPoint.year)}: {bn(hoveredChartPoint.val, hoveredChartPoint.dec)} {hoveredChartPoint.unit}
-          </div>
-        )}
+        {/* Glass Hover Tooltip */}
+        <ChartTooltip
+          visible={hoveredChartPoint?.chartId === id}
+          x={hoveredChartPoint ? `${(hoveredChartPoint.x / W) * 100}%` : '50%'}
+          y={hoveredChartPoint ? `${(hoveredChartPoint.y / H) * 100}%` : '50%'}
+          title={hoveredChartPoint ? `${by(hoveredChartPoint.year)}` : ''}
+          value={hoveredChartPoint ? `${bn(hoveredChartPoint.val, hoveredChartPoint.dec)}` : ''}
+          unit={hoveredChartPoint?.unit || ''}
+          theme="dark"
+        />
 
         <span className="src" style={{ fontSize: '11px', color: 'var(--faint, #5f7064)', marginTop: 4, display: 'block' }}>
           {src}
@@ -820,14 +845,14 @@ export function NasaWeatherStation3D({
               {/* Chart 1: Mean Max Temp */}
               {renderChart({
                 id: 'c1',
-                title: lang === 'bn' ? '🌡️ গড় সর্বোচ্চ তাপমাত্রা (বছরে)' : '🌡️ Mean Maximum Temperature (Annual)',
+                title: lang === 'bn' ? 'গড় সর্বোচ্চ তাপমাত্রা (বছরে)' : 'Mean Maximum Temperature (Annual)',
                 say: lang === 'bn'
                   ? `দশকে ${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${bn(summary.tmax_trend?.[0], 2)}°C, কিন্তু বছরভেদে ওঠানামা বেশি — ${summary.tmax_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'নিশ্চিত নয়'}।`
                   : `${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${bn(summary.tmax_trend?.[0], 2)}°C per decade, high interannual variability — ${summary.tmax_trend?.[1] < 0.05 ? 'confirmed' : 'not statistically significant'}.`,
                 src: lang === 'bn' ? 'NASA POWER T2M_MAX · ড্যাশ লাইন = প্রবণতা' : 'NASA POWER T2M_MAX · Dashed line = trend',
                 vals: summary.tmax,
                 kind: 'line',
-                color: 'var(--amber, #f2b24c)',
+                color: CHART_PALETTE.dark.amber,
                 unit: '°C',
                 trend: summary.tmax_trend?.[0],
                 dec: 1,
@@ -836,42 +861,42 @@ export function NasaWeatherStation3D({
               {/* Chart 2: Heat stress days */}
               {renderChart({
                 id: 'c2',
-                title: lang === 'bn' ? '🔥 ৩৫°C-এর বেশি গরম দিন (বছরে)' : '🔥 Extreme Heat Days > 35°C (Annual)',
+                title: lang === 'bn' ? '৩৫°C-এর বেশি চরম গরম দিন' : 'Extreme Heat Days > 35°C (Annual)',
                 say: lang === 'bn'
                   ? `গড়ে বছরে ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} দিন, বেশিরভাগ মার্চ–জুনে।`
                   : `Average ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} days/yr, mostly March–June.`,
                 src: lang === 'bn' ? 'NASA POWER দৈনিক T2M_MAX' : 'NASA POWER Daily T2M_MAX',
                 vals: summary.heat,
                 kind: 'bar',
-                color: 'var(--red, #f07a6a)',
+                color: CHART_PALETTE.dark.coral,
                 unit: lang === 'bn' ? 'দিন' : 'days',
               })}
 
               {/* Chart 3: Kharif-1 Rain */}
               {renderChart({
                 id: 'c3',
-                title: lang === 'bn' ? '🌦️ এপ্রিল–মে-র বৃষ্টি (খরিফ-১)' : '🌦️ April–May Rainfall (Kharif-1)',
+                title: lang === 'bn' ? 'এপ্রিল–মে-র বৃষ্টি (খরিফ-১)' : 'April–May Rainfall (Kharif-1)',
                 say: lang === 'bn'
                   ? `ওঠানামা অনেক (${bn(Math.min(...(summary.am_rain || [0])))}–${bn(Math.max(...(summary.am_rain || [0])))} মিমি)। শেষ বছরে খরা টান ${bn(summary.dryspell?.[summary.dryspell?.length - 1] || 0)} দিন।`
                   : `High variance (${bn(Math.min(...(summary.am_rain || [0])))}–${bn(Math.max(...(summary.am_rain || [0])))} mm). Recent dry spell ${bn(summary.dryspell?.[summary.dryspell?.length - 1] || 0)} days.`,
                 src: lang === 'bn' ? `${provenance.rain?.source || 'GPM IMERG'} দৈনিক বৃষ্টি` : `${provenance.rain?.source || 'GPM IMERG'} Daily Rainfall`,
                 vals: summary.am_rain,
                 kind: 'bar',
-                color: 'var(--blue, #5fb0ef)',
+                color: CHART_PALETTE.dark.cyan,
                 unit: lang === 'bn' ? 'মিমি' : 'mm',
               })}
 
               {/* Chart 4: Annual Rain */}
               {renderChart({
                 id: 'c4',
-                title: lang === 'bn' ? '🌧️ বছরের মোট বৃষ্টি' : '🌧️ Annual Total Rainfall',
+                title: lang === 'bn' ? 'বছরের মোট বৃষ্টিপাত' : 'Annual Total Rainfall',
                 say: lang === 'bn'
                   ? `দশকে ${bn(Math.abs(summary.annual_trend?.[0] || 0))} মিমি ${summary.annual_trend?.[0] >= 0 ? 'বৃদ্ধি' : 'কমার ইঙ্গিত'} (p = ${bn(summary.annual_trend?.[1], 2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'নিশ্চিত নয়'}।`
                   : `${summary.annual_trend?.[0] >= 0 ? '+' : '−'}${bn(Math.abs(summary.annual_trend?.[0] || 0))} mm/decade trend (p = ${bn(summary.annual_trend?.[1], 2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'confirmed' : 'not statistically significant'}.`,
                 src: lang === 'bn' ? `${provenance.rain?.source || 'GPM IMERG'} · ড্যাশ লাইন = প্রবণতা` : `${provenance.rain?.source || 'GPM IMERG'} · Dashed line = trend`,
                 vals: summary.annual,
                 kind: 'line',
-                color: 'var(--blue, #5fb0ef)',
+                color: CHART_PALETTE.dark.lime,
                 unit: lang === 'bn' ? 'মিমি' : 'mm',
                 trend: summary.annual_trend?.[0],
               })}

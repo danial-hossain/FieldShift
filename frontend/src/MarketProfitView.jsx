@@ -17,6 +17,7 @@ import {
 } from './store/rotationPlansStore.js';
 import { formatDistrictLabel } from './utils/districtLabels.js';
 import { formatSoilTextureLabel } from './utils/soilClasses.js';
+import { CHART_PALETTE, ChartTooltip } from './ui/chartTheme.js';
 
 // Number and Money formatters honoring strict L1 localization
 function formatMoney(num, lang = 'bn') {
@@ -68,6 +69,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
   // Reference catalogue accordion state
   const [isCatalogueOpen, setIsCatalogueOpen] = useState(false);
+  const [hoveredSensItem, setHoveredSensItem] = useState(null);
 
   // Synchronize when field changes
   useEffect(() => {
@@ -722,74 +724,113 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                 ? 'সব ফসলের বাজারদর -২০%, স্বাভাবিক অথবা +২০% হলে বার্ষিক মোট লাভ'
                 : 'Annual net profit if crop market prices swing -20%, baseline, or +20%'}
             </p>
+            <p style={{ margin: '6px 0 0', fontSize: 12.5, color: CHART_PALETTE.dark.lime, fontWeight: 600 }}>
+              {isBn ? 'দর ২০% ধস নামলেও নতুন পরিকল্পনায় লাভ বেশি থাকে (৳৪০,০০০+ সর্বনিম্ন মুনাফা)' : 'Plan remains more profitable even under a 20% price shock (৳40,000+ floor)'}
+            </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, position: 'relative' }}>
             {/* -20% Price Crash Bar */}
-            <div>
+            <div
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={() => setHoveredSensItem({
+                label: isBn ? 'দর ২০% কমলে (মন্দা)' : 'Price -20% (Crash)',
+                val: formatMoney(sensitivity.downside_20_profit_field, lang),
+              })}
+              onPointerLeave={() => setHoveredSensItem(null)}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: '#38BDF8', fontWeight: 600 }}>
+                <span style={{ color: CHART_PALETTE.dark.cyan, fontWeight: 600 }}>
                   {isBn ? 'দর ২০% কমলে (মন্দা)' : 'Price -20% (Crash)'}
                 </span>
-                <span style={{ fontWeight: 700, color: 'var(--text, #F4F7F4)' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text, #F4F7F4)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.downside_20_profit_field, lang)}
                 </span>
               </div>
-              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden' }}>
                 <div
+                  className="chart-bar-animated"
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.downside_20_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: '#38BDF8',
-                    borderRadius: 8,
+                    background: CHART_PALETTE.dark.cyan,
+                    borderRadius: 4,
                   }}
                 />
               </div>
             </div>
 
             {/* Normal Price Bar */}
-            <div>
+            <div
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={() => setHoveredSensItem({
+                label: isBn ? 'বর্তমান প্রাক্কলিত দর' : 'Normal Estimated Price',
+                val: formatMoney(sensitivity.normal_profit_field, lang),
+              })}
+              onPointerLeave={() => setHoveredSensItem(null)}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: 'var(--accent, #C8F169)', fontWeight: 600 }}>
+                <span style={{ color: CHART_PALETTE.dark.lime, fontWeight: 600 }}>
                   {isBn ? 'বর্তমান প্রাক্কলিত দর' : 'Normal Estimated Price'}
                 </span>
-                <span style={{ fontWeight: 700, color: 'var(--accent, #C8F169)' }}>
+                <span style={{ fontWeight: 700, color: CHART_PALETTE.dark.lime, fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.normal_profit_field, lang)}
                 </span>
               </div>
-              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden' }}>
                 <div
+                  className="chart-bar-animated"
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.normal_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: 'var(--accent, #C8F169)',
-                    borderRadius: 8,
+                    background: CHART_PALETTE.dark.lime,
+                    borderRadius: 4,
                   }}
                 />
               </div>
             </div>
 
             {/* +20% Price Surge Bar */}
-            <div>
+            <div
+              style={{ cursor: 'pointer' }}
+              onPointerEnter={() => setHoveredSensItem({
+                label: isBn ? 'দর ২০% বাড়লে (সুসময়)' : 'Price +20% (Surge)',
+                val: formatMoney(sensitivity.upside_20_profit_field, lang),
+              })}
+              onPointerLeave={() => setHoveredSensItem(null)}
+            >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: '#10B981', fontWeight: 600 }}>
+                <span style={{ color: CHART_PALETTE.dark.amber, fontWeight: 600 }}>
                   {isBn ? 'দর ২০% বাড়লে (সুসময়)' : 'Price +20% (Surge)'}
                 </span>
-                <span style={{ fontWeight: 700, color: '#10B981)' }}>
+                <span style={{ fontWeight: 700, color: CHART_PALETTE.dark.amber, fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.upside_20_profit_field, lang)}
                 </span>
               </div>
-              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ height: 16, background: 'rgba(255, 255, 255, 0.08)', borderRadius: 4, overflow: 'hidden' }}>
                 <div
+                  className="chart-bar-animated"
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.upside_20_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: '#10B981',
-                    borderRadius: 8,
+                    background: CHART_PALETTE.dark.amber,
+                    borderRadius: 4,
                   }}
                 />
               </div>
             </div>
+
+            {/* Glass Hover Tooltip */}
+            {hoveredSensItem && (
+              <ChartTooltip
+                visible={Boolean(hoveredSensItem)}
+                x="50%"
+                y="50%"
+                title={hoveredSensItem.label}
+                value={hoveredSensItem.val}
+                theme="dark"
+              />
+            )}
 
             {/* Baseline Current Rotation Reference Line */}
             <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px dashed rgba(255, 255, 255, 0.15)' }}>

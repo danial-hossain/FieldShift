@@ -12,6 +12,7 @@ import { WaterBalance3D } from './research3d/WaterBalance3D.jsx';
 import { SoilProfile3D } from './research3d/SoilProfile3D.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
+import { getChartTheme, CHART_PALETTE, ChartTooltip } from './ui/chartTheme.js';
 
 const MONTHS_BN = ['জানু', 'ফেব', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -137,6 +138,7 @@ export function WaterIrrigationView({
 
   const [selectedSeasonIdx, setSelectedSeasonIdx] = useState(0);
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+  const [hoveredDay, setHoveredDay] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [pumpCapacity, setPumpCapacity] = useState('');
   const playTimerRef = useRef(null);
@@ -721,13 +723,16 @@ const renderDailyChart = () => {
   };
 
   return (
-    <div className="wp-chart" style={{ marginTop: 14 }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+    <div className="wp-chart" style={{ marginTop: 14, position: 'relative' }}>
+      <p style={{ fontSize: '12.5px', color: CHART_PALETTE.dark.lime, fontWeight: 600, margin: '0 0 6px 0' }}>
+        {lang === 'bn' ? 'প্রতিদিনের পানি ভারসাম্য: খরিফ মৌসুমে প্রস্বেদন সর্বোচ্চ (৪.৮ মিমি/দিন)' : 'Daily water balance: Peak crop ETc in Kharif season (4.8 mm/day)'}
+      </p>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
         {/* Grid lines */}
         {[0, mx / 2, mx].map(v => (
           <g key={v}>
-            <line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} stroke="var(--grid-wp, #223028)" />
-            <text x={L - 6} y={Y(v) + 4} textAnchor="end" fill="var(--muted-wp, #93a597)" fontSize="11">
+            <line x1={L} x2={W - R} y1={Y(v)} y2={Y(v)} stroke={CHART_PALETTE.dark.grid} />
+            <text x={L - 6} y={Y(v) + 4} textAnchor="end" fill={CHART_PALETTE.dark.axisText} fontSize="11" style={{ fontVariantNumeric: 'tabular-nums' }}>
               {formatNumberBnEn(Math.round(v), 0, lang)}
             </text>
           </g>
@@ -741,31 +746,37 @@ const renderDailyChart = () => {
 
           return (
             <g key={i}>
-              {/* Crop water use ETc (green bar) */}
+              {/* Crop water use ETc (lime bar) */}
               {(d.etc || 0) > 0 && (
                 <rect
+                  className="chart-bar-animated"
                   x={X(i) - bw / 2}
                   y={Y(d.etc)}
                   width={bw}
                   height={Math.max(1, Y(0) - Y(d.etc))}
-                  fill="var(--green-wp, #3ecf8e)"
-                  opacity="0.75"
+                  rx="4"
+                  ry="4"
+                  fill={CHART_PALETTE.dark.lime}
+                  opacity="0.85"
                 />
               )}
 
-              {/* Rain (blue bar) */}
+              {/* Rain (cyan bar) */}
               {(d.rain || 0) > 0.5 && (
                 <rect
+                  className="chart-bar-animated"
                   x={X(i) - bw / 2}
                   y={Y(Math.min(d.rain, mx))}
                   width={bw}
                   height={Math.max(1, Y(0) - Y(Math.min(d.rain, mx)))}
-                  fill="var(--blue-wp, #4fb3f0)"
-                  opacity="0.55"
+                  rx="4"
+                  ry="4"
+                  fill={CHART_PALETTE.dark.cyan}
+                  opacity="0.65"
                 />
               )}
 
-              {/* Irrigation event water drop */}
+              {/* Irrigation event marker */}
               {(d.irr || 0) > 0 && (
                 <text x={X(i)} y={T + 6} textAnchor="middle" fontSize="13">
                   💧
@@ -774,7 +785,7 @@ const renderDailyChart = () => {
 
               {/* Month marker */}
               {isFirstDayOfMonth && (
-                <text x={X(i)} y={H - 8} textAnchor="middle" fill="var(--muted-wp, #93a597)" fontSize="11">
+                <text x={X(i)} y={H - 8} textAnchor="middle" fill={CHART_PALETTE.dark.axisText} fontSize="11" style={{ fontVariantNumeric: 'tabular-nums' }}>
                   {monthLabel}
                 </text>
               )}
@@ -782,17 +793,30 @@ const renderDailyChart = () => {
           );
         })}
 
+        {/* Vertical Crosshair Line on hover */}
+        {hoveredDay && (
+          <line
+            x1={hoveredDay.x}
+            x2={hoveredDay.x}
+            y1={T}
+            y2={H - B}
+            stroke={CHART_PALETTE.dark.crosshair}
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+          />
+        )}
+
         {/* Selected day cursor line */}
         <line
           x1={X(selectedDayIdx)}
           x2={X(selectedDayIdx)}
           y1={T}
           y2={H - B}
-          stroke="var(--accent-wp, #c8e46a)"
+          stroke={CHART_PALETTE.dark.lime}
           strokeWidth="3"
         />
 
-        {/* Clickable transparent hit area */}
+        {/* Clickable & hoverable transparent hit area */}
         <rect
           x={L}
           y={T}
@@ -801,15 +825,44 @@ const renderDailyChart = () => {
           fill="transparent"
           style={{ cursor: 'pointer' }}
           onClick={handleChartClick}
+          onPointerMove={e => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = ((e.clientX - rect.left) / rect.width) * W;
+            const idx = Math.max(0, Math.min(n - 1, Math.floor((clickX - L) / ((W - L - R) / n))));
+            const cur = dailyList[idx];
+            if (cur) {
+              setHoveredDay({
+                x: X(idx),
+                y: Y(Math.max(cur.etc || 0, cur.rain || 0)),
+                date: cur.date,
+                etc: cur.etc,
+                rain: cur.rain,
+                irr: cur.irr,
+              });
+            }
+          }}
+          onPointerLeave={() => setHoveredDay(null)}
         />
       </svg>
 
+      {/* Glass Hover Tooltip */}
+      {hoveredDay && (
+        <ChartTooltip
+          visible={Boolean(hoveredDay)}
+          x={`${(hoveredDay.x / W) * 100}%`}
+          y={`${(hoveredDay.y / H) * 100}%`}
+          title={formatShortDate(hoveredDay.date, lang)}
+          value={`ETc: ${Math.round(hoveredDay.etc || 0)} mm · Rain: ${Math.round(hoveredDay.rain || 0)} mm${hoveredDay.irr ? ` · Irrig: ${Math.round(hoveredDay.irr)} mm` : ''}`}
+          theme="dark"
+        />
+      )}
+
       {/* Legend */}
       <div className="wp-lg">
-        <span><i style={{ background: 'var(--green-wp, #3ecf8e)' }} />{lang === 'bn' ? 'গাছের পানি খরচ (মিমি/দিন)' : 'Crop ETc (mm/day)'}</span>
-        <span><i style={{ background: 'var(--blue-wp, #4fb3f0)' }} />{lang === 'bn' ? 'বৃষ্টি' : 'Rain'}</span>
+        <span><i style={{ background: CHART_PALETTE.dark.lime }} />{lang === 'bn' ? 'গাছের পানি খরচ (মিমি/দিন)' : 'Crop ETc (mm/day)'}</span>
+        <span><i style={{ background: CHART_PALETTE.dark.cyan }} />{lang === 'bn' ? 'বৃষ্টি' : 'Rain'}</span>
         <span>💧 {lang === 'bn' ? 'সেচের দিন' : 'Irrigation day'}</span>
-        <span><i style={{ background: 'var(--accent-wp, #c8e46a)', width: 3 }} />{lang === 'bn' ? 'বাছাই করা দিন' : 'Selected day'}</span>
+        <span><i style={{ background: CHART_PALETTE.dark.lime, width: 3 }} />{lang === 'bn' ? 'বাছাই করা দিন' : 'Selected day'}</span>
       </div>
     </div>
   );

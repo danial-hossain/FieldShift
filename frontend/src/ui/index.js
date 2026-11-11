@@ -32,4 +32,5 @@ export { ChartCard } from './ChartCard.jsx';
 export { SourceChip } from './SourceChip.jsx';
 export { CropIllustration } from './CropIllustration.jsx';
 export { useCountUp, AnimatedNumber } from './useCountUp.js';
+export { CHART_PALETTE, getChartTheme, formatChartNumber, computeTrendTakeaway, ChartTooltip } from './chartTheme.js';
 export * from './Icons.jsx';

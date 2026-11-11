@@ -1,4 +1,5 @@
-import React, { useId } from 'react';
+import React, { useId, useState } from 'react';
+import { CHART_PALETTE, ChartTooltip } from './chartTheme.js';
 
 export function LineChart({
   series = [], // array of numbers or [{ x, y }]
@@ -7,10 +8,12 @@ export function LineChart({
   tone = 'accent', // 'accent' | 'leaf' | 'water' | 'sun' | 'alert' | 'hud'
   strokeWidth = 2,
   showGradient = true,
+  unit = '',
   className = '',
   style = {}
 }) {
   const gradientId = useId();
+  const [hoveredPoint, setHoveredPoint] = useState(null);
 
   // Normalize numbers
   const points = series.map((pt, i) => {
@@ -56,7 +59,7 @@ export function LineChart({
   const coords = points.map((p, idx) => {
     const x = padX + (idx / (points.length - 1)) * drawW;
     const y = padY + drawH - ((p.y - minY) / ySpan) * drawH;
-    return { x, y };
+    return { x, y, val: p.y };
   });
 
   const pathD = coords.reduce((acc, pt, idx) => {
@@ -66,21 +69,22 @@ export function LineChart({
   const areaD = `${pathD} L ${coords[coords.length - 1].x} ${height - padY} L ${coords[0].x} ${height - padY} Z`;
 
   const toneColors = {
-    accent: '#c5e86c',
-    leaf: '#00df81',
-    water: '#38bdf8',
-    sun: '#facc15',
-    alert: '#f43f5e',
-    hud: '#00f0ff'
+    accent: CHART_PALETTE.dark.lime,
+    leaf: CHART_PALETTE.dark.lime,
+    water: CHART_PALETTE.dark.cyan,
+    sun: CHART_PALETTE.dark.amber,
+    alert: CHART_PALETTE.dark.coral,
+    hud: CHART_PALETTE.dark.cyan,
+    violet: CHART_PALETTE.dark.violet,
   };
-  const strokeColor = toneColors[tone] || '#c5e86c';
+  const strokeColor = toneColors[tone] || CHART_PALETTE.dark.lime;
 
   return (
     <div className={`ui-linechart ${className}`} style={{ width, height, position: 'relative', ...style }}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
+            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.15" />
             <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
           </linearGradient>
         </defs>
@@ -88,6 +92,7 @@ export function LineChart({
           <path d={areaD} fill={`url(#${gradientId})`} />
         )}
         <path
+          className="chart-line-animated"
           d={pathD}
           fill="none"
           stroke={strokeColor}
@@ -95,7 +100,48 @@ export function LineChart({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+
+        {/* Vertical crosshair on hover */}
+        {hoveredPoint && (
+          <line
+            x1={hoveredPoint.x}
+            x2={hoveredPoint.x}
+            y1={padY}
+            y2={height - padY}
+            stroke={CHART_PALETTE.dark.crosshair}
+            strokeWidth="1.5"
+            strokeDasharray="3 3"
+          />
+        )}
+
+        {/* Hover hit points */}
+        {coords.map((pt, i) => (
+          <circle
+            key={i}
+            cx={pt.x}
+            cy={pt.y}
+            r={hoveredPoint?.x === pt.x ? 4 : 2.5}
+            fill={strokeColor}
+            stroke="#07140D"
+            strokeWidth={1.5}
+            style={{ cursor: 'pointer' }}
+            onPointerEnter={() => setHoveredPoint(pt)}
+            onPointerLeave={() => setHoveredPoint(null)}
+          />
+        ))}
       </svg>
+
+      {/* Glass hover tooltip */}
+      {hoveredPoint && (
+        <ChartTooltip
+          visible={Boolean(hoveredPoint)}
+          x={hoveredPoint.x}
+          y={hoveredPoint.y}
+          value={Math.round(hoveredPoint.val * 10) / 10}
+          unit={unit}
+          theme="dark"
+        />
+      )}
     </div>
   );
 }
