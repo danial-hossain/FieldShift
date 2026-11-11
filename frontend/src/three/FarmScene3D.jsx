@@ -485,6 +485,7 @@ export function FarmScene3D({
   const bedLossPctsRef = useRef(bedLossPcts);
   bedLossPctsRef.current = bedLossPcts;
   const [hasWebGL, setHasWebGL] = useState(true);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
   const [infoStats, setInfoStats] = useState({ calls: 0, triangles: 0, fps: 60 });
   const [isLowLod, setIsLowLod] = useState(false);
@@ -2121,6 +2122,23 @@ export function FarmScene3D({
           </div>
         ) : null}
       </div>
+
+      {/* LB5: Mobile Tap to Interact Overlay */}
+      {!hasInteracted && (
+        <div
+          className="tap-to-interact-overlay"
+          onClick={() => setHasInteracted(true)}
+          onTouchStart={() => setHasInteracted(true)}
+          role="button"
+          tabIndex={0}
+          aria-label={lang === 'bn' ? 'ট্যাপ করে দেখুন' : 'Tap to interact'}
+        >
+          <div className="tap-to-interact-pill">
+            <span style={{ fontSize: 16 }}>👆</span>
+            <span>{lang === 'bn' ? 'ট্যাপ করে দেখুন' : 'Tap to interact'}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
