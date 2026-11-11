@@ -168,6 +168,7 @@ export function SeasonTimelineBar({
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             type="button"
+            id="timeline-play-btn"
             className="timeline-play-btn"
             onClick={onPlayPause}
             aria-label={isPlaying ? (lang === 'bn' ? 'থামান' : 'Pause') : (lang === 'bn' ? 'চালান' : 'Play')}
@@ -218,7 +219,7 @@ export function SeasonTimelineBar({
         </div>
 
         {/* Live Accumulation Counters: Water & Profit */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12.5, fontWeight: 600 }}>
+        <div className="timeline-live-counters" style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12.5, fontWeight: 600 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--neon-cyan, #5BE3FF)' }}>
             <span><Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /></span>
             <span>
