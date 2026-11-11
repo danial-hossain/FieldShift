@@ -5,7 +5,7 @@ export function Toast({
   type = 'info', // 'success' | 'error' | 'info'
   message,
   onClose,
-  duration = 4000,
+  duration = 2500, // 2.5s per LB4 spec
   className = '',
   style = {}
 }) {
@@ -20,23 +20,23 @@ export function Toast({
   const getStyle = () => {
     if (type === 'success') {
       return {
-        bg: 'var(--bg-card, #161d23)',
-        border: '1px solid #00df81',
+        bg: 'rgba(12, 28, 18, 0.96)',
+        border: '1.5px solid #00df81',
         icon: <CheckIcon size={18} className="text-emerald-400" />,
         color: '#00df81',
       };
     }
     if (type === 'error') {
       return {
-        bg: 'var(--bg-card, #161d23)',
-        border: '1px solid #ef4444',
+        bg: 'rgba(32, 16, 16, 0.96)',
+        border: '1.5px solid #ef4444',
         icon: <AlertCircleIcon size={18} className="text-red-400" />,
         color: '#ef4444',
       };
     }
     return {
-      bg: 'var(--bg-card, #161d23)',
-      border: '1px solid #38bdf8',
+      bg: 'rgba(16, 24, 32, 0.96)',
+      border: '1.5px solid #38bdf8',
       icon: <InfoIcon size={18} className="text-sky-400" />,
       color: '#38bdf8',
     };
@@ -47,24 +47,28 @@ export function Toast({
   return (
     <div
       className={`ui-toast ${className}`}
+      role="alert"
+      data-testid="bottom-toast"
       style={{
         position: 'fixed',
         bottom: 24,
-        right: 24,
+        left: '50%',
+        transform: 'translateX(-50%)',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
         gap: 10,
-        padding: '12px 18px',
+        padding: '10px 20px',
         background: t.bg,
         border: t.border,
-        borderRadius: 'var(--radius-md, 12px)',
-        boxShadow: 'var(--shadow-elevation-2, 0 8px 24px rgba(0,0,0,0.45))',
+        borderRadius: '9999px',
+        boxShadow: '0 12px 32px rgba(0,0,0,0.65), 0 0 16px rgba(0, 223, 129, 0.2)',
         color: 'var(--text-main, #e8ece9)',
-        fontSize: '13px',
-        fontWeight: 600,
-        maxWidth: '380px',
-        animation: 'slideUp 180ms ease-out',
+        fontSize: '13.5px',
+        fontWeight: 700,
+        maxWidth: '90vw',
+        animation: 'slideUpFade 200ms cubic-bezier(0.16, 1, 0.3, 1)',
+        backdropFilter: 'blur(8px)',
         ...style
       }}
     >

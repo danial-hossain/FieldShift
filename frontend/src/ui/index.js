@@ -31,4 +31,5 @@ export { SliderWithLabels } from './SliderWithLabels.jsx';
 export { ChartCard } from './ChartCard.jsx';
 export { SourceChip } from './SourceChip.jsx';
 export { CropIllustration } from './CropIllustration.jsx';
+export { useCountUp, AnimatedNumber } from './useCountUp.js';
 export * from './Icons.jsx';

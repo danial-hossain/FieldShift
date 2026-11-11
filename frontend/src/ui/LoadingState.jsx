@@ -1,4 +1,5 @@
 import React from 'react';
+import { Skeleton } from './Skeleton.jsx';
 
 export function LoadingState({
   message = 'তথ্য লোড হচ্ছে...',
@@ -16,29 +17,39 @@ export function LoadingState({
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: height,
-        padding: '32px 16px',
+        padding: '24px 16px',
         textAlign: 'center',
         background: 'transparent',
+        width: '100%',
+        maxWidth: 600,
+        margin: '0 auto',
+        gap: 12,
         ...style
       }}
     >
-      <div style={{
-        width: 38,
-        height: 38,
-        borderRadius: '50%',
-        border: '3px solid rgba(0, 223, 129, 0.2)',
-        borderTopColor: 'var(--primary, #00df81)',
-        animation: 'spin 0.8s linear infinite',
-        marginBottom: 16
-      }} />
-      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main, #e8ece9)', marginBottom: 4 }}>
-        {message}
-      </div>
-      {subtext && (
-        <div style={{ fontSize: '12px', color: 'var(--text-muted, #9aa5a0)' }}>
-          {subtext}
+      {/* Shimmer skeleton mock cards instead of mid-page spinner */}
+      <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <Skeleton width="48px" height="48px" borderRadius="12px" />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Skeleton width="40%" height="18px" borderRadius="6px" />
+            <Skeleton width="65%" height="13px" borderRadius="4px" />
+          </div>
         </div>
-      )}
+        <Skeleton width="100%" height="32px" borderRadius="8px" />
+        <Skeleton width="88%" height="24px" borderRadius="6px" />
+      </div>
+
+      <div style={{ marginTop: 8, textAlign: 'center' }}>
+        <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-main, #e8ece9)', marginBottom: 3 }}>
+          {message}
+        </div>
+        {subtext && (
+          <div style={{ fontSize: '12px', color: 'var(--text-muted, #9aa5a0)' }}>
+            {subtext}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

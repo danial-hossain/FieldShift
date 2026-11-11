@@ -1,4 +1,5 @@
 import React from 'react';
+import { useCountUp } from './useCountUp.js';
 
 export function KeyNumberTile({
   label,
@@ -13,6 +14,7 @@ export function KeyNumberTile({
   className = '',
   style = {}
 }) {
+  const animatedValue = useCountUp(value, 600);
   const getDeltaStyle = () => {
     if (deltaType === 'positive') {
       return { background: 'rgba(0, 223, 129, 0.15)', color: '#00df81', border: '1px solid rgba(0, 223, 129, 0.3)' };
@@ -48,7 +50,7 @@ export function KeyNumberTile({
 
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, margin: '4px 0 8px 0' }}>
         <span style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main, #e8ece9)', letterSpacing: '-0.02em', lineHeight: 1 }}>
-          {value}
+          {animatedValue}
         </span>
         {unit && (
           <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-dim, #7a8781)' }}>
