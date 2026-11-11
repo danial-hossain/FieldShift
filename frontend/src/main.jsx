@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Shield, Lightbulb, AlertTriangle, Bell, Wheat, Sprout, BookOpen, Microscope, Home, Zap, Play, FlaskConical, Scale, Coins, Ruler, Bot, Leaf, Sun, Rocket, RotateCw, CloudRain, ClipboardList, Moon, Tractor, Waves } from 'lucide-react';
+import { Shield, Lightbulb, AlertTriangle, Bell, Wheat, Sprout, BookOpen, Microscope, Home, Zap, Play, FlaskConical, Scale, Coins, Ruler, Bot, Leaf, Sun, Rocket, RotateCw, CloudRain, ClipboardList, Moon, Tractor, Waves, Presentation } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
 import 'leaflet/dist/leaflet.css';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
@@ -755,7 +755,24 @@ export function App() {
   const [dashboardMode, setDashboardMode] = useState('farmer');
   const [chatWidgetOpen, setChatWidgetOpen] = useState(false);
   const [chatMessages, setChatMessages] = useState([]);
+  const [demoModeActive, setDemoModeActive] = useState(false);
   const { t } = useTranslation(lang);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.key === 'd' || e.key === 'D') {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          setDemoModeActive(prev => !prev);
+        }
+      } else if (e.key === 'Escape' && demoModeActive) {
+        setDemoModeActive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [demoModeActive]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -2539,6 +2556,15 @@ export function App() {
             {/* Header Field Selector for Instant Context Switching Across Any View (hidden on Overview) */}
             {activeNav !== 'dashboard' && (
               <div className="header-field-selector" title="Active Field Parcel">
+                <span
+                  className="live-pulse-dot"
+                  title={activeField
+                    ? (activeField.is_demo || activeField.id === 'demo'
+                        ? `NASA POWER: demo benchmark · ${activeField.latitude?.toFixed(2)}°N, ${activeField.longitude?.toFixed(2)}°E`
+                        : `NASA POWER: observed · ${activeField.latitude?.toFixed(2)}°N, ${activeField.longitude?.toFixed(2)}°E`)
+                    : (nasa?.data_status === 'observed' ? 'NASA POWER: observed' : 'NASA POWER: standby')}
+                  style={{ cursor: 'help', flexShrink: 0, marginRight: 2 }}
+                />
                 <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)' }}><FieldIcon size={16} /></span>
                 <select
                   aria-label="Active field parcel"
@@ -2575,20 +2601,39 @@ export function App() {
               </div>
             )}
 
-            {/* NASA Status Telemetry Badge (Collapses cleanly on mobile) */}
-            <div className="top-bar-pill-badge" title="NASA POWER agro-climatic observation feed">
-              <span className="live-pulse-dot" />
-              <span className="nasa-badge-full-text">
-                {activeField
-                  ? (activeField.is_demo || activeField.id === 'demo'
-                      ? `NASA POWER: Demo Benchmark (${activeField.latitude?.toFixed(2)}°N, ${activeField.longitude?.toFixed(2)}°E)`
-                      : `NASA POWER: Observed (${activeField.latitude?.toFixed(2)}°N, ${activeField.longitude?.toFixed(2)}°E)`)
-                  : (nasa?.data_status === 'observed' ? 'NASA POWER: Observed' : 'NASA POWER: Standby')}
-              </span>
-              <span className="nasa-badge-short-text">
-                NASA
-              </span>
-            </div>
+            {/* Glass Neon Demo Mode Toggle Button */}
+            <button
+              type="button"
+              className={`top-bar-icon-btn demo-mode-toggle-btn ${demoModeActive ? 'active' : ''}`}
+              title={lang === 'bn' ? 'ডেমো মোড (শর্টকাট: D)' : 'Demo Mode (Shortcut: D)'}
+              aria-label={lang === 'bn' ? 'ডেমো মোড' : 'Demo Mode'}
+              aria-pressed={demoModeActive ? 'true' : 'false'}
+              onClick={() => setDemoModeActive(prev => !prev)}
+              style={{
+                width: 'auto',
+                padding: '0 14px',
+                height: 40,
+                fontWeight: 700,
+                fontSize: 13,
+                background: demoModeActive
+                  ? 'linear-gradient(135deg, rgba(82,214,122,.28) 0%, rgba(46,184,92,.42) 100%)'
+                  : 'rgba(8,14,11,.65)',
+                color: demoModeActive ? '#a8f5c0' : 'var(--leaf-neon, #7ee787)',
+                border: demoModeActive ? '1px solid rgba(82,214,122,.85)' : '1px solid rgba(82,214,122,.40)',
+                borderRadius: '9999px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 7,
+                cursor: 'pointer',
+                boxShadow: demoModeActive
+                  ? '0 0 20px rgba(82,214,122,.45), inset 0 0 12px rgba(82,214,122,.25)'
+                  : '0 0 12px rgba(82,214,122,.15)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <Presentation size={16} />
+              <span>{lang === 'bn' ? 'ডেমো' : 'Demo'}</span>
+            </button>
 
             {/* Header Language Switcher (Bangla / English) */}
             <button
