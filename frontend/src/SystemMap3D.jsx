@@ -566,7 +566,7 @@ export function SystemMap3D({
     return `M${x1},${y1} C${x1 + dx},${y1} ${x2 - dx},${y2} ${x2},${y2}`;
   };
 
-  // Follow 718 mm Animation: 6 captioned steps as in reference
+  // Follow Rahim Field Water Number (GPM + POWER -> FAO-56 -> MILP -> Planner)
   const handleFollowNumber = () => {
     if (followTimerRef.current) {
       clearTimeout(followTimerRef.current);
@@ -574,55 +574,64 @@ export function SystemMap3D({
     }
     setPinned(null);
 
-    const steps = [
+    const stages = [
       {
-        ids: ['gpm'],
-        textBn: 'GPM: রহিমের জমির ১০ কিমি ঘরের দৈনিক বৃষ্টি',
-        textEn: 'GPM: Daily rainfall at Rahim field 0.1° (~10 km) cell',
+        stageNum: 1,
+        total: 4,
+        paths: [getEdgePath('gpm', 'api'), getEdgePath('power', 'api')],
+        activeIds: ['gpm', 'ceres', 'power', 'api'],
+        duration: 1.6,
+        textBn: '১. GPM + NASA POWER: রহিমের জমির জন্য ১,৪৪২ মিমি বৃষ্টি ও রোদ সংগ্রহ',
+        textEn: '1. GPM + NASA POWER: 1,442 mm rain & solar telemetry for Rahim field (24.62°N, 88.55°E)',
       },
       {
-        ids: ['gpm', 'ceres', 'power'],
-        textBn: 'NASA POWER: তাপ, আর্দ্রতা, বাতাস, রোদ (CERES)',
-        textEn: 'NASA POWER: Temp, humidity, wind, and CERES solar irradiance',
+        stageNum: 2,
+        total: 4,
+        paths: [getEdgePath('api', 'water')],
+        activeIds: ['gpm', 'ceres', 'power', 'api', 'water'],
+        duration: 1.5,
+        textBn: '২. FAO-56 পেনম্যান-মন্টিথ: প্রতিদিন মাটির আর্দ্রতা ও বাষ্পীভবন (ETc) হিসাব',
+        textEn: '2. FAO-56 Daily Balance: Dual Kc evapotranspiration & AWD moisture balance',
       },
       {
-        ids: ['gpm', 'ceres', 'power', 'soil', 'api'],
-        textBn: 'API: সব তথ্য জমির বিন্দুতে, মাটি SoilGrids থেকে',
-        textEn: 'API: Harmonises all point rasters, soil parameters from SoilGrids',
+        stageNum: 3,
+        total: 4,
+        paths: [getEdgePath('water', 'milp')],
+        activeIds: ['gpm', 'ceres', 'power', 'api', 'water', 'milp'],
+        duration: 1.5,
+        textBn: '৩. MILP অপ্টিমাইজার: ৬-মৌসুম আবর্তন সমাধান (সরিষা ➔ মুগডাল ➔ আমন ধান)',
+        textEn: '3. MILP Optimizer: Solves 6-season sequence (Mustard -> Mungbean -> Aman rice)',
       },
       {
-        ids: ['gpm', 'ceres', 'power', 'soil', 'api', 'water'],
-        textBn: 'FAO-56: প্রতিদিন ফসলের পানি − বৃষ্টি = সেচ',
-        textEn: 'FAO-56: Daily crop ETc − effective rain = net irrigation deficit',
-      },
-      {
-        ids: ['gpm', 'ceres', 'power', 'soil', 'api', 'water', 'milp'],
-        textBn: 'MILP: কম পানির ফসল বেছে ৬ মৌসুম সাজায়',
-        textEn: 'MILP: Selects low-water crop sequence across 6 seasons',
-      },
-      {
-        ids: ['gpm', 'ceres', 'power', 'soil', 'api', 'water', 'milp', 'p_plan'],
-        textBn: 'প্ল্যানার: বছরে সেচ ১৫৪৮ → ৭১৮ মিমি সাশ্রয়',
-        textEn: 'Planner: Annual irrigation cut from 1,548 mm to 718 mm',
+        stageNum: 4,
+        total: 4,
+        paths: [getEdgePath('milp', 'p_plan')],
+        activeIds: ['gpm', 'ceres', 'power', 'api', 'water', 'milp', 'p_plan'],
+        duration: 1.4,
+        textBn: '৪. রোটেশন প্ল্যানার: ড্যাশবোর্ডে বার্ষিক সেচ ১,১২২ ➔ ২৭৯.৫ মিমি সাশ্রয় (৮৪২ মিমি/বছর)',
+        textEn: '4. Rotation Planner: Annual irrigation cut to 279.5 mm (saving 842 mm/yr vs Boro rice)',
       },
     ];
 
     let idx = 0;
     const playNext = () => {
-      if (idx >= steps.length) {
+      if (idx >= stages.length) {
         followTimerRef.current = setTimeout(() => {
           setFollowStep(null);
-        }, 3500);
+        }, 4000);
         return;
       }
+      const cur = stages[idx];
       setFollowStep({
-        stepNum: idx + 1,
-        total: steps.length,
-        ids: steps[idx].ids,
-        text: isBn ? steps[idx].textBn : steps[idx].textEn,
+        stepNum: cur.stageNum,
+        total: cur.total,
+        ids: cur.activeIds,
+        paths: cur.paths,
+        duration: cur.duration,
+        text: isBn ? cur.textBn : cur.textEn,
       });
       idx++;
-      followTimerRef.current = setTimeout(playNext, 1750);
+      followTimerRef.current = setTimeout(playNext, (cur.duration + 0.3) * 1000);
     };
 
     playNext();
@@ -788,6 +797,16 @@ export function SystemMap3D({
             </feMerge>
           </filter>
 
+          <filter id="brightGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur1" />
+            <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
+            <feMerge>
+              <feMergeNode in="blur2" />
+              <feMergeNode in="blur1" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+
           <radialGradient id="earth" cx="38%" cy="35%">
             <stop offset="0" stopColor="#5bb4f0" />
             <stop offset="0.6" stopColor="#1f5fa6" />
@@ -882,12 +901,15 @@ export function SystemMap3D({
             const targetNode = byId[b];
             if (!sourceNode || !targetNode || !pathD) return null;
 
-            const isPlanned = sourceNode.st === 'planned';
+            // Only used and partial connections count as active used data paths
+            const isUsedPath = (sourceNode.st === 'used' || sourceNode.st === 'partial') &&
+                               (targetNode.st === 'used' || targetNode.st === 'partial');
+            const isPlanned = !isUsedPath;
             const isExp = targetNode.st === 'exp';
             const edgeColor = isPlanned ? COL.planned : isExp ? COL.exp : COL[sourceNode.st] || '#C8F169';
 
             const isEdgeOn = activeSet ? activeSet.has(a) && activeSet.has(b) : true;
-            const opacity = activeSet ? (isEdgeOn ? 1 : 0.08) : isPlanned ? 0.25 : 0.38;
+            const opacity = activeSet ? (isEdgeOn ? 1 : 0.08) : isPlanned ? 0.22 : 0.42;
 
             return (
               <g key={`edge-${a}-${b}`} style={{ transition: 'opacity 0.2s', opacity }}>
@@ -899,7 +921,8 @@ export function SystemMap3D({
                   strokeDasharray={isPlanned ? '4 6' : undefined}
                   filter={isEdgeOn && activeSet ? 'url(#glow)' : undefined}
                 />
-                {!isPlanned && (
+                {/* LB2: Particles flow only along used paths; planned paths stay grey and still */}
+                {isUsedPath && (
                   <circle r={isEdgeOn && activeSet ? 4.5 : 3.5} fill={edgeColor} filter="url(#glow)">
                     <animateMotion
                       dur={`${2.2 + (i % 5) * 0.4}s`}
@@ -914,13 +937,48 @@ export function SystemMap3D({
           })}
         </g>
 
+        {/* LB2: "Follow One Number" Bright Traveling Particle (GPM + POWER -> FAO-56 -> MILP -> Planner) */}
+        {followStep && followStep.paths && (
+          <g id="bright-follow-particle" key={`follow-particle-${followStep.stepNum}`}>
+            {followStep.paths.map((pD, pi) => (
+              <g key={`follow-p-${pi}`}>
+                {/* Outer pulsing neon ring */}
+                <circle r="14" fill="none" stroke="#C8F169" strokeWidth="2.5" opacity="0.85" filter="url(#brightGlow)">
+                  <animateMotion
+                    dur={`${followStep.duration}s`}
+                    repeatCount="1"
+                    path={pD}
+                    fill="freeze"
+                  />
+                  <animate
+                    attributeName="r"
+                    values="10;17;10"
+                    dur="0.6s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                {/* Inner white-hot glowing particle */}
+                <circle r="7" fill="#ffffff" filter="url(#brightGlow)">
+                  <animateMotion
+                    dur={`${followStep.duration}s`}
+                    repeatCount="1"
+                    path={pD}
+                    fill="freeze"
+                  />
+                </circle>
+              </g>
+            ))}
+          </g>
+        )}
+
         {/* Nodes Layer: Labelled Glass Blocks & Realistic Satellites */}
         <g id="nodes">
           {NODES.map((n) => {
-            const isNodeOn = activeSet ? activeSet.has(n.id) : true;
-            const isSelected = pinned === n.id;
+            const isFollowLit = Boolean(followStep && followStep.ids && followStep.ids.includes(n.id));
+            const isNodeOn = isFollowLit || (activeSet ? activeSet.has(n.id) : true);
+            const isSelected = pinned === n.id || isFollowLit;
             const nodeOpacity = activeSet ? (isNodeOn ? 1 : 0.22) : 1;
-            const nodeColor = COL[n.st] || '#C8F169';
+            const nodeColor = isFollowLit ? '#ffffff' : (COL[n.st] || '#C8F169');
             const [w, h] = getNodeSize(n);
             const label = isBn ? n.lBn : n.lEn;
             const sub = isBn ? n.sBn : n.sEn;
@@ -945,7 +1003,12 @@ export function SystemMap3D({
                 {/* 1. SATELLITE NODE TYPE */}
                 {n.t === 'sat' && (
                   <g transform={`translate(${n.x} ${n.y})`}>
-                    <circle r="34" fill={nodeColor} opacity={isSelected ? '0.22' : '0.08'} />
+                    <circle
+                      r={isFollowLit ? 44 : 34}
+                      fill={isFollowLit ? '#C8F169' : nodeColor}
+                      opacity={isFollowLit ? '0.45' : isSelected ? '0.22' : '0.08'}
+                      filter={isFollowLit ? 'url(#brightGlow)' : undefined}
+                    />
                     {/* Satellite Body & Solar Panels */}
                     <rect
                       x="-9"
@@ -1023,10 +1086,10 @@ export function SystemMap3D({
                       height={h}
                       rx="10"
                       fill={n.ext ? '#141f1a' : '#10241a'}
-                      stroke={nodeColor}
-                      strokeWidth={isSelected ? 3 : n.big ? 2.5 : 1.5}
+                      stroke={isFollowLit ? '#ffffff' : nodeColor}
+                      strokeWidth={isFollowLit ? 3.5 : isSelected ? 3 : n.big ? 2.5 : 1.5}
                       strokeDasharray={n.dash ? '7 5' : undefined}
-                      filter={isSelected ? 'url(#glow)' : undefined}
+                      filter={isFollowLit ? 'url(#brightGlow)' : isSelected ? 'url(#glow)' : undefined}
                     />
                     {/* NASA POWER Hub Indicator Circle */}
                     {n.t === 'hub' && (
@@ -1082,9 +1145,10 @@ export function SystemMap3D({
                       height={h}
                       rx="9"
                       fill="#0f1c16"
-                      stroke={nodeColor}
+                      stroke={isFollowLit ? '#ffffff' : nodeColor}
                       strokeOpacity={isSelected ? 1 : 0.7}
-                      strokeWidth={isSelected ? 2.5 : 1}
+                      strokeWidth={isFollowLit ? 3.5 : isSelected ? 2.5 : 1}
+                      filter={isFollowLit ? 'url(#brightGlow)' : isSelected ? 'url(#glow)' : undefined}
                     />
                     <rect x="8" y="8" width="26" height={h - 16} rx="4" fill={nodeColor} opacity="0.2" />
                     <path
