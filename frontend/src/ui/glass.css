@@ -37,7 +37,6 @@
   --text-amber: #f5b04c;
   --text-coral: #ff7a6b;
   --text-violet: #b388ff;
-  --text-fallow: #cbd5e1;
 
   /* Neon Effects (Neon ONLY on specific interactive accents) */
   --neon-btn-glow: 0 0 18px rgba(200, 241, 105, 0.35);
@@ -67,12 +66,11 @@ body.light {
   /* High-contrast semantic text colors on light background */
   --text-primary: #0E1A13;
   --text-muted: #37473D;
-  --text-lime: #166534;     /* WCAG AA: 6.3:1 */
+  --text-lime: #15803d;     /* WCAG AA: 5.6:1 */
   --text-cyan: #0369a1;     /* WCAG AA: 5.4:1 */
   --text-amber: #b45309;    /* WCAG AA: 5.2:1 */
   --text-coral: #b91c1c;    /* WCAG AA: 5.5:1 */
   --text-violet: #6d28d9;   /* WCAG AA: 5.7:1 */
-  --text-fallow: #334155;   /* WCAG AA: 9.1:1 */
 
   /* Neon at 50% intensity in light theme */
   --neon-btn-glow: 0 0 10px rgba(21, 128, 61, 0.25);
@@ -325,3 +323,4 @@ text {
     -webkit-backdrop-filter: none !important;
   }
 }
+

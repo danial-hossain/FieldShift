@@ -1,0 +1,18 @@
+.lvb{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;background:#0b1630;contain:strict}
+.lvb-layer{position:absolute;inset:-3%;will-change:transform;transform:translate3d(0,0,0)}
+/* the art is 1600x1000, shown like background-size: cover */
+.lvb-frame{position:absolute;left:50%;top:50%;width:max(106vw,169.6vh);height:max(106vh,66.25vw);transform:translate(-50%,-50%)}
+.lvb-frame img{position:absolute;inset:0;width:100%;height:100%;display:block;user-select:none}
+.lvb-frame i{position:absolute;display:block;transform:translate(-50%,-50%);border-radius:50%;will-change:opacity}
+.lvb-star{background:#fff;opacity:var(--o);animation:lvbTwinkle 4s ease-in-out infinite alternate}
+.lvb-fly{width:14px;height:14px;background:radial-gradient(circle,#fff4b0 0 18%,rgba(255,229,138,.55) 32%,rgba(255,229,138,0) 70%);animation:lvbFly 2.5s ease-in-out infinite alternate}
+.lvb-window{aspect-ratio:1;background:radial-gradient(circle,rgba(255,190,90,.55),rgba(255,160,60,0) 65%);animation:lvbFlicker 5s ease-in-out infinite alternate}
+.lvb-sun{width:46vh;height:46vh;background:radial-gradient(circle,rgba(255,226,168,.55),rgba(255,184,103,.18) 40%,rgba(255,154,85,0) 70%);animation:lvbSun 6s ease-in-out infinite alternate}
+@keyframes lvbTwinkle{from{opacity:calc(var(--o) * .35)}to{opacity:var(--o)}}
+@keyframes lvbFly{from{opacity:.25;transform:translate(-50%,-50%)}to{opacity:1;transform:translate(-50%,calc(-50% - 8px))}}
+@keyframes lvbFlicker{0%{opacity:.75}50%{opacity:1}100%{opacity:.85}}
+@keyframes lvbSun{from{opacity:.7}to{opacity:1}}
+.lvb-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,9,7,.55) 0%,rgba(4,9,7,.68) 45%,rgba(4,9,7,.82) 100%)}
+[data-theme="light"] .lvb-overlay{background:linear-gradient(180deg,rgba(240,246,240,.35),rgba(240,246,240,.70))}
+@media (max-width:768px){.lvb-frame i{display:none}}
+@media (prefers-reduced-motion:reduce){.lvb-frame i{animation:none!important}}

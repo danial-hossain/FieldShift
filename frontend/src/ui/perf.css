@@ -1,0 +1,39 @@
+/* ==========================================================================
+   FieldShift performance overrides — import this LAST (after styles.css and all UI css).
+   backdrop-filter over a moving background is recomputed on every scroll frame and was the
+   main cause of the lag (measured: 19 fps -> 50 fps without it). Keep blur only on the app shell
+   (sidebar, top bar), modals, the chat panel and the demo spotlight. Everything else gets a
+   slightly more opaque glass colour so it looks the same.
+   ========================================================================== */
+:root {
+  --glass-panel-bg: rgba(8, 14, 11, 0.86);
+  --glass-panel-blur: none;
+  --glass-surface-blur: none;
+}
+[data-theme="light"], .light-theme, body.light {
+  --glass-panel-bg: rgba(255, 255, 255, 0.88);
+}
+
+body *:not(.sidebar):not(.global-top-bar):not([class*="modal"]):not([class*="Modal"]):not([class*="demo-"]):not([class*="chat"]):not([class*="Chat"]):not(.fsx-play) {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* cheaper shadows inside scrolling content */
+.main-content .ui-card, .main-content .glass-card, .main-content .card-inner {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* isolate heavy blocks so a change inside does not repaint the whole page */
+.glass-panel, .panel, .dash-card, .wp-card, .ui-card { contain: layout paint; }
+
+/* the shell keeps its glass */
+.sidebar, .global-top-bar {
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(130%);
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

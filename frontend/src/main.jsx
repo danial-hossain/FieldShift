@@ -30,6 +30,7 @@ import {
   runCounterfactualRequest,
 } from './counterfactual.js';
 import './styles.css';
+import './ui/perf.css';
 import { Toast, Modal } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
