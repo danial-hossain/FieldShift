@@ -32,6 +32,7 @@ import './styles.css';
 import { Toast, Modal } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
+import { SplashScreen } from './ui/SplashScreen.jsx';
 import {
   HomeIcon,
   FieldIcon,
@@ -2336,6 +2337,9 @@ export function App() {
 
   return (
     <div className="app-shell" data-mode={currentMode} data-nav={activeNav} data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}>
+      {/* LA2: Animated Orbit Ring Splash (first load only) */}
+      <SplashScreen />
+
       {/* Village Dusk Responsive Living Background (G2: 5-layer Parallax + Glow) */}
       <div className="village-bg-layer" aria-hidden="true">
         <LivingVillageBackground />

@@ -19160,4 +19160,53 @@ body table {
   }
 }
 
+/* LA2: Orbit ring drawing animation & splash */
+@keyframes splashOrbitDraw {
+  0% {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 120;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dasharray: 120;
+    stroke-dashoffset: 0;
+    opacity: 0.95;
+  }
+}
+
+@keyframes splashSatelliteTravel {
+  0% {
+    opacity: 0;
+    transform: translate(-10px, 8px) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+.splash-orbit-ring {
+  animation: splashOrbitDraw 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.splash-satellite-dot {
+  animation: splashSatelliteTravel 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-orbit-ring,
+  .splash-satellite-dot {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+
 
