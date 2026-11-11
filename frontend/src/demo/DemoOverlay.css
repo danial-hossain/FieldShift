@@ -1,4 +1,4 @@
-/* frontend/src/demo/DemoOverlay.css - DS1 Spotlight Overlay */
+/* frontend/src/demo/DemoOverlay.css - DS1 Spotlight & DS2 Tooltip Card */
 
 .demo-spotlight-overlay {
   position: fixed;
@@ -50,17 +50,68 @@
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  padding: 14px 18px;
+  padding: 16px 18px;
   max-width: 320px;
   width: calc(100vw - 32px);
   color: #E8ECE9;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.2);
   pointer-events: auto;
+  font-family: inherit;
+  transition: opacity 180ms ease;
+}
+
+.demo-card-arrow {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: rgba(8, 14, 11, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.demo-card-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(200, 241, 105, 0.12);
+  color: #C8F169;
+  border: 1px solid rgba(200, 241, 105, 0.30);
+}
+
+.demo-progress-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.demo-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.demo-dot.active {
+  background: #C8F169;
+  width: 16px;
+  border-radius: 999px;
+  box-shadow: 0 0 8px rgba(200, 241, 105, 0.5);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .demo-spotlight-panel,
-  .demo-spotlight-ring {
+  .demo-spotlight-ring,
+  .demo-spotlight-card {
     transition: none !important;
   }
 }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { computePosition, flip, shift, offset, arrow } from '@floating-ui/dom';
 import { DEMO_ANNOTATIONS } from './annotations.js';
 import './DemoOverlay.css';
 
@@ -12,7 +13,10 @@ export function DemoOverlay({
   const [activeIndex, setActiveIndex] = useState(0);
   const [holeRect, setHoleRect] = useState(null);
   const [viewport, setViewport] = useState({ width: 1920, height: 1080 });
+  const [autoPlay, setAutoPlay] = useState(false);
   const rafRef = useRef(null);
+  const cardRef = useRef(null);
+  const arrowRef = useRef(null);
 
   // Map route + planner subtab to annotation catalog key
   const currentKey = useMemo(() => {
@@ -60,6 +64,7 @@ export function DemoOverlay({
   // Reset active index when view changes
   useEffect(() => {
     setActiveIndex(0);
+    setAutoPlay(false);
     refreshValidSteps();
   }, [currentKey, refreshValidSteps]);
 
@@ -131,7 +136,6 @@ export function DemoOverlay({
     window.addEventListener('scroll', onUpdate, true);
     onUpdate();
 
-    // Re-check periodically for any dynamic layout shifts
     const interval = setInterval(onUpdate, 150);
 
     return () => {
@@ -142,7 +146,101 @@ export function DemoOverlay({
     };
   }, [isOpen, updateHoleRect]);
 
-  // Keyboard navigation
+  // Floating UI Card Positioning (DS2)
+  const updateCardPosition = useCallback(() => {
+    if (!isOpen || !holeRect || !cardRef.current) return;
+
+    const virtualEl = {
+      getBoundingClientRect() {
+        return {
+          x: holeRect.left,
+          y: holeRect.top,
+          top: holeRect.top,
+          left: holeRect.left,
+          bottom: holeRect.bottom,
+          right: holeRect.right,
+          width: holeRect.width,
+          height: holeRect.height,
+        };
+      }
+    };
+
+    const middleware = [
+      offset(16),
+      flip({ fallbackPlacements: ['left', 'bottom', 'top'] }),
+      shift({ padding: 16 }),
+    ];
+
+    if (arrowRef.current) {
+      middleware.push(arrow({ element: arrowRef.current }));
+    }
+
+    computePosition(virtualEl, cardRef.current, {
+      placement: 'right',
+      middleware,
+    }).then(({ x, y, placement, middlewareData }) => {
+      if (!cardRef.current) return;
+      cardRef.current.style.left = `${Math.round(x)}px`;
+      cardRef.current.style.top = `${Math.round(y)}px`;
+
+      if (middlewareData.arrow && arrowRef.current) {
+        const { x: arrowX, y: arrowY } = middlewareData.arrow;
+        const staticSide = {
+          top: 'bottom',
+          right: 'left',
+          bottom: 'top',
+          left: 'right',
+        }[placement.split('-')[0]];
+
+        Object.assign(arrowRef.current.style, {
+          left: arrowX != null ? `${arrowX}px` : '',
+          top: arrowY != null ? `${arrowY}px` : '',
+          right: '',
+          bottom: '',
+          [staticSide]: '-5px',
+        });
+      }
+    }).catch(() => {});
+  }, [isOpen, holeRect]);
+
+  useEffect(() => {
+    updateCardPosition();
+  }, [updateCardPosition, activeIndex]);
+
+  // Auto-play every 5 seconds (DS2)
+  useEffect(() => {
+    if (!autoPlay || !isOpen) return undefined;
+    const timer = setInterval(() => {
+      setActiveIndex(idx => {
+        if (idx + 1 < validSteps.length) {
+          return idx + 1;
+        }
+        setAutoPlay(false);
+        return idx;
+      });
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [autoPlay, isOpen, validSteps.length]);
+
+  // Stop auto mode on any keydown or pointer click outside toggle
+  useEffect(() => {
+    if (!autoPlay) return undefined;
+    const stop = (e) => {
+      if (e.target && e.target.closest && e.target.closest('[data-testid="demo-auto-toggle"]')) {
+        return;
+      }
+      setAutoPlay(false);
+    };
+    window.addEventListener('keydown', stop);
+    window.addEventListener('pointerdown', stop, true);
+    return () => {
+      window.removeEventListener('keydown', stop);
+      window.removeEventListener('pointerdown', stop, true);
+    };
+  }, [autoPlay]);
+
+  // Keyboard navigation & Focus trapping (DS2)
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (e) => {
@@ -155,6 +253,26 @@ export function DemoOverlay({
       } else if (e.key === 'Escape') {
         e.preventDefault();
         onClose?.();
+      } else if (e.key === 'Tab') {
+        // Focus trap inside tooltip card
+        const focusables = cardRef.current?.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables && focusables.length > 0) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey) {
+            if (document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            }
+          } else {
+            if (document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -165,6 +283,7 @@ export function DemoOverlay({
 
   const totalSteps = validSteps.length;
   const currentStepNum = activeIndex + 1;
+  const chipText = activeStep.chip || null;
 
   return (
     <div
@@ -175,7 +294,6 @@ export function DemoOverlay({
       aria-label="Demo Spotlight Tour"
     >
       {/* 4 Fixed Backdrop Panels surrounding the active hole (DS1) */}
-      {/* 1. Top Panel */}
       <div
         className="demo-spotlight-panel"
         data-testid="spotlight-panel-top"
@@ -187,8 +305,6 @@ export function DemoOverlay({
         }}
         onClick={(e) => { e.stopPropagation(); }}
       />
-
-      {/* 2. Bottom Panel */}
       <div
         className="demo-spotlight-panel"
         data-testid="spotlight-panel-bottom"
@@ -200,8 +316,6 @@ export function DemoOverlay({
         }}
         onClick={(e) => { e.stopPropagation(); }}
       />
-
-      {/* 3. Left Panel */}
       <div
         className="demo-spotlight-panel"
         data-testid="spotlight-panel-left"
@@ -213,8 +327,6 @@ export function DemoOverlay({
         }}
         onClick={(e) => { e.stopPropagation(); }}
       />
-
-      {/* 4. Right Panel */}
       <div
         className="demo-spotlight-panel"
         data-testid="spotlight-panel-right"
@@ -239,83 +351,169 @@ export function DemoOverlay({
         }}
       />
 
-      {/* Card Placeholder (Refined in DS2) */}
+      {/* Tooltip Card (DS2) */}
       <div
+        ref={cardRef}
         className="demo-spotlight-card"
         data-testid="demo-spotlight-card"
-        style={{
-          bottom: 24,
-          left: '50%',
-          transform: 'translateX(-50%)',
-        }}
+        role="region"
+        aria-live="polite"
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255, 255, 255, 0.55)' }}>
-            {lang === 'bn' ? `ধাপ ${currentStepNum} / ${totalSteps}` : `Step ${currentStepNum} of ${totalSteps}`}
-          </span>
+        <div ref={arrowRef} className="demo-card-arrow" />
+
+        {/* Header row: Step count, Chip, Auto toggle, Close */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255, 255, 255, 0.65)' }}>
+              {lang === 'bn' ? `ধাপ ${currentStepNum} / ${totalSteps}` : `Step ${currentStepNum} of ${totalSteps}`}
+            </span>
+            {chipText && (
+              <span className="demo-card-chip" data-testid="demo-card-chip">
+                {chipText}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              data-testid="demo-auto-toggle"
+              onClick={() => setAutoPlay(prev => !prev)}
+              style={{
+                background: autoPlay ? 'rgba(200, 241, 105, 0.20)' : 'rgba(255, 255, 255, 0.08)',
+                border: autoPlay ? '1px solid #C8F169' : '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 999,
+                color: autoPlay ? '#C8F169' : 'rgba(255, 255, 255, 0.70)',
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '2px 8px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+              }}
+              title={lang === 'bn' ? 'স্বয়ংক্রিয় প্লে (প্রতি ৫ সেকেন্ড)' : 'Auto-advance every 5 seconds'}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: autoPlay ? '#C8F169' : 'rgba(255,255,255,0.4)',
+                  boxShadow: autoPlay ? '0 0 6px #C8F169' : 'none',
+                }}
+              />
+              Auto
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.6)',
+                fontSize: 18,
+                cursor: 'pointer',
+                lineHeight: 1,
+                padding: 0,
+              }}
+              aria-label={lang === 'bn' ? 'ট্যুর বন্ধ করুন' : 'Close Tour'}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#FFFFFF' }}>
+          {activeStep.title?.[lang] || activeStep.title?.en}
+        </h4>
+
+        {/* 1-2 Short Lines of Description */}
+        <p style={{ margin: '0 0 12px', fontSize: 14, color: '#B2C2B8', lineHeight: 1.45 }}>
+          {activeStep.desc?.[lang] || activeStep.desc?.en}
+        </p>
+
+        {/* Progress Dots */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <div className="demo-progress-dots" role="tablist" aria-label="Progress">
+            {validSteps.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`demo-dot ${i === activeIndex ? 'active' : ''}`}
+                onClick={() => setActiveIndex(i)}
+                aria-label={`Go to step ${i + 1}`}
+                role="tab"
+                aria-selected={i === activeIndex}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Actions row: Skip tour, Back, Next */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <button
             type="button"
             onClick={onClose}
             style={{
               background: 'transparent',
               border: 'none',
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: 18,
-              cursor: 'pointer',
-              lineHeight: 1,
-              padding: 0,
-            }}
-            aria-label="Close Tour"
-          >
-            ×
-          </button>
-        </div>
-        <h4 style={{ margin: '0 0 6px', fontSize: 16, fontWeight: 700, color: '#FFFFFF' }}>
-          {activeStep.title?.[lang] || activeStep.title?.en}
-        </h4>
-        <p style={{ margin: '0 0 14px', fontSize: 13.5, color: '#9AA5A0', lineHeight: 1.45 }}>
-          {activeStep.desc?.[lang] || activeStep.desc?.en}
-        </p>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setActiveIndex(idx => Math.max(0, idx - 1))}
-            disabled={activeIndex === 0}
-            style={{
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: 8,
-              color: activeIndex === 0 ? 'rgba(255,255,255,0.25)' : '#E8ECE9',
-              padding: '6px 12px',
-              fontSize: 12,
-              cursor: activeIndex === 0 ? 'default' : 'pointer',
-            }}
-          >
-            {lang === 'bn' ? 'পেছনে' : 'Back'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (activeIndex + 1 < totalSteps) {
-                setActiveIndex(idx => idx + 1);
-              } else {
-                onClose?.();
-              }
-            }}
-            style={{
-              background: '#C8F169',
-              border: 'none',
-              borderRadius: 8,
-              color: '#08140B',
-              fontWeight: 700,
-              padding: '6px 14px',
+              color: 'rgba(255, 255, 255, 0.55)',
               fontSize: 12,
               cursor: 'pointer',
-              boxShadow: '0 0 12px rgba(200, 241, 105, 0.35)',
+              padding: '6px 4px',
+              textDecoration: 'underline',
+              textUnderlineOffset: '2px',
             }}
           >
-            {activeIndex + 1 === totalSteps ? (lang === 'bn' ? 'সমাপ্ত' : 'Finish') : (lang === 'bn' ? 'পরবর্তী' : 'Next')}
+            {lang === 'bn' ? 'ট্যুর শেষ করুন' : 'Skip tour'}
           </button>
+
+          <div style={{ display: 'flex', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => setActiveIndex(idx => Math.max(0, idx - 1))}
+              disabled={activeIndex === 0}
+              style={{
+                background: 'rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                borderRadius: 8,
+                color: activeIndex === 0 ? 'rgba(255,255,255,0.25)' : '#E8ECE9',
+                padding: '6px 12px',
+                fontSize: 12,
+                cursor: activeIndex === 0 ? 'default' : 'pointer',
+              }}
+            >
+              {lang === 'bn' ? 'পেছনে' : 'Back'}
+            </button>
+
+            <button
+              type="button"
+              data-testid="demo-next-btn"
+              onClick={() => {
+                if (activeIndex + 1 < totalSteps) {
+                  setActiveIndex(idx => idx + 1);
+                } else {
+                  onClose?.();
+                }
+              }}
+              style={{
+                background: '#C8F169',
+                border: 'none',
+                borderRadius: 8,
+                color: '#08140B',
+                fontWeight: 700,
+                padding: '6px 14px',
+                fontSize: 12,
+                cursor: 'pointer',
+                boxShadow: '0 0 16px rgba(200, 241, 105, 0.40)',
+              }}
+            >
+              {activeIndex + 1 === totalSteps ? (lang === 'bn' ? 'সমাপ্ত' : 'Finish') : (lang === 'bn' ? 'পরবর্তী' : 'Next')}
+            </button>
+          </div>
         </div>
       </div>
     </div>
