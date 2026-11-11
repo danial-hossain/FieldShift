@@ -347,6 +347,9 @@ export function OrbitToFieldStory({
       const progress = Math.max(0, Math.min(1, p));
       setScrollProgress(progress);
       setCurrentSceneIndex(Math.min(SCENE_COUNT - 1, Math.floor(progress * SCENE_COUNT)));
+      if (typeof window !== 'undefined' && window.__FS_CANVAS_SNAP_PROGRESS__) {
+        window.__FS_CANVAS_SNAP_PROGRESS__(progress);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -437,7 +440,7 @@ export function OrbitToFieldStory({
         { label: REGIONAL_ROTATIONS.haor.regionEn,   labelBn: REGIONAL_ROTATIONS.haor.regionBn,   val: 'Boro rice → fallow (flooded)', valBn: 'বোরো ধান → পতিত (প্লাবিত)', color: '#38D9F5' },
         { label: REGIONAL_ROTATIONS.coast.regionEn,  labelBn: REGIONAL_ROTATIONS.coast.regionBn,  val: 'Fallow → fallow → Aman rice', valBn: 'পতিত → পতিত → আমন ধান', color: '#F5B04C' },
       ],
-      nasa: 'ISRIC SoilGrids · SRTM 30m',
+      nasa: 'ISRIC SoilGrids 250m',
       link: { label: 'Open My Fields', labelBn: 'আমার জমি দেখুন', dest: 'field' },
       side: 'left',
     },
@@ -675,9 +678,39 @@ export function OrbitToFieldStory({
         {/* 10 Sections (100vh each) */}
         <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
           {SCENES.map((scene, idx) => {
-            const dist = Math.abs(currentSceneIndex - idx);
-            // Active scene visible, neighbours faded out
-            const opacity = dist === 0 ? 1 : 0;
+            // G4: Single timeline card fades + slides 24px in at 20% of section, out at 85%
+            const u = (scrollProgress * SCENE_COUNT) - idx;
+            let opacity = 0;
+            let translateY = 24;
+
+            if (u >= 0 && u <= 1) {
+              if (u < 0.20) {
+                // In at 20%: slide up from 24px and fade in
+                const tin = Math.max(0, Math.min(1, u / 0.20));
+                // cubic-bezier(.2,.8,.2,1) ease
+                const easeIn = 1 - Math.pow(1 - tin, 3);
+                opacity = easeIn;
+                translateY = 24 * (1 - easeIn);
+              } else if (u <= 0.85) {
+                // Solid in place
+                opacity = 1;
+                translateY = 0;
+              } else {
+                // Out at 85%: slide up by -24px and fade out
+                const tout = Math.max(0, Math.min(1, (u - 0.85) / 0.15));
+                const easeOut = Math.pow(tout, 3);
+                opacity = 1 - tout;
+                translateY = -24 * easeOut;
+              }
+            } else if (u > 1) {
+              opacity = 0;
+              translateY = -24;
+            } else {
+              opacity = 0;
+              translateY = 24;
+            }
+
+            const isInteractive = opacity > 0.45;
             return (
               <div
                 key={scene.idx}
@@ -688,16 +721,17 @@ export function OrbitToFieldStory({
                   display: 'flex',
                   alignItems: 'center',
                   padding: '0 6%',
-                  transition: 'opacity 0.4s ease',
                   opacity,
-                  pointerEvents: dist === 0 ? 'auto' : 'none',
+                  transform: `translateY(${translateY.toFixed(2)}px)`,
+                  transition: prefersReducedMotion ? 'none' : 'opacity 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                  pointerEvents: isInteractive ? 'auto' : 'none',
                 }}
               >
                 <StoryGlassCard
                   scene={scene}
                   isBn={isBn}
                   onNavigate={onNavigate}
-                  isActive={dist === 0}
+                  isActive={currentSceneIndex === idx}
                   side={scene.side || (idx % 2 === 0 ? 'left' : 'right')}
                 />
               </div>
@@ -705,29 +739,6 @@ export function OrbitToFieldStory({
           })}
         </div>
       </div>
-
-      {/* Dev Mode 3D Status Badge */}
-      {Boolean(import.meta.env?.DEV) && (
-        <div
-          data-testid="dev-mode-3d-badge"
-          style={{
-            position: 'fixed',
-            bottom: 12,
-            left: 12,
-            zIndex: 9999,
-            background: 'rgba(0, 0, 0, 0.75)',
-            color: hasWebGL ? '#10B981' : '#F59E0B',
-            border: `1px solid ${hasWebGL ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`,
-            borderRadius: 6,
-            padding: '4px 8px',
-            fontSize: 11,
-            fontFamily: 'monospace',
-            pointerEvents: 'none',
-          }}
-        >
-          3D: {hasWebGL ? 'live' : 'stills (no WebGL)'}
-        </div>
-      )}
     </>
   );
 }

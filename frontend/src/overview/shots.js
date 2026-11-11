@@ -20,8 +20,8 @@ export const SHOTS = [
   {
     id: '02_dive',
     name: 'Atmosphere · Cloud Dive',
-    camPos: [0.0, 0.45, 4.15],
-    lookAt: [0.0, 0.35, 0.8],
+    camPos: [0.0, 2.0, 4.0],
+    lookAt: [0.0, 0.5, 0.0],
     fov: 44,
     sun: { dir: [12, 5, 6], color: 0xfff2da, intensity: 2.4 },
     fog: { color: 0x0a101b, density: 0.0001 },
@@ -42,8 +42,8 @@ export const SHOTS = [
   {
     id: '04_water',
     name: 'Map · Groundwater & Aquifer',
-    camPos: [-1.8, 4.2, -1.8],
-    lookAt: [-1.4, 0.2, -4.5],
+    camPos: [-1.0, 5.2, -3.2],
+    lookAt: [-1.0, 0.4, -8.0],
     fov: 45,
     sun: { dir: [6, 12, 5], color: 0xffedd5, intensity: 1.9 },
     fog: { color: 0x1e462f, density: 0.007 },
@@ -53,8 +53,8 @@ export const SHOTS = [
   {
     id: '05_climate',
     name: 'Farm · Sky & Climate Risk',
-    camPos: [0.0, 6.0, -8.0],
-    lookAt: [0.0, 0.8, -18.0],
+    camPos: [0.0, 6.0, -6.0],
+    lookAt: [0.0, 0.8, -17.0],
     fov: 45,
     sun: { dir: [10, 10, 5], color: 0xfde047, intensity: 1.6 },
     fog: { color: 0x183024, density: 0.008 },

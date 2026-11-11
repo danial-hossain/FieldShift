@@ -821,6 +821,41 @@ export function OrbitToFieldCanvas({
     let isMounted = true;
     let animId = null;
     let isVisible = typeof document !== 'undefined' ? !document.hidden : true;
+    let currentT = scrollProgRef.current;
+
+    window.__FS_CANVAS_SNAP_PROGRESS__ = (p) => {
+      currentT = p;
+      scrollProgRef.current = p;
+    };
+
+    function setGroupOpacity(group, opacity) {
+      if (opacity <= 0.001) {
+        group.visible = false;
+        return;
+      }
+      group.visible = true;
+      group.traverse((child) => {
+        if (child.isMesh || child.isPoints || child.isLine || child.isSprite) {
+          const mats = Array.isArray(child.material) ? child.material : [child.material];
+          mats.forEach((mat) => {
+            if (!mat) return;
+            if (mat.userData.baseOpacity === undefined) {
+              mat.userData.baseOpacity = mat.opacity !== undefined ? mat.opacity : 1;
+              mat.userData.wasTransparent = mat.transparent;
+            }
+            if (opacity >= 0.75) {
+              mat.transparent = Boolean(mat.userData.wasTransparent);
+              mat.opacity = mat.userData.baseOpacity;
+              mat.depthWrite = true;
+            } else {
+              mat.transparent = true;
+              mat.opacity = mat.userData.baseOpacity * (opacity / 0.75);
+              mat.depthWrite = false;
+            }
+          });
+        }
+      });
+    }
 
     const handleVisibilityChange = () => {
       isVisible = !document.hidden;
@@ -835,7 +870,18 @@ export function OrbitToFieldCanvas({
         animId = null;
         return;
       }
-      const t = scrollProgRef.current;
+
+      // Smooth scroll interpolation with lerp 0.08
+      const targetT = scrollProgRef.current;
+      if (prefersReducedMotion) {
+        currentT = targetT;
+      } else {
+        currentT += (targetT - currentT) * 0.08;
+        if (Math.abs(targetT - currentT) < 0.0001) {
+          currentT = targetT;
+        }
+      }
+      const t = currentT;
       const shot = getInterpolatedShot(t);
 
       // 1. Update Camera
@@ -855,33 +901,64 @@ export function OrbitToFieldCanvas({
       fog.density = shot.fog.density;
       scene.background.copy(shot.fog.color);
 
-      // 3. World Transitions based on scroll t
-      // t in [0.0, 0.24]: Space & Earth
-      // t in [0.20, 0.44]: Bangladesh Map
-      // t in [0.40, 1.00]: Farm Diorama
-      if (t < 0.22) {
-        spaceGroup.visible = true;
-        mapGroup.visible = false;
-        farmGroup.visible = false;
+      // 3. Smooth Connected World Transitions (G4: crossfade window >= 15%)
+      // Section span is 0.10. 15% window is >= 0.015.
+      // Transition 1: Space -> Map [0.06, 0.22] (width 0.16 = 160% of section)
+      // Transition 2: Map -> Farm  [0.30, 0.44] (width 0.14 = 140% of section)
+      let spaceOpacity = 0;
+      let mapOpacity = 0;
+      let farmOpacity = 0;
 
+      if (t < 0.06) {
+        spaceOpacity = 1;
+        mapOpacity = 0;
+        farmOpacity = 0;
+      } else if (t <= 0.22) {
+        // Transition 1: Space -> Map crossfade window
+        const p = (t - 0.06) / 0.16;
+        const ease = 0.5 - 0.5 * Math.cos(p * Math.PI);
+        spaceOpacity = 1 - ease;
+        mapOpacity = ease;
+        farmOpacity = 0;
+      } else if (t < 0.30) {
+        spaceOpacity = 0;
+        mapOpacity = 1;
+        farmOpacity = 0;
+      } else if (t <= 0.44) {
+        // Transition 2: Map -> Farm crossfade window
+        const p = (t - 0.30) / 0.14;
+        const ease = 0.5 - 0.5 * Math.cos(p * Math.PI);
+        spaceOpacity = 0;
+        mapOpacity = 1 - ease;
+        farmOpacity = ease;
+      } else {
+        spaceOpacity = 0;
+        mapOpacity = 0;
+        farmOpacity = 1;
+      }
+
+      setGroupOpacity(spaceGroup, spaceOpacity);
+      setGroupOpacity(mapGroup, mapOpacity);
+      setGroupOpacity(farmGroup, farmOpacity);
+
+      // Animate world internal elements
+      if (spaceOpacity > 0) {
         // Rotate Earth slightly with scroll
         earthMesh.rotation.y = bangladeshRotY + (t * 0.8);
         // Clouds rotate slowly with time and scroll
         cloudsMesh.rotation.y = bangladeshRotY + (t * 1.0) + (prefersReducedMotion ? 0 : (Date.now() * 0.0001));
 
         // Shot 02 cloud dive rush
-        cloudDiveGroup.visible = t > 0.08 && !prefersReducedMotion;
+        cloudDiveGroup.visible = t > 0.08 && !prefersReducedMotion && spaceOpacity > 0.1;
         if (cloudDiveGroup.visible) {
           cloudDiveGroup.children.forEach(c => {
             c.position.z -= 0.04;
             if (c.position.z < 1.0) c.position.z = 2.8;
           });
         }
-      } else if (t < 0.42) {
-        spaceGroup.visible = false;
-        mapGroup.visible = true;
-        farmGroup.visible = false;
+      }
 
+      if (mapOpacity > 0) {
         // Shot 04 Aquifer Cutaway Block
         const isCutaway = t > 0.31;
         cutawayGroup.visible = isCutaway;
@@ -890,10 +967,9 @@ export function OrbitToFieldCanvas({
           const trendSign = -1;
           aquiferMesh.position.y = -1.5 + Math.sin(Date.now() * 0.003) * 0.08 * trendSign;
         }
-      } else {
-        spaceGroup.visible = false;
-        mapGroup.visible = false;
-        farmGroup.visible = true;
+      }
+
+      if (farmOpacity > 0) {
 
         // Shot 05: Rain & Heat
         const isRain = t >= 0.40 && t < 0.52;
@@ -1028,6 +1104,7 @@ export function OrbitToFieldCanvas({
 
     return () => {
       isMounted = false;
+      delete window.__FS_CANVAS_SNAP_PROGRESS__;
       if (animId) cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
