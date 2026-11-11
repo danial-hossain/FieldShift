@@ -14200,6 +14200,7 @@ h2, h3, .card-title, .panel-title {
 
 .bg-sun-glow {
   animation: sunBreathe 6s ease-in-out infinite;
+  animation-play-state: paused !important;
   transform-origin: 1080px 540px;
   will-change: opacity;
 }
@@ -14237,6 +14238,7 @@ h2, h3, .card-title, .panel-title {
 
 .bg-window-glow {
   animation: windowFlicker 4s ease-in-out infinite;
+  animation-play-state: paused !important;
   will-change: opacity;
 }
 
@@ -14254,6 +14256,7 @@ h2, h3, .card-title, .panel-title {
 
 .bg-firefly {
   animation: fireflyPulse 3s ease-in-out infinite;
+  animation-play-state: paused !important;
   transform-box: fill-box;
   transform-origin: center;
   will-change: transform, opacity;
@@ -14300,16 +14303,16 @@ h2, h3, .card-title, .panel-title {
   display: block;
 }
 
-/* One overlay gradient only */
+/* One overlay gradient only - Darker background so the UI glows */
 .village-bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6, 12, 9, 0.15) 0%, rgba(6, 12, 9, 0.35) 45%, rgba(6, 12, 9, 0.65) 100%);
+  background: linear-gradient(180deg, rgba(4, 9, 7, 0.55) 0%, rgba(4, 9, 7, 0.68) 45%, rgba(4, 9, 7, 0.82) 100%) !important;
   pointer-events: none;
 }
 
 [data-theme="light"] .village-bg-overlay {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(240, 246, 240, 0.55) 100%);
+  background: linear-gradient(180deg, rgba(240, 246, 240, 0.35) 0%, rgba(240, 246, 240, 0.70) 100%) !important;
 }
 
 /* Overview page has its own full 3D Canvas */
@@ -15505,7 +15508,7 @@ body[data-lang="bn"],
 }
 
 [data-theme="light"] .village-bg-overlay {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
+  background: linear-gradient(180deg, rgba(240, 246, 240, 0.35) 0%, rgba(240, 246, 240, 0.70) 100%) !important;
 }
 
 /* ==========================================================================
@@ -18628,7 +18631,7 @@ body[data-lang="bn"],
 }
 
 [data-theme="light"] .village-bg-overlay {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
+  background: linear-gradient(180deg, rgba(240, 246, 240, 0.35) 0%, rgba(240, 246, 240, 0.70) 100%) !important;
 }
 
 /* ==========================================================================
