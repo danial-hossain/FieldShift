@@ -731,7 +731,29 @@ class ResultBoundary extends React.Component {
 }
 
 export function App() {
-  const [activeNav, setActiveNav] = useState('dashboard');
+  const [activeNav, setActiveNavState] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qNav = params.get('nav');
+      if (qNav) return qNav;
+      return localStorage.getItem('fieldshift_active_nav') || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+
+  const setActiveNav = useCallback((nav) => {
+    setActiveNavState(nav);
+    try {
+      localStorage.setItem('fieldshift_active_nav', nav);
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      performance.mark('fieldshift:mount');
+    } catch {}
+  }, []);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     try {
@@ -2020,6 +2042,14 @@ export function App() {
       loadUserSession();
     }
   }, []);
+
+  useEffect(() => {
+    if (result && !running) {
+      try {
+        performance.mark('fieldshift:data_ready');
+      } catch {}
+    }
+  }, [result, running]);
 
   // U7 Keyboard Accessibility: Esc closes open modals and overlays
   useEffect(() => {

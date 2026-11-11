@@ -31,15 +31,27 @@ export function FarmPlanningView({
   request,
 }) {
   const { t } = useTranslation(lang);
-  const [subTab, setSubTab] = useState(initialSubTab);
+  const [subTab, setSubTab] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const qSub = params.get('subtab');
+      if (qSub) return qSub;
+      return localStorage.getItem('fieldshift_planning_subtab') || initialSubTab || 'milp';
+    } catch {
+      return initialSubTab || 'milp';
+    }
+  });
   const [stressContext, setStressContext] = useState(null);
 
   useEffect(() => {
     if (initialSubTab) setSubTab(initialSubTab);
-  }, [initialSubTab]); // 'milp' | 'replan' | 'comparison'
+  }, [initialSubTab]);
 
   const handleSubTabChange = (t) => {
     setSubTab(t);
+    try {
+      localStorage.setItem('fieldshift_planning_subtab', t);
+    } catch {}
     if (typeof onSubTabChange === 'function') {
       onSubTabChange(t);
     }
