@@ -30,12 +30,12 @@ import {
   runCounterfactualRequest,
 } from './counterfactual.js';
 import './styles.css';
-import './ui/perf.css';
 import { Toast, Modal } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
 import { SplashScreen } from './ui/SplashScreen.jsx';
 import { DemoOverlay } from './demo/DemoOverlay.jsx';
+import './ui/perf.css';
 import {
   HomeIcon,
   FieldIcon,
