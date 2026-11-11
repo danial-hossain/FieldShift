@@ -22,6 +22,7 @@ import { FarmPlanningView } from './FarmPlanningView.jsx';
 import { WaterIrrigationView } from './WaterIrrigationView.jsx';
 import { DataEvidenceView } from './DataEvidenceView.jsx';
 import { ChatWidget } from './ChatWidget.jsx';
+import { LivingVillageBackground } from './LivingVillageBackground.jsx';
 import { useTranslation, formatArea, soilLabel, districtLabel, unitLabel, formatNumber as formatI18nNumber, seasonLabel, cropLabel } from './i18n.js';
 import {
   buildCounterfactualPayload,
@@ -2335,18 +2336,9 @@ export function App() {
 
   return (
     <div className="app-shell" data-mode={currentMode} data-nav={activeNav} data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}>
-      {/* Village Dusk Responsive Picture Background (UP2) */}
+      {/* Village Dusk Responsive Living Background (G2: 5-layer Parallax + Glow) */}
       <div className="village-bg-layer" aria-hidden="true">
-        <picture className="village-bg-picture">
-          <source media="(min-width: 1700px)" srcSet="/bg/village_dusk_bg_2560.webp" type="image/webp" />
-          <source srcSet="/bg/village_dusk_bg_1600.webp" type="image/webp" />
-          <img
-            src="/bg/village_dusk_bg_1600.webp"
-            alt=""
-            className="village-bg-img"
-          />
-        </picture>
-        <div className="village-bg-overlay" />
+        <LivingVillageBackground />
       </div>
       {/* Mobile Drawer Backdrop */}
       {mobileNavOpen && (
