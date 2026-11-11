@@ -88,34 +88,45 @@ if (!fs.existsSync(outDir)) {
   await page.screenshot({ path: path.join(outDir, 'section_9_start.png') });
   console.log('Saved section_9_start.png');
 
-  // 2. Test Sidebar Pages Navigation
+  // 2. Test All 11 Canonical Destinations Navigation
   const navItems = [
+    { nav: 'dashboard', label: 'Overview' },
     { nav: 'field', label: 'My Fields' },
     { nav: 'farm_planning', label: 'Rotation Planner' },
-    { nav: 'water_irrigation', label: 'Water' },
-    { nav: 'weather', label: 'Climate' },
-    { nav: 'harvest_profit', label: 'Market' },
-    { nav: 'data_evidence', label: 'Evidence' },
+    { nav: 'weather', label: 'Climate Station' },
+    { nav: 'water_irrigation', label: 'Water & Irrigation' },
+    { nav: 'harvest_profit', label: 'Market Profit' },
+    { nav: 'data_evidence', label: 'Data Evidence' },
+    { nav: 'crop_advice', label: 'Crop Advisory' },
+    { nav: 'research', label: 'Research Workspace' },
+    { nav: 'assistant', label: 'AI Assistant' },
+    { nav: 'account', label: 'Account Cockpit' },
   ];
 
   for (const item of navItems) {
-    console.log(`Testing sidebar navigation to ${item.label} (${item.nav})...`);
-    const btn = await page.$(`[data-nav="${item.nav}"]`);
-    if (btn) {
-      await btn.click();
-      await page.waitForTimeout(1000);
-    } else {
-      console.warn(`Sidebar item [data-nav="${item.nav}"] not found`);
-    }
+    console.log(`Navigating to ${item.label} (${item.nav})...`);
+    await page.evaluate((targetNav) => {
+      if (typeof window.__fs_navigate === 'function') {
+        window.__fs_navigate(targetNav);
+      } else {
+        const btn = document.querySelector(`[data-nav="${targetNav}"]`);
+        if (btn) btn.click();
+      }
+    }, item.nav);
+    await page.waitForTimeout(1000);
+    const activeNav = await page.evaluate(() => {
+      return document.querySelector('.app-shell')?.dataset?.nav;
+    });
+    console.log(`  -> Page loaded, activeNav=${activeNav}, errors so far: ${consoleErrors.length}`);
   }
 
   // Navigate back to Dashboard (Overview)
   console.log('Navigating back to Overview...');
-  const dashBtn = await page.$('[data-nav="dashboard"]');
-  if (dashBtn) {
-    await dashBtn.click();
-    await page.waitForTimeout(1000);
-  }
+  await page.evaluate(() => {
+    if (typeof window.__fs_navigate === 'function') window.__fs_navigate('dashboard');
+    else document.querySelector('[data-nav="dashboard"]')?.click();
+  });
+  await page.waitForTimeout(1500);
 
   console.log('Total console errors recorded:', consoleErrors.length);
   if (consoleErrors.length > 0) {
@@ -129,3 +140,4 @@ if (!fs.existsSync(outDir)) {
     process.exit(1);
   }
 })();
+

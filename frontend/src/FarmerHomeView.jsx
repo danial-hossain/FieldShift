@@ -1,6 +1,6 @@
 // frontend/src/FarmerHomeView.jsx
 // Overview route component rendering <OverviewStory /> with real story data.
-import React, { useEffect } from 'react';
+import React from 'react';
 import OverviewStory, { OverviewStoryErrorBoundary } from './overview/OverviewStory.jsx';
 import { useStoryData } from './overview/useStoryData.js';
 
@@ -12,12 +12,6 @@ export function FarmerHomeView({
   onNavigate = () => {},
 }) {
   const storyData = useStoryData(activeField, lang);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && storyData) {
-      window.__FS_STORY_DATA__ = storyData;
-    }
-  }, [storyData]);
 
   return (
     <OverviewStory
