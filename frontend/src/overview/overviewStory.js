@@ -139,6 +139,8 @@ function copy(d, lang) {
       h: L('Decades of NASA data, <em>for one field.</em>', 'এক জমির জন্য <em>কয়েক দশকের</em> NASA ডেটা।'),
       stats: stat(d.years?.power != null ? num(d.years.power) : null, L(`years of NASA POWER (${d.years?.powerRange || ''})`, `বছরের NASA POWER (${d.years?.powerRange || ''})`))
            + stat(d.years?.imerg != null ? num(d.years.imerg) : null, L(`years of GPM IMERG (${d.years?.imergRange || ''})`, `বছরের GPM IMERG (${d.years?.imergRange || ''})`), 'c'),
+      p: L('Different grids — GPM IMERG 0.1°, NASA POWER 0.5°, GRACE-FO ~3° — are sampled to your field and added up season by season.',
+           'আলাদা গ্রিড — GPM IMERG ০.১°, NASA POWER ০.৫°, GRACE-FO ~৩° — আপনার জমির বিন্দুতে মিলিয়ে মৌসুম ধরে যোগ করা হয়।'),
       src: 'NASA POWER · GPM IMERG' },
     { side: 'l', kick: L('Problem: one advice for the whole country does not fit', 'সমস্যা: সারা দেশের জন্য এক পরামর্শ খাটে না'),
       h: L('Every region farms <em>differently.</em>', 'প্রতিটি অঞ্চলের চাষ <em>আলাদা।</em>'),
@@ -158,14 +160,19 @@ function copy(d, lang) {
       h: L('Legumes put nitrogen <em>back.</em>', 'ডাল ফসল মাটিতে <em>নাইট্রোজেন</em> ফেরায়।'),
       stats: stat(cur.bareDays != null && best ? `${num(cur.bareDays)}→${num(best.bareDays)}` : null, L('bare days per year', 'বছরে ফাঁকা দিন'))
            + stat(best?.nitrogenKgHa != null ? sign(best.nitrogenKgHa) : null, L('kg N/ha from legumes', 'কেজি N/হেক্টর ডাল থেকে')),
+      p: L('Mungbean, chickpea and lentil fix nitrogen from the air. Filling the bare months also shields the topsoil from sun and rain.',
+           'মুগ, ছোলা, মসুর বাতাস থেকে নাইট্রোজেন ধরে রাখে। ফাঁকা মাসগুলো ভরলে রোদ-বৃষ্টি থেকে উপরের মাটিও বাঁচে।'),
       btn: [['planner', L('Open Planner →', 'প্ল্যানার খুলুন →')]], src: 'ISRIC SoilGrids · FAO' },
     { side: 'l', kick: L('Problem: which crop, which season?', 'সমস্যা: কোন মৌসুমে কোন ফসল?'),
       h: L('MILP picks the best <em>6-season</em> plan.', 'MILP বেছে নেয় সেরা <em>৬ মৌসুমের</em> পরিকল্পনা।'),
       stats: stat(cur.profit != null && best ? `${num(cur.profit / 1000, 1)}k→${num(best.profit / 1000, 1)}k` : null, L(`BDT/yr for ${F.areaLabel || 'your field'} · now → ${best?.label || ''} ⭐`, `টাকা/বছর · এখন → ${best?.label || ''} ⭐`)),
+      p: L('You set the limits: water you have, no power tiller, crops you cannot sell. No crop family twice in a row, which breaks pest and disease cycles.',
+           'সীমা আপনি ঠিক করেন: কতটা পানি আছে, পাওয়ার টিলার নেই, কোন ফসল বিক্রি করা যায় না। একই গোত্রের ফসল পরপর নয়, তাতে পোকা ও রোগের চক্র ভাঙে।'),
       btn: [['planner', L('Open Planner →', 'প্ল্যানার খুলুন →')]], src: 'PuLP MILP · NASA POWER · GPM IMERG' },
     { side: 'r', kick: L('Problem: one bad season can ruin a year', 'সমস্যা: এক খারাপ মৌসুমে বছর নষ্ট'),
       h: L('Stress-test the plan <em>before</em> planting.', 'লাগানোর <em>আগেই</em> পরিকল্পনা যাচাই।'),
-      p: d.stress?.label ? esc(d.stress.label) : L('Heatwave, drought, flood, cold and salinity — season by season.', 'তাপপ্রবাহ, খরা, বন্যা, শীত, লবণাক্ততা — মৌসুম ধরে।'),
+      p: (d.stress?.label ? esc(d.stress.label) + ' ' : '') + L('Heatwave, drought, flood, cold and salinity, season by season. Every plan also shows its weak spots: a ~50 km weather grid, no soil test yet, reference prices.',
+           'তাপপ্রবাহ, খরা, বন্যা, শীত, লবণাক্ততা — মৌসুম ধরে। প্রতিটি পরিকল্পনা তার দুর্বল দিকও দেখায়: ~৫০ কিমি আবহাওয়া গ্রিড, এখনো মাটি পরীক্ষা নেই, দাম রেফারেন্স।'),
       btn: [['stress', L('Open Stress test →', 'স্ট্রেস টেস্ট →')]], src: 'FAO-33 Ky · FAO-29 · NASA POWER' },
     { side: 'l', kick: L('Problem: real harvests never match the plan', 'সমস্যা: আসল ফলন কখনো পরিকল্পনার মতো হয় না'),
       h: L('It learns from <em>your harvest.</em>', 'এটি শেখে <em>আপনার ফসল</em> থেকে।'),
@@ -176,6 +183,8 @@ function copy(d, lang) {
       h: L('Start with <em>your field.</em>', 'শুরু করুন <em>আপনার জমি</em> দিয়ে।'),
       p: L(`Now farming: <b>${esc((cur.rotation || []).join(' · '))}</b> on ${esc(F.areaLabel || '')} in ${esc(F.district || '')}.`,
            `এখনকার চাষ: <b>${esc((cur.rotation || []).join(' · '))}</b>, ${esc(F.areaLabel || '')}, ${esc(F.district || '')}।`),
+      note: L('FieldShift supports, not replaces, the farmer\'s judgment. Check every plan with your local SAAO before planting.',
+              'FieldShift কৃষকের সিদ্ধান্তকে সাহায্য করে, বদলায় না। লাগানোর আগে প্রতিটি পরিকল্পনা স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে মিলিয়ে নিন।'),
       team: d.team, btn: [['myfields', L('Open My Fields →', 'আমার জমি খুলুন →'), true], ['planner', L('Open Planner', 'প্ল্যানার')]],
       src: (d.datasetsUsed || []).join(' · ') },
   ];
@@ -376,7 +385,9 @@ export function mountOverviewStory(root, data, opts = {}) {
       const q = bedQuad([1, 4][k % 2]), [x, y] = bil(q, Math.random(), Math.random());
       return `<i class="fsx-spark" style="left:${(x / 1600) * 100}%;top:${(y / 1000) * 100}%;animation-delay:${(k * 0.17) % 2.4}s"></i>`;
     }).join('');
-    L.overlay.innerHTML = `<div class="fsx-ribbon">${cells}</div><div class="fsx-chips">${strat}</div><div class="fsx-sparks" style="position:absolute;inset:-3%;">${sparks}</div>`;
+    const bn = lang === 'bn';
+    const legend = `<p class="fsx-legend"><i style="background:#FF7A6B"></i>${bn ? 'তাপ' : 'Heat'}<i style="background:#F5B04C"></i>${bn ? 'শুকনো' : 'Dry spell'}<i style="background:#5BE3FF"></i>${bn ? 'ভারী বৃষ্টি' : 'Heavy rain'}<i style="background:#A78BFA"></i>${bn ? 'শীত' : 'Cold'}<span>${bn ? 'গাঢ় = বেশি বছর' : 'darker = more years'}</span></p>`;
+    L.overlay.innerHTML = `<div class="fsx-ribbon">${cells}${legend}</div><div class="fsx-chips">${strat}</div><div class="fsx-sparks" style="position:absolute;inset:-3%;">${sparks}</div>`;
   }
 
   /* cards + rail */
@@ -388,6 +399,7 @@ export function mountOverviewStory(root, data, opts = {}) {
       ${c.p ? `<p class="fsx-p">${c.p}</p>` : ''}
       ${c.stats ? `<div class="fsx-stats">${c.stats}</div>` : ''}
       ${c.rows ? `<div class="fsx-rows">${c.rows}</div>` : ''}
+      ${c.note ? `<p class="fsx-note">${c.note}</p>` : ''}
       ${c.team?.length ? `<div class="fsx-team"><b>Team Azoic · Dhaka</b><br>${c.team.map(esc).join(' · ')}</div>` : ''}
       ${c.src ? `<div class="fsx-src">◆ ${esc(c.src)}</div>` : ''}
       ${c.btn ? `<div class="fsx-btns">${c.btn.map(([pg, t, pri]) => `<button class="fsx-btn ${pri ? 'p' : ''}" data-go="${pg}">${t}</button>`).join('')}</div>` : ''}
@@ -454,7 +466,7 @@ export function mountOverviewStory(root, data, opts = {}) {
   window.addEventListener('mousemove', onMouse, { passive: true });
   const onResize = () => drawStars(); window.addEventListener('resize', onResize);
   const cards = () => [...L.cards.children];
-  const op = (el, v) => { el.style.opacity = v.toFixed(3); el.style.visibility = v < 0.005 ? 'hidden' : 'visible'; };
+  const op = (el, v) => { if (!el) return; const o = v.toFixed(2); if (el._o === o) return; el._o = o; el.style.opacity = o; el.style.visibility = v < 0.005 ? 'hidden' : 'visible'; };
 
   function frame(now) {
     if (!alive) return;
@@ -476,7 +488,7 @@ export function mountOverviewStory(root, data, opts = {}) {
     L.gcv.style.filter = `blur(${(Math.max(0, zt - 0.45) * 9).toFixed(2)}px)`;
     const idle = reduce ? 0 : (now / 1000) * 4 * (1 - sm(0.15, 0.7, p));
     const lon0 = ((lerp(25, 90.4, sm(0, 0.85, p)) + idle) * Math.PI) / 180;
-    if (p < 1.7) renderGlobe(lon0, lon0 * 0.97 + now / 90000);
+    if (p < 1.7 && (!G.t || now - G.t > 33)) { G.t = now; renderGlobe(lon0, lon0 * 0.97 + now / 90000); }
     // clouds + flash (1.3-1.9)
     const cl = win(p, 1.3, 1.6, 0.14);
     op(L.cloud, cl * 0.9); L.cloud.style.transform = `scale(${1 + sm(1.3, 1.8, p) * 1.8})`;
@@ -530,7 +542,8 @@ export function mountOverviewStory(root, data, opts = {}) {
     } else { seq = bestSeq; }
     if (!(p >= 5.25 && p < 6.0)) seq.forEach((c, i) => setBed(i, c, g));
     bedG.forEach((b, i) => {
-      b.querySelector('.glow').setAttribute('opacity', glowBed === 9 ? 0.55 + 0.25 * Math.sin(now / 300) : (p > 8.15 && p < 9 && i === (D.learning?.changedBed ?? -1) ? 0.4 + 0.3 * Math.sin(now / 200) : 0));
+      const gv = glowBed === 9 ? 0.7 : (p > 8.15 && p < 9 && i === (D.learning?.changedBed ?? -1) ? 0.6 : 0);
+      if (b._g !== gv) { b._g = gv; b.querySelector('.glow').setAttribute('opacity', gv); }
     });
     L.overlay.querySelectorAll('.fsx-chip').forEach((c) => c.classList.toggle('on', c.dataset.s === chipOn));
     op(L.overlay.querySelector('.fsx-ribbon'), win(p, 4.15, 4.85, 0.15));
@@ -539,16 +552,17 @@ export function mountOverviewStory(root, data, opts = {}) {
     // stress (7-8)
     const st = win(p, 7.15, 7.85, 0.15), S = D.stress || {};
     bedG.forEach((b, i) => {
-      b.querySelector('.flood').setAttribute('opacity', (S.floodBeds || []).includes(i) ? 0.75 * st : 0);
-      b.querySelector('.crack').setAttribute('opacity', (S.droughtBeds || []).includes(i) ? st : 0);
-      b.querySelector('.plants').style.filter = (S.droughtBeds || []).includes(i) && st > 0.05 ? `sepia(${st * 0.9}) saturate(${1 - st * 0.5}) brightness(${1 - st * 0.15})` : '';
+      const stq = Math.round(st * 10) / 10;
+      if (b._st === stq) return; b._st = stq;
+      b.querySelector('.flood').setAttribute('opacity', (S.floodBeds || []).includes(i) ? 0.75 * stq : 0);
+      b.querySelector('.crack').setAttribute('opacity', (S.droughtBeds || []).includes(i) ? stq : 0);
+      b.querySelector('.plants').style.filter = (S.droughtBeds || []).includes(i) && stq > 0.05 ? `sepia(${stq * 0.9}) saturate(${1 - stq * 0.5}) brightness(${1 - stq * 0.15})` : '';
     });
     // tint: dusk -> storm -> dawn
     const storm = st, dawn = sm(9.1, 9.6, p), cool = clim * 0.6;
-    const tTop = [lerp(lerp(255, 150, cool), 85, storm), lerp(lerp(255, 165, cool), 95, storm), lerp(lerp(255, 200, cool), 125, storm)];
-    const bot = [lerp(255, 150, storm), lerp(255, 160, storm), lerp(255, 175, storm)];
-    const dt2 = [lerp(tTop[0], 255, dawn), lerp(tTop[1], 214, dawn), lerp(tTop[2], 205, dawn)];
-    L.tint.style.background = `linear-gradient(180deg, rgb(${dt2.map(Math.round)}) 0%, rgb(${bot.map(Math.round)}) 70%)`;
+    const aTop = Math.max(storm * 0.55, cool * 0.25), aBot = storm * 0.35;
+    const tintS = `linear-gradient(180deg, rgba(20,28,52,${aTop.toFixed(2)}) 0%, rgba(20,28,40,${aBot.toFixed(2)}) 75%)`;
+    if (L.tint._s !== tintS) { L.tint.style.background = tintS; L.tint._s = tintS; }
     op(L.dawn, dawn * 0.75);
     const bolt = storm > 0.6 && !reduce ? Math.max(0, Math.sin(now / 137) * Math.sin(now / 911)) ** 18 : 0;
     op(L.flash, Math.max(Math.max(0, win(p, 1.56, 1.6, 0.07) * 0.9), bolt * 0.35));
@@ -567,6 +581,7 @@ export function mountOverviewStory(root, data, opts = {}) {
     });
     L.rail.querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', Math.round(p - 0.3) === i || (i === 0 && p < 0.7)));
     op(L.hint, 1 - sm(0.05, 0.3, p));
+    L.play.classList.toggle('mini', p > 0.35);
     raf = requestAnimationFrame(frame);
   }
 

@@ -1,0 +1,327 @@
+/* ==========================================================================
+   FieldShift Unified Glass + Neon Design System (glass.css)
+   Tokens, Level 1 Panels, Level 2 Cards, Level 3 Chips, and Neon Accents
+   ========================================================================== */
+
+:root {
+  /* Surface Tokens: Level 1 Panel (Dark Theme) */
+  --glass-panel-bg: rgba(8, 14, 11, 0.78);
+  --glass-panel-blur: blur(20px) saturate(140%);
+  --glass-panel-border: 1px solid rgba(255, 255, 255, 0.08);
+  --glass-panel-radius: 22px;
+  --glass-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
+
+  /* Surface Tokens: Level 2 Card (Dark Theme) */
+  --glass-card-bg: rgba(255, 255, 255, 0.05);
+  --glass-card-border: 1px solid rgba(255, 255, 255, 0.10);
+  --glass-card-radius: 16px;
+  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Surface Tokens: Level 3 Chip/Button (Dark Theme) */
+  --glass-chip-bg: rgba(255, 255, 255, 0.06);
+  --glass-chip-border: 1px solid rgba(200, 241, 105, 0.22);
+  --glass-chip-radius: 9999px;
+
+  /* Universal Color Meanings Everywhere */
+  --color-lime: #c8f169;    /* recommended / good */
+  --color-cyan: #5be3ff;    /* water / NASA data */
+  --color-amber: #f5b04c;   /* risk / warning */
+  --color-coral: #ff7a6b;   /* loss / hazard */
+  --color-violet: #b388ff;  /* cold / chilling */
+
+  /* Text Colors with Guaranteed WCAG AA (>= 4.5:1) */
+  --text-primary: #E8ECE9;
+  --text-muted: #9AA5A0;
+  --text-lime: #c8f169;
+  --text-cyan: #5be3ff;
+  --text-amber: #f5b04c;
+  --text-coral: #ff7a6b;
+  --text-violet: #b388ff;
+  --text-fallow: #cbd5e1;
+
+  /* Neon Effects (Neon ONLY on specific interactive accents) */
+  --neon-btn-glow: 0 0 18px rgba(200, 241, 105, 0.35);
+  --neon-btn-glow-hover: 0 0 22px rgba(200, 241, 105, 0.55);
+  --neon-selected-glow: 0 0 16px rgba(200, 241, 105, 0.45);
+  --neon-key-number-glow: 0 0 18px rgba(200, 241, 105, 0.30);
+  --neon-cyan-chip-glow: 0 0 12px rgba(91, 227, 255, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Light Theme Tokens & WCAG AA Contrast Overrides (>= 4.5:1)
+   -------------------------------------------------------------------------- */
+[data-theme="light"],
+.light-theme,
+body.light {
+  --glass-panel-bg: rgba(255, 255, 255, 0.82);
+  --glass-panel-border: 1px solid rgba(0, 0, 0, 0.08);
+  --glass-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.90), 0 18px 40px rgba(0, 0, 0, 0.08);
+
+  --glass-card-bg: rgba(255, 255, 255, 0.65);
+  --glass-card-border: 1px solid rgba(0, 0, 0, 0.08);
+  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+
+  --glass-chip-bg: rgba(0, 0, 0, 0.04);
+  --glass-chip-border: 1px solid rgba(21, 128, 61, 0.30);
+
+  /* High-contrast semantic text colors on light background */
+  --text-primary: #0E1A13;
+  --text-muted: #37473D;
+  --text-lime: #166534;     /* WCAG AA: 6.3:1 */
+  --text-cyan: #0369a1;     /* WCAG AA: 5.4:1 */
+  --text-amber: #b45309;    /* WCAG AA: 5.2:1 */
+  --text-coral: #b91c1c;    /* WCAG AA: 5.5:1 */
+  --text-violet: #6d28d9;   /* WCAG AA: 5.7:1 */
+  --text-fallow: #334155;   /* WCAG AA: 9.1:1 */
+
+  /* Neon at 50% intensity in light theme */
+  --neon-btn-glow: 0 0 10px rgba(21, 128, 61, 0.25);
+  --neon-btn-glow-hover: 0 0 14px rgba(21, 128, 61, 0.40);
+  --neon-selected-glow: 0 0 10px rgba(21, 128, 61, 0.25);
+  --neon-key-number-glow: none;
+  --neon-cyan-chip-glow: 0 0 8px rgba(3, 105, 161, 0.15);
+}
+
+/* ==========================================================================
+   LEVEL 1: Page Section Panels
+   ========================================================================== */
+.glass-panel,
+.panel,
+.dash-card,
+.wp-card,
+.weather-station,
+.farm-planning-workspace > .ui-card,
+.market-header-card,
+.market-card-section {
+  background: var(--glass-panel-bg) !important;
+  -webkit-backdrop-filter: var(--glass-panel-blur) !important;
+  backdrop-filter: var(--glass-panel-blur) !important;
+  border: var(--glass-panel-border) !important;
+  border-radius: var(--glass-panel-radius) !important;
+  box-shadow: var(--glass-panel-shadow) !important;
+}
+
+/* ==========================================================================
+   LEVEL 2: Cards inside Panels
+   ========================================================================== */
+.glass-card,
+.card-inner,
+.ui-card-glass,
+.ui-key-number-tile,
+.market-kpi-tile,
+.stat-card,
+.evidence-card {
+  background: var(--glass-card-bg) !important;
+  border: var(--glass-card-border) !important;
+  border-radius: var(--glass-card-radius) !important;
+  box-shadow: var(--glass-card-shadow) !important;
+}
+
+/* Selected or Recommended Card: Top Highlight & Subtle Gradient Border */
+.glass-card-recommended,
+.glass-card.selected,
+.glass-card.recommended,
+.strategy-card.selected,
+.ui-card.recommended {
+  border: 1px solid rgba(200, 241, 105, 0.35) !important;
+  box-shadow: var(--glass-card-shadow), 0 0 18px rgba(200, 241, 105, 0.18) !important;
+}
+
+[data-theme="light"] .glass-card-recommended,
+[data-theme="light"] .glass-card.selected,
+[data-theme="light"] .glass-card.recommended,
+[data-theme="light"] .strategy-card.selected,
+[data-theme="light"] .ui-card.recommended {
+  border: 1px solid rgba(21, 128, 61, 0.35) !important;
+  box-shadow: var(--glass-card-shadow), 0 0 14px rgba(21, 128, 61, 0.12) !important;
+}
+
+/* ==========================================================================
+   LEVEL 3: Chips & Buttons
+   ========================================================================== */
+.glass-chip,
+.ui-chip,
+.ui-pill {
+  background: var(--glass-chip-bg) !important;
+  border: var(--glass-chip-border) !important;
+  border-radius: var(--glass-chip-radius) !important;
+}
+
+.glass-btn {
+  background: var(--glass-chip-bg);
+  border: var(--glass-chip-border);
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   NEON RULES (Explicitly on allowed elements ONLY)
+   ========================================================================== */
+
+/* 1. Primary Buttons: Lime gradient + glow */
+.glass-btn-primary,
+.btn-primary,
+.fsx-btn.p,
+button.btn-primary {
+  background: linear-gradient(135deg, #c8f169 0%, #aee642 100%) !important;
+  color: #08140B !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: var(--neon-btn-glow) !important;
+  transition: all 0.2s ease !important;
+}
+
+.glass-btn-primary:hover,
+.btn-primary:hover,
+.fsx-btn.p:hover,
+button.btn-primary:hover {
+  box-shadow: var(--neon-btn-glow-hover) !important;
+  transform: translateY(-1px);
+}
+
+[data-theme="light"] .glass-btn-primary,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .fsx-btn.p {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%) !important;
+  color: #FFFFFF !important;
+}
+
+/* 2. Selected tab / strategy / sidebar item: Solid lime, dark text, 16px glow */
+.nav-item.active,
+.ui-tab-item-active,
+.glass-selected {
+  background: var(--color-lime) !important;
+  color: #08140B !important;
+  font-weight: 700 !important;
+  box-shadow: var(--neon-selected-glow) !important;
+}
+
+[data-theme="light"] .nav-item.active,
+[data-theme="light"] .ui-tab-item-active,
+[data-theme="light"] .glass-selected {
+  background: #15803d !important;
+  color: #FFFFFF !important;
+  box-shadow: var(--neon-selected-glow) !important;
+}
+
+/* 3. Key Numbers: text-shadow 0 0 18px currentColor at 30% */
+.glass-key-number,
+.kpi-val,
+.kpi-value,
+.stat-value {
+  text-shadow: var(--neon-key-number-glow);
+}
+
+/* 4. Data Chips: Cyan text + thin cyan border */
+.glass-data-chip,
+.chip-data,
+.data-chip,
+.chip-nasa {
+  color: var(--text-cyan) !important;
+  border: 1px solid rgba(91, 227, 255, 0.35) !important;
+  background: rgba(91, 227, 255, 0.08) !important;
+  box-shadow: var(--neon-cyan-chip-glow) !important;
+}
+
+[data-theme="light"] .glass-data-chip,
+[data-theme="light"] .chip-data,
+[data-theme="light"] .data-chip,
+[data-theme="light"] .chip-nasa {
+  color: var(--text-cyan) !important;
+  border: 1px solid rgba(3, 105, 161, 0.35) !important;
+  background: rgba(3, 105, 161, 0.08) !important;
+}
+
+/* STRICT RULE: NO glow on body text, tables, paragraphs, chart labels */
+body,
+p,
+span:not(.glass-key-number):not(.kpi-val):not(.stat-value),
+table,
+td,
+th,
+.say,
+.chart-label,
+text {
+  text-shadow: none !important;
+}
+
+/* ==========================================================================
+   Semantic Utility Classes for Indicators & Badges
+   ========================================================================== */
+.sem-recommended { color: var(--text-lime) !important; }
+.sem-water { color: var(--text-cyan) !important; }
+.sem-risk { color: var(--text-amber) !important; }
+.sem-loss { color: var(--text-coral) !important; }
+.sem-cold { color: var(--text-violet) !important; }
+
+/* Light Theme High Contrast Table text & lines */
+[data-theme="light"] table tbody,
+[data-theme="light"] .market-table tbody {
+  background: rgba(255, 255, 255, 0.94) !important;
+  color: #0E1A13 !important;
+}
+
+[data-theme="light"] th {
+  color: #1E293B !important;
+}
+
+[data-theme="light"] td {
+  color: #0E1A13 !important;
+}
+
+[data-theme="light"] .say {
+  color: #15803d !important; /* WCAG AA: 5.6:1 */
+}
+
+/* ==========================================================================
+   Fallbacks for Non-Backdrop-Filter Browsers & Reduced Transparency
+   ========================================================================== */
+@supports not (backdrop-filter: blur(20px)) {
+  .glass-panel,
+  .panel,
+  .dash-card,
+  .wp-card,
+  .weather-station,
+  .market-header-card,
+  .market-card-section {
+    background: #080e0b !important;
+  }
+  [data-theme="light"] .glass-panel,
+  [data-theme="light"] .panel,
+  [data-theme="light"] .dash-card,
+  [data-theme="light"] .wp-card,
+  [data-theme="light"] .weather-station,
+  [data-theme="light"] .market-header-card,
+  [data-theme="light"] .market-card-section {
+    background: #FFFFFF !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass-panel,
+  .panel,
+  .dash-card,
+  .wp-card,
+  .weather-station,
+  .market-header-card,
+  .market-card-section {
+    background: #080e0b !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  [data-theme="light"] .glass-panel,
+  [data-theme="light"] .panel,
+  [data-theme="light"] .dash-card,
+  [data-theme="light"] .wp-card,
+  [data-theme="light"] .weather-station,
+  [data-theme="light"] .market-header-card,
+  [data-theme="light"] .market-card-section {
+    background: #FFFFFF !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}

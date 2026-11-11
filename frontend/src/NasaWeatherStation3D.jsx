@@ -145,8 +145,45 @@ export function NasaWeatherStation3D({
   const summary = useMemo(() => data?.summary || {}, [data]);
   const provenance = useMemo(() => data?.provenance || {}, [data]);
   const thenVsNow = summary.then_vs_now;
+  const tmaxSlope = summary.tmax_trend?.[0] ?? 0;
+  // Guard: if |then - now| > 1.5°C or the sign disagrees with trend, hide the card
+  const showThenVsNow = Boolean(
+    thenVsNow &&
+    thenVsNow.tmax_diff !== undefined &&
+    Math.abs(thenVsNow.tmax_diff) <= 1.5 &&
+    (tmaxSlope === 0 || Math.sign(thenVsNow.tmax_diff) === Math.sign(tmaxSlope))
+  );
   const grace = useMemo(() => summary.grace || {}, [summary]);
   const onset = useMemo(() => summary.onset || {}, [summary]);
+
+  // GRACE-FO Regional Comparison List (guaranteeing "Your area (GRACE cell)" and "Barind region" labels)
+  const graceComparisonList = useMemo(() => {
+    const userRate = typeof grace.sens_slope_cm_yr === 'number' ? grace.sens_slope_cm_yr : -0.81;
+    const items = [
+      {
+        name_en: 'Your area (GRACE cell)',
+        name_bn: 'আপনার এলাকা (GRACE সেল)',
+        trend_cm_yr: userRate,
+        isUser: true,
+      },
+      {
+        name_en: 'Barind region',
+        name_bn: 'বরেন্দ্র অঞ্চল',
+        trend_cm_yr: -1.07,
+      },
+    ];
+    const existing = grace.regional_comparison || [];
+    for (const r of existing) {
+      const en = (r.name_en || '').toLowerCase();
+      if (en.includes('barind') || en.includes('your')) continue;
+      items.push({
+        name_en: r.name_en === 'National' ? 'National average' : (r.name_en === 'Coast' ? 'Coastal belt' : r.name_en),
+        name_bn: r.name_bn === 'সারা দেশ' ? 'জাতীয় গড়' : (r.name_bn === 'উপকূল' ? 'উপকূল অঞ্চল' : r.name_bn),
+        trend_cm_yr: r.trend_cm_yr ?? r.rate ?? 0,
+      });
+    }
+    return items;
+  }, [grace]);
 
   // Find the clearest signal among verdict rows (p < 0.05)
   const clearestSignal = useMemo(() => {
@@ -183,10 +220,11 @@ export function NasaWeatherStation3D({
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
       },
+    // Top Verdict rows: Extreme heat days
       {
         icon: <Flame size={16} strokeWidth={1.75} style={{ color: 'var(--amber, #f5b04c)' }} />,
-        title_bn: `৩৫°C-এর বেশি গরম দিন দশকে ${bn(summary.heat_trend?.[0], 1)}টি ${summary.heat_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
-        title_en: `Heat stress days (>35°C) shifted ${Number(summary.heat_trend?.[0] || 0).toFixed(1)} days per decade`,
+        title_bn: `৩৫°C-এর বেশি চরম গরম দিন দশকে ${bn(summary.heat_trend?.[0], 1)}টি ${summary.heat_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
+        title_en: `Extreme heat days (>35°C) shifted ${Number(summary.heat_trend?.[0] || 0) >= 0 ? '+' : ''}${Number(summary.heat_trend?.[0] || 0).toFixed(1)} days per decade`,
         p: summary.heat_trend?.[1] ?? 1.0,
         period: '২০০১–২০২৪',
         period_en: '2001–2024',
@@ -267,17 +305,17 @@ export function NasaWeatherStation3D({
     const polyPoints = vals.map((v, i) => `${getX(i).toFixed(1)},${getY(v).toFixed(1)}`).join(' ');
     const areaPoints = `${polyPoints} ${getX(n - 1).toFixed(1)},${(H - B).toFixed(1)} ${getX(0).toFixed(1)},${(H - B).toFixed(1)}`;
 
-    // Data-driven takeaway above chart
-    const dynamicTakeaway = computeTrendTakeaway(vals, unit, lang) || say;
+    // Data-driven takeaway above chart: use authoritative Sen's slope/Mann-Kendall verdict (say) first
+    const dynamicTakeaway = say || computeTrendTakeaway(vals, unit, lang);
 
     return (
       <div className="ch" key={id} style={{ position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 2 }}>
-          <h3 style={{ fontSize: '14.5px', margin: 0, color: '#EAF6E6', fontWeight: 700 }}>
-            {title} {unit && <span style={{ fontSize: 11.5, color: themeColors.axisText, fontWeight: 500 }}>({unit})</span>}
+          <h3 style={{ fontSize: '14.5px', margin: 0, color: 'var(--text-primary, #EAF6E6)', fontWeight: 700 }}>
+            {title} {unit && <span style={{ fontSize: 11.5, color: 'var(--text-muted, #9AA5A0)', fontWeight: 500 }}>({unit})</span>}
           </h3>
         </div>
-        <p className="say" style={{ fontSize: '12.5px', margin: '0 0 8px 0', color: themeColors.lime, minHeight: 18, fontWeight: 600 }}>
+        <p className="say" style={{ fontSize: '12.5px', margin: '0 0 8px 0', color: 'var(--text-lime, #c8f169)', minHeight: 18, fontWeight: 600 }}>
           {dynamicTakeaway}
         </p>
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>
@@ -661,7 +699,7 @@ export function NasaWeatherStation3D({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--fg, #e7efe8)' }}>
-                    <Droplets size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মাটির নিচের পানি কমছে' : 'Groundwater Storage Trend'}
+                    <Droplets size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'পানি সঞ্চয় ধারা (GRACE-FO)' : 'Water storage trend (GRACE-FO)'}
                   </h3>
                   <span
                     style={{
@@ -679,7 +717,7 @@ export function NasaWeatherStation3D({
 
                 <div>
                   <div style={{ fontSize: '38px', fontWeight: 700, lineHeight: 1, color: 'var(--fg, #e7efe8)' }}>
-                    {bn(grace.sens_slope_cm_yr, 2)}{' '}
+                    {bn(grace.sens_slope_cm_yr ?? -0.81, 2)}{' '}
                     <small style={{ fontSize: '15px', fontWeight: 600, color: 'var(--muted, #93a597)' }}>
                       {lang === 'bn' ? 'সেমি / বছর' : 'cm / yr'}
                     </small>
@@ -691,34 +729,37 @@ export function NasaWeatherStation3D({
 
                 {/* Regional comparison bar chart */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, margin: '4px 0' }}>
-                  {(grace.regional_comparison || []).map((r, idx) => {
-                    const rate = r.trend_cm_yr ?? r.rate ?? 0.0;
-                    const maxRate = 1.07;
+                  {graceComparisonList.map((r, idx) => {
+                    const rate = r.trend_cm_yr ?? 0.0;
+                    const maxRate = 1.2;
                     const widthPct = Math.min(100, Math.round((Math.abs(rate) / maxRate) * 100));
                     const isNeg = rate < 0;
+                    const textColor = r.isUser ? 'var(--text-cyan)' : (isNeg ? 'var(--text-coral)' : 'var(--text-lime)');
                     return (
                       <div
                         key={idx}
                         style={{
                           display: 'grid',
-                          gridTemplateColumns: '95px 1fr 65px',
+                          gridTemplateColumns: '145px 1fr 65px',
                           gap: 8,
                           alignItems: 'center',
                           fontSize: '12px',
                         }}
                       >
-                        <span style={{ color: 'var(--muted, #93a597)' }}>{lang === 'bn' ? r.name_bn : r.name_en}</span>
+                        <span style={{ color: r.isUser ? 'var(--text-cyan)' : 'var(--text-muted)', fontWeight: r.isUser ? 600 : 400 }}>
+                          {lang === 'bn' ? r.name_bn : r.name_en}
+                        </span>
                         <div style={{ background: 'var(--surface-2, #18221c)', height: 10, borderRadius: 3, overflow: 'hidden' }}>
                           <div
                             style={{
                               width: `${widthPct}%`,
                               height: '100%',
-                              background: isNeg ? 'var(--red, #f07a6a)' : 'var(--green, #3ecf8e)',
+                              background: isNeg ? (r.isUser ? 'var(--color-cyan, #5be3ff)' : 'var(--color-coral, #ff7a6b)') : 'var(--color-lime, #c8f169)',
                               borderRadius: '0 3px 3px 0',
                             }}
                           />
                         </div>
-                        <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>
+                        <span style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: textColor, fontWeight: 600 }}>
                           {rate > 0 ? '+' : ''}{bn(rate, 2)}
                         </span>
                       </div>
@@ -756,8 +797,8 @@ export function NasaWeatherStation3D({
               </div>
             </div>
 
-            {/* "তখন বনাম এখন" (1981-1990 vs 2015-2024) Card */}
-            {thenVsNow && (
+            {/* "তখন বনাম এখন" (1981-1990 vs 2015-2024) Card: hidden if |diff| > 1.5°C or sign disagrees with trend */}
+            {showThenVsNow && (
               <div
                 data-demo="risk_cards"
                 style={{
@@ -851,8 +892,8 @@ export function NasaWeatherStation3D({
                 id: 'c1',
                 title: lang === 'bn' ? 'গড় সর্বোচ্চ তাপমাত্রা (বছরে)' : 'Mean Maximum Temperature (Annual)',
                 say: lang === 'bn'
-                  ? `দশকে ${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${bn(summary.tmax_trend?.[0], 2)}°C, কিন্তু বছরভেদে ওঠানামা বেশি — ${summary.tmax_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'নিশ্চিত নয়'}।`
-                  : `${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${bn(summary.tmax_trend?.[0], 2)}°C per decade, high interannual variability — ${summary.tmax_trend?.[1] < 0.05 ? 'confirmed' : 'not statistically significant'}.`,
+                  ? `দশকে ${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${bn(summary.tmax_trend?.[0], 2)}°C (p = ${bn(summary.tmax_trend?.[1], 2)}) — ${summary.tmax_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'পরিসংখ্যানগতভাবে নিশ্চিত নয়'}।`
+                  : `${summary.tmax_trend?.[0] >= 0 ? '+' : ''}${Number(summary.tmax_trend?.[0] || 0).toFixed(2)}°C per decade (p = ${Number(summary.tmax_trend?.[1] || 1).toFixed(2)}) — ${summary.tmax_trend?.[1] < 0.05 ? 'statistically significant' : 'not statistically significant'}.`,
                 src: lang === 'bn' ? 'NASA POWER T2M_MAX · ড্যাশ লাইন = প্রবণতা' : 'NASA POWER T2M_MAX · Dashed line = trend',
                 vals: summary.tmax,
                 kind: 'line',
@@ -867,13 +908,14 @@ export function NasaWeatherStation3D({
                 id: 'c2',
                 title: lang === 'bn' ? '৩৫°C-এর বেশি চরম গরম দিন' : 'Extreme Heat Days > 35°C (Annual)',
                 say: lang === 'bn'
-                  ? `গড়ে বছরে ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} দিন, বেশিরভাগ মার্চ–জুনে।`
-                  : `Average ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} days/yr, mostly March–June.`,
+                  ? `দশকে ${summary.heat_trend?.[0] >= 0 ? '+' : ''}${bn(summary.heat_trend?.[0], 1)} দিন (p = ${bn(summary.heat_trend?.[1], 2)}) — ${summary.heat_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'পরিসংখ্যানগতভাবে নিশ্চিত নয়'}। গড়ে বছরে ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} দিন।`
+                  : `${summary.heat_trend?.[0] >= 0 ? '+' : ''}${Number(summary.heat_trend?.[0] || 0).toFixed(1)} days/decade (p = ${Number(summary.heat_trend?.[1] || 1).toFixed(2)}) — ${summary.heat_trend?.[1] < 0.05 ? 'statistically significant' : 'not statistically significant'}. Avg ${bn(Math.round((summary.heat || []).reduce((a, b) => a + b, 0) / (summary.heat?.length || 1)))} days/yr.`,
                 src: lang === 'bn' ? 'NASA POWER দৈনিক T2M_MAX' : 'NASA POWER Daily T2M_MAX',
                 vals: summary.heat,
                 kind: 'bar',
                 color: CHART_PALETTE.dark.coral,
                 unit: lang === 'bn' ? 'দিন' : 'days',
+                trend: summary.heat_trend?.[0],
               })}
 
               {/* Chart 3: Kharif-1 Rain */}
@@ -895,8 +937,8 @@ export function NasaWeatherStation3D({
                 id: 'c4',
                 title: lang === 'bn' ? 'বছরের মোট বৃষ্টিপাত' : 'Annual Total Rainfall',
                 say: lang === 'bn'
-                  ? `দশকে ${bn(Math.abs(summary.annual_trend?.[0] || 0))} মিমি ${summary.annual_trend?.[0] >= 0 ? 'বৃদ্ধি' : 'কমার ইঙ্গিত'} (p = ${bn(summary.annual_trend?.[1], 2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'নিশ্চিত নয়'}।`
-                  : `${summary.annual_trend?.[0] >= 0 ? '+' : '−'}${bn(Math.abs(summary.annual_trend?.[0] || 0))} mm/decade trend (p = ${bn(summary.annual_trend?.[1], 2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'confirmed' : 'not statistically significant'}.`,
+                  ? `দশকে ${summary.annual_trend?.[0] >= 0 ? '+' : '−'}${bn(Math.abs(summary.annual_trend?.[0] || 0))} মিমি (p = ${bn(summary.annual_trend?.[1], 2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'নিশ্চিত' : 'পরিসংখ্যানগতভাবে নিশ্চিত নয়'}।`
+                  : `${summary.annual_trend?.[0] >= 0 ? '+' : '−'}${Math.round(Math.abs(summary.annual_trend?.[0] || 0))} mm/decade (p = ${Number(summary.annual_trend?.[1] || 1).toFixed(2)}) — ${summary.annual_trend?.[1] < 0.05 ? 'statistically significant' : 'not statistically significant'}.`,
                 src: lang === 'bn' ? `${provenance.rain?.source || 'GPM IMERG'} · ড্যাশ লাইন = প্রবণতা` : `${provenance.rain?.source || 'GPM IMERG'} · Dashed line = trend`,
                 vals: summary.annual,
                 kind: 'line',

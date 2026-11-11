@@ -15,7 +15,7 @@
 .fsx-mapbox{position:absolute;left:62%;top:52%;height:86vh;aspect-ratio:622/868;transform-origin:50% 60%;will-change:transform}
 .fsx-mapbox svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .fsx-map-under{background:radial-gradient(ellipse at 50% 55%,#173322 0%,#0a1710 55%,#04090c 100%)}
-.fsx-pill{position:absolute;transform:translate(-50%,-140%);padding:6px 13px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);letter-spacing:.2px}
+.fsx-pill{position:absolute;transform:translate(-50%,-140%);padding:6px 13px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.16);letter-spacing:.2px}
 .fsx-pill b{font-weight:800}
 .fsx-pin{position:absolute;width:0;height:0}
 .fsx-pin i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.25),0 0 24px #fff}
@@ -25,9 +25,9 @@
 /* village */
 .fsx-village .fsx-vl{position:absolute;inset:-3%;width:106%;height:106%;will-change:transform}
 .fsx-village .fsx-vl svg{width:100%;height:100%;display:block}
-.fsx-tint{position:absolute;inset:0;mix-blend-mode:multiply}
+.fsx-tint{position:absolute;inset:0}
 .fsx-rain{position:absolute;inset:0;width:100%;height:100%}
-.fsx-shimmer{position:absolute;left:0;right:0;top:48%;height:22%;background:repeating-linear-gradient(0deg,rgba(255,170,90,.0) 0 6px,rgba(255,170,90,.10) 6px 8px);filter:blur(3px);animation:fsxShim 1.6s ease-in-out infinite alternate}
+.fsx-shimmer{position:absolute;left:0;right:0;top:48%;height:22%;background:repeating-linear-gradient(0deg,rgba(255,170,90,.0) 0 6px,rgba(255,170,90,.10) 6px 8px);animation:fsxShim 1.6s ease-in-out infinite alternate}
 @keyframes fsxShim{from{transform:translateY(0) scaleY(1)}to{transform:translateY(-6px) scaleY(1.05)}}
 .fsx-firefly{fill:#ffe58a;animation:fsxFly 3s ease-in-out infinite alternate}
 @keyframes fsxFly{from{opacity:.25;transform:translateY(0)}to{opacity:1;transform:translateY(-8px)}}
@@ -37,16 +37,16 @@
 .fsx-beds svg{position:absolute;inset:-3%;width:106%;height:106%}
 .fsx-bedlabel{font:700 12px Inter,"Hind Siliguri",sans-serif;fill:#EAF6E6}
 .fsx-tag{position:absolute;transform:translate(-50%,-100%);padding:5px 10px;border-radius:10px;font-size:13px;font-weight:800;white-space:nowrap;background:rgba(6,14,10,.78);border:1px solid rgba(255,255,255,.18)}
-.fsx-ribbon{position:absolute;left:50%;top:15%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(12,1fr);gap:4px;width:min(760px,70vw);padding:10px;border-radius:16px;background:rgba(6,14,10,.70);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px)}
+.fsx-ribbon{position:absolute;left:50%;top:15%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(12,1fr);gap:4px;width:min(760px,70vw);padding:10px;border-radius:16px;background:rgba(6,14,10,.70);border:1px solid rgba(255,255,255,.14)}
 .fsx-ribbon div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#a9bcae}
 .fsx-ribbon span{width:100%;height:22px;border-radius:6px}
-.fsx-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime);animation:fsxRise 2.4s ease-in infinite}
+.fsx-spark{position:absolute;width:7px;height:7px;border-radius:50%;background:radial-gradient(circle,#eaffb0,rgba(200,241,105,0) 70%);animation:fsxRise 2.4s ease-in infinite}
 @keyframes fsxRise{from{transform:translateY(0);opacity:0}20%{opacity:1}to{transform:translateY(-120px);opacity:0}}
 .fsx-chips{position:absolute;left:50%;top:13%;transform:translateX(-50%);display:flex;gap:8px}
 .fsx-chip{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(6,14,10,.7);border:1px solid rgba(200,241,105,.25);color:#cfe3d3;transition:all .25s}
 .fsx-chip.on{background:var(--lime);color:#10230f;box-shadow:0 0 22px rgba(200,241,105,.55);border-color:var(--lime)}
 /* cards */
-.fsx-card{position:absolute;top:50%;width:min(440px,38vw);padding:26px 28px;border-radius:22px;background:rgba(7,14,10,.74);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(16px) saturate(130%);box-shadow:0 20px 50px rgba(0,0,0,.45);pointer-events:auto;will-change:opacity,transform}
+.fsx-card{position:absolute;top:50%;width:min(440px,38vw);padding:26px 28px;border-radius:22px;background:linear-gradient(180deg,rgba(10,20,14,.90),rgba(6,12,9,.86));border:1px solid rgba(255,255,255,.12);box-shadow:0 20px 50px rgba(0,0,0,.45);pointer-events:auto;will-change:opacity,transform}
 .fsx-card.l{left:5%}.fsx-card.r{right:6%}
 .fsx-kick{font-size:11px;font-weight:800;letter-spacing:1.6px;color:var(--amber);text-transform:uppercase;margin-bottom:10px}
 .fsx-kick.g{color:var(--lime)}
@@ -80,9 +80,18 @@
 .fsx-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-size:12px;letter-spacing:1.5px;color:#9fb5a4;text-transform:uppercase}
 @media (max-width:900px){.fsx-card{left:4%!important;right:4%!important;width:auto;top:auto;bottom:4%}.fsx-ribbon{top:8%}}
 @media (prefers-reduced-motion:reduce){.fsx *{animation:none!important;transition:none!important}}
-.fsx-dawn{background:linear-gradient(180deg,#ff9e7a 0%,#ffc58f 30%,#ffd9a0 48%,rgba(255,217,160,0) 62%);mix-blend-mode:screen}
-.fsx-play{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:12px 22px 12px 16px;border-radius:999px;border:1px solid rgba(200,241,105,.45);background:rgba(7,14,10,.72);backdrop-filter:blur(12px);color:#e9f8cf;font:700 14px Inter,"Hind Siliguri",sans-serif;cursor:pointer;pointer-events:auto;z-index:6;box-shadow:0 0 18px rgba(200,241,105,.25);transition:box-shadow .2s,transform .15s}
+.fsx-dawn{background:linear-gradient(180deg,rgba(255,140,110,.55) 0%,rgba(255,190,140,.38) 30%,rgba(255,215,160,.18) 48%,rgba(255,217,160,0) 62%);opacity:.0}
+.fsx-play{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:12px 22px 12px 16px;border-radius:999px;border:1px solid rgba(200,241,105,.45);background:rgba(7,14,10,.72);color:#e9f8cf;font:700 14px Inter,"Hind Siliguri",sans-serif;cursor:pointer;pointer-events:auto;z-index:6;box-shadow:0 0 18px rgba(200,241,105,.25);transition:box-shadow .2s,transform .15s}
 .fsx-play:hover{box-shadow:0 0 30px rgba(200,241,105,.5);transform:translateX(-50%) translateY(-1px)}
 .fsx-play .ic{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#D7F78A,#A8E04A);color:#10230f;font-size:11px}
 .fsx-play.on{bottom:22px;padding:8px 16px 8px 10px;opacity:.85}
 .fsx-play:focus-visible{outline:2px solid var(--lime);outline-offset:3px}
+.fsx-note{font-size:13px;line-height:1.5;color:#F5D58A;margin:0 0 12px;padding:8px 10px;border-radius:10px;background:rgba(245,176,76,.08);border:1px solid rgba(245,176,76,.25)}
+.fsx-play.mini{left:24px;bottom:22px;transform:none;padding:8px 14px 8px 8px;font-size:12px}
+.fsx-play.mini:hover{transform:translateY(-1px)}
+.fsx-play.mini .ic{width:24px;height:24px}
+.fsx-vl,.fsx-beds,.fsx-scene{contain:paint}
+.fsx-scene{will-change:transform,opacity}
+.fsx-legend{grid-column:1/-1;display:flex;align-items:center;gap:6px;margin:6px 0 0;font-size:11px;color:#a9bcae;justify-content:center}
+.fsx-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:8px}
+.fsx-legend span{margin-left:12px;opacity:.75}

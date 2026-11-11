@@ -727,7 +727,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                 ? 'সব ফসলের বাজারদর -২০%, স্বাভাবিক অথবা +২০% হলে বার্ষিক মোট লাভ'
                 : 'Annual net profit if crop market prices swing -20%, baseline, or +20%'}
             </p>
-            <p style={{ margin: '6px 0 0', fontSize: 12.5, color: CHART_PALETTE.dark.lime, fontWeight: 600 }}>
+            <p style={{ margin: '6px 0 0', fontSize: 12.5, color: 'var(--text-lime)', fontWeight: 600 }}>
               {isBn ? 'দর ২০% ধস নামলেও নতুন পরিকল্পনায় লাভ বেশি থাকে (৳৪০,০০০+ সর্বনিম্ন মুনাফা)' : 'Plan remains more profitable even under a 20% price shock (৳40,000+ floor)'}
             </p>
           </div>
@@ -743,10 +743,10 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
               onPointerLeave={() => setHoveredSensItem(null)}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: CHART_PALETTE.dark.cyan, fontWeight: 600 }}>
+                <span style={{ color: 'var(--text-cyan)', fontWeight: 600 }}>
                   {isBn ? 'দর ২০% কমলে (মন্দা)' : 'Price -20% (Crash)'}
                 </span>
-                <span style={{ fontWeight: 700, color: 'var(--text, #F4F7F4)', fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text-primary, #F4F7F4)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.downside_20_profit_field, lang)}
                 </span>
               </div>
@@ -756,7 +756,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.downside_20_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: CHART_PALETTE.dark.cyan,
+                    background: 'var(--color-cyan, #5be3ff)',
                     borderRadius: 4,
                   }}
                 />
@@ -773,10 +773,10 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
               onPointerLeave={() => setHoveredSensItem(null)}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: CHART_PALETTE.dark.lime, fontWeight: 600 }}>
+                <span style={{ color: 'var(--text-lime)', fontWeight: 600 }}>
                   {isBn ? 'বর্তমান প্রাক্কলিত দর' : 'Normal Estimated Price'}
                 </span>
-                <span style={{ fontWeight: 700, color: CHART_PALETTE.dark.lime, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text-lime)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.normal_profit_field, lang)}
                 </span>
               </div>
@@ -786,7 +786,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.normal_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: CHART_PALETTE.dark.lime,
+                    background: 'var(--color-lime, #c8f169)',
                     borderRadius: 4,
                   }}
                 />
@@ -803,10 +803,10 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
               onPointerLeave={() => setHoveredSensItem(null)}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: CHART_PALETTE.dark.amber, fontWeight: 600 }}>
+                <span style={{ color: 'var(--text-amber)', fontWeight: 600 }}>
                   {isBn ? 'দর ২০% বাড়লে (সুসময়)' : 'Price +20% (Surge)'}
                 </span>
-                <span style={{ fontWeight: 700, color: CHART_PALETTE.dark.amber, fontVariantNumeric: 'tabular-nums' }}>
+                <span style={{ fontWeight: 700, color: 'var(--text-amber)', fontVariantNumeric: 'tabular-nums' }}>
                   {formatMoney(sensitivity.upside_20_profit_field, lang)}
                 </span>
               </div>
@@ -816,7 +816,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                   style={{
                     height: '100%',
                     width: `${Math.max(5, Math.min(100, ((sensitivity.upside_20_profit_field || 0) / maxSensProfit) * 100))}%`,
-                    background: CHART_PALETTE.dark.amber,
+                    background: 'var(--color-amber, #f5b04c)',
                     borderRadius: 4,
                   }}
                 />

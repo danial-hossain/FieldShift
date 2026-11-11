@@ -723,7 +723,7 @@ const renderDailyChart = () => {
 
   return (
     <div className="wp-chart" style={{ marginTop: 14, position: 'relative' }}>
-      <p style={{ fontSize: '12.5px', color: CHART_PALETTE.dark.lime, fontWeight: 600, margin: '0 0 6px 0' }}>
+      <p style={{ fontSize: '12.5px', color: 'var(--text-lime)', fontWeight: 600, margin: '0 0 6px 0' }}>
         {lang === 'bn' ? 'প্রতিদিনের পানি ভারসাম্য: খরিফ মৌসুমে প্রস্বেদন সর্বোচ্চ (৪.৮ মিমি/দিন)' : 'Daily water balance: Peak crop ETc in Kharif season (4.8 mm/day)'}
       </p>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block', overflow: 'visible' }}>

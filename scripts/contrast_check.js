@@ -183,7 +183,10 @@ async function runLiveContrastCheck() {
           }, theme);
 
           const pass = issues.length === 0;
-          if (!pass) allPass = false;
+          if (!pass) {
+            allPass = false;
+            console.log('    Issues:', JSON.stringify(issues, null, 2));
+          }
           console.log(`  [${pass ? 'PASS ✓' : 'FAIL ✗'}] ${target.name.padEnd(12)}: low_contrast_elements=${issues.length} (all text >= 4.5:1)`);
         }
       } catch (err) {

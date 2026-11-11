@@ -27,7 +27,7 @@ const CROP_COLORS = {
   Tomato: '#ef4444',
   Groundnut: '#f97316',
   Onion: '#c084fc',
-  Fallow: '#78716c',
+  Fallow: 'var(--text-fallow, #cbd5e1)',
 };
 
 const PERIOD_KEYS_6 = ['Y1_S1', 'Y1_S2', 'Y1_S3', 'Y2_S1', 'Y2_S2', 'Y2_S3'];
@@ -372,7 +372,7 @@ export function SeasonTimelineBar({
             <div
               key={mIdx}
               style={{
-                color: isMonsoon ? 'var(--neon-cyan, #5BE3FF)' : 'inherit',
+                color: isMonsoon ? 'var(--text-cyan, #0369a1)' : 'inherit',
                 fontWeight: isMonsoon ? 600 : 400,
               }}
             >

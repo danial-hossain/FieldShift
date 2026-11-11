@@ -35,8 +35,8 @@ export const GLOSSARY = {
     science_desc: 'FAO-56 পেনম্যান-মন্টিথ সম্ভাব্য বাষ্পীভবন (ETc)'
   },
   groundwater_trend: {
-    bn: 'ভূগর্ভস্থ পানির স্তর পরিবর্তন',
-    en: 'Groundwater Storage Trend',
+    bn: 'পানি সঞ্চয় ধারা (GRACE-FO)',
+    en: 'Water storage trend (GRACE-FO)',
     farmer_desc: 'নাসার গ্রেস (GRACE) উপগ্রহ অনুযায়ী বরেন্দ্র বা উপকূলের মাটির নিচের পানির ওঠা-নামা',
     science_desc: 'NASA GRACE-FO Terrestrial Water Storage Anomaly (cm/year)'
   },

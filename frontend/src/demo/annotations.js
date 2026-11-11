@@ -417,8 +417,8 @@ export const DEMO_ANNOTATIONS = {
       selector: '[data-demo="water_storage_trend"]',
       chip: 'GRACE-FO',
       title: {
-        en: 'Groundwater Storage Trend',
-        bn: 'ভূগর্ভস্থ পানি হ্রাস'
+        en: 'Water storage trend (GRACE-FO)',
+        bn: 'পানি সঞ্চয় ধারা (GRACE-FO)'
       },
       desc: {
         en: 'NASA GRACE-FO measurement showing Barind groundwater storage falling −1.07 cm/year.',
