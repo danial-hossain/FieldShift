@@ -1,0 +1,66 @@
+/* frontend/src/demo/DemoOverlay.css - DS1 Spotlight Overlay */
+
+.demo-spotlight-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+}
+
+/* 4 Fixed backdrop panels around the spotlight hole */
+.demo-spotlight-panel {
+  position: fixed;
+  z-index: 9998;
+  background: rgba(3, 8, 6, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto; /* clicks outside do nothing */
+  transition: top 300ms cubic-bezier(0, 0, 0.2, 1),
+              left 300ms cubic-bezier(0, 0, 0.2, 1),
+              width 300ms cubic-bezier(0, 0, 0.2, 1),
+              height 300ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@supports not (backdrop-filter: blur(6px)) {
+  .demo-spotlight-panel {
+    background: rgba(3, 8, 6, 0.78);
+  }
+}
+
+/* 2px Lime ring with soft outer glow around the active element */
+.demo-spotlight-ring {
+  position: fixed;
+  z-index: 9999;
+  border-radius: 14px;
+  border: 2px solid #C8F169;
+  box-shadow: 0 0 0 4px rgba(200, 241, 105, 0.18), 0 0 28px rgba(200, 241, 105, 0.35);
+  pointer-events: none; /* clicks pass right through into the highlighted element */
+  transition: top 300ms cubic-bezier(0, 0, 0.2, 1),
+              left 300ms cubic-bezier(0, 0, 0.2, 1),
+              width 300ms cubic-bezier(0, 0, 0.2, 1),
+              height 300ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Spotlight Tooltip Card (DS2) */
+.demo-spotlight-card {
+  position: fixed;
+  z-index: 10002;
+  background: rgba(8, 14, 11, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px 18px;
+  max-width: 320px;
+  width: calc(100vw - 32px);
+  color: #E8ECE9;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-spotlight-panel,
+  .demo-spotlight-ring {
+    transition: none !important;
+  }
+}
