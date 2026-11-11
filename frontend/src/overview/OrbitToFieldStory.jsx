@@ -4,7 +4,7 @@
 // Full English in EN mode, full Bengali in BN mode (dataset names stay English).
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { toBengaliNumber } from '../i18n.js';
+import { toBengaliNumber, cropLabel } from '../i18n.js';
 import { OrbitToFieldCanvas } from './OrbitToFieldCanvas.jsx';
 import { isWebGLAvailable, haToBigha } from '../three/farmSceneHelpers.js';
 import { REGIONAL_ROTATIONS } from './regionalRotationsConfig.js';
@@ -385,9 +385,9 @@ export function OrbitToFieldStory({
   const existingRotStr = useMemo(() => {
     const ext = activeField?.existing_rotation;
     if (ext && typeof ext === 'object') {
-      const r = ext.rabi || 'Boro rice';
-      const k1 = ext.kharif1 || 'Fallow';
-      const k2 = ext.kharif2 || 'Aman rice';
+      const r = cropLabel(ext.rabi || 'Boro rice', isBn ? 'bn' : 'en');
+      const k1 = cropLabel(ext.kharif1 || 'Fallow', isBn ? 'bn' : 'en');
+      const k2 = cropLabel(ext.kharif2 || 'Aman rice', isBn ? 'bn' : 'en');
       return `${r} · ${k1} · ${k2}`;
     }
     return isBn ? 'বোরো ধান · পতিত · আমন ধান' : 'Boro rice · Fallow · Aman rice';
