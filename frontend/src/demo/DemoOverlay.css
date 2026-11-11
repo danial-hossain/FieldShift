@@ -115,3 +115,11 @@
     transition: none !important;
   }
 }
+
+/* Demo Button Pressed State (DS4) */
+.demo-mode-toggle-btn.active {
+  background: linear-gradient(135deg, rgba(82,214,122,.32) 0%, rgba(46,184,92,.46) 100%) !important;
+  border-color: rgba(200, 241, 105, 0.90) !important;
+  color: #C8F169 !important;
+  box-shadow: 0 0 24px rgba(200, 241, 105, 0.50), inset 0 0 12px rgba(200, 241, 105, 0.25) !important;
+}

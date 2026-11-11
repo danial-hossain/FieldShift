@@ -56,7 +56,12 @@ export function DemoOverlay({
       const el = document.querySelector(ann.selector);
       if (!el) return false;
       const rect = el.getBoundingClientRect();
-      return rect.width > 2 && rect.height > 2;
+      if (rect.width <= 2 || rect.height <= 2) return false;
+      try {
+        const style = window.getComputedStyle(el);
+        if (style.display === 'none' || style.visibility === 'hidden') return false;
+      } catch {}
+      return true;
     });
     setValidSteps(found);
   }, [isOpen, rawList]);
@@ -145,6 +150,22 @@ export function DemoOverlay({
       clearInterval(interval);
     };
   }, [isOpen, updateHoleRect]);
+
+  // ResizeObserver for data load & container size changes (DS4)
+  useEffect(() => {
+    if (!isOpen || !activeStep) return undefined;
+    const el = document.querySelector(activeStep.selector);
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+
+    const ro = new ResizeObserver(() => {
+      updateHoleRect();
+      updateCardPosition();
+    });
+    ro.observe(el);
+    if (document.body) ro.observe(document.body);
+
+    return () => ro.disconnect();
+  }, [isOpen, activeStep, updateHoleRect, updateCardPosition]);
 
   // Floating UI Card Positioning (DS2)
   const updateCardPosition = useCallback(() => {
