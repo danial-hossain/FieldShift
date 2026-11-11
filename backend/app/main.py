@@ -1480,6 +1480,8 @@ def api_water_plan(
     except Exception as exc:
         raise HTTPException(500, f"Water plan computation failed: {str(exc)}") from exc
 
+_WATER_PLAN_CACHE: dict[str, Any] = {}
+
 @app.get("/api/water/season-plan")
 def api_water_season_plan(
     field_id: str | None = None,
@@ -1495,6 +1497,10 @@ def api_water_season_plan(
 
     actual_lat = lat if lat is not None else latitude
     actual_lon = lon if lon is not None else longitude
+    cache_key = f"{field_id}:{strategy}:{district}:{actual_lat}:{actual_lon}:{area_ha}"
+    if cache_key in _WATER_PLAN_CACHE:
+        return _WATER_PLAN_CACHE[cache_key]
+
     try:
         res = compute_season_water_plan(
             field_id=field_id,
@@ -1504,7 +1510,9 @@ def api_water_season_plan(
             longitude=actual_lon,
             area_ha=area_ha,
         )
-        return finite_json_value(jsonable_encoder(res))
+        val = finite_json_value(jsonable_encoder(res))
+        _WATER_PLAN_CACHE[cache_key] = val
+        return val
     except ValueError as val_err:
         raise HTTPException(422, str(val_err)) from val_err
     except Exception as exc:
@@ -1730,6 +1738,8 @@ def get_advisory_onset_comparison():
     return {"districts": records}
 
 
+_CLIMATE_SUMMARY_CACHE: dict[str, Any] = {}
+
 @app.get("/api/climate/field-summary")
 def get_climate_field_summary(
     field_id: str | None = None,
@@ -1777,13 +1787,19 @@ def get_climate_field_summary(
         field_id = "demo"
         field_name = "রহিম মিয়ার জমি"
 
-    return compute_climate_summary(
+    cache_key = f"{round(float(actual_lat), 4)}:{round(float(actual_lon), 4)}:{field_id}:{offline}"
+    if cache_key in _CLIMATE_SUMMARY_CACHE:
+        return _CLIMATE_SUMMARY_CACHE[cache_key]
+
+    res = compute_climate_summary(
         lat=actual_lat,
         lon=actual_lon,
         field_id=str(field_id or "demo"),
         field_name=field_name,
         offline=offline,
     )
+    _CLIMATE_SUMMARY_CACHE[cache_key] = res
+    return res
 
 
 @app.get("/api/satellite/readiness")
@@ -3888,6 +3904,8 @@ def market_overview(
     )
 
 
+_MARKET_PLAN_CACHE: dict[str, Any] = {}
+
 @app.get("/api/market/plan-economics")
 def market_plan_economics(
     field_id: str | None = None,
@@ -3903,6 +3921,10 @@ def market_plan_economics(
     from src.compute.market_service import compute_plan_economics
     actual_lat = lat if lat is not None else latitude
     actual_lon = lon if lon is not None else longitude
+    cache_key = f"{field_id}:{strategy}:{district}:{actual_lat}:{actual_lon}:{area_ha}"
+    if cache_key in _MARKET_PLAN_CACHE:
+        return _MARKET_PLAN_CACHE[cache_key]
+
     try:
         res = compute_plan_economics(
             field_id=field_id,
@@ -3912,7 +3934,9 @@ def market_plan_economics(
             longitude=actual_lon,
             area_ha=area_ha,
         )
-        return finite_json_value(jsonable_encoder(res))
+        val = finite_json_value(jsonable_encoder(res))
+        _MARKET_PLAN_CACHE[cache_key] = val
+        return val
     except ValueError as val_err:
         raise HTTPException(422, str(val_err)) from val_err
     except Exception as exc:
@@ -3925,6 +3949,7 @@ def market_custom_price(
     db: DbSession = Depends(get_db),
 ):
     """Saves or updates custom farmer selling price (MF9) for a crop and resolves updated economics."""
+    _MARKET_PLAN_CACHE.clear()
     data = payload.model_dump()
     raw_fid = data.get("field_id")
     crop = str(data.get("crop", "")).strip()

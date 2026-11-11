@@ -1,4 +1,4 @@
-import { request } from './apiClient.js';
+import { request, prefetch } from './apiClient.js';
 import { AlertTriangle, RotateCw, Printer, Info, Droplets, Tractor, ShoppingCart, Sprout, Flame, CheckCircle2, RefreshCw, Trophy, Shield, Sun, CloudRain, Clock, Target } from 'lucide-react';
 import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton, MarketIcon, WaterIcon, RotationIcon, ChecklistIcon, InfoIcon } from './ui/index.js';
 // frontend/src/SixSeasonRecommendationView.jsx
@@ -318,6 +318,26 @@ export function SixSeasonRecommendationView({
   // Resolve active priority response
   const currentPriority = STRATEGY_TO_PRIORITY[selectedStrategy] || 'balanced';
   const activePlanResponse = plansByPriority[currentPriority] || (plan || null);
+
+  // SP2: Prefetch Water/Market/Climate data for active plan in background (idle time)
+  useEffect(() => {
+    if (!loading && activeField && selectedStrategy) {
+      const fId = activeField.id || 'demo';
+      const dist = activeField.district || 'bogura';
+      const lat = activeField.latitude != null ? activeField.latitude : 24.59;
+      const lon = activeField.longitude != null ? activeField.longitude : 88.27;
+      const area = activeField.area_ha != null ? activeField.area_ha : 1.0;
+      const strat = selectedStrategy || 'balanced';
+
+      const timer = setTimeout(() => {
+        prefetch(`/api/water/season-plan?field_id=${fId}&strategy=${strat}&district=${dist}&latitude=${lat}&longitude=${lon}&area_ha=${area}`);
+        prefetch(`/api/market/plan-economics?field_id=${fId}&strategy=${strat}&district=${dist}&lat=${lat}&lon=${lon}&area_ha=${area}`);
+        prefetch(`/api/climate/field-summary?lat=${lat}&lon=${lon}&field_id=${fId}`);
+      }, 150);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading, activeField, selectedStrategy]);
 
   // Extract strategy rotation results from backend response
   const activePlanData = useMemo(() => {

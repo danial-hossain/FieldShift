@@ -52,41 +52,7 @@ import {
   BellIcon,
 } from './ui/index.js';
 
-const API = import.meta.env.VITE_API_URL || '';
-
-async function request(path, options = {}) {
-  const isPlainObject = options.body && typeof options.body === 'object' && !(options.body instanceof FormData) && !(options.body instanceof URLSearchParams) && !(options.body instanceof Blob);
-  const bodyToSend = isPlainObject ? JSON.stringify(options.body) : options.body;
-  let response;
-  try {
-    response = await fetch(`${API}${path}`, {
-      credentials: 'include',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      },
-      ...options,
-      body: bodyToSend
-    });
-  } catch (err) {
-    if (err?.name === 'AbortError') throw err;
-    throw new Error(`Could not reach the FastAPI backend at ${API || 'the /api proxy'} (${err.message}). Is uvicorn running on port 8000?`);
-  }
-  let body;
-  try {
-    body = await response.json();
-  } catch {
-    throw new Error(`Backend returned a non-JSON response (HTTP ${response.status}). Is the FastAPI backend running on port 8000?`);
-  }
-  if (!response.ok) {
-    const detail = Array.isArray(body.detail)
-      ? body.detail.map(item => item.msg || item.loc?.join('.') || 'Invalid request').join('; ')
-      : body.detail;
-    throw new Error(detail || body.message || `Request failed (${response.status})`);
-  }
-  return body;
-}
+import { request, prefetch } from './apiClient.js';
 
 export function formatNumber(val, digits = 2, fallback = 'Not available') {
   if (val === null || val === undefined || val === '') return fallback;
