@@ -47,7 +47,7 @@ function formatProvenanceLabel(code, l) {
   }
   return code;
 }
-import { useTranslation, formatCurrency, toBengaliNumber } from './i18n.js';
+import { useTranslation, formatCurrency, toBengaliNumber, formatArea, cropLabel } from './i18n.js';
 import { GlassPanel, GlassCard, GlassButton, GlassBadge } from './GlassComponents.jsx';
 import {
   CANONICAL_PERIODS,
@@ -1289,6 +1289,29 @@ export function SixSeasonRecommendationView({
             <span>🔄</span>
             <span>{lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Replan'}</span>
           </button>
+
+          <button
+            type="button"
+            className="action-print-card-btn"
+            onClick={() => window.print()}
+            style={{
+              background: 'var(--surface-2, rgba(255,255,255,0.05))',
+              border: '1px solid var(--line)',
+              borderRadius: 8,
+              padding: '6px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              color: 'var(--text)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+            title={lang === 'bn' ? '১ পাতার প্রিন্ট কার্ড (Ctrl+P)' : 'Print 1-Page Farmer Card (Ctrl+P)'}
+          >
+            <span>🖨️</span>
+            <span>{lang === 'bn' ? 'প্রিন্ট কার্ড' : 'Print Card'}</span>
+          </button>
         </div>
       </div>
 
@@ -1957,6 +1980,129 @@ export function SixSeasonRecommendationView({
 
       <div style={{ marginTop: 4 }}>
         <SaaoNotice lang={lang} />
+      </div>
+
+      {/* LB8: One-Page A4 Printable Farmer Card */}
+      <div className="farmer-print-card" aria-hidden="true">
+        {/* Header: Logo, Title, Date */}
+        <div className="fpc-header">
+          <div className="fpc-brand">
+            <img src="/brand/logo_full_light.svg" alt="FieldShift" className="fpc-logo" />
+            <div className="fpc-subbrand">
+              {lang === 'bn' ? 'স্মার্ট ফসল আবর্তন ও সেচ পরামর্শ কার্ড' : 'Smart Crop Rotation & Irrigation Advisory Card'}
+            </div>
+          </div>
+          <div className="fpc-meta">
+            <div><strong>{lang === 'bn' ? 'তারিখ:' : 'Date:'}</strong> {new Date().toLocaleDateString(lang === 'bn' ? 'bn-BD' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            <div><strong>{lang === 'bn' ? 'কৌশল:' : 'Strategy:'}</strong> {STRATEGY_DEFINITIONS[selectedStrategy]?.[lang === 'bn' ? 'titleBn' : 'titleEn'] || selectedStrategy}</div>
+          </div>
+        </div>
+
+        {/* Field Details */}
+        <div className="fpc-section fpc-field-box">
+          <div className="fpc-field-item">
+            <span className="fpc-label">{lang === 'bn' ? 'জমির নাম:' : 'Field Name:'}</span>
+            <span className="fpc-val">{activeField?.name || (lang === 'bn' ? 'আমার জমি' : 'My Field')}</span>
+          </div>
+          <div className="fpc-field-item">
+            <span className="fpc-label">{lang === 'bn' ? 'জেলা / অঞ্চল:' : 'District / Zone:'}</span>
+            <span className="fpc-val">{districtLabel(district, lang)}</span>
+          </div>
+          <div className="fpc-field-item">
+            <span className="fpc-label">{lang === 'bn' ? 'জমির আয়তন:' : 'Field Area:'}</span>
+            <span className="fpc-val">{formatArea(fieldAreaHa || 1, lang)}</span>
+          </div>
+          <div className="fpc-field-item">
+            <span className="fpc-label">{lang === 'bn' ? 'প্রত্যাশিত মোট মুনাফা:' : 'Expected Net Profit:'}</span>
+            <span className="fpc-val fpc-val-highlight">{formatCurrency(activePlanData.planProfitBdt || 0, lang)}</span>
+          </div>
+        </div>
+
+        {/* Recommended 6-Season Timeline Table */}
+        <div className="fpc-section">
+          <div className="fpc-section-title">
+            {lang === 'bn' ? 'প্রস্তাবিত ৬-মৌসুম ফসল আবর্তন ও সেচ পরিকল্পনা' : 'Recommended 6-Season Rotation & Irrigation Plan'}
+          </div>
+
+          {/* Coloured Timeline Strip */}
+          <div className="fpc-timeline-grid">
+            {farm3dBeds.map((bed, idx) => {
+              const mm = bed.waterReq || 0;
+              const seasonName = seasonMeta[bed.id]?.[lang] || bed.label;
+              const cropName = cropLabel(bed.crop, lang);
+              const tone = idx % 3 === 0 ? 'rabi' : idx % 3 === 1 ? 'kharif1' : 'kharif2';
+              return (
+                <div key={idx} className={`fpc-timeline-item fpc-tone-${tone}`}>
+                  <div className="fpc-tl-season">{seasonName}</div>
+                  <div className="fpc-tl-crop">{cropName}</div>
+                  <div className="fpc-tl-irrig">{formatNumber(mm, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          <table className="fpc-table">
+            <thead>
+              <tr>
+                <th>{lang === 'bn' ? 'মৌসুম' : 'Season'}</th>
+                <th>{lang === 'bn' ? 'বাছাইকৃত ফসল' : 'Recommended Crop'}</th>
+                <th>{lang === 'bn' ? 'সেচ চাহিদা' : 'Irrigation (mm)'}</th>
+                <th>{lang === 'bn' ? 'সেচের পানি (লিটার)' : 'Irrigation (Litres)'}</th>
+                <th>{lang === 'bn' ? 'বৈশিষ্ট্য ও সুবিধা' : 'Key Benefit'}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {farm3dBeds.map((bed, idx) => {
+                const mm = bed.waterReq || 0;
+                const litres = Math.round(mm * (fieldAreaHa || 1) * 10000);
+                const seasonName = seasonMeta[bed.id]?.[lang] || bed.label;
+                const cropName = cropLabel(bed.crop, lang);
+                const isLegume = ['mungbean', 'chickpea', 'lentil', 'grasspea'].includes(String(bed.crop).toLowerCase());
+                return (
+                  <tr key={idx}>
+                    <td><strong>{seasonName}</strong></td>
+                    <td><span className="fpc-crop-badge">{cropName}</span></td>
+                    <td>{formatNumber(mm, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</td>
+                    <td>{formatNumber(litres, lang)} {lang === 'bn' ? 'লিটার' : 'litres'}</td>
+                    <td>{isLegume ? (lang === 'bn' ? '🌱 নাইট্রোজেন সংবন্ধন' : '🌱 Nitrogen Fixation') : (mm > 400 ? (lang === 'bn' ? '💧 AWD সাশ্রয়ী' : '💧 AWD Efficient') : (lang === 'bn' ? '🌿 কম পানি সহনশীল' : '🌿 Drought Resilient'))}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Top 3 Climate Risks with Actions */}
+        <div className="fpc-section">
+          <div className="fpc-section-title">
+            {lang === 'bn' ? 'প্রধান ৩টি জলবায়ু ঝুঁকি ও মাঠের করণীয়' : 'Top 3 Climate Risks & Field Actions'}
+          </div>
+          <div className="fpc-risk-grid">
+            {riskSuite.slice(0, 3).map((r, idx) => (
+              <div key={idx} className="fpc-risk-card">
+                <div className="fpc-risk-head">
+                  <strong>⚠️ {lang === 'bn' ? (r.labelBn || r.label) : (r.labelEn || r.label)}</strong>
+                  <span className="fpc-risk-pill">{lang === 'bn' ? (r.levelBn || r.level) : (r.levelEn || r.level)}</span>
+                </div>
+                <div className="fpc-risk-action">
+                  <strong>{lang === 'bn' ? 'করণীয়: ' : 'Action: '}</strong>
+                  {lang === 'bn' ? (r.whyBn || r.why) : (r.whyEn || r.why)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer: NASA Sources & Attribution */}
+        <div className="fpc-footer">
+          <div>
+            <strong>{lang === 'bn' ? 'উপাত্ত সূত্র:' : 'Data Sources:'}</strong>{' '}
+            NASA POWER · GPM IMERG · GRACE-FO · ISRIC SoilGrids · FAO-56 AWD Model
+          </div>
+          <div className="fpc-footer-team">
+            FieldShift AI · NASA Space Apps Challenge 2026
+          </div>
+        </div>
       </div>
 
     </div>

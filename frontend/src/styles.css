@@ -15269,10 +15269,6 @@ body,
   }
 }
 
-/* ==========================================================================
-   LB7: Bangla Mode Polish & Typography
-   ========================================================================== */
-
 html[data-lang="bn"],
 body[data-lang="bn"],
 :lang(bn),
@@ -18066,8 +18062,269 @@ body,
 }
 
 /* ==========================================================================
-   LB7: Bangla Mode Polish & Typography
+   LB8: Ink-Friendly One-Page A4 Print Card
    ========================================================================== */
+
+.farmer-print-card {
+  display: none;
+}
+
+@page {
+  size: A4 portrait;
+  margin: 20mm;
+}
+
+@media print {
+  /* Hide all normal UI chrome, navigation, headers, and 3D scenes */
+  body, html {
+    background: #ffffff !important;
+    color: #111827 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+  }
+  
+  .app-shell > *:not(.main-wrapper),
+  .sidebar,
+  .mobile-bottom-nav,
+  .global-top-bar,
+  .village-bg-layer,
+  .chat-widget-fab,
+  .chat-widget-panel,
+  .planner-header,
+  .planner-subnav,
+  .planner-filter-strip,
+  .farm-scene-container,
+  .decision-drawer-toggle,
+  .benefits-comparison-card,
+  .action-replan-nav,
+  .action-print-card-btn,
+  .help-guide-side-panel,
+  .mobile-nav-backdrop,
+  .toast,
+  .ui-toast,
+  .farm-planning-workspace > *:not(.six-season-recommendation-workspace),
+  .six-season-recommendation-workspace > *:not(.farmer-print-card) {
+    display: none !important;
+  }
+
+  .main-wrapper,
+  .app-content,
+  .farm-planning-workspace,
+  .six-season-recommendation-workspace {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  /* Show ONLY the compact one-page farmer card */
+  .farmer-print-card {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+    font-family: 'Hind Siliguri', 'Inter', sans-serif !important;
+    font-size: 10.5pt !important;
+    line-height: 1.4 !important;
+  }
+
+  .fpc-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 2px solid #111827 !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .fpc-logo {
+    height: 32px !important;
+    width: auto !important;
+    display: block !important;
+  }
+
+  .fpc-subbrand {
+    font-size: 9.5pt !important;
+    color: #4b5563 !important;
+    font-weight: 600 !important;
+    margin-top: 3px !important;
+  }
+
+  .fpc-meta {
+    text-align: right !important;
+    font-size: 9pt !important;
+    color: #374151 !important;
+  }
+
+  .fpc-section {
+    margin-bottom: 12px !important;
+  }
+
+  .fpc-section-title {
+    font-size: 10.5pt !important;
+    font-weight: 800 !important;
+    border-bottom: 1.5px solid #d1d5db !important;
+    padding-bottom: 4px !important;
+    margin-bottom: 8px !important;
+    color: #111827 !important;
+  }
+
+  .fpc-field-box {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+  }
+
+  .fpc-field-item {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .fpc-label {
+    font-size: 8.5pt !important;
+    color: #6b7280 !important;
+    font-weight: 600 !important;
+  }
+
+  .fpc-val {
+    font-size: 10.5pt !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+  }
+
+  .fpc-val-highlight {
+    color: #047857 !important;
+  }
+
+  .fpc-timeline-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .fpc-timeline-item {
+    border-radius: 6px !important;
+    padding: 6px 4px !important;
+    text-align: center !important;
+    border: 1px solid #d1d5db !important;
+  }
+
+  .fpc-tone-rabi {
+    background: #fef3c7 !important;
+    border-color: #f59e0b !important;
+  }
+
+  .fpc-tone-kharif1 {
+    background: #dcfce7 !important;
+    border-color: #10b981 !important;
+  }
+
+  .fpc-tone-kharif2 {
+    background: #e0f2fe !important;
+    border-color: #38bdf8 !important;
+  }
+
+  .fpc-tl-season {
+    font-size: 7.5pt !important;
+    font-weight: 700 !important;
+    color: #374151 !important;
+    text-transform: uppercase !important;
+  }
+
+  .fpc-tl-crop {
+    font-size: 9pt !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+    margin: 2px 0 !important;
+  }
+
+  .fpc-tl-irrig {
+    font-size: 7.5pt !important;
+    font-weight: 600 !important;
+    color: #4b5563 !important;
+  }
+
+  .fpc-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9.5pt !important;
+  }
+
+  .fpc-table th {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    padding: 6px 8px !important;
+    text-align: left !important;
+    font-weight: 700 !important;
+    color: #111827 !important;
+  }
+
+  .fpc-table td {
+    border: 1px solid #e5e7eb !important;
+    padding: 5px 8px !important;
+    color: #1f2937 !important;
+  }
+
+  .fpc-crop-badge {
+    font-weight: 700 !important;
+    color: #047857 !important;
+  }
+
+  .fpc-risk-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .fpc-risk-card {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    background: #ffffff !important;
+    font-size: 8.5pt !important;
+  }
+
+  .fpc-risk-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 4px !important;
+  }
+
+  .fpc-risk-pill {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    font-size: 7.5pt !important;
+  }
+
+  .fpc-risk-action {
+    color: #374151 !important;
+    line-height: 1.35 !important;
+  }
+
+  .fpc-footer {
+    border-top: 1px solid #d1d5db !important;
+    padding-top: 8px !important;
+    margin-top: 14px !important;
+    font-size: 8pt !important;
+    color: #6b7280 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
+}
+
 
 html[data-lang="bn"],
 body[data-lang="bn"],
