@@ -17841,8 +17841,11 @@ p.body-14 {
 .farmer-card,
 .wp-card,
 .stress-impact-card,
-.strategy-card {
-  padding: 20px !important;
+.strategy-card,
+.ui-card,
+.farm-planning-header-card,
+.my-farm-header-card {
+  padding: 24px !important;
   border-radius: 16px !important;
   box-sizing: border-box !important;
 }
@@ -17854,7 +17857,10 @@ p.body-14 {
   .farmer-card,
   .wp-card,
   .stress-impact-card,
-  .strategy-card {
+  .strategy-card,
+  .ui-card,
+  .farm-planning-header-card,
+  .my-farm-header-card {
     padding: 16px !important;
   }
 }

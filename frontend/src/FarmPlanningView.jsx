@@ -45,10 +45,10 @@ export function FarmPlanningView({
   ];
 
   return (
-    <div className="farm-planning-workspace" style={{ padding: 0, width: '100%', margin: '0 auto' }}>
+    <div className="farm-planning-workspace content-container" style={{ width: '100%', margin: '0 auto' }}>
       
       {/* Top Banner & Sub-Navigation */}
-      <Card variant="glass" style={{ marginBottom: 20 }}>
+      <Card variant="glass" className="farm-planning-header-card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -69,8 +69,8 @@ export function FarmPlanningView({
           </div>
         </div>
 
-        {/* Sub-Navigation Pills */}
-        <div style={{ marginTop: 18, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+        {/* Sub-Navigation Pills (16px between subtitle and tab bar) */}
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
           <Tabs
             tabs={subTabs}
             activeTab={subTab}

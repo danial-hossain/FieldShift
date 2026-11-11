@@ -904,7 +904,7 @@ export function MyFarmWorkspaceView({
   ];
 
   return (
-    <div className="my-farm-workspace" style={{ padding: 0, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+    <div className="my-farm-workspace content-container" style={{ width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
       
       {/* Top Header Card */}
       <Card variant="glass" style={{ marginBottom: 20 }}>
@@ -957,7 +957,7 @@ export function MyFarmWorkspaceView({
         </div>
 
         {/* 4 Tabs Bar */}
-        <div style={{ marginTop: 18, borderTop: '1px solid var(--line)', paddingTop: 14 }}>
+        <div style={{ marginTop: 16, borderTop: '1px solid var(--line)', paddingTop: 16 }}>
           <Tabs
             tabs={subTabs}
             activeTab={subTab}
