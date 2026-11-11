@@ -102,9 +102,9 @@ def test_api_water_season_plan_endpoint():
     assert data["status"] == "ok"
     assert data["field"]["name"] == "রহিম মিয়ার জমি"
     assert len(data["seasons"]) == 6
-    assert data["yearly_totals"]["current_yearly_mm"] == 1547.9
-    assert data["yearly_totals"]["plan_yearly_mm"] == 717.9
-    assert data["yearly_totals"]["saved_yearly_mm"] == 830.0
+    assert data["yearly_totals"]["current_yearly_mm"] == 1121.4
+    assert data["yearly_totals"]["plan_yearly_mm"] == 279.5
+    assert data["yearly_totals"]["saved_yearly_mm"] == 841.9
 
     # Current rotation strategy
     resp_cur = client.get("/api/water/season-plan?field_id=demo&strategy=current")

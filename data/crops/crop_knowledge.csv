@@ -1,5 +1,5 @@
 crop,family,is_legume,water_requirement,duration_days,min_temperature,max_temperature,min_ph,max_ph,expected_yield,production_cost,market_price,nutrient_effect,soil_impact,source,data_status,allowed_seasons
-Rice,Poaceae,false,1100,130,20,35,5.0,7.5,4.0,80000,30000,high_nitrogen_demand,high_water_use,demo,synthetic,kharif2
+Rice,Poaceae,false,450,130,20,35,5.0,7.5,4.0,80000,30000,high_nitrogen_demand,high_water_use,demo,synthetic,kharif2
 Boro Rice,Poaceae,false,1200,150,15,32,5.0,7.5,5.5,95000,30000,high_nitrogen_demand,high_water_use,demo,synthetic,rabi
 Aus Rice,Poaceae,false,600,100,20,36,5.0,7.5,3.5,60000,30000,moderate_nitrogen_demand,moderate_water_use,demo,synthetic,kharif1
 Wheat,Poaceae,false,450,115,10,25,5.5,7.5,2.8,55000,32000,moderate_nitrogen_demand,moderate_residue,demo,synthetic,rabi

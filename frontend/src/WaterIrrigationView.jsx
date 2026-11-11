@@ -252,21 +252,21 @@ export function WaterIrrigationView({
     };
   }, [selectedSeasonIdx]);
 
-  // Soil texture translation
-  const soilTextureMapBn = {
-    'clay loam': 'এঁটেল দোআঁশ',
-    'clay_loam': 'এঁটেল দোআঁশ',
-    'loam': 'দোআঁশ',
-    'sandy loam': 'বেলে দোআঁশ',
-    'sandy_loam': 'বেলে দোআঁশ',
-    'silty loam': 'পলি দোআঁশ',
-    'silty_loam': 'পলি দোআঁশ',
-    'clay': 'এঁটেল মাটি',
-    'sand': 'বেলে মাটি',
+  // Soil texture translation & formatting ("Clay loam" not "clay_loam")
+  const formatSoilTexture = (tex, langCode) => {
+    if (!tex) return langCode === 'bn' ? 'এঁটেল দোআঁশ' : 'Clay loam';
+    const s = String(tex).trim().toLowerCase().replace(/_/g, ' ');
+    if (langCode === 'bn') {
+      if (s.includes('clay loam')) return 'এঁটেল দোআঁশ';
+      if (s.includes('silty loam') || s.includes('silt loam')) return 'পলি দোআঁশ';
+      if (s.includes('sandy loam')) return 'বেলে দোআঁশ';
+      if (s === 'clay') return 'এঁটেল মাটি';
+      if (s === 'loam') return 'দোআঁশ';
+      return s;
+    }
+    return s.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
-  const soilLabel = lang === 'bn'
-    ? (soilTextureMapBn[String(fieldInfo.soil_texture).toLowerCase()] || fieldInfo.soil_texture)
-    : fieldInfo.soil_texture;
+  const soilLabel = formatSoilTexture(fieldInfo.soil_texture, lang);
 
   const districtLabel = lang === 'bn'
     ? (fieldInfo.district === 'chapainawabganj' ? 'চাঁপাইনবাবগঞ্জ' : fieldInfo.district === 'sunamganj' ? 'সুনামগঞ্জ' : fieldInfo.district)
@@ -275,23 +275,23 @@ export function WaterIrrigationView({
   const bighaStr = formatNumberBnEn(fieldInfo.area_bigha, 1, lang);
   const m2Str = formatNumberBnEn(fieldInfo.area_m2, 0, lang);
 
-  // Strategy profiles
+  // Strategy profiles matching Planner names (Current, Balanced, Profit, Water saving, Soil health)
   const STRATEGIES = [
-    { id: 'current', labelBn: 'আপনার এখনকার চাষ', labelEn: 'Your Current Practice' },
-    { id: 'balanced', labelBn: 'সুষম পরিকল্পনা', labelEn: 'Balanced Plan' },
-    { id: 'profit', labelBn: 'সর্বোচ্চ লাভ', labelEn: 'Maximum Profit' },
-    { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water Saving' },
-    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health' },
+    { id: 'current', labelBn: 'বর্তমান চাষ', labelEn: 'Current' },
+    { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced' },
+    { id: 'profit', labelBn: 'লাভ', labelEn: 'Profit' },
+    { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water saving' },
+    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil health' },
   ];
 
   const currentStratObj = STRATEGIES.find(s => s.id === selectedStrategy) || STRATEGIES[1];
   const selectedStrategyLabel = lang === 'bn' ? currentStratObj.labelBn : currentStratObj.labelEn;
 
-  // Climatology note
+  // Climatology note (using ONE consistent IMERG cell rain number)
   const yrLabel = isDry
     ? (lang === 'bn' ? (climatology.dry_year_label_bn || '২০০৯–১০ (শুকনো বছর)') : (climatology.dry_year_label_en || '2009–10 (Dry Year)'))
     : (lang === 'bn' ? (climatology.normal_year_label_bn || '২০১৫–১৬ (স্বাভাবিক)') : (climatology.normal_year_label_en || '2015–16 (Normal Year)'));
-  const yrRain = isDry ? (climatology.dry_annual_rainfall_mm || 1166) : (climatology.normal_annual_rainfall_mm || 1372);
+  const yrRain = isDry ? (climatology.dry_annual_rainfall_mm || 1203) : (climatology.normal_annual_rainfall_mm || 1442);
   const yrNote = `${yrLabel} · ${lang === 'bn' ? 'বছরে বৃষ্টি' : 'Annual rain'} ${formatNumberBnEn(yrRain, 0, lang)} ${lang === 'bn' ? 'মিমি' : 'mm'}`;
 
   // Hydrological soil water calculations (FAO-56 standards)
@@ -781,9 +781,16 @@ export function WaterIrrigationView({
                     {lang === 'bn' ? 'জমি খালি — সেচ নেই' : 'Fallow — No irrigation'}
                   </span>
                 ) : irrigMm < 5 ? (
-                  <span className="wp-big wp-none">
-                    {lang === 'bn' ? 'সেচ লাগবে না (বৃষ্টিতে চলবে)' : 'Rainfed — No irrigation needed'}
-                  </span>
+                  <>
+                    <span className="wp-big wp-none">
+                      {lang === 'bn' ? 'সেচ লাগবে না (বৃষ্টিতে চলবে)' : 'Rainfed — No irrigation needed'}
+                    </span>
+                    <span className="wp-l" style={{ fontSize: 11.5, color: 'var(--green-wp, #3ecf8e)', marginTop: 2 }}>
+                      {lang === 'bn'
+                        ? `মাটির সঞ্চিত রস ও প্রাক-বর্ষার বৃষ্টিতে (মোট ${formatNumberBnEn(s.rainfall_mm, 0, lang)} মিমি) চাহিদা পূরণ`
+                        : `Met by stored soil moisture & pre-monsoon rain (${formatNumberBnEn(s.rainfall_mm, 0, lang)} mm tot)`}
+                    </span>
+                  </>
                 ) : (
                   <>
                     <span className="wp-big">
@@ -799,6 +806,9 @@ export function WaterIrrigationView({
                 {!s.is_fallow && irrigMm >= 5 && (
                   <span className="wp-l">
                     {formatNumberBnEn(s.irrigation_events_count, 0, lang)} {lang === 'bn' ? `বার সেচ, প্রায় ${formatNumberBnEn(s.recommended_interval_days, 0, lang)} দিন পরপর` : `irrigations, every ~${formatNumberBnEn(s.recommended_interval_days, 0, lang)} days`}
+                    {pumpCapacity && Number(pumpCapacity) > 0 && s.irrigation_events_count > 0 && (
+                      <> · {lang === 'bn' ? `পাম্প চালান ~${formatNumberBnEn(Math.round(((litresVal / s.irrigation_events_count) / Number(pumpCapacity)) * 10) / 10, 1, lang)} ঘণ্টা` : `Run the pump ~${formatNumberBnEn(Math.round(((litresVal / s.irrigation_events_count) / Number(pumpCapacity)) * 10) / 10, 1, lang)} hours`}</>
+                    )}
                   </span>
                 )}
 
@@ -1069,13 +1079,13 @@ export function WaterIrrigationView({
             <b>{lang === 'bn' ? 'কেন পানি বাঁচানো দরকার:' : 'Why save water:'}</b>{' '}
             {lang === 'bn' ? (
               graceData.isBarind ? (
-                <>বরেন্দ্রে মাটির নিচের পানি কমছে <b style={{ color: 'var(--red-wp)' }}>−১.০৭ সেমি/বছর</b> (NASA GRACE-FO, ২০০২–২০২৬)</>
+                <>বরেন্দ্রে ভূগর্ভস্থ পানি সঞ্চয় কমছে <b style={{ color: 'var(--red-wp)' }}>−১.০৭ সেমি/বছর</b> (NASA GRACE-FO)</>
               ) : (
                 <>{graceData.descBn}</>
               )
             ) : (
               graceData.isBarind ? (
-                <>Groundwater in Barind is depleting at <b style={{ color: 'var(--red-wp)' }}>−1.07 cm/year</b> (NASA GRACE-FO, 2002–2026)</>
+                <>Barind water storage falling <b style={{ color: 'var(--red-wp)' }}>−1.07 cm/yr</b> (NASA GRACE-FO)</>
               ) : (
                 <>{graceData.descEn}</>
               )

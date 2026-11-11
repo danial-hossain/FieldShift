@@ -679,8 +679,8 @@ def resolve_water_field(
             "name": "রহিম মিয়ার জমি",
             "name_en": "Rahim Mia's Plot",
             "district": "chapainawabganj",
-            "latitude": 24.59,
-            "longitude": 88.27,
+            "latitude": 24.62,
+            "longitude": 88.55,
             "area_ha": 0.6689,
             "area_bigha": 5.0,
             "area_m2": 6689,
@@ -983,26 +983,26 @@ def compute_season_water_plan(
             et0_val = fao56_penman_monteith_et0(t_m, t_min, t_max, rh, u2, rs, lat, doy)
             kc = kc_series[k]
             etc = round(et0_val * 0.3 if is_fallow else et0_val * kc, 2)
-            p_eff = max(0.0, round(rain_norm * 0.80 - 4.0, 2)) if rain_norm > 5.0 else 0.0
-            p_eff_dry = max(0.0, round(rain_dry * 0.80 - 4.0, 2)) if rain_dry > 5.0 else 0.0
-
-            tot_et0 += et0_val
-            tot_etc += etc
-            tot_rain += rain_norm
-            tot_eff_rain += p_eff
 
             f = k / dur
 
             # Normal year balance
             irr_app = 0.0
             if is_fallow:
+                p_eff = min(rain_norm, Dr + etc)
                 Dr = max(0.0, Dr - rain_norm + etc)
                 moist = max(0.05, min(1.0, 1.0 - Dr / (taw_unit * 0.6)))
                 L_val = 0.0
                 wt_cm = 0
             elif is_rice:
-                perc = 3.0 if L > 0 else 0.8
-                L = min(150.0, L + rain_norm - etc - perc)
+                # FAO-56 Paper 24/56 Table 30 & BRRI AWD guidelines for puddled clay loam:
+                # Saturated percolation rate through plow pan: 1.5 mm/day ponded, 0.5 mm/day unsaturated
+                # Bund height retention capacity: 75.0 mm (monsoon bund spillway)
+                perc = 1.5 if L > 0 else 0.5
+                net_storage = L + rain_norm - etc - perc
+                runoff = max(0.0, net_storage - 75.0)
+                p_eff = rain_norm - runoff
+                L = min(75.0, net_storage)
                 wt_cm = 0 if L >= 0 else min(150, int(round(-L / 0.15 / 10.0)))
                 critical = (k < 15) or (0.58 <= f <= 0.70)
                 if (critical and L < 0) or (L <= -22.5):
@@ -1011,7 +1011,7 @@ def compute_season_water_plan(
                     sim_events.append(k)
 
                 # Continuous flooding
-                Lf = min(150.0, Lf + rain_norm - etc - 3.0)
+                Lf = min(150.0, Lf + rain_norm - etc - 1.5)
                 if Lf < 20.0:
                     flood_sim += (50.0 - Lf)
                     Lf = 50.0
@@ -1022,7 +1022,9 @@ def compute_season_water_plan(
                 zr = zr_series[k]
                 taw = taw_unit * zr
                 raw = 0.55 * taw
-                Dr = max(0.0, Dr - p_eff + etc)
+                # FAO-56 Eq. 8-1: rain stored in root zone to satisfy depletion
+                p_eff = min(rain_norm, Dr + etc)
+                Dr = max(0.0, Dr - rain_norm + etc)
                 moist = max(0.05, min(1.0, 1.0 - Dr / taw))
                 if Dr >= raw and raw > 5.0:
                     irr_app = round(Dr, 1)
@@ -1030,6 +1032,11 @@ def compute_season_water_plan(
                     sim_events.append(k)
                 L_val = 0.0
                 wt_cm = 0
+
+            tot_et0 += et0_val
+            tot_etc += etc
+            tot_rain += rain_norm
+            tot_eff_rain += p_eff
 
             daily_records.append({
                 "day": k + 1,
@@ -1052,8 +1059,11 @@ def compute_season_water_plan(
             # Dry year balance
             irr_dry_app = 0.0
             if is_rice:
-                perc_d = 3.0 if L_dry > 0 else 0.8
-                L_dry = min(150.0, L_dry + rain_dry - etc - perc_d)
+                perc_d = 1.5 if L_dry > 0 else 0.5
+                net_storage_d = L_dry + rain_dry - etc - perc_d
+                runoff_d = max(0.0, net_storage_d - 75.0)
+                p_eff_dry = rain_dry - runoff_d
+                L_dry = min(75.0, net_storage_d)
                 wt_cm_d = 0 if L_dry >= 0 else min(150, int(round(-L_dry / 0.15 / 10.0)))
                 critical_d = (k < 15) or (0.58 <= f <= 0.70)
                 if (critical_d and L_dry < 0) or (L_dry <= -22.5):
@@ -1066,7 +1076,8 @@ def compute_season_water_plan(
                 zr_d = zr_series[k]
                 taw_d = taw_unit * zr_d
                 raw_d = 0.55 * taw_d
-                Dr_dry = max(0.0, Dr_dry - p_eff_dry + etc)
+                p_eff_dry = min(rain_dry, Dr_dry + etc)
+                Dr_dry = max(0.0, Dr_dry - rain_dry + etc)
                 moist_d = max(0.05, min(1.0, 1.0 - Dr_dry / taw_d))
                 if Dr_dry >= raw_d and raw_d > 5.0:
                     irr_dry_app = round(Dr_dry, 1)
@@ -1075,6 +1086,7 @@ def compute_season_water_plan(
                 L_dry_val = 0.0
                 wt_cm_d = 0
             else:
+                p_eff_dry = min(rain_dry, Dr_dry + etc)
                 Dr_dry = max(0.0, Dr_dry - rain_dry + etc)
                 moist_d = max(0.05, min(1.0, 1.0 - Dr_dry / (taw_unit * 0.6)))
                 L_dry_val = 0.0
