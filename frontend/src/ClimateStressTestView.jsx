@@ -418,6 +418,7 @@ export function ClimateStressTestView({
           return (
             <div
               key={sc.id}
+              {...(sc.id === 'drought' ? { 'data-demo': 'drought_slider' } : {})}
               onClick={() => setActiveScenarioId(sc.id)}
               style={{
                 background: isActive ? 'var(--surface-2, rgba(255, 255, 255, 0.08))' : 'var(--glass-bg, rgba(255, 255, 255, 0.02))',
@@ -483,7 +484,7 @@ export function ClimateStressTestView({
           </div>
 
           {/* Hit Seasons Toggles */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div data-demo="delay_slider" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               {lang === 'bn' ? 'আঘাতপ্রাপ্ত মৌসুম:' : 'Seasons Hit:'}
             </span>
@@ -745,7 +746,7 @@ export function ClimateStressTestView({
       })() : null}
 
       {/* 6. Impact Table by Season */}
-      <Card variant="glass" style={{ marginBottom: 24, padding: '18px 20px' }}>
+      <Card variant="glass" data-demo="robustness_score" style={{ marginBottom: 24, padding: '18px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
           <div>
             <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>

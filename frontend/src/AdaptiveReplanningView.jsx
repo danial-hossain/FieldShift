@@ -171,6 +171,14 @@ export function AdaptiveReplanningView({
 
   // Execute Replan Call
   const handleRunReplan = useCallback(async () => {
+    // Guard against running replan before plan crops are populated
+    for (let i = 0; i < finishedCount; i++) {
+      const c = (seasonRows[i]?.crop || plannerCrops?.[i] || '').trim();
+      if (!c) {
+        return;
+      }
+    }
+
     setLoading(true);
     setErrorMsg(null);
     setAppliedNotice(null);
@@ -179,10 +187,11 @@ export function AdaptiveReplanningView({
     for (let i = 0; i < finishedCount; i++) {
       const row = seasonRows[i];
       const seasonConfig = SEASONS_CONFIG[i];
+      const cropName = (row.crop || plannerCrops?.[i] || '').trim();
 
       const item = {
         period: seasonConfig.id,
-        crop: row.crop,
+        crop: cropName,
         outcome: row.outcome || 'normal',
       };
 
@@ -206,7 +215,7 @@ export function AdaptiveReplanningView({
 
     const payload = {
       field_id: activeField?.id || 'demo',
-      district: activeField?.district || 'chapai_nawabganj',
+      district: (activeField?.district || 'chapainawabganj').replace(/_/g, ''),
       latitude: activeField?.latitude || 24.62,
       longitude: activeField?.longitude || 88.55,
       area_ha: activeField?.area_ha || 0.67,
@@ -229,45 +238,6 @@ export function AdaptiveReplanningView({
         setReplanData(resp);
         setIsDirty(false);
 
-        // Fetch RL second opinion if season index > 0
-        try {
-          const realSoil = activeField?.soil_health_score != null ? Number(activeField.soil_health_score) : undefined;
-          const rlPayload = {
-            field_id: activeField?.id || 'demo',
-            season_index: finishedCount,
-            strategy_id: strategy,
-            field_area_ha: activeField?.area_ha || 0.67,
-            state: {
-              temperature_c: 26.5,
-              available_water_mm: (irrigationClass === 'rainfed' || irrigationClass === 'none') ? 0 : irrigationClass === 'limited' ? 400 : 1200,
-              ...(realSoil != null ? { soil_health_score: realSoil } : {}),
-            },
-            initial_state: {
-              temperature_c: 26.5,
-              available_water_mm: 1200,
-              ...(realSoil != null ? { soil_health_score: realSoil } : {}),
-            },
-            completed_seasons: completedPayload.map((c, idx) => ({
-              season_id: idx,
-              applied_action: c.crop,
-              outcome: c.outcome,
-            })),
-            milp_reference_rotation: resp.new_plan?.sequence || plannerCrops,
-          };
-          const rlResp = await request('/api/rl/decision', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(rlPayload),
-          });
-          if (rlResp?.decision) {
-            setRlDecision(rlResp.decision);
-          } else {
-            setRlDecision(null);
-          }
-        } catch {
-          setRlDecision(null);
-        }
-
         // Scroll to 3D view
         if (stageBoxRef.current) {
           stageBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -282,11 +252,14 @@ export function AdaptiveReplanningView({
     }
   }, [finishedCount, seasonRows, strategy, irrigationClass, activeField, request, plannerCrops, lang]);
 
-  // Initial calculation on mount
+  // Initial calculation once planner crops are ready
+  const initialRanRef = useRef(false);
   useEffect(() => {
-    handleRunReplan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!initialRanRef.current && plannerCrops && plannerCrops.length > 0 && plannerCrops[0]) {
+      initialRanRef.current = true;
+      handleRunReplan();
+    }
+  }, [plannerCrops, handleRunReplan]);
 
   // Update a season row field
   const updateSeasonRow = (idx, field, val) => {
@@ -548,6 +521,7 @@ export function AdaptiveReplanningView({
 
         {/* 6 crops baseline sequence strip */}
         <div
+          data-demo="changed_seasons"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
@@ -593,6 +567,7 @@ export function AdaptiveReplanningView({
 
       {/* Main Interaction Card: Finished Seasons & Feedback */}
       <section
+        data-demo="harvest_card"
         style={{
           background: 'var(--surface, #ffffff)',
           border: '1px solid var(--line, #dfe6dc)',
@@ -975,6 +950,7 @@ export function AdaptiveReplanningView({
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
           <button
             type="button"
+            data-demo="replan_trigger"
             onClick={handleRunReplan}
             disabled={loading}
             className="ui-btn ui-btn-primary ui-btn-md"

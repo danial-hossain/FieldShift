@@ -331,7 +331,7 @@ export function YourFarmingVsPlanView({
   // Render 4 key metrics row
   const renderNums = useCallback((metrics, baseMetrics) => {
     if (!metrics) return null;
-    const renderMetricCell = (label, val, unit, baseVal, isGoodFn) => {
+    const renderMetricCell = (label, val, unit, baseVal, isGoodFn, demoAttr) => {
       const delta = (baseVal != null && val != null) ? (val - baseVal) : null;
       const isDiff = delta != null && Math.abs(delta) > 0.1;
       const cls = !isDiff ? '' : (isGoodFn(delta) ? 'pos' : 'neg');
@@ -340,7 +340,7 @@ export function YourFarmingVsPlanView({
         ? (unit === 'টাকা' || unit === 'BDT' ? formatBdt(Math.abs(delta), lang) : formatNum(Math.abs(delta), lang))
         : '';
       return (
-        <div>
+        <div {...(demoAttr ? { 'data-demo': demoAttr } : {})}>
           <span>{label}</span>
           <strong>{formattedVal}</strong> <small>{unit}</small>
           {isDiff && (
@@ -359,7 +359,8 @@ export function YourFarmingVsPlanView({
           metrics.irrigationMm,
           lang === 'bn' ? 'মিমি' : 'mm',
           baseMetrics ? baseMetrics.irrigationMm : null,
-          (d) => d < 0
+          (d) => d < 0,
+          'water_saving_delta'
         )}
         {renderMetricCell(
           lang === 'bn' ? 'খালি দিন' : 'Bare soil',
@@ -380,7 +381,8 @@ export function YourFarmingVsPlanView({
           metrics.profitBdt,
           lang === 'bn' ? 'টাকা' : 'BDT',
           baseMetrics ? baseMetrics.profitBdt : null,
-          (d) => d > 0
+          (d) => d > 0,
+          'net_profit_delta'
         )}
       </div>
     );
@@ -576,7 +578,7 @@ export function YourFarmingVsPlanView({
       </div>
 
       {/* 3. Three Comparison Columns */}
-      <div className="cv-cols">
+      <div className="cv-cols" data-demo="strategy_cards">
         {/* Column 1: Current Farming */}
         {!baselineMetrics.hasSavedRotation ? (
           <div className="cv-col empty">

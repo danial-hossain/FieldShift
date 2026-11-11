@@ -1348,7 +1348,7 @@ export function SixSeasonRecommendationView({
       {/* 2. Toolbar: Strategy switch on left, actions on right */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: 6 }}>
         {/* Strategy Switch Segmented Buttons */}
-        <div className="seg" role="group" aria-label={lang === 'bn' ? 'কৌশল' : 'Strategy'} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        <div className="seg" data-demo="strategy_picker" role="group" aria-label={lang === 'bn' ? 'কৌশল' : 'Strategy'} style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {[
             { id: 'baseline', labelBn: 'বর্তমান', labelEn: 'Current', tipBn: 'বিদ্যমান আবর্তন (বেসলাইন)', tipEn: 'Existing baseline rotation' },
             { id: 'balanced', labelBn: 'সুষম', labelEn: 'Balanced', tipBn: 'সুষম: ৩৪% লাভ, ৩৩% পানি, ৩৩% মাটি', tipEn: 'Balanced: 34% profit, 33% water, 33% soil' },
@@ -1806,7 +1806,7 @@ export function SixSeasonRecommendationView({
       )}
 
       {/* 12-month continuous cropping calendar strip */}
-      <div style={{ marginTop: 2, fontSize: 11, color: 'var(--text-muted)' }}>
+      <div data-demo="six_season_sequence" style={{ marginTop: 2, fontSize: 11, color: 'var(--text-muted)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <strong>{lang === 'bn' ? '১২-মাসের ক্রপিং ক্যালেন্ডার স্ট্রিপ' : '12-Month Continuous Cropping Calendar Strip'}:</strong>
         </div>
@@ -1825,7 +1825,7 @@ export function SixSeasonRecommendationView({
       {/* 6. HERO: 3D Farm (65%) + Rich Bed Card (35%) */}
       <div className="main" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 12 }}>
         {/* 3D Farm Diorama + Timeline Bar (LA1) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div data-demo="farm_3d" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div className="stagebox three-canvas-container" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 560, height: 560 }}>
             <FarmScene3D
               beds={farm3dBeds}
@@ -2024,7 +2024,7 @@ export function SixSeasonRecommendationView({
     </div>
 
       {/* 7. Row of 3 Cards: Key Benefits | Risk Summary | Strategy Comparison Table */}
-      <div className="row3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+      <div className="row3" data-demo="financial_summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
         {/* Card 1: Key Benefits */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>

@@ -107,13 +107,15 @@ export function DataEvidenceView({
       </div>
 
       {/* EF1: Readable System Map (Space · NASA | Engine · Science · Decision | Farmer · App) */}
-      <SystemMap3D
-        lang={lang}
-        onNavigate={onNavigate}
-        activeField={activeField}
-        selectedId={selectedNodeId}
-        onSelectNode={handleSelectNode}
-      />
+      <div data-demo="satellite_methodology">
+        <SystemMap3D
+          lang={lang}
+          onNavigate={onNavigate}
+          activeField={activeField}
+          selectedId={selectedNodeId}
+          onSelectNode={handleSelectNode}
+        />
+      </div>
 
       {/* EF2 & EF3: Section "যে তথ্য ব্যবহার করি" (Single Compact Table with Live Values & Fact Corrections) */}
       <NasaDataCardsSection
@@ -124,14 +126,17 @@ export function DataEvidenceView({
       />
 
       {/* EF4: Section "সিদ্ধান্ত কীভাবে হয় (MILP)" (Compact 4-Step Strip & Weights) */}
-      <MilpDecisionSection
-        lang={lang}
-        onNavigate={onNavigate}
-      />
+      <div data-demo="math_formulation">
+        <MilpDecisionSection
+          lang={lang}
+          onNavigate={onNavigate}
+        />
+      </div>
 
       {/* EF4: Two Compact Cards Side-by-Side: "মাঠ থেকে শেখা" + "যাচাই ও সীমাবদ্ধতা" */}
       <div
         className="two"
+        data-demo="model_benchmarks"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',

@@ -28,6 +28,7 @@ export function Tabs({
             type="button"
             role="tab"
             aria-selected={isActive}
+            data-demo={item['data-demo'] || item.demoId || (id === 'comparison' ? 'compare_button' : undefined)}
             onClick={() => handleSelect && handleSelect(id)}
             className={`ui-tab-item ${isActive ? 'ui-tab-item-active' : ''}`}
           >

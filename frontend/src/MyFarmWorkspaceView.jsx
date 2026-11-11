@@ -948,6 +948,7 @@ export function MyFarmWorkspaceView({
               size="sm"
               onClick={onAddField}
               className="add-field-btn"
+              data-demo="add_field"
               style={{ display: 'flex', alignItems: 'center', gap: 6 }}
             >
               <span>+</span>
@@ -972,7 +973,7 @@ export function MyFarmWorkspaceView({
       {subTab === 'all_fields' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Map with ALL fields as markers */}
-          <Card variant="glass">
+          <Card variant="glass" data-demo="sat_map">
             <CardHeader
               title={lang === 'bn' ? 'স্যাটেলাইট মানচিত্রে আমার জমিগুলো' : 'Satellite Map with All Field Parcels'}
               subtitle={lang === 'bn' ? 'মানচিত্রের যেকোনো জমিতে ক্লিক করে সেটি সক্রিয় নির্বাচন করুন' : 'Click any parcel pin on the map to select as active field'}
@@ -1052,7 +1053,7 @@ export function MyFarmWorkspaceView({
               />
             </Card>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
+            <div data-demo="field_list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
               {filteredFields.map(f => {
                 const isSelected = activeField && String(f.id) === String(f.id === activeField.id ? activeField.id : f.id) && String(f.id) === String(activeField.id);
                 const comp = calculateCompleteness(f);
@@ -1140,7 +1141,7 @@ export function MyFarmWorkspaceView({
                             {' '}({lang === 'bn' ? `${toBn ? toBn((Number(f.area_ha) || 1.0).toFixed(2)) : (Number(f.area_ha) || 1.0).toFixed(2)} হেক্টর` : `${(Number(f.area_ha) || 1.0).toFixed(2)} ha`})
                           </span>
                         </div>
-                        <div style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
+                        <div data-demo="soil_card" style={{ background: 'var(--surface-2, rgba(255,255,255,0.03))', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--line)' }}>
                           <span style={{ color: 'var(--text-3)', display: 'block', fontSize: 10.5, fontWeight: 600 }}>{lang === 'bn' ? 'মাটির শ্রেণি:' : 'Soil Class:'}</span>
                           <strong style={{ color: 'var(--text)', fontSize: 13 }}>{formatSoilTextureLabel(f.soil_texture, lang)}</strong>
                         </div>

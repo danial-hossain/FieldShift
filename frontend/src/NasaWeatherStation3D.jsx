@@ -577,7 +577,7 @@ export function NasaWeatherStation3D({
             {/* Hero Grid: Verdict List + GRACE Aquifer Card */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
               {/* Left Column: Verdict rows */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div data-demo="monsoon_onset" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {verdicts.map((v, i) => {
                   const isConfirmed = v.p < 0.05;
                   const isHint = v.p >= 0.05 && v.p < 0.10;
@@ -758,6 +758,7 @@ export function NasaWeatherStation3D({
             {/* "তখন বনাম এখন" (1981-1990 vs 2015-2024) Card */}
             {thenVsNow && (
               <div
+                data-demo="risk_cards"
                 style={{
                   marginTop: 16,
                   padding: '14px 16px',
@@ -836,6 +837,7 @@ export function NasaWeatherStation3D({
 
             {/* 4 Interactive SVG Trend Charts */}
             <div
+              data-demo="nasa_power_chart"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',

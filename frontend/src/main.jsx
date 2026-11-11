@@ -34,6 +34,7 @@ import { Toast, Modal } from './ui/index.js';
 import { OnboardingModal } from './OnboardingModal.jsx';
 import { HelpModal } from './HelpModal.jsx';
 import { SplashScreen } from './ui/SplashScreen.jsx';
+import { DemoOverlay } from './demo/DemoOverlay.jsx';
 import {
   HomeIcon,
   FieldIcon,
@@ -5257,6 +5258,15 @@ export function App() {
         onClose={() => setHelpModalOpen(false)}
         onNavigate={handleNavigate}
         lang={lang}
+      />
+
+      {/* DM5: Interactive Demo Mode Overlay */}
+      <DemoOverlay
+        activeNav={activeNav}
+        plannerSubTab={farmPlanningSubTab}
+        lang={lang}
+        isOpen={demoModeActive}
+        onClose={() => setDemoModeActive(false)}
       />
     </div>
   );

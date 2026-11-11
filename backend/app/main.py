@@ -2155,6 +2155,9 @@ def workflow_replan(payload: Payload, fieldshift_session: str | None = Cookie(No
         except Exception as error:
             raise HTTPException(422, "Unable to resolve a district from the supplied coordinates.") from error
     elif district:
+        dist_raw = str(district).strip().lower().replace("_", "").replace(" ", "").replace("-", "")
+        if dist_raw in DISTRICT_REGISTRY:
+            district = dist_raw
         location_source = "farmer-provided district"
     if not district and str(requested_field_id or "").lower() in {"demo", "demo_field", "field_demo", "0"}:
         district = "bogura"

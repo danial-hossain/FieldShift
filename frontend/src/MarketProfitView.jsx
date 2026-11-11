@@ -513,6 +513,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         {/* Responsive Table */}
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <table
+            data-demo="wholesale_prices"
             className="market-table"
             style={{
               width: '100%',
@@ -707,6 +708,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       >
         {/* Left: Sensitivity Bar Chart */}
         <div
+          data-demo="price_forecast"
           className="market-card-section"
           style={{
             background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
@@ -1016,6 +1018,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           SECTION 6: "দামের উৎস" (REFERENCE CATALOGUE ACCORDION)
           ========================================================================= */}
       <section
+        data-demo="buyer_contacts"
         className="market-card-section"
         style={{
           background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',

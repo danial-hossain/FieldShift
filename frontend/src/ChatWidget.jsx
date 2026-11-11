@@ -244,6 +244,7 @@ export function ChatWidget({
         <button
           type="button"
           className="chat-widget-fab"
+          data-demo="ai_assistant"
           onClick={handleOpen}
           aria-label={lang === 'bn' ? 'FieldShift সহকারী' : 'Ask FieldShift'}
           title={lang === 'bn' ? 'FieldShift সহকারীকে প্রশ্ন করুন' : 'Ask FieldShift'}

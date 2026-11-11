@@ -90,7 +90,28 @@ function OverviewStoryInner({ data, lang = 'en', onNavigate }) {
       lang,
       onNavigate: (p) => nav.current?.(p),
     });
+
+    // Tag elements for Demo Mode annotations
+    const tagDemoElements = () => {
+      if (!ref.current) return;
+      const globe = ref.current.querySelector('.fsx-globe-layer') || ref.current.querySelector('.fsx-stage');
+      if (globe && !globe.getAttribute('data-demo')) globe.setAttribute('data-demo', 'earth_view');
+
+      const card = ref.current.querySelector('.fsx-card');
+      if (card && !card.getAttribute('data-demo')) card.setAttribute('data-demo', 'story_cards');
+
+      const navDots = ref.current.querySelector('.fsx-nav');
+      if (navDots && !navDots.getAttribute('data-demo')) navDots.setAttribute('data-demo', 'progress_dots');
+
+      const playBtn = ref.current.querySelector('.fsx-play');
+      if (playBtn && !playBtn.getAttribute('data-demo')) playBtn.setAttribute('data-demo', 'play_button');
+    };
+
+    tagDemoElements();
+    const tId = setTimeout(tagDemoElements, 300);
+
     return () => {
+      clearTimeout(tId);
       api.current?.destroy();
       api.current = null;
     };
