@@ -57,6 +57,7 @@ import {
 } from './sixSeasonEngine.js';
 import { SixSeasonTrajectory3D } from './research3d/SixSeasonTrajectory3D.jsx';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
+import { SeasonTimelineBar } from './three/SeasonTimelineBar.jsx';
 import { haToBigha } from './three/farmSceneHelpers.js';
 import { CropIllustration } from './ui/CropIllustration.jsx';
 import { BangladeshClimateMap } from './BangladeshClimateMap.jsx';
@@ -776,6 +777,14 @@ export function SixSeasonRecommendationView({
     return keys.map((k) => {
       const c = activeCrops[k] || 'Fallow';
       const waterReq = seasonIrrigMap[k] || 0;
+      const rec = (sixSeasonRecommendations || []).find((r) => r.key === k || r.id === k);
+      const cropEntry = activePlanData?.cropSeasonMatrix?.[k]?.[c] || {};
+      const yieldMaund = rec?.yieldMaundBigha != null
+        ? rec.yieldMaundBigha
+        : (cropEntry.dynamic_yield_t_ha != null ? Number((cropEntry.dynamic_yield_t_ha * 3.585).toFixed(1)) : 12.0);
+      const profitBdtVal = rec?.totalParcelProfitBdt != null
+        ? rec.totalParcelProfitBdt
+        : ((rec?.netProfitBdtHa || cropEntry.dynamic_gross_margin_bdt_ha || 28000) * (fieldAreaHa || 0.4));
       return {
         id: k,
         label: isBaseline
@@ -785,6 +794,8 @@ export function SixSeasonRecommendationView({
         season: seasonMeta[k]?.months,
         waterDepthMm: waterReq,
         irrigation_mm: waterReq,
+        yieldMaundBigha: yieldMaund,
+        profitBdt: Math.round(profitBdtVal),
         growthStage: 0.9,
         isGreyedOut: false,
         stress: {
@@ -793,7 +804,7 @@ export function SixSeasonRecommendationView({
         }
       };
     });
-  }, [activeCrops, seasonIrrigMap, seasonMeta, lang, activePlanData, selectedStrategy, periodKeys]);
+  }, [activeCrops, seasonIrrigMap, seasonMeta, lang, activePlanData, selectedStrategy, periodKeys, sixSeasonRecommendations, fieldAreaHa]);
 
   // Selected period details for side panel
   const activeSelectedPeriod = useMemo(() => {
@@ -1079,6 +1090,101 @@ export function SixSeasonRecommendationView({
     };
   }, [activeField, fieldAreaHa, lang, activeCrops, activePlanData, seasonIrrigMap, periodKeys, selectedStrategy, bestScoringStrategyId, baseIrrigVal, avgIrrig, savingsVal, baselineRotationBn, baselineRotationEn, waterAvailability, noPowerTiller, labourShortage, excludedCrops]);
 
+  // LA1: Season Timeline State & Playback (2 years in ~12s at 1x, or 6s at 2x)
+  const [timelineProgress, setTimelineProgress] = useState(0);
+  const [isTimelinePlaying, setIsTimelinePlaying] = useState(false);
+  const [isTimelineActive, setIsTimelineActive] = useState(false);
+  const [timelineSpeed, setTimelineSpeed] = useState(1);
+
+  // Auto-play timer loop with requestAnimationFrame
+  useEffect(() => {
+    if (!isTimelinePlaying) return;
+    const isReduced = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (isReduced) {
+      setIsTimelinePlaying(false);
+      return;
+    }
+
+    let animId;
+    let lastTime = performance.now();
+    const durationMs = (selectedStrategy === 'baseline' ? 6000 : 12000) / timelineSpeed;
+
+    const tick = (now) => {
+      const dt = now - lastTime;
+      lastTime = now;
+      setTimelineProgress((prev) => {
+        const next = prev + dt / durationMs;
+        if (next >= 1) {
+          setIsTimelinePlaying(false);
+          return 1;
+        }
+        return next;
+      });
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [isTimelinePlaying, timelineSpeed, selectedStrategy]);
+
+  // Scrubbing & seeking handler
+  const handleTimelineSeek = useCallback((newProgress) => {
+    setIsTimelineActive(true);
+    setTimelineProgress(newProgress);
+    const isBaseline = selectedStrategy === 'baseline';
+    const keys = isBaseline ? periodKeys.slice(0, 3) : periodKeys;
+    const spans = isBaseline ? [5, 3, 4] : [5, 3, 4, 5, 3, 4];
+    const totalM = isBaseline ? 12 : 24;
+    let cum = 0;
+    for (let i = 0; i < keys.length; i++) {
+      const startF = cum / totalM;
+      cum += spans[i];
+      const endF = cum / totalM;
+      if (newProgress >= startF && (newProgress < endF || i === keys.length - 1)) {
+        setSelectedPeriodKey(keys[i]);
+        break;
+      }
+    }
+  }, [selectedStrategy, periodKeys]);
+
+  // Cumulative water (litres) and profit (BDT) counters along the timeline
+  const { cumulativeWaterLitres, cumulativeProfitBdt } = useMemo(() => {
+    const isBaseline = selectedStrategy === 'baseline';
+    const beds = farm3dBeds;
+    const numBeds = isBaseline ? 3 : beds.length;
+    const spans = isBaseline ? [5, 3, 4] : [5, 3, 4, 5, 3, 4];
+    const totalM = isBaseline ? 12 : 24;
+    let cumWater = 0;
+    let cumProfit = 0;
+    let cumM = 0;
+
+    for (let i = 0; i < numBeds; i++) {
+      const startF = cumM / totalM;
+      cumM += spans[i];
+      const endF = cumM / totalM;
+      const bed = beds[i] || {};
+      const bedWaterL = (bed.irrigation_mm || 0) * (fieldAreaHa || 0.4) * 10000;
+      const bedProfit = bed.profitBdt || 25000;
+
+      if (timelineProgress >= endF) {
+        cumWater += bedWaterL;
+        cumProfit += bedProfit;
+      } else if (timelineProgress > startF) {
+        const frac = (timelineProgress - startF) / (endF - startF);
+        cumWater += bedWaterL * frac;
+        cumProfit += bedProfit * frac;
+      }
+    }
+    return { cumulativeWaterLitres: cumWater, cumulativeProfitBdt: cumProfit };
+  }, [farm3dBeds, timelineProgress, selectedStrategy, fieldAreaHa]);
+
+  const totalPlanWaterLitres = useMemo(() => {
+    return farm3dBeds.reduce((acc, b) => acc + (b.irrigation_mm || 0) * (fieldAreaHa || 0.4) * 10000, 0);
+  }, [farm3dBeds, fieldAreaHa]);
+
+  const waterFraction = totalPlanWaterLitres > 0
+    ? Math.min(1.0, cumulativeWaterLitres / totalPlanWaterLitres)
+    : timelineProgress;
 
   if (loading) {
     return (
@@ -1717,21 +1823,45 @@ export function SixSeasonRecommendationView({
 
       {/* 6. HERO: 3D Farm (65%) + Rich Bed Card (35%) */}
       <div className="main" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)', gap: 12 }}>
-        {/* 3D Farm Diorama */}
-        <div className="stagebox three-canvas-container" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 560, height: 560 }}>
-          <FarmScene3D
+        {/* 3D Farm Diorama + Timeline Bar (LA1) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="stagebox three-canvas-container" style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: '1px solid var(--line)', minHeight: 560, height: 560 }}>
+            <FarmScene3D
+              beds={farm3dBeds}
+              selectedStrategy={selectedStrategy}
+              selectedBedIndex={periodKeys.indexOf(activeSelectedPeriod)}
+              selectedBedId={activeSelectedPeriod}
+              onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
+              cameraPreset="iso"
+              fieldAreaHa={fieldAreaHa || null}
+              fieldName={activeField?.name || (lang === 'bn' ? 'জমি বাছাই করুন' : 'Select a field')}
+              theme={theme || 'dark'}
+              lang={lang}
+              height={560}
+              annualIrrigationMm={selectedStrategy === 'baseline' ? (baseIrrigVal ?? avgIrrig) : avgIrrig}
+              timelineProgress={timelineProgress}
+              isTimelineActive={isTimelineActive}
+              waterFraction={waterFraction}
+            />
+          </div>
+
+          <SeasonTimelineBar
+            progress={timelineProgress}
+            isPlaying={isTimelinePlaying}
+            speed={timelineSpeed}
+            onPlayPause={() => {
+              setIsTimelineActive(true);
+              setIsTimelinePlaying((p) => !p);
+            }}
+            onSpeedChange={(s) => setTimelineSpeed(s)}
+            onSeek={handleTimelineSeek}
+            onSelectSeason={(key) => setSelectedPeriodKey(key)}
+            activePeriodKey={activeSelectedPeriod}
             beds={farm3dBeds}
             selectedStrategy={selectedStrategy}
-            selectedBedIndex={periodKeys.indexOf(activeSelectedPeriod)}
-            selectedBedId={activeSelectedPeriod}
-            onBedClick={(idx, bed) => setSelectedPeriodKey(periodKeys[idx] || (bed && bed.id) || 'Y1_S1')}
-            cameraPreset="iso"
-            fieldAreaHa={fieldAreaHa || null}
-            fieldName={activeField?.name || (lang === 'bn' ? 'জমি বাছাই করুন' : 'Select a field')}
-            theme={theme || 'dark'}
             lang={lang}
-            height={560}
-            annualIrrigationMm={selectedStrategy === 'baseline' ? (baseIrrigVal ?? avgIrrig) : avgIrrig}
+            waterUsedLiters={cumulativeWaterLitres}
+            profitBdt={cumulativeProfitBdt}
           />
         </div>
 

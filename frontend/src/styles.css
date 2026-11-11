@@ -19144,3 +19144,20 @@ body table {
   }
 }
 
+/* LA1: Season Timeline Bar Glass & Transitions */
+.season-timeline-bar {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.timeline-playhead {
+  transition: left 0.05s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-playhead {
+    transition: none !important;
+  }
+}
+
+

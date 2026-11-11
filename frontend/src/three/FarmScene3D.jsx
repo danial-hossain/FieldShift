@@ -471,6 +471,9 @@ export function FarmScene3D({
   selectedStrategy = 'balanced',
   weather = null,
   bedLossPcts = null,
+  timelineProgress = null,
+  isTimelineActive = false,
+  waterFraction = null,
 }) {
   const containerRef = useRef(null);
   const labelsContainerRef = useRef(null);
@@ -484,6 +487,12 @@ export function FarmScene3D({
   weatherRef.current = weather;
   const bedLossPctsRef = useRef(bedLossPcts);
   bedLossPctsRef.current = bedLossPcts;
+  const timelineProgressRef = useRef(timelineProgress);
+  timelineProgressRef.current = timelineProgress;
+  const isTimelineActiveRef = useRef(isTimelineActive);
+  isTimelineActiveRef.current = isTimelineActive;
+  const waterFractionRef = useRef(waterFraction);
+  waterFractionRef.current = waterFraction;
   const [hasWebGL, setHasWebGL] = useState(true);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [currentPreset, setCurrentPreset] = useState(cameraPreset);
@@ -798,6 +807,52 @@ export function FarmScene3D({
     const pad = new THREE.CylinderGeometry(1.1, 1.1, 0.2, 20);
     pad.translate(-6, 0.1, -15);
     sceneryGeos.push(prep(pad, '#a9a39a'));
+
+    // 5b. Dynamic Irrigation Water Tank (follows cumulative plan irrigation)
+    const tankGroup = new THREE.Group();
+    tankGroup.position.set(-10.5, 0, -15);
+
+    const plinthGeo = new THREE.CylinderGeometry(1.4, 1.5, 0.6, 20);
+    const plinthMat = new THREE.MeshStandardMaterial({ color: 0x5a6578, roughness: 0.85 });
+    const plinthMesh = new THREE.Mesh(plinthGeo, plinthMat);
+    plinthMesh.position.y = 0.3;
+    plinthMesh.castShadow = true;
+    plinthMesh.receiveShadow = true;
+    tankGroup.add(plinthMesh);
+
+    const tankOuterGeo = new THREE.CylinderGeometry(1.2, 1.2, 2.8, 20, 1, true);
+    const tankOuterMat = new THREE.MeshStandardMaterial({
+      color: 0xa0b4c8,
+      transparent: true,
+      opacity: 0.32,
+      roughness: 0.15,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const tankOuterMesh = new THREE.Mesh(tankOuterGeo, tankOuterMat);
+    tankOuterMesh.position.y = 0.6 + 1.4;
+    tankGroup.add(tankOuterMesh);
+
+    const tankWaterGeo = new THREE.CylinderGeometry(1.15, 1.15, 2.6, 20);
+    const tankWaterMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.2,
+      metalness: 0.1,
+    });
+    const tankWaterMesh = new THREE.Mesh(tankWaterGeo, tankWaterMat);
+    tankWaterMesh.position.y = 0.6 + 1.3;
+    tankGroup.add(tankWaterMesh);
+
+    const tankLidGeo = new THREE.CylinderGeometry(1.25, 1.25, 0.1, 20);
+    const tankLidMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+    const tankLidMesh = new THREE.Mesh(tankLidGeo, tankLidMat);
+    tankLidMesh.position.y = 0.6 + 2.85;
+    tankGroup.add(tankLidMesh);
+
+    scene.add(tankGroup);
+    disposables.push(plinthGeo, plinthMat, tankOuterGeo, tankOuterMat, tankWaterGeo, tankWaterMat, tankLidGeo, tankLidMat);
 
     // Pond bank ring
     const bankGeo = new THREE.RingGeometry(9, 10.4, 48);
@@ -1334,6 +1389,22 @@ export function FarmScene3D({
             return;
           }
 
+          // Timeline harvest tag popup: "✓ {yield} maund/bigha"
+          if (isTimelineActiveRef.current && (b.timelineStage === 'harvested' || b.timelineStage === 'harvest')) {
+            const yieldVal = bedData.yieldMaundBigha != null
+              ? bedData.yieldMaundBigha
+              : (bedData.dynamicYieldTHa != null ? Number((bedData.dynamicYieldTHa * 3.585).toFixed(1)) : (i % 2 === 0 ? '5.2' : '15.4'));
+            const yieldDigits = currentLang === 'bn' ? toBanglaDigits(yieldVal) : yieldVal;
+            const yieldUnit = currentLang === 'bn' ? 'মন/বিঘা' : 'maund/bigha';
+            el.innerHTML = `<div style="display:flex;align-items:center;gap:4px;color:#C8F169;font-weight:800;font-size:11.5px;padding:3px 7px;text-shadow:0 0 8px rgba(200,241,105,0.7)">
+              <span>✓</span> <span>${yieldDigits} ${yieldUnit}</span>
+            </div>`;
+            el.style.background = 'rgba(15, 30, 18, 0.94)';
+            el.style.border = '1px solid #C8F169';
+            el.style.boxShadow = '0 0 12px rgba(200, 241, 105, 0.5)';
+            return;
+          }
+
           let cp = bedData.cropLabel || (bedData.crop ? cropLabel(bedData.crop, currentLang) : null) || (CROPS_META[b.cropKey] ? CROPS_META[b.cropKey][currentLang === 'bn' ? 'bn' : 'en'] : b.cropKey);
           if (i % 3 === 2 && (String(cp).toLowerCase().includes('rice') || String(cp).includes('ধান'))) {
             cp = currentLang === 'bn' ? 'আমন ধান' : 'Aman Rice';
@@ -1420,6 +1491,15 @@ export function FarmScene3D({
               ? (bedData.water_reported != null && bedData.water_reported > 0 ? ` · ${bedData.water_reported} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : '')
               : (irrigVal != null && irrigVal > 0 ? ` · ${irrigVal} ${currentLang === 'bn' ? 'মিমি' : 'mm'}` : (currentLang === 'bn' ? ' · বৃষ্টি-নির্ভর' : ' · Rainfed'));
             detailStr = isDone ? (yieldStr || waterStr) : waterStr;
+          }
+
+          if (isTimelineActiveRef.current && b.timelineStage) {
+            if (b.timelineStage === 'bare') detailStr = currentLang === 'bn' ? ' · পতিত জমি' : ' · Bare soil';
+            else if (b.timelineStage === 'sowing') detailStr = currentLang === 'bn' ? ' · বপন' : ' · Sowing';
+            else if (b.timelineStage === 'growing') detailStr = currentLang === 'bn' ? ' · বৃদ্ধি' : ' · Growing';
+            else if (b.timelineStage === 'flowering') detailStr = currentLang === 'bn' ? ' · ফুল ফোটা' : ' · Flowering';
+            else if (b.timelineStage === 'mature') detailStr = currentLang === 'bn' ? ' · পাকা ফসল' : ' · Mature';
+            else if (b.timelineStage === 'upcoming') detailStr = currentLang === 'bn' ? ' · প্রস্তুত জমি' : ' · Prepared';
           }
 
           el.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px">${prefix}<span class="crop-name-label">${cp}</span>${symbolsHtml ? `<span style="display:inline-flex;align-items:center;gap:3px;margin-left:2px">${symbolsHtml}</span>` : ''}<span>${detailStr}</span></span>`;
@@ -1738,10 +1818,104 @@ export function FarmScene3D({
       requestRender();
     }
 
+    const updateTimeline = (progress, isTimelineActive, waterFraction) => {
+      timelineProgressRef.current = progress;
+      isTimelineActiveRef.current = isTimelineActive;
+      waterFractionRef.current = waterFraction;
+
+      if (!isTimelineActive || progress == null) {
+        bedObjects.forEach((b) => {
+          b.timelineStage = null;
+          setGrowth(b, 1);
+        });
+        if (!weatherRef.current?.event) {
+          rainPoints.visible = false;
+        }
+        tankWaterMesh.scale.set(1, 0.45, 1);
+        tankWaterMesh.position.y = 0.6 + (2.6 * 0.45) / 2;
+        updateLabels();
+        renderer.shadowMap.needsUpdate = true;
+        requestRender();
+        return;
+      }
+
+      const p = Math.max(0, Math.min(1, progress));
+      const currentBeds = bedsRef.current || [];
+      const numBeds = currentBeds.length === 3 ? 3 : 6;
+      const activeSeasonIdx = Math.min(numBeds - 1, Math.floor(p * numBeds));
+      const seasonFrac = Math.max(0, Math.min(1, (p * numBeds) - activeSeasonIdx));
+
+      // Monsoon rain: May - Oct (months 6..10 in 12-month Rabi calendar)
+      const totalMonths = numBeds === 3 ? 12 : 24;
+      const currentMonthIdx = Math.floor(p * totalMonths) % 12;
+      const isMonsoon = currentMonthIdx >= 6 && currentMonthIdx <= 10;
+      if (!weatherRef.current?.event) {
+        rainPoints.visible = isMonsoon;
+      }
+
+      // Tank water level follows cumulative water
+      const tLevel = Math.max(0.08, Math.min(1.0, waterFraction != null ? waterFraction : p));
+      tankWaterMesh.scale.set(1, tLevel, 1);
+      tankWaterMesh.position.y = 0.6 + (2.6 * tLevel) / 2;
+
+      // Crop life cycle: bare soil -> sowing shoots -> growing -> flowering -> mature -> harvest
+      for (let i = 0; i < numBeds; i++) {
+        const b = bedObjects[i];
+        if (!b) continue;
+        const isFallow = b.cropKey === 'fallow';
+
+        if (i < activeSeasonIdx) {
+          // Harvested bed: crops cleared, harvest tag visible
+          setGrowth(b, 0.001);
+          b.timelineStage = 'harvested';
+        } else if (i === activeSeasonIdx) {
+          if (isFallow) {
+            setGrowth(b, 0.001);
+            b.timelineStage = 'fallow';
+          } else {
+            let growthVal = 0.001;
+            if (seasonFrac < 0.12) {
+              growthVal = 0.001;
+              b.timelineStage = 'bare';
+            } else if (seasonFrac < 0.35) {
+              const f = (seasonFrac - 0.12) / (0.35 - 0.12);
+              growthVal = 0.05 + f * 0.30;
+              b.timelineStage = 'sowing';
+            } else if (seasonFrac < 0.70) {
+              const f = (seasonFrac - 0.35) / (0.70 - 0.35);
+              growthVal = 0.35 + f * 0.45;
+              b.timelineStage = 'growing';
+            } else if (seasonFrac < 0.90) {
+              const f = (seasonFrac - 0.70) / (0.90 - 0.70);
+              growthVal = 0.80 + f * 0.18;
+              b.timelineStage = 'flowering';
+            } else if (seasonFrac < 0.96) {
+              growthVal = 1.0;
+              b.timelineStage = 'mature';
+            } else {
+              const f = (seasonFrac - 0.96) / (1.0 - 0.96);
+              growthVal = Math.max(0.001, 1.0 - f * 1.5);
+              b.timelineStage = 'harvest';
+            }
+            setGrowth(b, growthVal);
+          }
+        } else {
+          // Future bed
+          setGrowth(b, 0.001);
+          b.timelineStage = 'upcoming';
+        }
+      }
+
+      updateLabels();
+      renderer.shadowMap.needsUpdate = true;
+      requestRender();
+    };
+
     // Save references to update on prop changes
     container.__farm3d = {
       bedObjects,
       applyWeatherStress,
+      updateTimeline,
       plantBed: (idx, crop) => {
         plantBed(idx, crop);
         renderer.shadowMap.needsUpdate = true;
@@ -1885,6 +2059,15 @@ export function FarmScene3D({
       containerRef.current.__farm3d.requestRender();
     }
   }, [beds, activeIndex, isLowLod, selectedStrategy, lang, weather, bedLossPcts]);
+
+  // Dynamic update for Season Timeline Animation & Scrubber
+  useEffect(() => {
+    if (!containerRef.current || !containerRef.current.__farm3d) return;
+    const f3d = containerRef.current.__farm3d;
+    if (f3d.updateTimeline) {
+      f3d.updateTimeline(timelineProgress, isTimelineActive, waterFraction);
+    }
+  }, [timelineProgress, isTimelineActive, waterFraction]);
 
   // -------------------------------------------------------------
   // WebGL Fallback (Graceful 2D Bed Matrix)
