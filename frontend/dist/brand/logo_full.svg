@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 64" width="300" height="64">
+  <g>
+  <defs>
+    <linearGradient id="lf" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#2FB86A"/><stop offset="1" stop-color="#C8F169"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F2A1C"/><stop offset="1" stop-color="#07140D"/></linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M32 50 C18 44 16 28 26 18 C30 14 38 12 46 13 C48 22 47 32 42 40 C39 45 35 48 32 50Z" fill="url(#lf)"/>
+  <path d="M32 50 C33 38 37 27 44 16" stroke="#0B2016" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  <path d="M35.5 35 L28 31 M38.6 27 L32.5 23.5" stroke="#0B2016" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="32" cy="33" rx="25" ry="9" fill="none" stroke="#5BE3FF" stroke-width="2" transform="rotate(-24 32 33)" stroke-dasharray="58 8 40 200" opacity=".95"/>
+  <circle cx="53.5" cy="22.5" r="3.4" fill="#5BE3FF"/>
+  <circle cx="53.5" cy="22.5" r="6" fill="#5BE3FF" opacity=".25"/>
+</g>
+  <text x="76" y="40" font-family="'Space Grotesk','Inter',sans-serif" font-size="30" font-weight="700" fill="#EAF6E6" letter-spacing="-0.5">Field<tspan fill="#C8F169">Shift</tspan></text>
+  <text x="77" y="56" font-family="Inter,sans-serif" font-size="9.5" font-weight="600" fill="#8FA394" letter-spacing="2.2">SATELLITE DATA · FIELD DECISIONS</text>
+</svg>

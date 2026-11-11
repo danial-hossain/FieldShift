@@ -13,6 +13,7 @@ export function normalizeSeasonCode(seasonStr, lang = 'bn') {
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
+import { GoogleFieldMapThumbnail } from './GoogleFieldMapThumbnail.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation, toBengaliNumber, cropLabel, seasonLabel, formatMoney, formatUnit, unitLabel, formatNumber as formatI18nNumber } from './i18n.js';
 import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceChip, Skeleton } from './ui/index.js';
@@ -1071,7 +1072,8 @@ export function MyFarmWorkspaceView({
                       border: isSelected ? '1.5px solid #10b981' : '1px solid var(--line, rgba(255,255,255,0.12))',
                       background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface-card, rgba(16, 28, 22, 0.7))',
                       borderRadius: 14,
-                      padding: 18,
+                      padding: 0,
+                      overflow: 'hidden',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
@@ -1079,6 +1081,16 @@ export function MyFarmWorkspaceView({
                       transition: 'all 0.2s ease'
                     }}
                   >
+                    <GoogleFieldMapThumbnail
+                      latitude={f.latitude}
+                      longitude={f.longitude}
+                      name={f.name}
+                      boundary={f.boundary}
+                      area_ha={f.area_ha}
+                      height="130px"
+                      onClick={() => onSelectField && onSelectField(f)}
+                    />
+                    <div style={{ padding: 18, display: 'flex', flexDirection: 'column', flex: 1, justifyContent: 'space-between' }}>
                     <div>
                       {/* Top Row: Name, ID, District & Completeness Badge */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
@@ -1178,6 +1190,7 @@ export function MyFarmWorkspaceView({
                           🗑️ {lang === 'bn' ? 'মুছুন' : 'Delete'}
                         </Button>
                       </div>
+                    </div>
                     </div>
                   </Card>
                 );

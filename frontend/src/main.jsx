@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import 'leaflet/dist/leaflet.css';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { GoogleFieldMapThumbnail } from './GoogleFieldMapThumbnail.jsx';
 import { AdaptiveRlExperiment } from './AdaptiveRlExperiment.jsx';
@@ -4256,6 +4257,18 @@ export function App() {
                           lang={lang}
                           latitude={fieldForm.latitude}
                           longitude={fieldForm.longitude}
+                          boundary={fieldForm.boundary}
+                          onBoundaryChange={(boundaryCoords, areaHa) => {
+                            const bigha = (areaHa / 0.13378).toFixed(2);
+                            setFieldForm(prev => ({
+                              ...prev,
+                              boundary: boundaryCoords,
+                              area_ha: String(areaHa),
+                              area_input: bigha,
+                              latitude: boundaryCoords[0] ? String(boundaryCoords[0][0]) : prev.latitude,
+                              longitude: boundaryCoords[0] ? String(boundaryCoords[0][1]) : prev.longitude,
+                            }));
+                          }}
                           onChange={(lat, lng) => {
                             setFieldForm(prev => ({
                               ...prev,
