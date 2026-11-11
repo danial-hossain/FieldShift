@@ -4,7 +4,7 @@
 **Project Title:** FieldShift 2026: Climate-Adaptive Crop Rotation & Planting Intelligence  
 **Challenge:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
 **Team Name:** Team Azoic, Dhaka  
-**Team Members:** Daniel Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+**Team Members:** Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
 **Repository:** [GitHub Link: https://github.com/danial-hossain/FieldShift2026]  
 **License:** Apache License 2.0 (Open Source)  
 **Long Video (240s):** [240s video link]  
@@ -16,9 +16,9 @@
 
 Smallholder farmers across Bangladesh are trapped in a fragile Boro–Fallow–Aman monoculture, depleting Barind tract groundwater by -1.48 cm/year and degrading soils during bare fallow months. **FieldShift 2026** is a rotation-first decision-support tool that bridges 25 years of NASA Earth observations directly to smallholder farmers. 
 
-A farmer enters their field anywhere in Bangladesh and evaluates their existing rotation against three NASA-informed alternatives (Balanced, Water-Saving, Soil-Building) using exact mathematical optimization (PuLP MILP). Each strategy features a deterministic 5-item card detailing why it was chosen, scientific evidence from NASA GPM IMERG, POWER, SMAP, MODIS, GRACE, and SRTM, benefits versus baseline, data gaps, and risks. 
+A farmer enters their field anywhere in Bangladesh and evaluates their existing rotation against three NASA-informed alternatives (Balanced, Water-Saving, Soil-Building) using exact mathematical optimization (PuLP MILP). Each strategy features a deterministic 5-item card detailing why it was chosen, scientific evidence from NASA GPM IMERG, POWER, GRACE, and SoilGrids, benefits versus baseline, data gaps, and risks. 
 
-With plain-language popovers ("এর মানে কী?"), 100% offline functionality, and mandatory local SAAO verification notices, FieldShift empowers farmers to adapt crop rotations with scientific conservatism and zero fabricated numbers.
+With plain-language popovers ("এর মানে কী?") and mandatory local SAAO verification notices, FieldShift empowers farmers to adapt crop rotations with scientific conservatism.
 
 ---
 
@@ -46,14 +46,14 @@ FieldShift models an agronomic horizon of **6 distinct agricultural seasons acro
    - **Soil-Building Strategy:** Mandates biological nitrogen-fixing (BNF) legumes and continuous living soil canopy, cutting synthetic urea costs.
 3. **Deterministic 5-Item Strategy Assessment Card:**
    - *১. কেন এই প্রস্তাব? (Why Suggested):* Derived deterministically from objective components and binding farmer constraints.
-   - *২. উপাত্তভিত্তিক প্রমাণ (Scientific Evidence):* Calibrated with NASA POWER 25-year climatology, GPM IMERG rainfall, SMAP root moisture, and SoilGrids hydraulic properties.
+   - *২. উপাত্তভিত্তিক প্রমাণ (Scientific Evidence):* Calibrated with NASA POWER 25-year climatology, GPM IMERG rainfall, GRACE water trends, and SoilGrids hydraulic properties.
    - *৩. বিদ্যমান অভ্যাসের তুলনায় সুবিধা (Benefits vs Baseline):* Clear delta in water saved (mm), BNF nitrogen fixed (+70 kg N/ha), soil organic carbon gain, bare days reduced, and net gross margin.
    - *৪. তথ্যের ঘাটতি (Information Gaps):* Discloses satellite resolution limitations ($0.5^\circ$ vs micro-drainage) and lack of local laboratory soil tests.
    - *৫. ঝুঁকি ও মাঠপর্যায়ে স্থানীয় যাচাইকরণ (Risks Needing Local Review):* Advises seed germination checks and field drainage inspections.
 4. **Mandatory Extension Verification Notice:** Every strategy output concludes with:
    > *"এটি সিদ্ধান্তে সহায়তার জন্য; স্থানীয় কৃষি কর্মকর্তার (SAAO) সাথে যাচাই করুন।"*  
    > *(This is for decision support; please verify with your local Sub-Assistant Agriculture Officer).*
-5. **Plain-Language Explanations ("এর মানে কী?"):** Interactive popovers translate technical agronomic terms into intuitive farmer language: evapotranspiration ($ET_0$), SMAP soil moisture anomalies, MODIS NDVI canopy greenness, heat stress thresholds, FAO-56 water balance, satellite versus ground measurements, reanalysis versus direct observation, and uncertainty bounds (P10–P90).
+5. **Plain-Language Explanations ("এর মানে কী?"):** Interactive popovers translate technical agronomic terms into intuitive farmer language: evapotranspiration ($ET_0$), soil moisture anomalies, canopy greenness, heat stress thresholds, FAO-56 water balance, satellite versus ground measurements, reanalysis versus direct observation, and uncertainty bounds (P10–P90).
 6. **Scenario Perturbation & 64-District Choropleth:** Interactive climate sliders allow farmers and extension officers to simulate rainfall ($\pm 20\%$) and temperature ($+0..+2^\circ\text{C}$) perturbations, observing real-time strategy resilience across all 64 districts.
 
 ### How: Honest Science & Discrepancy Disclosure
@@ -67,10 +67,10 @@ FieldShift does not invent data or gloss over scientific contradictions:
 
 1. **NASA GPM IMERG Final Daily (`GPM_3IMERGDF` v07):** 0.1° × 0.1° resolution daily precipitation (2001–2024, 24 years) via GES DISC. Used for rainfall reliability, dry-spell risk, and monsoon onset cross-validation.
 2. **NASA POWER Daily Point API (v2.0):** 0.5° × 0.5° spatial grid (2001–2025, 25 years). Used for surface solar radiation, daily max/min temperatures, reference evapotranspiration ($ET_0$ via FAO-56 Penman-Monteith), and Growing Degree Days.
-3. **NASA SMAP L4 Global Root Zone Soil Moisture (`SPL4SMGP`):** 9 km spatial resolution (2015–2024). Used for 0–100 cm root-zone soil moisture anomalies indicating pre-monsoon and post-monsoon drought stress.
-4. **NASA Terra MODIS (`MOD13Q1.061`):** 250 m 16-day NDVI vegetation index (2001–2024). Used for vegetative canopy cycles and identifying bare-ground fallow periods (NDVI < 0.20).
+3. **NASA SMAP L4 Global Root Zone Soil Moisture (`SPL4SMGP`):** 9 km spatial resolution. Planned for 0–100 cm root-zone soil moisture anomalies indicating pre-monsoon and post-monsoon drought stress.
+4. **NASA Terra MODIS (`MOD13Q1.061`):** 250 m 16-day NDVI vegetation index. Planned for vegetative canopy cycles and identifying bare-ground fallow periods.
 5. **NASA GRACE / GRACE-FO Level-3 Mascon:** JPL RL06.3M (2002–2024, 267 months). Identifies long-term Barind tract aquifer decline (-1.48 cm/year) to dynamically weight water conservation.
-6. **NASA SRTM 30m (`SRTMGL1`):** 1 arc-second global digital elevation model. Ingested for field-specific slope percentage and drainage/flood exposure assessment.
+6. **NASA SRTM 30m (`SRTMGL1`):** 1 arc-second global digital elevation model. Partial elevation and slope assessment for drainage and flood exposure.
 
 ---
 
@@ -78,7 +78,7 @@ FieldShift does not invent data or gloss over scientific contradictions:
 
 - **Algorithmic Solvers:** PuLP CBC Branch-and-Bound Mixed Integer Linear Programming (MILP), Gymnasium Reinforcement Learning environment for sequential decision comparisons, SciPy for statistical rank-sum tests.
 - **Frontend & Visualization:** React 19, Vite, Three.js (procedural 3D clay farm diorama with natural grass tones `#5f8f3c..#7aa84d` and on-demand rendering), SVG choropleth mapping.
-- **Offline Infrastructure:** FastAPI, SQLite, full fixture caching for 100% offline standalone execution in remote rural areas.
+- **Infrastructure:** FastAPI, SQLite, with local caching for standalone execution.
 - **Community & Extension:** Designed in consultation with sub-district agrarian practices in Rajshahi and Bogura, aligning recommendations with Bangladesh Agricultural Research Institute (BARI) and Bangladesh Rice Research Institute (BRRI) certified cropping systems.
 
 ---

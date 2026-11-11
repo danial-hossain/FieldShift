@@ -18,7 +18,7 @@
 3. **Operations Research Engineer** — Mathematical Programming & Optimization (PuLP Mixed-Integer Linear Programming, Saxton-Rawls soil hydraulics, FAO-56 Penman-Monteith water scheduling)
 4. **Data Systems & Provenance Lead** — Geospatial Data Pipeline (ISRIC SoilGrids 250m integration, FAOSTAT national food balance sheets, SQLite persistence, offline caching)
 5. **UI/UX & 3D Visualization Engineer** — Frontend & Interactive Graphics (Three.js clay farm diorama, responsive design system, bilingual English/Bengali interface)
-6. **Field Validation & Impact Coordinator** — Farmer Advisory & Communication (Bangla SMS generation under 160 characters, regional field validation across Northwest, Floodplain, Coastal, and Haor zones)
+6. **Field Validation & Impact Coordinator** — Farmer Advisory & Communication (regional field validation across Northwest, Floodplain, Coastal, and Haor zones)
 
 ---
 
@@ -38,7 +38,7 @@ FieldShift 2026 empowers any farmer or agronomist in Bangladesh to specify any f
 2. **Realistic 6-Period Multi-Season Crop Rotation:** A 2-year × 3-season (Rabi, Kharif-1, Kharif-2) Mixed-Integer Linear Programming (PuLP MILP) schedule adhering strictly to biological nitrogen fixation (BNF) intervals, botanical family alternations, and seasonal agro-ecological suitability.
 3. **Scientific Water Budgeting (FAO-56):** Daily soil-water deficit balance utilizing the FAO-56 Penman-Monteith reference evapotranspiration ($ET_0$) equation, dynamic single-crop $K_c$ curves, and ISRIC SoilGrids 250m hydraulic properties (Saxton-Rawls), evaluating net irrigation requirements against conventional unmanaged flooding based on assumed field efficiency 45% vs 75% (FAO reference values).
 4. **National Need & Market Intelligence:** Crop selection grounded in official FAOSTAT Bangladesh food balance sheets (2022–2024), prioritizing national deficit crops (pulses, oilseeds, wheat) for import substitution while aligning farmgate prices with BBS/DAM benchmarks.
-5. **100% Offline Autonomy:** Fully operational in low-connectivity rural settings without active internet access via local SQLite persistence and bundled fixtures.
+5. **Local Standalone Architecture:** Operational without active internet access via local SQLite persistence and bundled fixtures.
 
 ---
 

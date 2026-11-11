@@ -59,7 +59,7 @@ This technical guide provides a complete, authoritative reference for every view
   - *কৌশল নির্বাচন (Strategy Cards):* Side-by-side selection of Existing Baseline, Balanced, Water-Saving, or Soil-Building strategies.
   - *অগ্রাধিকার স্লাইডার (Priority Sliders):* Adjusts weights between profit (40%), water conservation (30%), soil health (20%), and national need (10%).
   - *সম্পদ সীমাবদ্ধতা ইনপুট (Resource Constraints):* Toggles limited irrigation cap (350 mm), rainfed-only mode, no power tiller, or labor shortage.
-  - *"এর মানে কী?" পপওভার (Plain-Language Popovers):* Clickable tooltips explaining ET0, SMAP soil moisture, MODIS NDVI, heat stress, and uncertainty.
+  - *"এর মানে কী?" পপওভার (Plain-Language Popovers):* Clickable tooltips explaining ET0, soil moisture, canopy greenness, heat stress, and uncertainty.
 - **Data Feeds (তথ্য উৎস):** PuLP CBC MILP optimization solver (`/api/planning`), NASA POWER, SoilGrids hydraulics, FAOSTAT Bangladesh supply balance.
 - **Dynamic Behavior (গতিশীল আচরণ):** Recomputes crop selection, gross margin, water volume (mm), biological nitrogen fixed (kg/ha), and bare soil days. Dynamically highlights the best-suited strategy badge.
 - **Known Limitations (সীমাবদ্ধতা):** Economic figures are representative regional benchmarks; actual profit depends on local village haat volatility. Includes mandatory SAAO verification notice.
@@ -129,9 +129,9 @@ This technical guide provides a complete, authoritative reference for every view
 - **Interactive Controls (নিয়ন্ত্রণসমূহ):**
   - *ট্যাব নির্বাচক (Evidence Tabs):* Toggles between NASA Satellite Telemetry, IMERG Cross-Validation, and Agronomic Limitations.
   - *ডাউনলোড বোতাম (Export Provenance JSON):* Exports full reproducible data manifest.
-- **Data Feeds (তথ্য উৎস):** NASA GRACE JPL RL06.3M (-1.48 cm/yr Barind trend), NASA MODIS MOD13Q1 NDVI, NASA GPM IMERG v07 daily.
+- **Data Feeds (তথ্য উৎস):** NASA GRACE JPL RL06.3M (-1.48 cm/yr Barind trend), NASA GPM IMERG v07 daily, and planned NASA MODIS/SMAP pipelines.
 - **Dynamic Behavior (গতিশীল আচরণ):** Displays the exact POWER vs IMERG onset discrepancy table ($p=0.34$, shift=0 days) proving scientific conservatism.
-- **Known Limitations (সীমাবদ্ধতা):** Documents satellite revisit intervals (16-day MODIS, monthly GRACE) and spatial grid bounds.
+- **Known Limitations (সীমাবদ্ধতা):** Documents satellite revisit intervals and spatial grid bounds.
 
 ---
 

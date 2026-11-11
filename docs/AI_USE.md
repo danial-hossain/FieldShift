@@ -3,7 +3,7 @@
 
 **Project:** FieldShift 2026: Climate-Adaptive Crop Rotation & Planting Intelligence  
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
-**Team:** Team Azoic, Dhaka (Daniel Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy)  
+**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy)  
 **License:** Apache License 2.0  
 
 ---
@@ -38,17 +38,17 @@ FieldShift 2026 was conceptualized, architected, and scientifically governed by 
 | **Problem Definition** | Identified the Boro–Fallow–Aman monoculture bottleneck in Bangladesh's Barind Tract; decided to pivot from single-season forecast to multi-season rotation. | None. | Field agronomy literature, BBS statistics, and DAE extension records. |
 | **Scientific Conservatism** | Discovered and investigated the POWER vs. GPM IMERG pre-monsoon onset discrepancy; decided to reject premature planting shifts and enforce conservative satellite-confirmed baselines. | Automated the Benjamini-Hochberg FDR tests and generated IMERG validation tables (`docs/imerg_validation.md`). | Independent verification across 24 years of NASA GES DISC GPM_3IMERGDF daily records. |
 | **Mathematical MILP Solver** | Formulated the multi-objective objective function, biological nitrogen fixation (BNF) legume intervals, food security cereal minimums, and haor seasonal flood boundaries. | Implemented the PuLP CBC branch-and-bound optimization solver in Python (`backend/app/domain/optimization.py`). | 48/48 test matrix verification across all Bangladesh AEZ profiles (`tests/test_milp.py`). |
-| **NASA Earth Observation Suite** | Selected NASA GPM IMERG, POWER, SMAP, MODIS, GRACE, and SRTM; defined exact resolutions, spatial bounding boxes, and agronomic derivations. | Built automated data ingestion clients, HDF5/NetCDF parsers, and local SQLite/JSON caching engines. | Grounded in official NASA Earthdata, GES DISC, and Langley documentation. |
+| **NASA Earth Observation Suite** | Selected NASA GPM IMERG, POWER, GRACE, and SRTM (with planned SMAP and MODIS integration); defined exact resolutions, spatial bounding boxes, and agronomic derivations. | Built automated data ingestion clients, HDF5/NetCDF parsers, and local SQLite/JSON caching engines. | Grounded in official NASA Earthdata, GES DISC, and Langley documentation. |
 | **Farmer UI & 3D Digital Twin** | Designed the bilingual Bengali-first UX layout, 1680px container rules, 5-item assessment cards, and stylized procedural clay farm diorama. | Coded React 19 JSX components, responsive CSS variables, Three.js shaders, and procedural canvas textures (`farmTextures.js`). | 146 unit tests (`frontend/src/*.test.js`) and SSR smoke test across all 12 platform views. |
 | **Prompt Engineering & Prompts Repository** | Formulated system prompts, temperature settings, and grounding constraints. Prompts stored in [`docs/prompts/README.md`](file:///h:/FieldShift2026/docs/prompts/README.md). | Synthesized prompt test cases and edge-case inputs. | Manual test script with 4 distinct field profiles (`scripts/field_test.py`). |
 
 ---
 
-### 4. Zero Data Fabrication Guardrails
+### 4. Data Integrity Guardrails
 
 Throughout development, strict operational guardrails prohibited any generative AI tool from inventing data:
-1. **No Synthetic Telemetry:** Satellite data fields (temperature, rainfall, soil moisture, NDVI, GRACE anomalies) are strictly loaded from verified files downloaded from NASA servers or rendered as `"তথ্য নেই" / "No data"`.
-2. **No Hallucinated Optimality:** If an agronomic constraint cannot be satisfied, the PuLP MILP solver reports `Infeasible` or `Warning` rather than producing fabricated crop plans.
+1. **No Synthetic Telemetry:** Satellite data fields (temperature, rainfall, GRACE anomalies) are strictly loaded from verified files downloaded from NASA servers or rendered as `"তথ্য নেই" / "No data"`.
+2. **No Hallucinated Optimality:** If an agronomic constraint cannot be satisfied, the PuLP MILP solver reports `Infeasible` or `Warning` rather than producing invalid crop plans.
 3. **Mandatory SAAO Extension Guard:** Every AI-assisted strategy output terminates with the mandatory notice:  
    *"এটি সিদ্ধান্তে সহায়তার জন্য; স্থানীয় কৃষি কর্মকর্তার (SAAO) সাথে যাচাই করুন।"*
 

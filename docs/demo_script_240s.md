@@ -2,7 +2,7 @@
 ## NASA International Space Apps Challenge 2026 — Team Azoic (Dhaka, Bangladesh)
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data"  
 **Duration:** Exactly 240 Seconds (4 Minutes)  
-**Presenters:** Team Azoic — Daniel Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+**Presenters:** Team Azoic — Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
 **Tone:** Agronomically rigorous, statistically honest, farmer-centered, clear English voiceover with visual Bangla UI cues  
 **Structure:** Aligned with the 7 Guided Demo Steps (P3.1) and Two-Field Regional Comparison (P3.2)  
 
@@ -29,7 +29,7 @@ Presenter presses the Right Arrow key (or clicks **"পরবর্তী (Next)
 ### PART 2: Groundwater Depletion & Multi-Season Optimization (0:50 – 1:40 | 50s)
 
 **Visual (0:50 – 1:15):**  
-Presenter advances to **Step 3: Groundwater Stress (NASA GRACE-FO)**. The modal visualizes the JPL RL06.3M mascon trend showing $-1.07\text{ cm/year}$ depletion in Rajshahi's Barind tract, contrasted with SMAP root-zone soil moisture anomalies.
+Presenter advances to **Step 3: Groundwater Stress (NASA GRACE-FO)**. The modal visualizes the JPL RL06.3M mascon trend showing $-1.07\text{ cm/year}$ depletion in Rajshahi's Barind tract.
 - *Click path:* Press `->` -> Step 3.
 
 **Voiceover (0:50 – 1:15):**  
@@ -79,8 +79,8 @@ Presenter clicks sidebar item 5: **"পানি ও সেচ (Water)"**. The c
 *"On the Water page, our Soil-Water Column visualizes FAO-56 root-zone depletion in real-time, showing rainfall drops, evapotranspiration vapour, and alternate wetting and drying (AWD) thresholds to save 25% to 30% irrigation fuel."*
 
 **Visual (3:35 – 4:00):**  
-Presenter returns to Farm Planning, clicks **"রিপোর্ট ডাউনলোড / প্রিন্ট (Print Card)"** to display the clean printable A4 farmer card, clicks **"SMS কপি করুন"** (showing Toast notification "SMS ক্লিপবোর্ডে কপি হয়েছে"), and toggles the top-bar **Light/Dark theme** button. Closing slide with Team Azoic credits, Apache-2.0 license, and live QR code.
-- *Click path:* Sidebar -> **আবর্তন পরিকল্পনা** -> Click **"SMS কপি করুন"** -> Toggle **Theme** button.
+Presenter returns to Farm Planning, clicks **"রিপোর্ট ডাউনলোড / প্রিন্ট (Print Card)"** to display the clean printable A4 farmer card, and toggles the top-bar **Light/Dark theme** button. Closing slide with Team Azoic credits, Apache-2.0 license, and live QR code.
+- *Click path:* Sidebar -> **আবর্তন পরিকল্পনা** -> Toggle **Theme** button.
 
 **Voiceover (3:35 – 4:00):**  
-*"FieldShift reaches every farmer: through modern web dashboards, high-contrast daylight mode for outdoor smartphones, printable A4 cards, and plain-text SMS for basic feature phones. Most importantly, it operates 100% offline with zero external dependencies. FieldShift does not replace the farmer or the agricultural extension officer (SAAO)—it equips them with 25 years of NASA Earth observation science to adapt, conserve water, and prosper. We are Team Azoic, and this is FieldShift 2026. Thank you!"*
+*"FieldShift reaches farmers through modern web dashboards, high-contrast daylight mode for outdoor smartphones, and printable A4 cards for extension meetings. FieldShift does not replace the farmer or the agricultural extension officer (SAAO)—it equips them with 25 years of NASA Earth observation science to adapt, conserve water, and prosper. We are Team Azoic, and this is FieldShift 2026. Thank you!"*
