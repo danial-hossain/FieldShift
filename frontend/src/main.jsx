@@ -3948,6 +3948,7 @@ export function App() {
             onNavigate={handleNavigate}
             onRunWorkflow={runAnalysis}
             initialSubTab={farmPlanningSubTab}
+            onSubTabChange={setFarmPlanningSubTab}
             request={request}
           />
         )}

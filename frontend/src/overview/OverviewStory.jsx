@@ -94,7 +94,7 @@ function OverviewStoryInner({ data, lang = 'en', onNavigate }) {
     // Tag elements for Demo Mode annotations
     const tagDemoElements = () => {
       if (!ref.current) return;
-      const globe = ref.current.querySelector('.fsx-globe-layer') || ref.current.querySelector('.fsx-stage');
+      const globe = ref.current.querySelector('.fsx-globe-wrap') || ref.current.querySelector('.fsx-globe-layer');
       if (globe && !globe.getAttribute('data-demo')) globe.setAttribute('data-demo', 'earth_view');
 
       const card = ref.current.querySelector('.fsx-card');

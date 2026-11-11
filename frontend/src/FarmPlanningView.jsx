@@ -27,6 +27,7 @@ export function FarmPlanningView({
   onNavigate,
   onRunWorkflow,
   initialSubTab = 'milp',
+  onSubTabChange,
   request,
 }) {
   const { t } = useTranslation(lang);
@@ -36,6 +37,13 @@ export function FarmPlanningView({
   useEffect(() => {
     if (initialSubTab) setSubTab(initialSubTab);
   }, [initialSubTab]); // 'milp' | 'replan' | 'comparison'
+
+  const handleSubTabChange = (t) => {
+    setSubTab(t);
+    if (typeof onSubTabChange === 'function') {
+      onSubTabChange(t);
+    }
+  };
 
   const subTabs = [
     { id: 'milp', label: lang === 'bn' ? '১. ৬-মৌসুম পরিকল্পনা (6-Season Plan)' : '1. 6-Season Rotation Plan', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
@@ -74,7 +82,7 @@ export function FarmPlanningView({
           <Tabs
             tabs={subTabs}
             activeTab={subTab}
-            onChange={setSubTab}
+            onChange={handleSubTabChange}
           />
         </div>
       </Card>

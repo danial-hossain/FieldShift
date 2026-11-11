@@ -71,12 +71,26 @@ export function DemoOverlay({
     setActiveIndex(0);
     setAutoPlay(false);
     refreshValidSteps();
+    const t1 = setTimeout(refreshValidSteps, 150);
+    const t2 = setTimeout(refreshValidSteps, 400);
+    const t3 = setTimeout(refreshValidSteps, 800);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
   }, [currentKey, refreshValidSteps]);
 
   // Check valid steps on open or when rawList changes
   useEffect(() => {
     refreshValidSteps();
-  }, [refreshValidSteps]);
+    const t1 = setTimeout(refreshValidSteps, 200);
+    const t2 = setTimeout(refreshValidSteps, 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [isOpen, refreshValidSteps]);
 
   // Safe active step
   const activeStep = useMemo(() => {
@@ -151,22 +165,6 @@ export function DemoOverlay({
     };
   }, [isOpen, updateHoleRect]);
 
-  // ResizeObserver for data load & container size changes (DS4)
-  useEffect(() => {
-    if (!isOpen || !activeStep) return undefined;
-    const el = document.querySelector(activeStep.selector);
-    if (!el || typeof ResizeObserver === 'undefined') return undefined;
-
-    const ro = new ResizeObserver(() => {
-      updateHoleRect();
-      updateCardPosition();
-    });
-    ro.observe(el);
-    if (document.body) ro.observe(document.body);
-
-    return () => ro.disconnect();
-  }, [isOpen, activeStep, updateHoleRect, updateCardPosition]);
-
   // Floating UI Card Positioning (DS2)
   const updateCardPosition = useCallback(() => {
     if (!isOpen || !holeRect || !cardRef.current) return;
@@ -189,7 +187,7 @@ export function DemoOverlay({
     const middleware = [
       offset(16),
       flip({ fallbackPlacements: ['left', 'bottom', 'top'] }),
-      shift({ padding: 16 }),
+      shift({ padding: 16, mainAxis: true, crossAxis: true }),
     ];
 
     if (arrowRef.current) {
@@ -201,8 +199,16 @@ export function DemoOverlay({
       middleware,
     }).then(({ x, y, placement, middlewareData }) => {
       if (!cardRef.current) return;
-      cardRef.current.style.left = `${Math.round(x)}px`;
-      cardRef.current.style.top = `${Math.round(y)}px`;
+      const cardW = cardRef.current.offsetWidth || 320;
+      const cardH = cardRef.current.offsetHeight || 260;
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 1920;
+      const vh = typeof window !== 'undefined' ? window.innerHeight : 1080;
+
+      const clampedX = Math.max(16, Math.min(vw - cardW - 16, Math.round(x)));
+      const clampedY = Math.max(16, Math.min(vh - cardH - 16, Math.round(y)));
+
+      cardRef.current.style.left = `${clampedX}px`;
+      cardRef.current.style.top = `${clampedY}px`;
 
       if (middlewareData.arrow && arrowRef.current) {
         const { x: arrowX, y: arrowY } = middlewareData.arrow;
@@ -227,6 +233,22 @@ export function DemoOverlay({
   useEffect(() => {
     updateCardPosition();
   }, [updateCardPosition, activeIndex]);
+
+  // ResizeObserver for data load & container size changes (DS4)
+  useEffect(() => {
+    if (!isOpen || !activeStep) return undefined;
+    const el = document.querySelector(activeStep.selector);
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+
+    const ro = new ResizeObserver(() => {
+      updateHoleRect();
+      updateCardPosition();
+    });
+    ro.observe(el);
+    if (document.body) ro.observe(document.body);
+
+    return () => ro.disconnect();
+  }, [isOpen, activeStep, updateHoleRect, updateCardPosition]);
 
   // Auto-play every 5 seconds (DS2)
   useEffect(() => {

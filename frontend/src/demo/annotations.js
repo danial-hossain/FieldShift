@@ -387,19 +387,6 @@ export const DEMO_ANNOTATIONS = {
   // 8. Water & Irrigation Page
   water: [
     {
-      id: 'water_storage_trend',
-      selector: '[data-demo="water_storage_trend"]',
-      chip: 'GRACE-FO',
-      title: {
-        en: 'Groundwater Storage Trend',
-        bn: 'ভূগর্ভস্থ পানি হ্রাস'
-      },
-      desc: {
-        en: 'NASA GRACE-FO measurement showing Barind groundwater storage falling −1.07 cm/year.',
-        bn: 'নাসা গ্রেস স্যাটেলাইট পরিমাপে বরেন্দ্র অঞ্চলের ভূগর্ভস্থ পানি প্রতি বছর ১.০৭ সেমি নিচে নামার প্রমাণ।'
-      }
-    },
-    {
       id: 'irrigation_table',
       selector: '[data-demo="irrigation_table"]',
       chip: 'FAO-56 · GPM IMERG',
@@ -423,6 +410,19 @@ export const DEMO_ANNOTATIONS = {
       desc: {
         en: 'Calculates exact pump runtime in hours based on your tube-well capacity (litres/hr).',
         bn: 'আপনার পাম্পের ধারণক্ষমতা অনুযায়ী কত ঘণ্টা পাম্প চালাতে হবে তার হিসাব।'
+      }
+    },
+    {
+      id: 'water_storage_trend',
+      selector: '[data-demo="water_storage_trend"]',
+      chip: 'GRACE-FO',
+      title: {
+        en: 'Groundwater Storage Trend',
+        bn: 'ভূগর্ভস্থ পানি হ্রাস'
+      },
+      desc: {
+        en: 'NASA GRACE-FO measurement showing Barind groundwater storage falling −1.07 cm/year.',
+        bn: 'নাসা গ্রেস স্যাটেলাইট পরিমাপে বরেন্দ্র অঞ্চলের ভূগর্ভস্থ পানি প্রতি বছর ১.০৭ সেমি নিচে নামার প্রমাণ।'
       }
     },
     {
