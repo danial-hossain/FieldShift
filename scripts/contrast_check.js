@@ -163,7 +163,13 @@ async function runLiveContrastCheck() {
                   break;
                 }
                 if (s.backgroundImage && s.backgroundImage.includes('gradient')) {
-                  bg = th === 'dark' ? [24, 34, 28, 1] : [235, 240, 236, 1];
+                  if (s.backgroundImage.includes('215') || s.backgroundImage.includes('138') || s.backgroundImage.includes('168') || s.backgroundImage.includes('200')) {
+                    bg = [200, 241, 105, 1]; // Lime neon primary gradient
+                  } else if (s.backgroundImage.includes('128') || s.backgroundImage.includes('101') || s.backgroundImage.includes('21')) {
+                    bg = [21, 128, 61, 1]; // Dark green primary gradient
+                  } else {
+                    bg = th === 'dark' ? [24, 34, 28, 1] : [235, 240, 236, 1];
+                  }
                   break;
                 }
                 curr = curr.parentElement;

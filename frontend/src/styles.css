@@ -53,6 +53,8 @@
   --border-focus:   var(--leaf);
   --muted:          var(--text-muted);
   --tile-highlight-color: #34d399;
+  --neon:           #C8F169;
+  --neon-cyan:      #5BE3FF;
   --amber:          #f2b24c;
   --red:            #f07a6a;
   --blue:           #5fb0ef;
@@ -11333,6 +11335,8 @@ html, body {
   --text:           #0f172a;
   --text-muted:     #334155;
   --muted:          #334155;
+  --neon:           #4C9A1F;
+  --neon-cyan:      #0284c7;
   --tile-highlight-color: #047857;
   --amber:          #92400e;
   --red:            #b91c1c;
@@ -18729,3 +18733,282 @@ table tbody tr:nth-child(even),
 
 
 
+
+
+/* ==========================================================================
+   G3: NEON GLOW UI SYSTEM
+   ========================================================================== */
+
+/* 1. Focus Visible */
+:focus-visible {
+  outline: 2px solid var(--neon, #C8F169) !important;
+  outline-offset: 2px !important;
+}
+
+[data-theme="light"] :focus-visible {
+  outline: 2px solid var(--neon, #4C9A1F) !important;
+}
+
+/* 2. Primary Buttons */
+.ui-btn-primary,
+.btn-primary,
+.btn-primary-sm,
+.add-field-btn,
+button.btn-primary,
+button.primary {
+  background: linear-gradient(135deg, #D7F78A 0%, #A8E04A 100%) !important;
+  color: #0b1a10 !important;
+  border: 1px solid rgba(200, 241, 105, 0.6) !important;
+  box-shadow: 0 0 0 1px rgba(200, 241, 105, 0.45), 0 0 18px rgba(200, 241, 105, 0.35) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
+}
+
+.ui-btn-primary *,
+.btn-primary *,
+.btn-primary-sm *,
+.add-field-btn *,
+button.btn-primary *,
+button.primary * {
+  color: #0b1a10 !important;
+}
+
+.ui-btn-primary:hover:not(:disabled),
+.btn-primary:hover:not(:disabled),
+.btn-primary-sm:hover:not(:disabled),
+.add-field-btn:hover:not(:disabled),
+button.btn-primary:hover:not(:disabled),
+button.primary:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(200, 241, 105, 0.6), 0 0 28px rgba(200, 241, 105, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ui-btn-primary:active:not(:disabled),
+.btn-primary:active:not(:disabled),
+.btn-primary-sm:active:not(:disabled),
+.add-field-btn:active:not(:disabled),
+button.btn-primary:active:not(:disabled),
+button.primary:active:not(:disabled) {
+  transform: scale(0.98) !important;
+}
+
+[data-theme="light"] .ui-btn-primary,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-primary-sm,
+[data-theme="light"] .add-field-btn,
+[data-theme="light"] button.btn-primary,
+[data-theme="light"] button.primary {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%) !important;
+  color: #ffffff !important;
+  border-color: #15803d !important;
+  box-shadow: 0 0 0 1px rgba(76, 154, 31, 0.25), 0 0 9px rgba(76, 154, 31, 0.18) !important;
+}
+
+[data-theme="light"] .ui-btn-primary *,
+[data-theme="light"] .btn-primary *,
+[data-theme="light"] .btn-primary-sm *,
+[data-theme="light"] .add-field-btn *,
+[data-theme="light"] button.btn-primary *,
+[data-theme="light"] button.primary * {
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .ui-btn-primary:hover:not(:disabled),
+[data-theme="light"] .btn-primary:hover:not(:disabled),
+[data-theme="light"] .btn-primary-sm:hover:not(:disabled),
+[data-theme="light"] .add-field-btn:hover:not(:disabled),
+[data-theme="light"] button.btn-primary:hover:not(:disabled),
+[data-theme="light"] button.primary:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px rgba(76, 154, 31, 0.35), 0 0 14px rgba(76, 154, 31, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="light"] .ui-btn-primary:active:not(:disabled),
+[data-theme="light"] .btn-primary:active:not(:disabled),
+[data-theme="light"] .btn-primary-sm:active:not(:disabled),
+[data-theme="light"] .add-field-btn:active:not(:disabled),
+[data-theme="light"] button.btn-primary:active:not(:disabled),
+[data-theme="light"] button.primary:active:not(:disabled) {
+  transform: scale(0.98) !important;
+}
+
+/* 3. Secondary / Glass Buttons & Chips */
+.ui-btn-secondary,
+.btn-secondary,
+.btn-outline,
+.btn-ghost,
+.glass-chip,
+.top-bar-icon-btn:not(.lang-toggle-btn),
+.irrigation-chip:not(.active):not([aria-pressed="true"]),
+.ui-chip {
+  border: 1px solid rgba(200, 241, 105, 0.25) !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.ui-btn-secondary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled),
+.btn-outline:hover:not(:disabled),
+.btn-ghost:hover:not(:disabled),
+.glass-chip:hover,
+.top-bar-icon-btn:not(.lang-toggle-btn):hover,
+.irrigation-chip:not(.active):not([aria-pressed="true"]):hover,
+.ui-chip:hover {
+  border-color: rgba(200, 241, 105, 0.5) !important;
+  box-shadow: 0 0 12px rgba(200, 241, 105, 0.3) !important;
+}
+
+[data-theme="light"] .ui-btn-secondary,
+[data-theme="light"] .btn-secondary,
+[data-theme="light"] .btn-outline,
+[data-theme="light"] .btn-ghost,
+[data-theme="light"] .glass-chip,
+[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn),
+[data-theme="light"] .irrigation-chip:not(.active):not([aria-pressed="true"]),
+[data-theme="light"] .ui-chip {
+  border: 1px solid rgba(76, 154, 31, 0.25) !important;
+}
+
+[data-theme="light"] .ui-btn-secondary:hover:not(:disabled),
+[data-theme="light"] .btn-secondary:hover:not(:disabled),
+[data-theme="light"] .btn-outline:hover:not(:disabled),
+[data-theme="light"] .btn-ghost:hover:not(:disabled),
+[data-theme="light"] .glass-chip:hover,
+[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn):hover,
+[data-theme="light"] .irrigation-chip:not(.active):not([aria-pressed="true"]):hover,
+[data-theme="light"] .ui-chip:hover {
+  border-color: rgba(76, 154, 31, 0.5) !important;
+  box-shadow: 0 0 6px rgba(76, 154, 31, 0.15) !important;
+}
+
+/* 4. Selected States */
+.sidebar-nav .nav-item.active,
+.sidebar .nav-item.active,
+.nav-tab.active,
+.strategy-pill[aria-pressed="true"],
+.strategy-pill.active,
+.strategy-card.active,
+button.strategy-card.active,
+.replan-count-btn[aria-pressed="true"],
+.replan-count-btn.active,
+.pb[aria-pressed="true"],
+.pb.active,
+.irrigation-chip[aria-pressed="true"],
+.irrigation-chip.active {
+  background: var(--neon, #C8F169) !important;
+  color: #0b1a10 !important;
+  border-color: var(--neon, #C8F169) !important;
+  box-shadow: 0 0 16px rgba(200, 241, 105, 0.45) !important;
+}
+
+.sidebar-nav .nav-item.active *,
+.sidebar .nav-item.active *,
+.strategy-pill[aria-pressed="true"] *,
+.strategy-pill.active *,
+.strategy-card.active *,
+button.strategy-card.active *,
+.replan-count-btn[aria-pressed="true"] *,
+.replan-count-btn.active *,
+.pb[aria-pressed="true"] *,
+.pb.active *,
+.irrigation-chip[aria-pressed="true"] *,
+.irrigation-chip.active * {
+  color: #0b1a10 !important;
+}
+
+[data-theme="light"] .sidebar-nav .nav-item.active,
+[data-theme="light"] .sidebar .nav-item.active,
+[data-theme="light"] .nav-tab.active,
+[data-theme="light"] .strategy-pill[aria-pressed="true"],
+[data-theme="light"] .strategy-pill.active,
+[data-theme="light"] .strategy-card.active,
+[data-theme="light"] button.strategy-card.active,
+[data-theme="light"] .replan-count-btn[aria-pressed="true"],
+[data-theme="light"] .replan-count-btn.active,
+[data-theme="light"] .pb[aria-pressed="true"],
+[data-theme="light"] .pb.active,
+[data-theme="light"] .irrigation-chip[aria-pressed="true"],
+[data-theme="light"] .irrigation-chip.active {
+  background: var(--neon, #4C9A1F) !important;
+  color: #0b1a10 !important;
+  border-color: var(--neon, #4C9A1F) !important;
+  box-shadow: 0 0 8px rgba(76, 154, 31, 0.25) !important;
+}
+
+[data-theme="light"] .sidebar-nav .nav-item.active *,
+[data-theme="light"] .sidebar .nav-item.active *,
+[data-theme="light"] .strategy-pill[aria-pressed="true"] *,
+[data-theme="light"] .strategy-pill.active *,
+[data-theme="light"] .strategy-card.active *,
+[data-theme="light"] button.strategy-card.active *,
+[data-theme="light"] .replan-count-btn[aria-pressed="true"] *,
+[data-theme="light"] .replan-count-btn.active *,
+[data-theme="light"] .pb[aria-pressed="true"] *,
+[data-theme="light"] .pb.active *,
+[data-theme="light"] .irrigation-chip[aria-pressed="true"] *,
+[data-theme="light"] .irrigation-chip.active * {
+  color: #0b1a10 !important;
+}
+
+/* 5. Top Bar Pills & Live Dot */
+.top-bar-pill-badge,
+.header-field-selector select {
+  border: 1px solid rgba(200, 241, 105, 0.35) !important;
+  box-shadow: 0 0 12px rgba(200, 241, 105, 0.15) !important;
+}
+
+[data-theme="light"] .top-bar-pill-badge,
+[data-theme="light"] .header-field-selector select {
+  border: 1px solid rgba(76, 154, 31, 0.35) !important;
+  box-shadow: 0 0 6px rgba(76, 154, 31, 0.08) !important;
+}
+
+.live-pulse-dot,
+.nasa-pulse-dot {
+  background: var(--neon, #C8F169) !important;
+  animation: nasaLivePulse 2s infinite ease-in-out !important;
+}
+
+@keyframes nasaLivePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(200, 241, 105, 0.45), 0 0 8px rgba(200, 241, 105, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(200, 241, 105, 0.12), 0 0 16px rgba(200, 241, 105, 0.85);
+  }
+}
+
+/* 6. Big KPI Numbers Glow */
+.ui-stat-value,
+.ui-key-number-tile .value,
+.ui-key-number-value,
+.kpi-number,
+.kpi-value,
+.strategy-kpi-val,
+.kpi-cube-value,
+.rl-kpi-tile-value,
+.market-kpi-val,
+.font-kpi-large {
+  text-shadow: 0 0 18px color-mix(in srgb, currentColor 35%, transparent) !important;
+}
+
+[data-theme="light"] .ui-stat-value,
+[data-theme="light"] .ui-key-number-tile .value,
+[data-theme="light"] .ui-key-number-value,
+[data-theme="light"] .kpi-number,
+[data-theme="light"] .kpi-value,
+[data-theme="light"] .strategy-kpi-val,
+[data-theme="light"] .kpi-cube-value,
+[data-theme="light"] .rl-kpi-tile-value,
+[data-theme="light"] .market-kpi-val,
+[data-theme="light"] .font-kpi-large {
+  text-shadow: 0 0 12px color-mix(in srgb, currentColor 18%, transparent) !important;
+}
+
+/* Guard: NO glow on body text, tables or paragraphs */
+body p,
+body td,
+body th,
+body span:not(.ui-stat-value):not(.kpi-value):not(.kpi-number):not([data-stat]),
+body li,
+body table {
+  text-shadow: none !important;
+}
