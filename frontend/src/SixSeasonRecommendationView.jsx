@@ -1478,6 +1478,7 @@ export function SixSeasonRecommendationView({
       <div className="rotation-plan-area" style={{ position: 'relative', width: '100%' }}>
         <CalculationLoadingOverlay
           active={loading || isSolving}
+          isApiLoading={loading}
           isInitialOpen={isInitialLoad}
           mode="planner"
           nOptions={18}

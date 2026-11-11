@@ -89,6 +89,7 @@ const MODE_STEPS = {
  */
 export function CalculationLoadingOverlay({
   active = true,
+  isApiLoading = false,
   isInitialOpen = false,
   mode = 'planner',
   lang = 'en',
@@ -162,26 +163,24 @@ export function CalculationLoadingOverlay({
         }
       });
 
-      // Check if API has returned and minDuration has passed
-      if (!active) {
-        if (elapsed >= minDuration) {
-          // Complete all steps
-          const allIndices = new Set(steps.map((_, i) => i));
-          setCompletedSteps(allIndices);
-          setActiveStepIdx(steps.length);
-          setRingProgress(1);
+      // Check if API has returned (or not actively loading) and minDuration has passed
+      if (!isApiLoading && elapsed >= minDuration) {
+        // Complete all steps
+        const allIndices = new Set(steps.map((_, i) => i));
+        setCompletedSteps(allIndices);
+        setActiveStepIdx(steps.length);
+        setRingProgress(1);
 
-          // Hold completed checkmarks for 100ms, then initiate fade out
-          timerId = setTimeout(() => {
-            setIsFadingOut(true);
-            // 250ms fade out transition
-            setTimeout(() => {
-              setMounted(false);
-              if (onComplete) onComplete();
-            }, 250);
-          }, 100);
-          return;
-        }
+        // Hold completed checkmarks for 100ms, then initiate fade out
+        timerId = setTimeout(() => {
+          setIsFadingOut(true);
+          // 250ms fade out transition
+          setTimeout(() => {
+            setMounted(false);
+            if (onComplete) onComplete();
+          }, 250);
+        }, 100);
+        return;
       }
 
       animFrame = requestAnimationFrame(updateLoop);
@@ -193,7 +192,7 @@ export function CalculationLoadingOverlay({
       if (animFrame) cancelAnimationFrame(animFrame);
       if (timerId) clearTimeout(timerId);
     };
-  }, [mounted, active, minDuration, steps, isReducedMotion, error, onComplete, activeStepIdx]);
+  }, [mounted, isApiLoading, minDuration, steps, isReducedMotion, error, onComplete, activeStepIdx]);
 
   if (!mounted && !active) return null;
 
