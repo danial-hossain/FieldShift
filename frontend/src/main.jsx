@@ -2358,16 +2358,12 @@ export function App() {
       {/* Left Vertical Navigation Rail (Mobile Drawer on phone screens) */}
       <aside className={`sidebar ${mobileNavOpen ? 'mobile-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-logo" title="FieldShift Decision Support" data-nav="dashboard" onClick={() => handleNavigate('dashboard')} style={{ cursor: 'pointer' }}>
-          <div className="sidebar-logo-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
-              <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
-            </svg>
-          </div>
-          <div className="sidebar-logo-text">
-            <span className="sidebar-logo-name">FieldShift</span>
-            <span className="sidebar-logo-tagline">AI Decision Support</span>
-          </div>
+          <img
+            src={sidebarCollapsed ? '/brand/logo_mark.svg' : (theme === 'light' ? '/brand/logo_full_light.svg' : '/brand/logo_full.svg')}
+            alt="FieldShift"
+            className="sidebar-brand-logo-img"
+            style={{ height: 32, width: 'auto', display: 'block' }}
+          />
           <button
             type="button"
             className="sidebar-collapse-toggle"

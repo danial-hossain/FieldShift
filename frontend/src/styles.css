@@ -15269,6 +15269,98 @@ body,
   }
 }
 
+/* ==========================================================================
+   LB6: Light Theme Parity
+   ========================================================================== */
+
+[data-theme="light"] {
+  --bg-root: #f8fafc !important;
+  --bg-app: #f8fafc !important;
+  --bg-card: rgba(255, 255, 255, 0.94) !important;
+  --bg-card-subtle: #f1f5f9 !important;
+  --surface-card: rgba(255, 255, 255, 0.94) !important;
+  --glass-bg-card: rgba(255, 255, 255, 0.92) !important;
+  --glass-bg-primary: rgba(255, 255, 255, 0.94) !important;
+  --glass-bg: rgba(255, 255, 255, 0.94) !important;
+  --glass-panel: #ffffff !important;
+  --glass-border: rgba(0, 0, 0, 0.12) !important;
+  --glass-border-light: rgba(0, 0, 0, 0.08) !important;
+  --border-light: #e2e8f0 !important;
+  --border-medium: #cbd5e1 !important;
+  --text-main: #0f172a !important;
+  --text-muted: #334155 !important;
+  --text-dim: #64748b !important;
+  --text: #0f172a !important;
+
+  /* Neon glow at 50% */
+  --primary-glow: rgba(4, 120, 87, 0.18) !important;
+  --glass-shadow-glow: 0 0 12px rgba(4, 120, 87, 0.14) !important;
+  --glass-border-emerald: rgba(4, 120, 87, 0.3) !important;
+}
+
+[data-theme="light"] .village-bg-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
+}
+
+[data-theme="light"] .glass-card,
+[data-theme="light"] .dash-card,
+[data-theme="light"] .card,
+[data-theme="light"] .panel,
+[data-theme="light"] .surface-card,
+[data-theme="light"] .evidence-card,
+[data-theme="light"] .wp-card,
+[data-theme="light"] .ui-card,
+[data-theme="light"] .ui-key-number-tile,
+[data-theme="light"] .stat-card {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
+}
+
+/* Light Theme Readable Charts */
+[data-theme="light"] .recharts-cartesian-grid line {
+  stroke: rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .recharts-cartesian-axis-tick text,
+[data-theme="light"] .recharts-text,
+[data-theme="light"] svg text:not([data-theme-override]) {
+  fill: #1e293b;
+}
+[data-theme="light"] .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Fix dark-only hardcoded colors */
+[data-theme="light"] .sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item {
+  color: #334155 !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item.active {
+  background: rgba(4, 120, 87, 0.12) !important;
+  color: #047857 !important;
+}
+[data-theme="light"] .global-top-bar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .header-field-selector select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+
 
 /* Unified card/panel solid translucent surfaces without backdrop-filter (Lag Optimization R4) */
 .card,
@@ -17962,6 +18054,98 @@ body,
     display: none !important;
   }
 }
+
+/* ==========================================================================
+   LB6: Light Theme Parity
+   ========================================================================== */
+
+[data-theme="light"] {
+  --bg-root: #f8fafc !important;
+  --bg-app: #f8fafc !important;
+  --bg-card: rgba(255, 255, 255, 0.94) !important;
+  --bg-card-subtle: #f1f5f9 !important;
+  --surface-card: rgba(255, 255, 255, 0.94) !important;
+  --glass-bg-card: rgba(255, 255, 255, 0.92) !important;
+  --glass-bg-primary: rgba(255, 255, 255, 0.94) !important;
+  --glass-bg: rgba(255, 255, 255, 0.94) !important;
+  --glass-panel: #ffffff !important;
+  --glass-border: rgba(0, 0, 0, 0.12) !important;
+  --glass-border-light: rgba(0, 0, 0, 0.08) !important;
+  --border-light: #e2e8f0 !important;
+  --border-medium: #cbd5e1 !important;
+  --text-main: #0f172a !important;
+  --text-muted: #334155 !important;
+  --text-dim: #64748b !important;
+  --text: #0f172a !important;
+
+  /* Neon glow at 50% */
+  --primary-glow: rgba(4, 120, 87, 0.18) !important;
+  --glass-shadow-glow: 0 0 12px rgba(4, 120, 87, 0.14) !important;
+  --glass-border-emerald: rgba(4, 120, 87, 0.3) !important;
+}
+
+[data-theme="light"] .village-bg-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
+}
+
+[data-theme="light"] .glass-card,
+[data-theme="light"] .dash-card,
+[data-theme="light"] .card,
+[data-theme="light"] .panel,
+[data-theme="light"] .surface-card,
+[data-theme="light"] .evidence-card,
+[data-theme="light"] .wp-card,
+[data-theme="light"] .ui-card,
+[data-theme="light"] .ui-key-number-tile,
+[data-theme="light"] .stat-card {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
+}
+
+/* Light Theme Readable Charts */
+[data-theme="light"] .recharts-cartesian-grid line {
+  stroke: rgba(0, 0, 0, 0.12) !important;
+}
+[data-theme="light"] .recharts-cartesian-axis-tick text,
+[data-theme="light"] .recharts-text,
+[data-theme="light"] svg text:not([data-theme-override]) {
+  fill: #1e293b;
+}
+[data-theme="light"] .recharts-default-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Fix dark-only hardcoded colors */
+[data-theme="light"] .sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item {
+  color: #334155 !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .sidebar-nav .nav-item.active {
+  background: rgba(4, 120, 87, 0.12) !important;
+  color: #047857 !important;
+}
+[data-theme="light"] .global-top-bar {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .header-field-selector select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
 
 
 
