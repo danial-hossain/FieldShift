@@ -1,5 +1,4 @@
 import React from 'react';
-import { useCountUp } from './useCountUp.js';
 
 export function Stat({
   label,
@@ -10,7 +9,6 @@ export function Stat({
   className = '',
   style = {}
 }) {
-  const animatedValue = useCountUp(value, 600);
   const isMissing = value == null || value === '' || value === '—' || value === 'তথ্য নেই' || value === 'No data';
   const toneClass = (!isMissing && tone !== 'neutral') ? `ui-stat-tone-${tone}` : '';
 
@@ -24,7 +22,7 @@ export function Stat({
           </span>
         ) : (
           <>
-            <span className={`ui-stat-value ${toneClass}`}>{animatedValue}</span>
+            <span className={`ui-stat-value ${toneClass}`}>{value}</span>
             {unit && <span className="ui-stat-unit">{unit}</span>}
           </>
         )}

@@ -936,7 +936,7 @@ export function MyFarmWorkspaceView({
               size="sm"
               onClick={handleCreateSampleField}
               disabled={isCreatingSample}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: '#10b981', color: '#10b981' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: 'var(--accent, #10b981)', color: 'var(--accent, #10b981)', background: 'transparent' }}
               title={lang === 'bn' ? 'আবর্তন ও সেচ পরীক্ষা করতে ১ হেক্টর মডেল খামার যোগ করুন' : 'Add 1 ha model farm to test rotation'}
             >
               <span>🌾</span>

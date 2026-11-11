@@ -68,7 +68,6 @@ export function Toast({
         fontWeight: 700,
         maxWidth: '90vw',
         animation: 'slideUpFade 200ms cubic-bezier(0.16, 1, 0.3, 1)',
-        backdropFilter: 'blur(8px)',
         ...style
       }}
     >

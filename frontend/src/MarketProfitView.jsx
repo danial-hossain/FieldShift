@@ -212,13 +212,14 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           SECTION 1: HEADER & STRATEGY SELECTOR
           ========================================================================= */}
       <header
+        className="market-header-card"
         style={{
-          background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
           marginBottom: 24,
-          boxShadow: 'var(--shadow-glass, 0 8px 32px rgba(0, 0, 0, 0.25))',
+          boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
         }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
@@ -327,7 +328,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
             borderRadius: 'var(--r-md, 12px)',
             background: priceNotice.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
             border: priceNotice.type === 'success' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
-            color: priceNotice.type === 'success' ? '#34d399' : '#f87171',
+            color: priceNotice.type === 'success' ? 'var(--good, #34d399)' : '#f87171',
             fontSize: 14,
             fontWeight: 500,
           }}
@@ -365,11 +366,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       >
         {/* Tile 1: Profit/yr Current -> Plan */}
         <div
+          className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
           }}
         >
           <div style={{ fontSize: 12, color: 'var(--text-muted, #8C9B90)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
@@ -391,23 +394,25 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
         {/* Tile 2: Extra Income / Year */}
         <div
+          className="market-kpi-tile market-kpi-tile-highlight"
           style={{
-            background: 'rgba(16, 185, 129, 0.08)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
+            background: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.35)',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
           }}
         >
-          <div style={{ fontSize: 12, color: '#34d399', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--tile-highlight-color, #34d399)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
             {isBn ? 'অতিরিক্ত বার্ষিক আয়' : 'Extra Annual Income'}
           </div>
-          <div style={{ fontSize: 'clamp(22px, 2.4vw, 28px)', fontWeight: 800, color: '#10B981', letterSpacing: '-0.02em', marginBottom: 6 }}>
+          <div style={{ fontSize: 'clamp(22px, 2.4vw, 28px)', fontWeight: 800, color: 'var(--tile-highlight-color, #10B981)', letterSpacing: '-0.02em', marginBottom: 6 }}>
             +{formatMoney(totals.delta_profit_field, lang)}
             <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--text-muted, #8C9B90)' }}>
               {isBn ? '/বছর' : '/yr'}
             </span>
           </div>
-          <div style={{ fontSize: 12, color: '#34d399' }}>
+          <div style={{ fontSize: 12, color: 'var(--tile-highlight-color, #34d399)' }}>
             {totals.current_profit_field > 0 ? (
               <span>
                 +{formatNum(((totals.delta_profit_field || 0) / totals.current_profit_field) * 100, 0, lang)}% {isBn ? 'মুনাফা বৃদ্ধি' : 'increase over baseline'}
@@ -420,11 +425,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
         {/* Tile 3: Plan Profit at -20% Prices */}
         <div
+          className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
           }}
         >
           <div style={{ fontSize: 12, color: 'var(--text-muted, #8C9B90)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
@@ -443,11 +450,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
         {/* Tile 4: Custom vs Catalogue Prices Count */}
         <div
+          className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
           }}
         >
           <div style={{ fontSize: 12, color: 'var(--text-muted, #8C9B90)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 8 }}>
@@ -472,12 +481,14 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           SECTION 3: "মৌসুম ধরে আয়-ব্যয়" (SEASON ECONOMICS TABLE)
           ========================================================================= */}
       <section
+        className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
           marginBottom: 32,
+          boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
         }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 20 }}>
@@ -499,6 +510,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         {/* Responsive Table */}
         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
           <table
+            className="market-table"
             style={{
               width: '100%',
               borderCollapse: 'collapse',
@@ -692,11 +704,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       >
         {/* Left: Sensitivity Bar Chart */}
         <div
+          className="market-card-section"
           style={{
-            background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-xl, 20px)',
             padding: '24px 26px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
           }}
         >
           <div style={{ marginBottom: 16 }}>
@@ -783,7 +797,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                 <span>{isBn ? 'রেফারেন্স: সনাতন চাষের নিট লাভ' : 'Reference: Current Farming Profit'}</span>
                 <strong>{formatMoney(sensitivity.current_rotation_profit_field, lang)}</strong>
               </div>
-              <div style={{ fontSize: 11, color: '#34d399', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: 'var(--good, #34d399)', marginTop: 4 }}>
                 ✓ {isBn ? 'দাম ২০% ধস নামলেও নতুন পরিকল্পনায় লাভ বেশি থাকে' : 'Plan remains more profitable even under a 20% price collapse'}
               </div>
             </div>
@@ -792,11 +806,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
         {/* Right: Riskiest Crop Card */}
         <div
+          className="market-card-section"
           style={{
-            background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-xl, 20px)',
             padding: '24px 26px',
+            boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -826,7 +842,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                     padding: '12px 16px',
                   }}
                 >
-                  <div style={{ fontSize: 11, color: '#F59E0B', textTransform: 'uppercase', fontWeight: 600 }}>
+                  <div style={{ fontSize: 11, color: 'var(--amber, #F59E0B)', textTransform: 'uppercase', fontWeight: 600 }}>
                     {isBn ? '২০% দর কমলে সম্ভাব্য প্রভাব' : 'Impact if price drops 20%'}
                   </div>
                   <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text, #F4F7F4)', marginTop: 2 }}>
@@ -854,12 +870,14 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           SECTION 5: "পরিকল্পনা বনাম আসল" (ADAPTIVE OUTCOMES)
           ========================================================================= */}
       <section
+        className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
           marginBottom: 32,
+          boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
         }}
       >
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -877,7 +895,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
         {adaptive.has_records && adaptive.records.length > 0 ? (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted, #8C9B90)' }}>
                   <th style={{ padding: '10px 12px' }}>{isBn ? 'বছর / মৌসুম' : 'Year / Season'}</th>
@@ -956,11 +974,13 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           SECTION 6: "দামের উৎস" (REFERENCE CATALOGUE ACCORDION)
           ========================================================================= */}
       <section
+        className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(255, 255, 255, 0.05))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.1))',
+          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '18px 24px',
+          boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
         }}
       >
         <div
@@ -1014,7 +1034,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
             </p>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted, #8C9B90)' }}>
                     <th style={{ padding: '8px 10px', textAlign: 'left' }}>{isBn ? 'ফসল' : 'Crop'}</th>

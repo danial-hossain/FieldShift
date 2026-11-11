@@ -51,8 +51,16 @@
   --sidebar-text-active: var(--leaf);
   --border-light:   var(--border);
   --border-focus:   var(--leaf);
+  --muted:          var(--text-muted);
+  --tile-highlight-color: #34d399;
+  --amber:          #f2b24c;
+  --red:            #f07a6a;
+  --blue:           #5fb0ef;
   --text-main:      var(--text);
-  --text-dim:       #7a8781;
+  --text-dim:       #9AA5A0;
+  --faint:          #9AA5A0;
+  --good:           #34d399;
+  --bad:            #F97316;
   --text-inverse:   #0f1412;
   --accent-blue:    var(--water);
   --accent-amber:   var(--sun);
@@ -91,7 +99,7 @@
   /* Text */
   --text-main:     #f1f5f9;
   --text-muted:    #8a99a8;
-  --text-dim:      #5f7081;
+  --text-dim:      #9AA5A0;
   --text-inverse:  #0e1318;
 
   /* Accent colors */
@@ -11324,12 +11332,20 @@ html, body {
   --border:         #cbd5e1;
   --text:           #0f172a;
   --text-muted:     #334155;
+  --muted:          #334155;
+  --tile-highlight-color: #047857;
+  --amber:          #92400e;
+  --red:            #b91c1c;
+  --blue:           #0369a1;
   --text-dim:       #64748b;
   --leaf:           #047857;
   --soil:           #92400e;
   --water:          #0284c7;
   --sun:            #d97706;
   --alert:          #dc2626;
+  --faint:          #475569;
+  --good:           #15803d;
+  --bad:            #C2410C;
 
   --bg-root:        #f8fafc;
   --bg-app:         #f8fafc;
@@ -14371,6 +14387,23 @@ h2, h3, .card-title, .panel-title {
   border-color: var(--line);
 }
 
+.ui-btn-outline {
+  background: transparent !important;
+  color: var(--text, #E8ECE9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.20) !important;
+}
+
+.ui-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+}
+
+[data-theme="light"] .ui-btn-outline {
+  background: transparent !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(0, 0, 0, 0.20) !important;
+}
+
 .ui-btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.15);
@@ -14490,6 +14523,11 @@ h2, h3, .card-title, .panel-title {
 .ui-tab-item-active {
   background: var(--accent);
   color: #0b1a10;
+}
+
+[data-theme="light"] .ui-tab-item-active,
+[data-theme="light"] .ui-tab-item-active * {
+  color: #ffffff !important;
 }
 
 [data-mode="research"] .ui-tab-item-active {
@@ -14901,10 +14939,23 @@ h2, h3, .card-title, .panel-title {
   vertical-align: middle !important;
 }
 
-.top-bar-icon-btn {
+.top-bar-icon-btn:not(.lang-toggle-btn) {
   width: 40px !important;
   justify-content: center !important;
   padding: 0 !important;
+}
+
+.lang-toggle-btn {
+  width: auto !important;
+  min-width: max-content !important;
+  padding: 0 16px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.lang-toggle-btn span {
+  white-space: nowrap !important;
+  display: inline-block !important;
 }
 
 .top-bar-pill-badge {
@@ -15308,6 +15359,43 @@ body[data-lang="bn"],
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
 }
 
+/* ==========================================================================
+   G1: Card Readability on Village Background & Solid Table Surfaces
+   ========================================================================== */
+
+.glass-card,
+.dash-card,
+.card,
+.panel,
+.surface-card,
+.evidence-card,
+.wp-card,
+.ui-card,
+.ui-key-number-tile,
+.stat-card,
+.market-header-card,
+.market-kpi-tile,
+.market-card-section {
+  background: rgba(8, 14, 11, 0.80) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Tables: table body sits on solid surface with zebra rows */
+table tbody,
+.market-table tbody,
+.table-container tbody {
+  background: rgba(8, 14, 11, 0.88) !important;
+}
+
+table tbody tr:nth-child(even),
+.market-table tbody tr:nth-child(even),
+.table-container tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
 [data-theme="light"] .glass-card,
 [data-theme="light"] .dash-card,
 [data-theme="light"] .card,
@@ -15317,11 +15405,28 @@ body[data-lang="bn"],
 [data-theme="light"] .wp-card,
 [data-theme="light"] .ui-card,
 [data-theme="light"] .ui-key-number-tile,
-[data-theme="light"] .stat-card {
-  background: rgba(255, 255, 255, 0.94) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+[data-theme="light"] .stat-card,
+[data-theme="light"] .market-header-card,
+[data-theme="light"] .market-kpi-tile,
+[data-theme="light"] .market-card-section {
+  background: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
   color: #0f172a !important;
+}
+
+[data-theme="light"] table tbody,
+[data-theme="light"] .market-table tbody,
+[data-theme="light"] .table-container tbody {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+[data-theme="light"] table tbody tr:nth-child(even),
+[data-theme="light"] .market-table tbody tr:nth-child(even),
+[data-theme="light"] .table-container tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02) !important;
 }
 
 /* Light Theme Readable Charts */
@@ -15746,7 +15851,10 @@ button {
   color: var(--text-main, #f8fafc);
 }
 
-/* Accessible High-Contrast Button & Chip Tokens (WCAG >= 4.5:1) */
+.ui-toast {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
 .strategy-pill[aria-pressed="true"],
 .strategy-pill.active,
 .strategy-card.active,
@@ -15762,6 +15870,13 @@ button.strategy-card.active,
   background: var(--accent) !important;
   color: var(--accent-ink) !important;
   border-color: var(--accent) !important;
+}
+
+[data-theme="light"] .add-field-btn,
+[data-theme="light"] .ui-btn-primary,
+[data-theme="light"] .add-field-btn *,
+[data-theme="light"] .ui-btn-primary * {
+  color: #ffffff !important;
 }
 
 [data-theme="dark"] {
@@ -16953,7 +17068,7 @@ span[style*="197, 232, 108"] {
   --line-wp: #243029;
   --fg-wp: #e7efe8;
   --muted-wp: #93a597;
-  --faint-wp: #5f7064;
+  --faint-wp: #9AA5A0;
   --accent-wp: #c8e46a;
   --accent-ink-wp: #0f1a07;
   --green-wp: #3ecf8e;
@@ -16980,7 +17095,7 @@ span[style*="197, 232, 108"] {
   --line-wp: #243029;
   --fg-wp: #e7efe8;
   --muted-wp: #93a597;
-  --faint-wp: #5f7064;
+  --faint-wp: #9AA5A0;
   --accent-wp: #c8e46a;
   --accent-ink-wp: #0f1a07;
   --green-wp: #3ecf8e;
@@ -16997,12 +17112,12 @@ span[style*="197, 232, 108"] {
   --surface-2-wp: #f4f7f1;
   --line-wp: #dde5da;
   --fg-wp: #18231b;
-  --muted-wp: #5b6a5e;
-  --faint-wp: #8a988d;
-  --accent-wp: #2f8a4d;
+  --muted-wp: #334155;
+  --faint-wp: #475569;
+  --accent-wp: #15803d;
   --accent-ink-wp: #ffffff;
-  --green-wp: #24834f;
-  --amber-wp: #b5761a;
+  --green-wp: #15803d;
+  --amber-wp: #854d0e;
   --red-wp: #b9472f;
   --blue-wp: #2d78b5;
   --grid-wp: #e3e9e0;
@@ -17188,10 +17303,12 @@ span[style*="197, 232, 108"] {
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .water-planner-view .wp-pill.w {
-  background: rgba(30, 110, 170, 0.85);
+  background: #0369a1 !important;
+  color: #ffffff !important;
 }
 .water-planner-view .wp-pill.s {
-  background: rgba(160, 110, 30, 0.85);
+  background: #78350f !important;
+  color: #ffffff !important;
 }
 .water-planner-view .wp-ctrl {
   display: flex;
@@ -18365,6 +18482,43 @@ body[data-lang="bn"],
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(241, 245, 249, 0.75) 50%, rgba(241, 245, 249, 0.92) 100%) !important;
 }
 
+/* ==========================================================================
+   G1: Card Readability on Village Background & Solid Table Surfaces
+   ========================================================================== */
+
+.glass-card,
+.dash-card,
+.card,
+.panel,
+.surface-card,
+.evidence-card,
+.wp-card,
+.ui-card,
+.ui-key-number-tile,
+.stat-card,
+.market-header-card,
+.market-kpi-tile,
+.market-card-section {
+  background: rgba(8, 14, 11, 0.80) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Tables: table body sits on solid surface with zebra rows */
+table tbody,
+.market-table tbody,
+.table-container tbody {
+  background: rgba(8, 14, 11, 0.88) !important;
+}
+
+table tbody tr:nth-child(even),
+.market-table tbody tr:nth-child(even),
+.table-container tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
 [data-theme="light"] .glass-card,
 [data-theme="light"] .dash-card,
 [data-theme="light"] .card,
@@ -18374,11 +18528,28 @@ body[data-lang="bn"],
 [data-theme="light"] .wp-card,
 [data-theme="light"] .ui-card,
 [data-theme="light"] .ui-key-number-tile,
-[data-theme="light"] .stat-card {
-  background: rgba(255, 255, 255, 0.94) !important;
-  border: 1px solid rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+[data-theme="light"] .stat-card,
+[data-theme="light"] .market-header-card,
+[data-theme="light"] .market-kpi-tile,
+[data-theme="light"] .market-card-section {
+  background: rgba(255, 255, 255, 0.84) !important;
+  backdrop-filter: blur(18px) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.10) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08) !important;
   color: #0f172a !important;
+}
+
+[data-theme="light"] table tbody,
+[data-theme="light"] .market-table tbody,
+[data-theme="light"] .table-container tbody {
+  background: rgba(255, 255, 255, 0.94) !important;
+}
+
+[data-theme="light"] table tbody tr:nth-child(even),
+[data-theme="light"] .market-table tbody tr:nth-child(even),
+[data-theme="light"] .table-container tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02) !important;
 }
 
 /* Light Theme Readable Charts */

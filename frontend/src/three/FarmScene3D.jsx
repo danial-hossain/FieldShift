@@ -2024,7 +2024,7 @@ export function FarmScene3D({
             onClick={() => handlePresetClick('iso')}
             title={lang === 'bn' ? 'আইসোমেট্রিক সাধারণ ভিউ' : 'Isometric overview'}
             style={{
-              background: currentPreset === 'iso' ? '#2f8f4e' : 'transparent',
+              background: currentPreset === 'iso' ? '#15803d' : 'transparent',
               color: '#ffffff',
               border: 'none',
               borderRadius: 6,
@@ -2041,7 +2041,7 @@ export function FarmScene3D({
             onClick={() => handlePresetClick('top')}
             title={lang === 'bn' ? 'উপর থেকে ফ্ল্যাট প্ল্যান ভিউ' : 'Top-down plan view'}
             style={{
-              background: currentPreset === 'top' ? '#2f8f4e' : 'transparent',
+              background: currentPreset === 'top' ? '#15803d' : 'transparent',
               color: '#ffffff',
               border: 'none',
               borderRadius: 6,
@@ -2058,7 +2058,7 @@ export function FarmScene3D({
             onClick={() => handlePresetClick('close')}
             title={lang === 'bn' ? 'নির্বাচিত ফসলের নিকটবর্তী ভিউ' : 'Close-up on selected crop'}
             style={{
-              background: currentPreset === 'close' ? '#2f8f4e' : 'transparent',
+              background: currentPreset === 'close' ? '#15803d' : 'transparent',
               color: '#ffffff',
               border: 'none',
               borderRadius: 6,
