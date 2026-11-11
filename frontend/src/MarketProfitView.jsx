@@ -23,7 +23,7 @@ function formatMoney(num, lang = 'bn') {
   if (num === null || num === undefined || isNaN(Number(num))) return '—';
   const val = Math.round(Number(num));
   const locale = lang === 'bn' ? 'bn-BD' : 'en-US';
-  const prefix = '৳';
+  const prefix = lang === 'bn' ? '৳' : 'BDT ';
   return `${prefix}${val.toLocaleString(locale)}`;
 }
 
@@ -147,7 +147,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           type: 'success',
           text: isBn
             ? `${editTarget.crop_bn}-এর দর ৳${Math.round(pVal).toLocaleString('bn-BD')}/মণ সংরক্ষিত হয়েছে এবং পরিকল্পনা পুনঃগণনা করা হয়েছে।`
-            : `Updated price for ${editTarget.crop} to ৳${Math.round(pVal).toLocaleString('en-US')}/maund. Plan re-solved.`,
+            : `Updated price for ${editTarget.crop} to ${Math.round(pVal).toLocaleString('en-US')} BDT/maund. Plan re-solved.`,
         });
         setTimeout(() => setPriceNotice(null), 5000);
       }

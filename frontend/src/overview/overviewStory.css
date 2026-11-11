@@ -1,0 +1,83 @@
+/* FieldShift Overview story — scoped under .fsx */
+.fsx{position:relative;width:100%;color:#EAF6E6;font-family:Inter,"Hind Siliguri",system-ui,sans-serif;--lime:#C8F169;--cyan:#5BE3FF;--amber:#F5B04C;--coral:#FF7A6B}
+.fsx *{box-sizing:border-box}
+.fsx-track{position:relative}
+.fsx-stage{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:#03070b}
+.fsx-layer{position:absolute;inset:0;will-change:opacity,transform;pointer-events:none}
+.fsx-stars{position:absolute;inset:0;width:100%;height:100%}
+/* globe */
+.fsx-globe-wrap{position:absolute;left:50%;top:50%;width:min(64vh,640px);height:min(64vh,640px);transform-origin:50% 50%;will-change:transform}
+.fsx-globe-wrap canvas{width:100%;height:100%;border-radius:50%;display:block}
+.fsx-atmo{position:absolute;inset:-6%;border-radius:50%;background:radial-gradient(circle closest-side,rgba(91,227,255,0) 86%,rgba(120,200,255,.55) 89.5%,rgba(91,227,255,.16) 94%,rgba(91,227,255,0) 100%);pointer-events:none}
+.fsx-flash{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#fff 0%,#eaf4ff 50%,#cfe3f5 100%)}
+.fsx-cloudfly{position:absolute;inset:-20%;background-size:cover;background-position:center;mix-blend-mode:screen;filter:blur(2px)}
+/* map */
+.fsx-mapbox{position:absolute;left:62%;top:52%;height:86vh;aspect-ratio:622/868;transform-origin:50% 60%;will-change:transform}
+.fsx-mapbox svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.fsx-map-under{background:radial-gradient(ellipse at 50% 55%,#173322 0%,#0a1710 55%,#04090c 100%)}
+.fsx-pill{position:absolute;transform:translate(-50%,-140%);padding:6px 13px;border-radius:999px;font-size:14px;font-weight:700;white-space:nowrap;background:rgba(6,14,10,.72);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);letter-spacing:.2px}
+.fsx-pill b{font-weight:800}
+.fsx-pin{position:absolute;width:0;height:0}
+.fsx-pin i{position:absolute;left:-7px;top:-7px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.25),0 0 24px #fff}
+.fsx-pin i::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid rgba(255,255,255,.8);animation:fsxPulse 1.8s ease-out infinite}
+.fsx-pin s{position:absolute;left:-1px;bottom:0;width:2px;height:120px;background:linear-gradient(to top,rgba(255,255,255,.9),rgba(255,255,255,0));text-decoration:none}
+@keyframes fsxPulse{from{transform:scale(.4);opacity:1}to{transform:scale(1.6);opacity:0}}
+/* village */
+.fsx-village .fsx-vl{position:absolute;inset:-3%;width:106%;height:106%;will-change:transform}
+.fsx-village .fsx-vl svg{width:100%;height:100%;display:block}
+.fsx-tint{position:absolute;inset:0;mix-blend-mode:multiply}
+.fsx-rain{position:absolute;inset:0;width:100%;height:100%}
+.fsx-shimmer{position:absolute;left:0;right:0;top:48%;height:22%;background:repeating-linear-gradient(0deg,rgba(255,170,90,.0) 0 6px,rgba(255,170,90,.10) 6px 8px);filter:blur(3px);animation:fsxShim 1.6s ease-in-out infinite alternate}
+@keyframes fsxShim{from{transform:translateY(0) scaleY(1)}to{transform:translateY(-6px) scaleY(1.05)}}
+.fsx-firefly{fill:#ffe58a;animation:fsxFly 3s ease-in-out infinite alternate}
+@keyframes fsxFly{from{opacity:.25;transform:translateY(0)}to{opacity:1;transform:translateY(-8px)}}
+/* underground */
+.fsx-under svg{position:absolute;left:0;bottom:0;width:100%;height:100%}
+/* beds */
+.fsx-beds svg{position:absolute;inset:-3%;width:106%;height:106%}
+.fsx-bedlabel{font:700 12px Inter,"Hind Siliguri",sans-serif;fill:#EAF6E6}
+.fsx-tag{position:absolute;transform:translate(-50%,-100%);padding:5px 10px;border-radius:10px;font-size:13px;font-weight:800;white-space:nowrap;background:rgba(6,14,10,.78);border:1px solid rgba(255,255,255,.18)}
+.fsx-ribbon{position:absolute;left:50%;top:15%;transform:translateX(-50%);display:grid;grid-template-columns:repeat(12,1fr);gap:4px;width:min(760px,70vw);padding:10px;border-radius:16px;background:rgba(6,14,10,.70);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px)}
+.fsx-ribbon div{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#a9bcae}
+.fsx-ribbon span{width:100%;height:22px;border-radius:6px}
+.fsx-spark{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime);animation:fsxRise 2.4s ease-in infinite}
+@keyframes fsxRise{from{transform:translateY(0);opacity:0}20%{opacity:1}to{transform:translateY(-120px);opacity:0}}
+.fsx-chips{position:absolute;left:50%;top:13%;transform:translateX(-50%);display:flex;gap:8px}
+.fsx-chip{padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;background:rgba(6,14,10,.7);border:1px solid rgba(200,241,105,.25);color:#cfe3d3;transition:all .25s}
+.fsx-chip.on{background:var(--lime);color:#10230f;box-shadow:0 0 22px rgba(200,241,105,.55);border-color:var(--lime)}
+/* cards */
+.fsx-card{position:absolute;top:50%;width:min(440px,38vw);padding:26px 28px;border-radius:22px;background:rgba(7,14,10,.74);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(16px) saturate(130%);box-shadow:0 20px 50px rgba(0,0,0,.45);pointer-events:auto;will-change:opacity,transform}
+.fsx-card.l{left:5%}.fsx-card.r{right:6%}
+.fsx-kick{font-size:11px;font-weight:800;letter-spacing:1.6px;color:var(--amber);text-transform:uppercase;margin-bottom:10px}
+.fsx-kick.g{color:var(--lime)}
+.fsx-h{font-family:"Space Grotesk",Inter,sans-serif;font-weight:700;font-size:clamp(26px,2.6vw,42px);line-height:1.08;margin:0 0 12px;letter-spacing:-.5px}
+.fsx-h em{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-weight:400;color:var(--lime)}
+.fsx-p{font-size:15px;line-height:1.55;color:#c3d3c7;margin:0 0 14px}
+.fsx-bn{font-size:14px;color:#9fb5a4;margin:-6px 0 12px}
+.fsx-stats{display:flex;gap:22px;margin:6px 0 14px;flex-wrap:wrap}
+.fsx-stat b{display:block;font-family:"Space Grotesk",Inter,sans-serif;font-size:34px;line-height:1;font-weight:700;color:var(--lime);text-shadow:0 0 18px rgba(200,241,105,.35);font-variant-numeric:tabular-nums}
+.fsx-stat b.c{color:var(--cyan);text-shadow:0 0 18px rgba(91,227,255,.35)}
+.fsx-stat b.a{color:var(--amber);text-shadow:0 0 18px rgba(245,176,76,.35)}
+.fsx-stat small{display:block;margin-top:6px;font-size:12px;color:#94a99a}
+.fsx-src{display:inline-flex;gap:6px;align-items:center;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--cyan);border:1px solid rgba(91,227,255,.35);background:rgba(91,227,255,.06);margin-bottom:16px}
+.fsx-rows{display:flex;flex-direction:column;gap:6px;margin:4px 0 14px}
+.fsx-rows div{font-size:13px;color:#c3d3c7;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07)}
+.fsx-rows b{font-weight:700}
+.fsx-btns{display:flex;gap:10px;flex-wrap:wrap}
+.fsx-btn{appearance:none;border:1px solid rgba(200,241,105,.35);background:rgba(200,241,105,.08);color:#e5f7c6;font-weight:700;font-size:14px;padding:11px 18px;border-radius:12px;cursor:pointer;transition:transform .15s,box-shadow .2s,background .2s}
+.fsx-btn:hover{transform:translateY(-1px);box-shadow:0 0 22px rgba(200,241,105,.35)}
+.fsx-btn.p{background:linear-gradient(135deg,#D7F78A,#A8E04A);color:#10230f;border-color:transparent;box-shadow:0 0 0 1px rgba(200,241,105,.45),0 0 18px rgba(200,241,105,.35)}
+.fsx-btn.p:hover{box-shadow:0 0 0 1px rgba(200,241,105,.6),0 0 30px rgba(200,241,105,.6)}
+.fsx-btn:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+.fsx-team{font-size:12.5px;line-height:1.6;color:#b9cbbd;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);margin-bottom:14px}
+.fsx-team b{color:var(--lime)}
+/* rail */
+.fsx-rail{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;pointer-events:auto;z-index:5}
+.fsx-rail button{width:6px;height:26px;border-radius:4px;border:0;background:rgba(255,255,255,.18);cursor:pointer;padding:0;position:relative;transition:background .2s,height .2s}
+.fsx-rail button.on{background:var(--lime);height:40px;box-shadow:0 0 14px rgba(200,241,105,.6)}
+.fsx-rail button span{position:absolute;right:14px;top:50%;transform:translateY(-50%);white-space:nowrap;font-size:12px;font-weight:700;padding:4px 9px;border-radius:8px;background:rgba(6,14,10,.85);opacity:0;pointer-events:none;transition:opacity .15s}
+.fsx-rail button:hover span{opacity:1}
+.fsx-hint{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);font-size:12px;letter-spacing:1.5px;color:#9fb5a4;text-transform:uppercase}
+@media (max-width:900px){.fsx-card{left:4%!important;right:4%!important;width:auto;top:auto;bottom:4%}.fsx-ribbon{top:8%}}
+@media (prefers-reduced-motion:reduce){.fsx *{animation:none!important;transition:none!important}}
+.fsx-dawn{background:linear-gradient(180deg,#ff9e7a 0%,#ffc58f 30%,#ffd9a0 48%,rgba(255,217,160,0) 62%);mix-blend-mode:screen}

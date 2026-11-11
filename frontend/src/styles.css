@@ -15270,8 +15270,18 @@ body,
 }
 
 /* ==========================================================================
-   LB6: Light Theme Parity
+   LB7: Bangla Mode Polish & Typography
    ========================================================================== */
+
+html[data-lang="bn"],
+body[data-lang="bn"],
+:lang(bn),
+[lang="bn"],
+.bn-text {
+  font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  line-height: 1.6 !important;
+}
+
 
 [data-theme="light"] {
   --bg-root: #f8fafc !important;
@@ -18056,8 +18066,18 @@ body,
 }
 
 /* ==========================================================================
-   LB6: Light Theme Parity
+   LB7: Bangla Mode Polish & Typography
    ========================================================================== */
+
+html[data-lang="bn"],
+body[data-lang="bn"],
+:lang(bn),
+[lang="bn"],
+.bn-text {
+  font-family: 'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  line-height: 1.6 !important;
+}
+
 
 [data-theme="light"] {
   --bg-root: #f8fafc !important;

@@ -27,6 +27,7 @@ export function OrbitToFieldCanvas({
   graceTrends = null,
   onsetComparison = null,
   prefersReducedMotion = false,
+  lang = 'bn',
 }) {
   const mountRef = useRef(null);
   const scrollProgRef = useRef(scrollProgress);
@@ -796,14 +797,15 @@ export function OrbitToFieldCanvas({
       return el;
     }
 
+    const isBn = lang === 'bn';
     const labels = {
-      barind: createHtmlPill('Barind · বরেন্দ্র'),
-      haor: createHtmlPill('Haor · হাওর'),
-      coast: createHtmlPill('Coast · উপকূল'),
-      field: createHtmlPill(activeField?.name || 'Active Field'),
-      waterTrend: createHtmlPill('Trend: −1.07 cm/yr'),
-      starBed: createHtmlPill('Balanced ⭐ Optimum'),
-      harvestDone: createHtmlPill('✓ Harvest Logged'),
+      barind: createHtmlPill(isBn ? 'বরেন্দ্র' : 'Barind'),
+      haor: createHtmlPill(isBn ? 'হাওর' : 'Haor'),
+      coast: createHtmlPill(isBn ? 'উপকূল' : 'Coast'),
+      field: createHtmlPill(activeField?.name || (isBn ? 'সক্রিয় জমি' : 'Active Field')),
+      waterTrend: createHtmlPill(isBn ? 'ধারা: −১.০৭ সেমি/বছর' : 'Trend: −1.07 cm/yr'),
+      starBed: createHtmlPill(isBn ? 'সুষম ⭐ সেরা পছন্দ' : 'Balanced ⭐ Optimum'),
+      harvestDone: createHtmlPill(isBn ? '✓ ফসল তোলা সম্পন্ন' : '✓ Harvest Logged'),
     };
 
     function projectToScreen(pos3D) {

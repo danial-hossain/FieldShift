@@ -763,6 +763,8 @@ export function App() {
     localStorage.setItem('fieldshift_lang', lang);
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('lang', lang);
+      document.documentElement.setAttribute('data-lang', lang);
+      document.body.setAttribute('data-lang', lang);
     }
   }, [lang]);
 

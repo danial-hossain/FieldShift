@@ -4,6 +4,7 @@
 // Full English in EN mode, full Bengali in BN mode (dataset names stay English).
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { toBengaliNumber } from '../i18n.js';
 import { OrbitToFieldCanvas } from './OrbitToFieldCanvas.jsx';
 import { isWebGLAvailable, haToBigha } from '../three/farmSceneHelpers.js';
 import { REGIONAL_ROTATIONS } from './regionalRotationsConfig.js';
@@ -162,7 +163,7 @@ function StoryGlassCard({ scene, isBn, onNavigate, isActive, side = 'left' }) {
             color: bigNum.color || '#C8F169',
             lineHeight: 1,
           }}>
-            {bigNum.prefix || ''}{isActive ? countedVal : '—'}{bigNum.suffix || ''}
+            {(isBn ? (bigNum.prefixBn || bigNum.prefix) : (bigNum.prefixEn || bigNum.prefix)) || ''}{isActive ? countedVal : '—'}{(isBn ? (bigNum.suffixBn || bigNum.suffix) : (bigNum.suffixEn || bigNum.suffix)) || ''}
           </span>
           <span style={{ fontSize: 13, color: '#9fb3a5', fontWeight: 600 }}>
             {isBn ? (bigNum.labelBn || bigNum.label) : bigNum.label}
@@ -185,7 +186,7 @@ function StoryGlassCard({ scene, isBn, onNavigate, isActive, side = 'left' }) {
               alignItems: 'center',
             }}>
               <span style={{ color: '#9fb3a5' }}>{isBn ? (n.labelBn || n.label) : n.label}:</span>
-              <b style={{ color: n.color || '#EAF2EC' }}>{n.val}</b>
+              <b style={{ color: n.color || '#EAF2EC' }}>{isBn ? (n.valBn || n.val) : (n.val || n.valBn)}</b>
             </span>
           ))}
         </div>
@@ -432,9 +433,9 @@ export function OrbitToFieldStory({
       bodyEn: 'Barind groundwater differs from Haor flash floods and Coastal salinity. FieldShift customizes advice by agro-ecological zone.',
       bodyBn: 'বরেন্দ্রের ভূগর্ভস্থ পানি, হাওরের আগাম বন্যা এবং উপকূলের লবণাক্ততা এক নয়। ফিল্ডশিফট অঞ্চলভেদে পৃথক সমাধান দেয়।',
       nums: [
-        { label: REGIONAL_ROTATIONS.barind.regionEn, labelBn: REGIONAL_ROTATIONS.barind.regionBn, val: 'Boro rice → fallow → Aman rice', color: '#C8F169' },
-        { label: REGIONAL_ROTATIONS.haor.regionEn,   labelBn: REGIONAL_ROTATIONS.haor.regionBn,   val: 'Boro rice → fallow (flooded)', color: '#38D9F5' },
-        { label: REGIONAL_ROTATIONS.coast.regionEn,  labelBn: REGIONAL_ROTATIONS.coast.regionBn,  val: 'Fallow → fallow → Aman rice', color: '#F5B04C' },
+        { label: REGIONAL_ROTATIONS.barind.regionEn, labelBn: REGIONAL_ROTATIONS.barind.regionBn, val: 'Boro rice → fallow → Aman rice', valBn: 'বোরো ধান → পতিত → আমন ধান', color: '#C8F169' },
+        { label: REGIONAL_ROTATIONS.haor.regionEn,   labelBn: REGIONAL_ROTATIONS.haor.regionBn,   val: 'Boro rice → fallow (flooded)', valBn: 'বোরো ধান → পতিত (প্লাবিত)', color: '#38D9F5' },
+        { label: REGIONAL_ROTATIONS.coast.regionEn,  labelBn: REGIONAL_ROTATIONS.coast.regionBn,  val: 'Fallow → fallow → Aman rice', valBn: 'পতিত → পতিত → আমন ধান', color: '#F5B04C' },
       ],
       nasa: 'ISRIC SoilGrids · SRTM 30m',
       link: { label: 'Open My Fields', labelBn: 'আমার জমি দেখুন', dest: 'field' },
@@ -449,10 +450,10 @@ export function OrbitToFieldStory({
       bodyEn: 'GRACE-FO tracks total water storage changes from orbit. FieldShift balances evapotranspiration (FAO-56) with remaining water access.',
       bodyBn: 'গ্রেজ-এফও উপগ্রহ কক্ষপথ থেকে মোট সঞ্চিত পানির পরিবর্তন পর্যবেক্ষণ করে। ফিল্ডশিফট ফসলের প্রস্বেদন হিসাব করে পানির অপচয় রোধ করে।',
       bigNums: [
-        { rawVal: Math.abs(barindTrend), prefix: barindTrend < 0 ? '−' : '+', suffix: ' cm/yr', label: 'Barind region trend', labelBn: 'বরেন্দ্র অঞ্চলের পরিবর্তন', color: '#F5B04C', decimals: 2 },
+        { rawVal: Math.abs(barindTrend), prefix: barindTrend < 0 ? '−' : '+', suffix: isBn ? ' সেমি/বছর' : ' cm/yr', label: 'Barind region trend', labelBn: 'বরেন্দ্র অঞ্চলের পরিবর্তন', color: '#F5B04C', decimals: 2 },
       ],
       nums: [
-        { label: 'Haor region trend', labelBn: 'হাওর অঞ্চলের পরিবর্তন', val: `+${Math.abs(haorTrend).toFixed(2)} cm/yr`, color: '#38D9F5' },
+        { label: 'Haor region trend', labelBn: 'হাওর অঞ্চলের পরিবর্তন', val: `+${Math.abs(haorTrend).toFixed(2)} cm/yr`, valBn: `+${toBengaliNumber(Math.abs(haorTrend).toFixed(2))} সেমি/বছর`, color: '#38D9F5' },
       ],
       nasa: 'GRACE-FO Mascon · JPL',
       link: { label: 'Water & Irrigation', labelBn: 'পানি ও সেচ পাতা', dest: 'water_irrigation' },
@@ -504,11 +505,11 @@ export function OrbitToFieldStory({
       bodyEn: 'Mathematical Mixed-Integer Linear Programming solves multi-objective trade-offs between profit, water consumption, and soil sustainability.',
       bodyBn: 'গাণিতিক অপ্টিমাইজেশন পানি সাশ্রয়, অধিক মুনাফা ও মাটির পুষ্টির মধ্যে শ্রেষ্ঠ ভারসাম্য নির্ধারণ করে।',
       bigNums: [
-        { rawVal: 34000, prefix: '+৳', suffix: '', label: 'Net profit gain / bigha', labelBn: 'বিঘাপ্রতি অতিরিক্ত লাভ', color: '#C8F169' },
+        { rawVal: 34000, prefix: isBn ? '+৳' : '+BDT ', suffix: '', label: 'Net profit gain / bigha', labelBn: 'বিঘাপ্রতি অতিরিক্ত লাভ', color: '#C8F169' },
       ],
       nums: [
-        { label: 'Strategies', labelBn: 'কৌশলসমূহ', val: 'Balanced ⭐ · Profit · Water Saving · Soil Health', color: '#C8F169' },
-        { label: 'Optimization', labelBn: 'মডেল', val: '6-Season MILP', color: '#38D9F5' },
+        { label: 'Strategies', labelBn: 'কৌশলসমূহ', val: 'Balanced ⭐ · Profit · Water Saving · Soil Health', valBn: 'সুষম ⭐ · সর্বোচ্চ লাভ · পানি সাশ্রয় · মাটির স্বাস্থ্য', color: '#C8F169' },
+        { label: 'Optimization', labelBn: 'মডেল', val: '6-Season MILP', valBn: '৬-মৌসুম এমআইএলপি', color: '#38D9F5' },
       ],
       nasa: 'MILP Optimizer · NASA POWER',
       link: { label: 'Rotation Planner', labelBn: 'আবর্তন পরিকল্পনা পাতা', dest: 'farm_planning' },
@@ -527,7 +528,7 @@ export function OrbitToFieldStory({
       ],
       nums: [
         { label: 'Drought shock', labelBn: 'খরা প্রভাব', val: '−12%', color: '#F5B04C' },
-        { label: 'Scenarios tested', labelBn: 'পরীক্ষিত দুর্যোগ', val: '5 Extreme Shocks', color: '#38D9F5' },
+        { label: 'Scenarios tested', labelBn: 'পরীক্ষিত দুর্যোগ', val: '5 Extreme Shocks', valBn: '৫টি চরম দুর্যোগ', color: '#38D9F5' },
       ],
       nasa: 'NASA Earth Observations Archive',
       link: { label: 'Climate Stress Test', labelBn: 'স্ট্রেস টেস্ট সাব-ল্যাব', dest: 'farm_planning' },
@@ -542,8 +543,8 @@ export function OrbitToFieldStory({
       bodyEn: 'Log real-world yields and market wholesale prices. FieldShift updates transition probabilities to continuously sharpen next year’s advice.',
       bodyBn: 'বাস্তব ফলন ও বাজার দর যুক্ত করুন। রিইনফোর্সমেন্ট লার্নিং অ্যালগরিদম ভবিষ্যতের পরামর্শকে আরও বাস্তবমুখী করে তোলে।',
       nums: [
-        { label: 'Model', labelBn: 'মডেল', val: 'RL-inspired adaptive learning', color: '#C8F169' },
-        { label: 'Feedback', labelBn: 'ফিডব্যাক', val: 'Harvest & Soil Logged', color: '#EAF2EC' },
+        { label: 'Model', labelBn: 'মডেল', val: 'RL-inspired adaptive learning', valBn: 'আরএল অভিযোজিত লার্নিং', color: '#C8F169' },
+        { label: 'Feedback', labelBn: 'ফিডব্যাক', val: 'Harvest & Soil Logged', valBn: 'ফলন ও মাটির তথ্য সংরক্ষিত', color: '#EAF2EC' },
       ],
       nasa: 'Reinforcement Learning · History',
       link: { label: 'Adaptive Replan', labelBn: 'অভিযোজিত পুনর্পরিকল্পনা', dest: 'farm_planning' },
@@ -588,6 +589,7 @@ export function OrbitToFieldStory({
           graceTrends={graceTrendsData}
           onsetComparison={advisoryData?.comparison}
           prefersReducedMotion={prefersReducedMotion}
+          lang={lang}
         />
       </CanvasErrorBoundary>
 
