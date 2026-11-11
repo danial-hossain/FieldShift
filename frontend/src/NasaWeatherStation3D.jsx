@@ -577,7 +577,7 @@ export function NasaWeatherStation3D({
             {/* Hero Grid: Verdict List + GRACE Aquifer Card */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, alignItems: 'stretch' }}>
               {/* Left Column: Verdict rows */}
-              <div data-demo="monsoon_onset" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div data-demo="verdict_rows" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {verdicts.map((v, i) => {
                   const isConfirmed = v.p < 0.05;
                   const isHint = v.p >= 0.05 && v.p < 0.10;
@@ -648,6 +648,7 @@ export function NasaWeatherStation3D({
 
               {/* Right Column: GRACE Aquifer Depletion Card */}
               <div
+                data-demo="water_storage_trend"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -837,7 +838,7 @@ export function NasaWeatherStation3D({
 
             {/* 4 Interactive SVG Trend Charts */}
             <div
-              data-demo="nasa_power_chart"
+              data-demo="climate_trends"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -975,7 +976,7 @@ export function NasaWeatherStation3D({
             </div>
 
             {/* Calendar Grid Container */}
-            <div style={{ overflowX: 'auto', paddingBottom: 6 }}>
+            <div data-demo="risk_calendar" style={{ overflowX: 'auto', paddingBottom: 6 }}>
               <div
                 style={{
                   display: 'grid',
@@ -1221,6 +1222,7 @@ export function NasaWeatherStation3D({
                   return (
                     <div
                       key={idx}
+                      data-demo={idx === 0 ? "risk_action_row" : undefined}
                       style={{
                         display: 'flex',
                         gap: 12,
@@ -1286,6 +1288,7 @@ export function NasaWeatherStation3D({
           ============================================================== */}
           {summary.recent && (
             <section
+              data-demo="recent_weather"
               className="card"
               style={{
                 background: 'var(--surface, #131b16)',
