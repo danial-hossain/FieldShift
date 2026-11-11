@@ -2536,42 +2536,44 @@ export function App() {
           </div>
 
           <div className="global-top-bar-right">
-            {/* Header Field Selector for Instant Context Switching Across Any View */}
-            <div className="header-field-selector" title="Active Field Parcel">
-              <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)' }}><FieldIcon size={16} /></span>
-              <select
-                aria-label="Active field parcel"
-                value={selectedFieldId == null ? '' : String(selectedFieldId)}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (!val) {
-                    setSelectedFieldId(null);
-                    return;
-                  }
-                  if (val === '__add_new__') {
-                    openAddFieldModal();
-                    return;
-                  }
-                  if (val === 'demo') {
-                    handleSelectActiveField(demoField, false);
-                    return;
-                  }
-                  const found = userFields.find(f => String(f.id) === String(val));
-                  if (found) handleSelectActiveField(found, false);
-                }}
-              >
-                <option value="" disabled>{lang === 'bn' ? 'সক্রিয় জমি নির্বাচন করুন...' : 'Select active field...'}</option>
-                <option value="__add_new__" style={{ fontWeight: 600, color: 'var(--leaf)' }}>
-                  {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add New Field'}
-                </option>
-                {Array.from(new Map(userFields.map(f => [String(f.id), f])).values()).map(f => (
-                  <option key={f.id} value={String(f.id)}>
-                    {f.name} ({f.district ? `${f.district}, ` : ''}{f.area_ha || 1} ha)
+            {/* Header Field Selector for Instant Context Switching Across Any View (hidden on Overview) */}
+            {activeNav !== 'dashboard' && (
+              <div className="header-field-selector" title="Active Field Parcel">
+                <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)' }}><FieldIcon size={16} /></span>
+                <select
+                  aria-label="Active field parcel"
+                  value={selectedFieldId == null ? '' : String(selectedFieldId)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val) {
+                      setSelectedFieldId(null);
+                      return;
+                    }
+                    if (val === '__add_new__') {
+                      openAddFieldModal();
+                      return;
+                    }
+                    if (val === 'demo') {
+                      handleSelectActiveField(demoField, false);
+                      return;
+                    }
+                    const found = userFields.find(f => String(f.id) === String(val));
+                    if (found) handleSelectActiveField(found, false);
+                  }}
+                >
+                  <option value="" disabled>{lang === 'bn' ? 'সক্রিয় জমি নির্বাচন করুন...' : 'Select active field...'}</option>
+                  <option value="__add_new__" style={{ fontWeight: 600, color: 'var(--leaf)' }}>
+                    {lang === 'bn' ? '+ নতুন জমি যোগ করুন' : '+ Add New Field'}
                   </option>
-                ))}
-                <option value="demo">{lang === 'bn' ? 'বগুড়া ডেমো খামার (১০ হেক্টর) [DEMO]' : 'Demo Field (Bogura 10 ha) [DEMO]'}</option>
-              </select>
-            </div>
+                  {Array.from(new Map(userFields.map(f => [String(f.id), f])).values()).map(f => (
+                    <option key={f.id} value={String(f.id)}>
+                      {f.name} ({f.district ? `${f.district}, ` : ''}{f.area_ha || 1} ha)
+                    </option>
+                  ))}
+                  <option value="demo">{lang === 'bn' ? 'বগুড়া ডেমো খামার (১০ হেক্টর) [DEMO]' : 'Demo Field (Bogura 10 ha) [DEMO]'}</option>
+                </select>
+              </div>
+            )}
 
             {/* NASA Status Telemetry Badge (Collapses cleanly on mobile) */}
             <div className="top-bar-pill-badge" title="NASA POWER agro-climatic observation feed">

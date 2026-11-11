@@ -10,6 +10,22 @@ import { useState, useEffect, useMemo } from 'react';
 import { request } from '../apiClient.js';
 import { REGIONAL_ROTATIONS } from './regionalRotationsConfig.js';
 import { translateCropName } from '../SixSeasonRecommendationView.jsx';
+import districtsData from '../bd_districts_choropleth.json' with { type: 'json' };
+
+function getDistrictLabel(districtRaw, lang = 'en') {
+  if (!districtRaw) return lang === 'bn' ? 'চাঁপাইনবাবগঞ্জ' : 'Chapainawabganj';
+  const raw = String(districtRaw).trim();
+  const k = raw.toLowerCase().replace(/[\s_-]+/g, '');
+  const match = districtsData.find(d => {
+    const dEn = d.name.toLowerCase().replace(/[\s_-]+/g, '');
+    const dBn = (d.bn_name || '').trim();
+    return dEn === k || dBn === raw || (k === 'bogra' && dEn === 'bogura') || (k === 'nawabganj' && dEn === 'chapainawabganj');
+  });
+  if (match) {
+    return lang === 'bn' ? match.bn_name : match.name;
+  }
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
 
 const DEFAULT_TEAM = [
   'Danial Hossain (Lead)',
@@ -296,7 +312,7 @@ export function useStoryData(activeField, lang = 'en') {
       lang,
       field: {
         name: activeField?.name || (isBn ? 'রহিম মিয়ার জমি' : "Rahim's Field"),
-        district: activeField?.district || (isBn ? 'চাঁপাইনবাবগঞ্জ' : 'Chapainawabganj'),
+        district: getDistrictLabel(activeField?.district, lang),
         areaLabel: formatAreaLabel(areaHa, lang),
         lat,
         lon,
