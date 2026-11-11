@@ -5,6 +5,7 @@
 // Clicking any row highlights its path on the 3D/SVG system map and opens the side drawer.
 
 import React from 'react';
+import { Satellite } from 'lucide-react';
 
 export function NasaDataCardsSection({
   lang = 'bn',
@@ -221,7 +222,7 @@ export function NasaDataCardsSection({
           gap: 8,
         }}
       >
-        <span>🛰️</span>
+        <Satellite size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
         <span>{isBn ? 'যে তথ্য ব্যবহার করি' : 'Data We Actually Use'}</span>
       </h2>
 

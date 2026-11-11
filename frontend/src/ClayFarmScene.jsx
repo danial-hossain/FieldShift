@@ -5,6 +5,7 @@
 // raycast plot selection, and zero fabricated telemetry.
 
 import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { Wheat } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -1089,7 +1090,7 @@ export function ClayFarmScene({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <span style={{ fontSize: 16 }}>🌾</span>
+          <Wheat size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
           <strong style={{ fontSize: 13, color: '#c5e86c' }}>{selectedPlot?.name || 'Plot'}</strong>
           {selectedPlot?.hasAlert && (
             <span style={{ color: CLAY_PALETTE.alert, fontWeight: 700, fontSize: 11 }}>

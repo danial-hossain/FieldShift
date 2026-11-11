@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { CloudRain, Zap, Shield } from 'lucide-react';
 import { ClimateStress3D } from './research3d/ClimateStress3D.jsx';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest } from './apiClient.js';
@@ -109,7 +110,7 @@ export function WeatherUncertaintyView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '26px' }}>🌦️</span>
+              <CloudRain size={26} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Weather Forecast Uncertainty &amp; Robust Planning
               </h2>
@@ -139,7 +140,7 @@ export function WeatherUncertaintyView({
               onClick={exportCsv}
               disabled={!uncertaintyData}
             >
-              📥 Export CSV
+              Export CSV
             </button>
             <button
               type="button"
@@ -147,7 +148,7 @@ export function WeatherUncertaintyView({
               onClick={fetchUncertaintyScenarios}
               disabled={loading}
             >
-              {loading ? 'Evaluating Scenarios...' : '⚡ Re-run Stress Suite'}
+              {loading ? 'Evaluating Scenarios...' : <><Zap size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />Re-run Stress Suite</>}
             </button>
           </div>
         </div>
@@ -212,7 +213,7 @@ export function WeatherUncertaintyView({
             className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={fetchUncertaintyScenarios}
           >
-            🔄 Retry Stress Suite
+            Retry Stress Suite
           </button>
         </div>
       )}
@@ -311,7 +312,7 @@ export function WeatherUncertaintyView({
 
           {/* Scientific Transparency Alert */}
           <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '22px' }}>🛡️</span>
+            <Shield size={22} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
             <div style={{ fontSize: '12px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.5 }}>
               <strong style={{ color: 'var(--text-main, #f1f5f9)' }}>Scientific Disclosure:</strong> {uncertaintyData.scientific_disclaimer}
             </div>

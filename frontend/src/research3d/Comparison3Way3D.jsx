@@ -8,6 +8,7 @@
 // - Full data grounding with zero fabricated fallbacks
 
 import React, { useMemo, useState } from 'react';
+import { BarChart3, Search } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 import { extractFirstCrop, parseFiniteMetric } from '../comparisonLabEngine.js';
@@ -212,7 +213,7 @@ export function Comparison3Way3D({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h4 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>📊</span>
+            <BarChart3 size={18} strokeWidth={1.75} />
             <span>{lang === 'bn' ? 'ঘূর্ণন কৌশল তুলনা (সংরক্ষিত আবর্তন উপলভ্য হলে দেখানো হবে)' : 'Rotation Strategy Comparison (saved rotation shown when available)'}</span>
           </h4>
           <p style={{ margin: '4px 0 0', fontSize: 12.5, color: '#94a3b8' }}>
@@ -379,7 +380,7 @@ export function Comparison3Way3D({
           {/* Quick Inspector Cards */}
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <h4 style={{ margin: 0, fontSize: 13.5, fontWeight: 800, color: '#f8fafc' }}>
-              🔍 {lang === 'bn' ? 'পদ্ধতিগত পার্থক্য বিশ্লেষণ' : 'Methodological Synthesis'}
+              <Search size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'পদ্ধতিগত পার্থক্য বিশ্লেষণ' : 'Methodological Synthesis'}
             </h4>
 
             {rows.map(r => (

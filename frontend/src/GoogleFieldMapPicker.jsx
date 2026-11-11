@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { MapPin, X, Pencil, Target } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Known agricultural preset coordinates in Bangladesh research zones
@@ -469,7 +470,7 @@ export function GoogleFieldMapPicker({
                   fontWeight: 600,
                 }}
               >
-                📍 {p.name}
+                <MapPin size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{p.name}
               </button>
             ))}
           </div>
@@ -496,7 +497,7 @@ export function GoogleFieldMapPicker({
                 gap: 5,
               }}
             >
-              <span>{isDrawingBoundary ? '✖' : '✏️'}</span>
+              <span>{isDrawingBoundary ? <X size={16} strokeWidth={1.75} /> : <Pencil size={16} strokeWidth={1.75} />}</span>
               <span>{isDrawingBoundary ? (isBn ? 'আঁকা বন্ধ করুন' : 'Cancel Drawing') : (isBn ? 'সীমানা আঁকুন (৪+ ক্লিক)' : 'Draw Boundary (4+ clicks)')}</span>
             </button>
 
@@ -515,7 +516,7 @@ export function GoogleFieldMapPicker({
                 cursor: 'pointer',
               }}
             >
-              🎯 {isLocating ? (isBn ? 'খোঁজা হচ্ছে…' : 'Locating…') : (isBn ? 'জিপিএস' : 'GPS')}
+              <Target size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{isLocating ? (isBn ? 'খোঁজা হচ্ছে…' : 'Locating…') : (isBn ? 'জিপিএস' : 'GPS')}
             </button>
           </div>
         </div>

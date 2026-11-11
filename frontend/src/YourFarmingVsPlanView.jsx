@@ -11,6 +11,7 @@
 // 7. Dynamic summary card with natural Bangla grammar (possessive suffixes) & English localization
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { Lightbulb, Star, RotateCw, Droplets } from 'lucide-react';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { haToBigha } from './three/farmSceneHelpers.js';
 import { formatDistrictLabel } from './utils/districtLabels.js';
@@ -449,8 +450,8 @@ export function YourFarmingVsPlanView({
     if (!currentPlanMetrics) return '';
     if (!baselineMetrics.hasSavedRotation) {
       return lang === 'bn'
-        ? `💡 এই জমিতে ${strategyLabels[selectedPriority]?.bn || 'নির্বাচিত'} কৌশলে বছরে সেচ লাগবে ${formatNum(currentPlanMetrics.irrigationMm, 'bn')} মিমি এবং সম্ভাব্য বাৎসরিক লাভ ${formatBdt(currentPlanMetrics.profitBdt, 'bn')}।`
-        : `💡 For this parcel, the ${strategyLabels[selectedPriority]?.en || 'selected'} strategy requires ${formatNum(currentPlanMetrics.irrigationMm, 'en')} mm irrigation/yr with an estimated profit of ${formatBdt(currentPlanMetrics.profitBdt, 'en')}.`;
+        ? `<Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />এই জমিতে ${strategyLabels[selectedPriority]?.bn || 'নির্বাচিত'} কৌশলে বছরে সেচ লাগবে ${formatNum(currentPlanMetrics.irrigationMm, 'bn')} মিমি এবং সম্ভাব্য বাৎসরিক লাভ ${formatBdt(currentPlanMetrics.profitBdt, 'bn')}।`
+        : `<Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />For this parcel, the ${strategyLabels[selectedPriority]?.en || 'selected'} strategy requires ${formatNum(currentPlanMetrics.irrigationMm, 'en')} mm irrigation/yr with an estimated profit of ${formatBdt(currentPlanMetrics.profitBdt, 'en')}.`;
     }
 
     const dI = (baselineMetrics.irrigationMm || 0) - (currentPlanMetrics.irrigationMm || 0);
@@ -496,12 +497,12 @@ export function YourFarmingVsPlanView({
     let res = '';
     if (swaps.length > 0) {
       res = lang === 'bn'
-        ? `💡 ${swapsStr} লাগালে বছরে ${waterStr} লাগবে আর ${profitStr} হবে।${waterWarning}`
-        : `💡 Planting ${swapsStr} will require ${waterStr} per year and yield ${profitStr}.${waterWarning}`;
+        ? `${swapsStr} লাগালে বছরে ${waterStr} লাগবে আর ${profitStr} হবে।${waterWarning}`
+        : `Planting ${swapsStr} will require ${waterStr} per year and yield ${profitStr}.${waterWarning}`;
     } else {
       res = lang === 'bn'
-        ? `💡 বর্তমান চাষ পদ্ধতির সাথে এই কৌশলের প্রথম বছরের ফসল একই।`
-        : `💡 The first year crop rotation matches your current farming practice.`;
+        ? `বর্তমান চাষ পদ্ধতির সাথে এই কৌশলের প্রথম বছরের ফসল একই।`
+        : `The first year crop rotation matches your current farming practice.`;
     }
 
     if (identicalStrategyNote && (selectedPriority === 'balanced' || selectedPriority === 'water')) {
@@ -561,14 +562,14 @@ export function YourFarmingVsPlanView({
                 aria-pressed={isSelected ? 'true' : 'false'}
                 onClick={() => setSelectedStrategy(pKey)}
               >
-                {label} {isBest ? '⭐' : ''}
+                {label} {isBest ? '(Best)' : ''}
               </button>
             );
           })}
         </div>
         {bestReason && (
           <div className="cv-best-reason">
-            <span>⭐</span>
+            <Star size={16} fill="var(--amber, #f5b04c)" color="var(--amber, #f5b04c)" />
             <span>{bestReason}</span>
           </div>
         )}
@@ -672,7 +673,7 @@ export function YourFarmingVsPlanView({
                   ? `মূল পরামর্শ · ${strategyLabels[selectedPriority]?.bn || ''}`
                   : `Plan · ${strategyLabels[selectedPriority]?.en || ''}`}
               </span>
-              {bestPriority === selectedPriority && <span>⭐</span>}
+              {bestPriority === selectedPriority && <Star size={16} fill="var(--amber, #f5b04c)" color="var(--amber, #f5b04c)" />}
               <small>{lang === 'bn' ? 'MILP · ২ বছর' : 'MILP · 2 years'}</small>
             </div>
             <div className="cv-strip">
@@ -765,7 +766,7 @@ export function YourFarmingVsPlanView({
               type="button"
               onClick={() => onNavigateTab ? onNavigateTab('replan') : null}
             >
-              🔄 {lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা →' : 'Adaptive Replan →'}
+              <RotateCw size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা →' : 'Adaptive Replan →'}
             </button>
           </div>
         )}
@@ -823,7 +824,7 @@ export function YourFarmingVsPlanView({
 
         {/* Tank Capacity Display */}
         <div className="tankcap">
-          💧 {lang === 'bn' ? 'বছরে সেচ:' : 'Yearly Irrigation:'} {formatNum(activeIrrigationMm, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
+          <Droplets size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'বছরে সেচ:' : 'Yearly Irrigation:'} {formatNum(activeIrrigationMm, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
         </div>
       </div>
 
@@ -943,7 +944,7 @@ export function YourFarmingVsPlanView({
           {PRIORITIES.map((pKey) => {
             const m = strategyMetrics[pKey];
             const isBest = bestPriority === pKey;
-            const label = (strategyLabels[pKey]?.[lang] || pKey) + (isBest ? ' ⭐' : '');
+            const label = (strategyLabels[pKey]?.[lang] || pKey) + (isBest ? ' (Best)' : '');
             return (
               <div key={pKey} className="br">
                 <span style={{ fontWeight: isBest ? 700 : 500 }}>{label}</span>

@@ -4,6 +4,7 @@
 // Backed strictly by live /api/planning, SRTM 30m elevations, and NASA GRACE trends.
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Scale, Sprout, Brain } from 'lucide-react';
 import { request } from './apiClient.js';
 import { toBengaliNumber, soilLabel } from './i18n.js';
 
@@ -356,7 +357,7 @@ export function TwoFieldComparisonModal({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 14 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 24 }}>⚖️🌱</span>
+              <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Scale size={22} strokeWidth={1.75} /><Sprout size={22} strokeWidth={1.75} color="var(--lime, #c8f169)" /></span>
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--leaf, #10b981)', textTransform: 'uppercase' }}>
                 NASA Multi-Mission Scientific Proof (SRTM + GRACE + MILP)
               </span>
@@ -385,7 +386,7 @@ export function TwoFieldComparisonModal({
           lineHeight: 1.6
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-            <span style={{ fontSize: 16 }}>🧠</span>
+            <Brain size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
             <strong style={{ color: '#10b981', fontSize: 13 }}>
               {lang === 'bn' ? 'আঞ্চলিক পার্থক্যের বৈজ্ঞানিক কারণ (Why the plans differ):' : 'Causal Agronomic Explanation:'}
             </strong>

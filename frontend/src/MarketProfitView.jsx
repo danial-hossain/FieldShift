@@ -10,6 +10,7 @@
 // 6. Reference Catalogue Table (collapsed by default, static benchmark notice)
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { MapPin, Ruler, Sprout, Lightbulb, Pencil, AlertTriangle, BarChart3, FileText } from 'lucide-react';
 import { request } from './apiClient.js';
 import {
   getFieldSelectedStrategy,
@@ -243,14 +244,14 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 8, fontSize: 13, color: 'var(--text-muted, #8C9B90)' }}>
               <span>
-                📍 {formatNum(fieldSummary.latitude, 2, lang)}°{isBn ? 'উ' : 'N'}, {formatNum(fieldSummary.longitude, 2, lang)}°{isBn ? 'পূ' : 'E'}
+                <MapPin size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{formatNum(fieldSummary.latitude, 2, lang)}°{isBn ? 'উ' : 'N'}, {formatNum(fieldSummary.longitude, 2, lang)}°{isBn ? 'পূ' : 'E'}
               </span>
               <span>•</span>
               <span>
-                📐 {formatNum(fieldSummary.area_bigha, 1, lang)} {isBn ? 'বিঘা' : 'bigha'} ({formatNum(fieldSummary.area_ha, 2, lang)} {isBn ? 'হেক্টর' : 'ha'})
+                <Ruler size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{formatNum(fieldSummary.area_bigha, 1, lang)} {isBn ? 'বিঘা' : 'bigha'} ({formatNum(fieldSummary.area_ha, 2, lang)} {isBn ? 'হেক্টর' : 'ha'})
               </span>
               <span>•</span>
-              <span>🌱 {soilLabel}</span>
+              <span><Sprout size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{soilLabel}</span>
             </div>
           </div>
 
@@ -505,7 +506,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
             </p>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted, #8C9B90)' }}>
-            💡 {isBn ? 'দর পরিবর্তন করতে পেন্সিল আইকনে ক্লিক করুন' : 'Click the pencil icon to input your own selling price'}
+            <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{isBn ? 'দর পরিবর্তন করতে পেন্সিল আইকনে ক্লিক করুন' : 'Click the pencil icon to input your own selling price'}
           </div>
         </div>
 
@@ -626,7 +627,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                                 color: 'var(--accent, #C8F169)',
                               }}
                             >
-                              ✏️
+                              <Pencil size={14} strokeWidth={1.75} />
                             </button>
                           </div>
                           <span
@@ -861,7 +862,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         >
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>⚠️</span>
+              <AlertTriangle size={18} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
               <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#F59E0B' }}>
                 {isBn ? 'কোন ফসলের দামে সবচেয়ে ঝুঁকি?' : 'Which Crop Holds the Highest Price Risk?'}
               </h3>
@@ -902,7 +903,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           </div>
 
           <div style={{ marginTop: 18, fontSize: 11, color: 'var(--text-muted, #8C9B90)' }}>
-            💡 {isBn ? 'ঝুঁকি কমাতে কন্ট্রাক্ট ফার্মিং বা আগাম বায়না দরে ফসল বিক্রির পরামর্শ দেওয়া হয়।' : 'Consider forward contracts or warehouse receipt storage to hedge market swings.'}
+            <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{isBn ? 'ঝুঁকি কমাতে কন্ট্রাক্ট ফার্মিং বা আগাম বায়না দরে ফসল বিক্রির পরামর্শ দেওয়া হয়।' : 'Consider forward contracts or warehouse receipt storage to hedge market swings.'}
           </div>
         </div>
       </section>
@@ -972,7 +973,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <div style={{ fontSize: 28 }}>📊</div>
+              <BarChart3 size={28} strokeWidth={1.75} style={{ display: 'block', margin: '0 auto' }} />
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text, #F4F7F4)' }}>
                   {isBn ? adaptive.callout_bn : adaptive.callout_en}
@@ -1043,7 +1044,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 16 }}>📜</span>
+            <FileText size={16} strokeWidth={1.75} />
             <span style={{ fontSize: 16, fontWeight: 700, color: 'var(--text, #F4F7F4)' }}>
               {isBn ? 'দামের উৎস ও সরকারি পাইকারি দর তালিকা' : 'Official Price Registry & Wholesale Reference'}
             </span>

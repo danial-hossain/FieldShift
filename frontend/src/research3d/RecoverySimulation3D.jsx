@@ -4,6 +4,7 @@
 // and multi-season restorative soil recovery trajectory.
 
 import React, { useRef, useMemo } from 'react';
+import { Shield } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -109,7 +110,7 @@ export function RecoverySimulation3D({
       {/* Numerical Recovery & Soil Restoration Inspector */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          🛡️ {lang === 'bn' ? 'ফসল বিপর্যয় ও পুনরুদ্ধার সিমুলেশন' : 'Crop Failure Shock & Recovery'}
+          <Shield size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--cyan, #5be3ff)' }} />{lang === 'bn' ? 'ফসল বিপর্যয় ও পুনরুদ্ধার সিমুলেশন' : 'Crop Failure Shock & Recovery'}
         </h4>
 
         <div style={{ background: 'rgba(30, 41, 59, 0.5)', padding: '10px 12px', borderRadius: 8, fontSize: 12 }}>

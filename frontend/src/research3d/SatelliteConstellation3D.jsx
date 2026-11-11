@@ -3,6 +3,7 @@
 // Real-time orbital paths for NASA POWER, Sentinel-2 MSI, NASA SMAP, and Landsat-9
 
 import React, { useRef, useEffect, useState, useId } from 'react';
+import { Satellite } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -408,7 +409,7 @@ export function SatelliteConstellation3D({
         border: '1px solid #1e293b',
         color: '#94a3b8'
       }}>
-        <div style={{ fontSize: 24, marginBottom: 8 }}>🛰️</div>
+        <Satellite size={24} strokeWidth={1.75} style={{ display: 'block', margin: '0 auto 8px', color: 'var(--cyan, #5be3ff)' }} />
         <h4 style={{ color: '#f8fafc', margin: '0 0 6px' }}>WebGL Orbital Constellation Unavailable</h4>
         <p style={{ margin: 0, fontSize: 13 }}>Hardware acceleration disabled or WebGL context unavailable in current browser.</p>
       </div>
@@ -492,7 +493,7 @@ export function SatelliteConstellation3D({
               cursor: 'pointer',
             }}
           >
-            {isRotating ? '⏸️ Pause Orbit' : '▶️ Resume Orbit'}
+            {isRotating ? 'Pause Orbit' : 'Resume Orbit'}
           </button>
           <button
             onClick={() => {
@@ -512,7 +513,7 @@ export function SatelliteConstellation3D({
               cursor: 'pointer',
             }}
           >
-            🎯 Center View
+            Center View
           </button>
         </div>
       </div>
@@ -546,7 +547,7 @@ export function SatelliteConstellation3D({
             justifyContent: 'center',
             fontSize: '18px',
           }}>
-            🛰️
+            
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

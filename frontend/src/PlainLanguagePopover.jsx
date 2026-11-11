@@ -3,6 +3,7 @@
 // Explains complex satellite data and mathematical concepts for farmers, field workers, and judges.
 
 import React, { useState, useRef, useEffect } from 'react';
+import { Lightbulb, Satellite, Landmark } from 'lucide-react';
 import {
   PLAIN_LANGUAGE_TERMS,
   SAAO_ADVISORY_NOTICE_BN,
@@ -72,7 +73,7 @@ export function PlainLanguagePopover({ termKey, lang = 'bn', inline = true, labe
           transition: 'all 0.15s ease',
         }}
       >
-        <span style={{ fontSize: 10 }}>💡</span>
+        <Lightbulb size={12} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
         <span>{buttonLabel}</span>
       </button>
 
@@ -131,7 +132,7 @@ export function PlainLanguagePopover({ termKey, lang = 'bn', inline = true, labe
           </p>
 
           <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 10.5, color: 'var(--leaf, #86efac)', fontStyle: 'italic' }}>
-            🛰️ {lang === 'bn' ? data.satelliteNoteBn : data.satelliteNoteEn}
+            <Satellite size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? data.satelliteNoteBn : data.satelliteNoteEn}
           </div>
         </div>
       )}
@@ -156,7 +157,7 @@ export function SaaoNotice({ lang = 'bn', compact = false }) {
         gap: 8,
       }}
     >
-      <span style={{ fontSize: 14 }}>🏛️</span>
+      <Landmark size={14} strokeWidth={1.75} />
       <span>
         {lang === 'bn' ? SAAO_ADVISORY_NOTICE_BN : SAAO_ADVISORY_NOTICE_EN}
       </span>

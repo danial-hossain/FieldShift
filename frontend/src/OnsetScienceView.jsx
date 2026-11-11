@@ -1,5 +1,6 @@
 // frontend/src/OnsetScienceView.jsx
 import React, { useState, useEffect } from 'react';
+import { Microscope, Scale } from 'lucide-react';
 import { request as defaultRequest } from './apiClient.js';
 
 export function OnsetScienceView({
@@ -55,7 +56,7 @@ export function OnsetScienceView({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: '24px' }}>🔬</span>
+            <Microscope size={24} strokeWidth={1.75} />
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800 }}>
               {lang === 'bn' ? 'অনসেট বিজ্ঞান: নাসা উপাত্তের দ্বৈত তুলনা (৩৯টি ইউনিক সেল)' : 'Onset Science: Dual NASA Observation Analysis (39 Unique Cells)'}
             </h2>
@@ -240,7 +241,7 @@ export function OnsetScienceView({
         alignItems: 'center',
         gap: '12px'
       }}>
-        <span style={{ fontSize: '24px' }}>⚖️</span>
+        <Scale size={24} strokeWidth={1.75} />
         <div>
           <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--hud-cyan, #38bdf8)' }}>
             Two NASA datasets disagree on the trend; FieldShift only advises on what is confirmed.

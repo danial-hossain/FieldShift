@@ -140,7 +140,7 @@ export function SixSeasonTrajectory3D({
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span style={{ color: 'rgba(238, 243, 238, 0.68)' }}>লেগিউম BNF স্ট্যাটাস:</span>
             <strong style={{ color: activeRec?.isLegume ? '#00df81' : '#f59e0b' }}>
-              {activeRec?.isLegume ? '✅ ডালজাতীয় নাইট্রোজেন সংবন্ধন' : '🌾 অপুষ্টিকারক সিরিয়াল'}
+              {activeRec?.isLegume ? 'ডালজাতীয় নাইট্রোজেন সংবন্ধন' : 'অপুষ্টিকারক সিরিয়াল'}
             </strong>
           </div>
         </div>

@@ -3,6 +3,7 @@
 // Sub-navigation: 6-Season Rotation Planner (MILP), Adaptive Replanning, Scenario Comparison Lab.
 
 import React, { useState, useEffect } from 'react';
+import { Wheat, RotateCw, Zap, Microscope, Ruler } from 'lucide-react';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { AdaptiveReplanningView } from './AdaptiveReplanningView.jsx';
 import { ClimateStressTestView } from './ClimateStressTestView.jsx';
@@ -37,10 +38,10 @@ export function FarmPlanningView({
   }, [initialSubTab]); // 'milp' | 'replan' | 'comparison'
 
   const subTabs = [
-    { id: 'milp', label: lang === 'bn' ? '১. ৬-মৌসুম পরিকল্পনা (6-Season Plan)' : '1. 6-Season Rotation Plan', icon: '🌾' },
-    { id: 'replan', label: lang === 'bn' ? '২. অভিযোজিত পুনঃপরিকল্পনা (Adaptive Replan)' : '2. Adaptive Next-Season Replan', icon: '🔄' },
-    { id: 'stress', label: lang === 'bn' ? '৩. জলবায়ু চাপ পরীক্ষা (Stress Test)' : '3. Climate Stress Test', icon: '⚡' },
-    { id: 'comparison', label: lang === 'bn' ? '৪. আপনার চাষ বনাম পরামর্শ' : '4. Your farming vs plan', icon: '🔬' },
+    { id: 'milp', label: lang === 'bn' ? '১. ৬-মৌসুম পরিকল্পনা (6-Season Plan)' : '1. 6-Season Rotation Plan', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
+    { id: 'replan', label: lang === 'bn' ? '২. অভিযোজিত পুনঃপরিকল্পনা (Adaptive Replan)' : '2. Adaptive Next-Season Replan', icon: <RotateCw size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /> },
+    { id: 'stress', label: lang === 'bn' ? '৩. জলবায়ু চাপ পরীক্ষা (Stress Test)' : '3. Climate Stress Test', icon: <Zap size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" /> },
+    { id: 'comparison', label: lang === 'bn' ? '৪. আপনার চাষ বনাম পরামর্শ' : '4. Your farming vs plan', icon: <Microscope size={18} strokeWidth={1.75} /> },
   ];
 
   return (
@@ -51,7 +52,7 @@ export function FarmPlanningView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <span style={{ fontSize: 26 }}>🌾📐</span>
+              <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Wheat size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" /><Ruler size={24} strokeWidth={1.75} /></span>
               <Pill tone="leaf">PuLP MILP Optimization Model</Pill>
               <Pill tone="water">
                 {activeField?.name || (lang === 'bn' ? 'বগুড়া পরীক্ষামূলক খামার' : 'Bogura Demo Field')} ({formatNumber(activeField?.area_ha || 10.0, 1)} ha)

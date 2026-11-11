@@ -3,6 +3,7 @@
 // Matches docs/evidence_layout_reference.html closely.
 
 import React from 'react';
+import { RotateCw, FlaskConical } from 'lucide-react';
 
 export function AdaptiveLearningSection({
   lang = 'bn',
@@ -35,7 +36,7 @@ export function AdaptiveLearningSection({
             gap: 8,
           }}
         >
-          <span>🔁</span>
+          <RotateCw size={18} strokeWidth={1.75} style={{ verticalAlign: "middle", marginRight: 6 }} />
           <span>{isBn ? 'মাঠ থেকে শেখা' : 'Learning from Harvest'}</span>
         </h2>
         <div
@@ -127,7 +128,7 @@ export function AdaptiveLearningSection({
           background: 'rgba(180, 156, 255, 0.05)',
         }}
       >
-        <span>🧪 </span>
+        <FlaskConical size={18} strokeWidth={1.75} style={{ verticalAlign: "middle", marginRight: 6, color: "var(--lime, #c8f169)" }} />
         <span>
           {isBn
             ? 'পরীক্ষামূলক Q-learning: কৃত্রিম পরিবেশে প্রশিক্ষিত ('

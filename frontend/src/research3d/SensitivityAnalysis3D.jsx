@@ -4,6 +4,7 @@
 // dynamic crop and water response scaling, parameter isolation controls, and linked numerical metrics.
 
 import React, { useState, useMemo } from 'react';
+import { Ruler } from 'lucide-react';
 import * as THREE from 'three';
 import { runAgronomicSimulation } from '../experimentSimulationEngine.js';
 import { Research3DScene } from './Research3DScene.jsx';
@@ -102,7 +103,7 @@ export function SensitivityAnalysis3D({
       {/* Sweep Configuration & Result Table Panel */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          📐 {lang === 'bn' ? 'সংবেদনশীলতা বিশ্লেষণ (Sensitivity Sweep)' : 'Sensitivity Sweep Controls'}
+          <Ruler size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'সংবেদনশীলতা বিশ্লেষণ (Sensitivity Sweep)' : 'Sensitivity Sweep Controls'}
         </h4>
 
         {/* Parameter Selector */}
@@ -112,10 +113,10 @@ export function SensitivityAnalysis3D({
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {[
-              { id: 'irrigation', label: '💧 সেচ বাজেট' },
-              { id: 'nitrogen', label: '🌱 নাইট্রোজেন' },
-              { id: 'temperature', label: '🌡️ তাপমাত্রা' },
-              { id: 'taw', label: '🪵 মাটির TAW' }
+              { id: 'irrigation', label: 'সেচ বাজেট' },
+              { id: 'nitrogen', label: 'নাইট্রোজেন' },
+              { id: 'temperature', label: 'তাপমাত্রা' },
+              { id: 'taw', label: 'মাটির TAW' }
             ].map(p => (
               <button
                 key={p.id}

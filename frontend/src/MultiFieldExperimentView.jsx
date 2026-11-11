@@ -3,6 +3,7 @@
 // FieldShift 2026 — AZOIC • NASA Space Apps Challenge 2026
 
 import React, { useState, useMemo } from 'react';
+import { Settings, AlertTriangle, RotateCw } from 'lucide-react';
 import {
   SYNTHETIC_FIELD_PROFILES,
   validateFieldProfile,
@@ -129,7 +130,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: '700', color: '#60a5fa' }}>
-                {lang === 'bn' ? '🧪 মাল্টি-ফিল্ড এক্সপেরিমেন্ট ও বৈজ্ঞানিক সংবেদনশীলতা ল্যাব' : '🧪 Multi-Field Agricultural Experiment & Sensitivity Lab'}
+                {lang === 'bn' ? 'মাল্টি-ফিল্ড এক্সপেরিমেন্ট ও বৈজ্ঞানিক সংবেদনশীলতা ল্যাব' : 'Multi-Field Agricultural Experiment & Sensitivity Lab'}
               </h2>
               <span style={{
                 background: 'rgba(239, 68, 68, 0.2)',
@@ -140,7 +141,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                 fontSize: '0.75rem',
                 fontWeight: '600'
               }}>
-                [🧪 SYNTHETIC TEST DATA]
+                [SYNTHETIC TEST DATA]
               </span>
               <span style={{
                 background: 'rgba(16, 185, 129, 0.2)',
@@ -167,21 +168,21 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
               onClick={handleDownloadCsv}
               className="ui-btn ui-btn-secondary ui-btn-sm"
             >
-              📥 CSV
+              CSV
             </button>
             <button
               type="button"
               onClick={handleDownloadJson}
               className="ui-btn ui-btn-secondary ui-btn-sm"
             >
-              📥 JSON
+              JSON
             </button>
             <button
               type="button"
               onClick={() => setEditingParam(!editingParam)}
               className={`ui-btn ${editingParam ? 'ui-btn-primary' : 'ui-btn-secondary'} ui-btn-sm`}
             >
-              ⚙️ {editingParam ? (lang === 'bn' ? 'সম্পাদনা বন্ধ করুন' : 'Close Tuning') : (lang === 'bn' ? 'প্যারামিটার পরিবর্তন' : 'Tune Parameters')}
+              <Settings size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{editingParam ? (lang === 'bn' ? 'সম্পাদনা বন্ধ করুন' : 'Close Tuning') : (lang === 'bn' ? 'প্যারামিটার পরিবর্তন' : 'Tune Parameters')}
             </button>
           </div>
         </div>
@@ -248,21 +249,21 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           {isTunedModified && (
             <div style={{ background: 'rgba(234, 179, 8, 0.2)', border: '1px solid rgba(234, 179, 8, 0.5)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ fontSize: '0.85rem', color: '#fde047', fontWeight: 600 }}>
-                ⚠️ {lang === 'bn' ? 'প্যারামিটার পরিবর্তন করা হয়েছে (অপ্রযুক্ত ফলাফল)।' : 'Inputs modified. Simulation results are unapplied.'}
+                <AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'প্যারামিটার পরিবর্তন করা হয়েছে (অপ্রযুক্ত ফলাফল)।' : 'Inputs modified. Simulation results are unapplied.'}
               </div>
               <button
                 type="button"
                 onClick={handleRerunAnalysis}
                 className="ui-btn ui-btn-primary ui-btn-sm"
               >
-                🔄 {lang === 'bn' ? 'পুনরায় বিশ্লেষণ চালান' : 'Re-run Analysis Pipeline'}
+                <RotateCw size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পুনরায় বিশ্লেষণ চালান' : 'Re-run Analysis Pipeline'}
               </button>
             </div>
           )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <h4 style={{ margin: 0, color: 'var(--accent)', fontSize: '0.95rem' }}>
-              ⚙️ {lang === 'bn' ? `${currentProfile.district} প্রোফাইল ইনপুট পরিবর্তন করুন` : `Tune Inputs: ${currentProfile.nameEn}`}
+              <Settings size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? `${currentProfile.district} প্রোফাইল ইনপুট পরিবর্তন করুন` : `Tune Inputs: ${currentProfile.nameEn}`}
             </h4>
             <button
               type="button"
@@ -436,7 +437,7 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
                       <td style={{ padding: '12px' }}>
                         {key === 'jashore_pulse_veg' ? (
                           <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
-                            ⚠️ Infeasible
+                            Infeasible
                           </span>
                         ) : (
                           <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
@@ -454,23 +455,23 @@ export function MultiFieldExperimentView({ lang = 'bn' }) {
           {/* Highlights */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginTop: '20px' }}>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: '600', marginBottom: '6px' }}>🏆 HIGHEST YIELDING FIELD</div>
+              <div style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: '600', marginBottom: '6px' }}>HIGHEST YIELDING FIELD</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Cumilla Heavy Clay (4.99 t/ha)</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>Heavy clay water retention minimizes vegetative drought stress.</div>
             </div>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-              <div style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: '600', marginBottom: '6px' }}>💧 WATER-STRESSED CASE</div>
+              <div style={{ fontSize: '0.8rem', color: '#60a5fa', fontWeight: '600', marginBottom: '6px' }}>WATER-STRESSED CASE</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Rajshahi Barind Tract (-22.5% Yield)</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>Groundwater constrained to 180 mm under drought weather scenario.</div>
             </div>
             <div style={{ background: 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
-              <div style={{ fontSize: '0.8rem', color: '#c084fc', fontWeight: '600', marginBottom: '6px' }}>💰 HIGHEST VALUE / HA</div>
+              <div style={{ fontSize: '0.8rem', color: '#c084fc', fontWeight: '600', marginBottom: '6px' }}>HIGHEST VALUE / HA</div>
               <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#fff' }}>Jashore BARI Lentil (4,000 BDT/md)</div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>High market price and low water requirement yield superior gross margin.</div>
             </div>
             <div style={{ background: selectedFieldKey === 'jashore_pulse_veg' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(30, 41, 59, 0.7)', borderRadius: '12px', padding: '16px', border: selectedFieldKey === 'jashore_pulse_veg' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.1)' }}>
               <div style={{ fontSize: '0.8rem', color: selectedFieldKey === 'jashore_pulse_veg' ? '#f87171' : '#60a5fa', fontWeight: '600', marginBottom: '6px' }}>
-                {selectedFieldKey === 'jashore_pulse_veg' ? '⚠️ SOLVER INFEASIBLE NOTICE' : '⚙️ OPTIMIZER STATUS'}
+                {selectedFieldKey === 'jashore_pulse_veg' ? 'SOLVER INFEASIBLE NOTICE' : 'OPTIMIZER STATUS'}
               </div>
               <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#fff' }}>
                 {selectedFieldKey === 'jashore_pulse_veg' ? 'Jashore Water Deficit (160 mm)' : `${currentProfile.district}: Optimal Feasible`}

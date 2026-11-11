@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Shield, Lightbulb, AlertTriangle, Bell, Wheat, Sprout, BookOpen, Microscope, Home, Zap, Play, FlaskConical, Scale, Coins, Ruler, Bot, Leaf, Sun, Rocket, RotateCw, CloudRain, ClipboardList, Moon, Tractor, Waves } from 'lucide-react';
 import { createRoot } from 'react-dom/client';
 import 'leaflet/dist/leaflet.css';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
@@ -102,27 +103,27 @@ const rotationText = rotation =>
     : 'No rotation returned';
 
 const CROP_META = {
-  Mungbean: { family: 'Fabaceae', is_legume: true, water_mm: 350, duration: 75, icon: '🌱', bnf: true, desc: 'Biological N-Fixer, short duration dry pulse' },
-  Lentil: { family: 'Fabaceae', is_legume: true, water_mm: 300, duration: 110, icon: '🌱', bnf: true, desc: 'High market pulse, soil enrichment' },
-  Maize: { family: 'Poaceae', is_legume: false, water_mm: 600, duration: 110, icon: '🌽', bnf: false, desc: 'High biomass grain, strong market demand' },
-  Rice: { family: 'Poaceae', is_legume: false, water_mm: 1200, duration: 130, icon: '🌾', bnf: false, desc: 'Staple cereal grain, wet season adapted' },
-  Wheat: { family: 'Poaceae', is_legume: false, water_mm: 450, duration: 120, icon: '🌾', bnf: false, desc: 'Cool season cereal, moderate residue' },
-  Mustard: { family: 'Brassicaceae', is_legume: false, water_mm: 350, duration: 100, icon: '🌼', bnf: false, desc: 'Oilseed crop, deep taproot, bio-fumigant' },
-  Potato: { family: 'Solanaceae', is_legume: false, water_mm: 500, duration: 100, icon: '🥔', bnf: false, desc: 'High cash return tuber, intensive nutrient user' },
-  Chickpea: { family: 'Fabaceae', is_legume: true, water_mm: 280, duration: 95, icon: '🌱', bnf: true, desc: 'Drought-tolerant winter pulse, BNF N-fixer' },
-  Soybean: { family: 'Fabaceae', is_legume: true, water_mm: 480, duration: 105, icon: '🌱', bnf: true, desc: 'High protein legume, strong residual biomass' },
-  Sorghum: { family: 'Poaceae', is_legume: false, water_mm: 250, duration: 90, icon: '🌾', bnf: false, desc: 'Ultra drought-tolerant C4 cereal, deep rooting' },
-  Sesame: { family: 'Pedaliaceae', is_legume: false, water_mm: 280, duration: 85, icon: '🌿', bnf: false, desc: 'High-value oilseed, low moisture requirement' },
-  Groundnut: { family: 'Fabaceae', is_legume: true, water_mm: 450, duration: 120, icon: '🥜', bnf: true, desc: 'Cash oilseed pulse, BNF soil fertility boost' },
-  Sunflower: { family: 'Asteraceae', is_legume: false, water_mm: 420, duration: 95, icon: '🌻', bnf: false, desc: 'Deep taproot scavenger, subsoil nutrient mobilizer' },
-  Tomato: { family: 'Solanaceae', is_legume: false, water_mm: 550, duration: 105, icon: '🍅', bnf: false, desc: 'High economic cash margin vegetable crop' },
-  Jute: { family: 'Malvaceae', is_legume: false, water_mm: 650, duration: 120, icon: '🎋', bnf: false, desc: 'Commercial fiber crop, substantial leaf litter residue' },
+  Mungbean: { family: 'Fabaceae', is_legume: true, water_mm: 350, duration: 75, icon: 'Sprout', bnf: true, desc: 'Biological N-Fixer, short duration dry pulse' },
+  Lentil: { family: 'Fabaceae', is_legume: true, water_mm: 300, duration: 110, icon: 'Sprout', bnf: true, desc: 'High market pulse, soil enrichment' },
+  Maize: { family: 'Poaceae', is_legume: false, water_mm: 600, duration: 110, icon: 'Wheat', bnf: false, desc: 'High biomass grain, strong market demand' },
+  Rice: { family: 'Poaceae', is_legume: false, water_mm: 1200, duration: 130, icon: 'Wheat', bnf: false, desc: 'Staple cereal grain, wet season adapted' },
+  Wheat: { family: 'Poaceae', is_legume: false, water_mm: 450, duration: 120, icon: 'Wheat', bnf: false, desc: 'Cool season cereal, moderate residue' },
+  Mustard: { family: 'Brassicaceae', is_legume: false, water_mm: 350, duration: 100, icon: 'Flower2', bnf: false, desc: 'Oilseed crop, deep taproot, bio-fumigant' },
+  Potato: { family: 'Solanaceae', is_legume: false, water_mm: 500, duration: 100, icon: 'Sprout', bnf: false, desc: 'High cash return tuber, intensive nutrient user' },
+  Chickpea: { family: 'Fabaceae', is_legume: true, water_mm: 280, duration: 95, icon: 'Sprout', bnf: true, desc: 'Drought-tolerant winter pulse, BNF N-fixer' },
+  Soybean: { family: 'Fabaceae', is_legume: true, water_mm: 480, duration: 105, icon: 'Sprout', bnf: true, desc: 'High protein legume, strong residual biomass' },
+  Sorghum: { family: 'Poaceae', is_legume: false, water_mm: 250, duration: 90, icon: 'Wheat', bnf: false, desc: 'Ultra drought-tolerant C4 cereal, deep rooting' },
+  Sesame: { family: 'Pedaliaceae', is_legume: false, water_mm: 280, duration: 85, icon: 'Leaf', bnf: false, desc: 'High-value oilseed, low moisture requirement' },
+  Groundnut: { family: 'Fabaceae', is_legume: true, water_mm: 450, duration: 120, icon: 'Sprout', bnf: true, desc: 'Cash oilseed pulse, BNF soil fertility boost' },
+  Sunflower: { family: 'Asteraceae', is_legume: false, water_mm: 420, duration: 95, icon: 'Sun', bnf: false, desc: 'Deep taproot scavenger, subsoil nutrient mobilizer' },
+  Tomato: { family: 'Solanaceae', is_legume: false, water_mm: 550, duration: 105, icon: 'Sprout', bnf: false, desc: 'High economic cash margin vegetable crop' },
+  Jute: { family: 'Malvaceae', is_legume: false, water_mm: 650, duration: 120, icon: 'Sprout', bnf: false, desc: 'Commercial fiber crop, substantial leaf litter residue' },
 };
 
 const STRATEGY_META = {
   profit_focused: {
     title: 'Profit Focused',
-    icon: '💰',
+    icon: 'Coins',
     badgeClass: 'profit',
     summary: 'Maximizes net agricultural margin and economic return across 6 multi-season periods.',
     primaryColor: '#2e7d32',
@@ -132,7 +133,7 @@ const STRATEGY_META = {
   },
   water_focused: {
     title: 'Water Efficiency',
-    icon: '💧',
+    icon: 'Droplets',
     badgeClass: 'water',
     summary: 'Minimizes irrigation consumption and mitigates dry-season drought risk and aquifer stress.',
     primaryColor: '#0288d1',
@@ -142,7 +143,7 @@ const STRATEGY_META = {
   },
   water_efficiency: {
     title: 'Water Efficiency',
-    icon: '💧',
+    icon: 'Droplets',
     badgeClass: 'water',
     summary: 'Minimizes irrigation consumption and mitigates dry-season drought risk and aquifer stress.',
     primaryColor: '#0288d1',
@@ -152,7 +153,7 @@ const STRATEGY_META = {
   },
   soil_focused: {
     title: 'Soil Health & Regeneration',
-    icon: '🌱',
+    icon: 'Sprout',
     badgeClass: 'soil',
     summary: 'Maximizes biological nitrogen fixation (BNF), organic carbon residues, and soil microbiology.',
     primaryColor: '#e67e22',
@@ -162,7 +163,7 @@ const STRATEGY_META = {
   },
   soil_health: {
     title: 'Soil Health & Regeneration',
-    icon: '🌱',
+    icon: 'Sprout',
     badgeClass: 'soil',
     summary: 'Maximizes biological nitrogen fixation (BNF), organic carbon residues, and soil microbiology.',
     primaryColor: '#e67e22',
@@ -172,7 +173,7 @@ const STRATEGY_META = {
   },
   balanced: {
     title: 'Balanced Multi-Objective',
-    icon: '⚖️',
+    icon: 'Scale',
     badgeClass: 'balanced',
     summary: 'Alternative multi-objective MILP trade-off balancing commercial profitability, water conservation, and soil fertility.',
     primaryColor: '#673ab7',
@@ -182,7 +183,7 @@ const STRATEGY_META = {
   },
   balanced_multi_objective: {
     title: 'Balanced Multi-Objective',
-    icon: '⚖️',
+    icon: 'Scale',
     badgeClass: 'balanced',
     summary: 'Alternative multi-objective MILP trade-off balancing commercial profitability, water conservation, and soil fertility.',
     primaryColor: '#673ab7',
@@ -197,43 +198,43 @@ const STRATEGY_PRIORITY_DESC = {
     name: 'Profit Focused',
     mainPriority: 'Higher economic return',
     legend: 'prioritizes economic return',
-    icon: '💰'
+    icon: 'Coins'
   },
   water_focused: {
     name: 'Water Efficiency',
     mainPriority: 'Better water efficiency',
     legend: 'prioritizes water efficiency',
-    icon: '💧'
+    icon: 'Droplets'
   },
   water_efficiency: {
     name: 'Water Efficiency',
     mainPriority: 'Better water efficiency',
     legend: 'prioritizes water efficiency',
-    icon: '💧'
+    icon: 'Droplets'
   },
   soil_focused: {
     name: 'Soil Health & Regeneration',
     mainPriority: 'Better soil health',
     legend: 'prioritizes soil health',
-    icon: '🌱'
+    icon: 'Sprout'
   },
   soil_health: {
     name: 'Soil Health & Regeneration',
     mainPriority: 'Better soil health',
     legend: 'prioritizes soil health',
-    icon: '🌱'
+    icon: 'Sprout'
   },
   balanced: {
     name: 'Balanced Multi-Objective',
     mainPriority: 'Balanced objectives',
     legend: 'balances the configured objectives',
-    icon: '⚖️'
+    icon: 'Scale'
   },
   balanced_multi_objective: {
     name: 'Balanced Multi-Objective',
     mainPriority: 'Balanced objectives',
     legend: 'balances the configured objectives',
-    icon: '⚖️'
+    icon: 'Scale'
   }
 };
 
@@ -248,10 +249,10 @@ export function toCanonicalStrategyKey(key) {
 }
 
 export const STRATEGY_PROFILES = {
-  profit_focused: { name: 'Profit Focused', icon: '💰', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
-  water_efficiency: { name: 'Water Efficiency', icon: '💧', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
-  soil_health: { name: 'Soil Health & Regeneration', icon: '🌱', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
-  balanced: { name: 'Balanced Multi-Objective', icon: '⚖️', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
+  profit_focused: { name: 'Profit Focused', icon: 'Coins', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
+  water_efficiency: { name: 'Water Efficiency', icon: 'Droplets', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
+  soil_health: { name: 'Soil Health & Regeneration', icon: 'Sprout', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
+  balanced: { name: 'Balanced Multi-Objective', icon: 'Scale', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
 };
 
 export const BENCHMARK_SCENARIOS = {
@@ -262,7 +263,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 800,
     temperature_c: 28,
     ph: 6.5,
-    icon: "💰",
+    icon: "Coins",
     color: "#2e7d32",
     desc: "800 mm, 28°C, pH 6.5"
   },
@@ -273,7 +274,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 320,
     temperature_c: 30,
     ph: 6.8,
-    icon: "🌵",
+    icon: "Sun",
     color: "#0288d1",
     desc: "320 mm, 30°C, pH 6.8"
   },
@@ -284,7 +285,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 600,
     temperature_c: 18,
     ph: 6.5,
-    icon: "❄️",
+    icon: "Snowflake",
     color: "#00897b",
     desc: "600 mm, 18°C, pH 6.5"
   },
@@ -295,7 +296,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 950,
     temperature_c: 34,
     ph: 6.8,
-    icon: "☀️",
+    icon: "Sun",
     color: "#e65100",
     desc: "950 mm, 34°C, pH 6.8"
   },
@@ -306,7 +307,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 500,
     temperature_c: 26,
     ph: 4.8,
-    icon: "🧪",
+    icon: "FlaskConical",
     color: "#c2185b",
     desc: "500 mm, 26°C, pH 4.8"
   },
@@ -317,7 +318,7 @@ export const BENCHMARK_SCENARIOS = {
     water_mm: 700,
     temperature_c: 25,
     ph: 6.5,
-    icon: "⚖️",
+    icon: "Scale",
     color: "#673ab7",
     desc: "700 mm, 25°C, pH 6.5"
   }
@@ -328,7 +329,7 @@ export const BENCHMARK_CONTEXTS = {
     id: "operational",
     name: "Operational Field",
     type: "field",
-    icon: "📍",
+    icon: "MapPin",
     color: "#15803d",
     desc: "Active Registered Parcel"
   },
@@ -401,7 +402,7 @@ export function ResearchProvenancePanel({ fieldName, fieldId, mode, nasaStatus }
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <strong style={{ fontSize: '12.5px', color: 'var(--text-main, #0f172a)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>🛡️</span> Research Provenance &amp; System Registry
+          <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Research Provenance &amp; System Registry
         </strong>
         <span style={{ fontSize: '10.5px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '999px', fontWeight: 700 }}>
           {fieldId && fieldId !== 'demo' ? 'PostgreSQL Registered Field' : 'Research Benchmark'}
@@ -525,7 +526,7 @@ function HelpGuideSidePanel({ isOpen, onClose, onNavigate, lang }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottom: '1px solid var(--line, rgba(255,255,255,0.1))', paddingBottom: 14 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 22 }}>💡</span>
+            <Lightbulb size={22} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
             <div>
               <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>
                 {lang === 'bn' ? 'ফিল্ডশিফ্ট ব্যবহারের নিয়মাবলী' : 'How to use FieldShift'}
@@ -661,7 +662,7 @@ class GlobalErrorBoundary extends React.Component {
             textAlign: 'center'
           }}
         >
-          <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
+          <AlertTriangle size={32} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ display: 'block', margin: '0 auto 12px' }} />
           <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 700, color: 'var(--text, #E8ECE9)' }}>
             Something went wrong / একটি সমস্যা দেখা দিয়েছে
           </h3>
@@ -1075,7 +1076,7 @@ export function App() {
     if (isBarind) {
       list.push({
         id: 'heat_risk',
-        icon: '☀️',
+        icon: 'Sun',
         badge: lang === 'bn' ? 'খরা ও তাপ ঝুঁকি' : 'Heat Risk',
         title: lang === 'bn' ? 'তাপ ও খরা ঝুঁকি সতর্কতা' : 'Heat & Drought Warning',
         text: lang === 'bn'
@@ -1090,7 +1091,7 @@ export function App() {
     } else if (isHaor) {
       list.push({
         id: 'flood_risk',
-        icon: '🌊',
+        icon: 'Waves',
         badge: lang === 'bn' ? 'আকস্মিক বন্যা' : 'Flash Flood',
         title: lang === 'bn' ? 'আকস্মিক বন্যা ঝুঁকি সতর্কতা' : 'Flash Flood Warning',
         text: lang === 'bn'
@@ -1105,7 +1106,7 @@ export function App() {
     } else {
       list.push({
         id: 'seasonal_risk',
-        icon: '☀️',
+        icon: 'Sun',
         badge: lang === 'bn' ? 'তাপ ঝুঁকি' : 'Heat Risk',
         title: lang === 'bn' ? 'তাপমাত্রা ও আর্দ্রতা চাপ' : 'Pre-monsoon Heat Risk',
         text: lang === 'bn'
@@ -1122,7 +1123,7 @@ export function App() {
     // (b) Next irrigation day from water plan
     list.push({
       id: 'irrigation_day',
-      icon: '💧',
+      icon: 'Droplets',
       badge: lang === 'bn' ? 'সেচ তফসিল' : 'Irrigation',
       title: lang === 'bn' ? 'আসন্ন নিয়ন্ত্রিত সেচ' : 'Upcoming AWD Irrigation',
       text: lang === 'bn'
@@ -1138,7 +1139,7 @@ export function App() {
     // (c) NASA data freshness
     list.push({
       id: 'nasa_staleness',
-      icon: '🛰️',
+      icon: 'Satellite',
       badge: lang === 'bn' ? 'নাসা পর্যবেক্ষণ' : 'NASA POWER',
       title: lang === 'bn' ? 'স্যাটেলাইট আবহাওয়া স্থিতি' : 'Weather Feed Staleness',
       text: lang === 'bn'
@@ -2577,7 +2578,7 @@ export function App() {
               <span>{lang === 'bn' ? 'বাংলা' : 'English'}</span>
             </button>
 
-            {/* Theme Toggle Button (☀️ / 🌙) */}
+            {/* Theme Toggle Button */}
             <button
               type="button"
               className="top-bar-icon-btn theme-toggle-btn"
@@ -2632,7 +2633,7 @@ export function App() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, borderBottom: '1px solid var(--line, rgba(255,255,255,0.1))', paddingBottom: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 16 }}>🔔</span>
+                      <Bell size={18} strokeWidth={1.75} />
                       <strong style={{ fontSize: 13, color: 'var(--text)' }}>
                         {lang === 'bn' ? 'সিস্টেম বিজ্ঞপ্তি' : 'System Alerts'}
                       </strong>
@@ -2732,7 +2733,7 @@ export function App() {
                 onClick={() => setCropSubTab('advisory')}
                 style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
               >
-                🌾 {lang === 'bn' ? 'নাসা ধান রোপণ উপদেষ্টা' : 'NASA Rice Advisory'}
+                <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'নাসা ধান রোপণ উপদেষ্টা' : 'NASA Rice Advisory'}
               </button>
               <button
                 type="button"
@@ -2740,7 +2741,7 @@ export function App() {
                 onClick={() => setCropSubTab('advice')}
                 style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
               >
-                🌱 {lang === 'bn' ? 'ফসলের পরামর্শ ও মিল' : 'Crop Advice & Matching'}
+                <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'ফসলের পরামর্শ ও মিল' : 'Crop Advice & Matching'}
               </button>
               <button
                 type="button"
@@ -2748,7 +2749,7 @@ export function App() {
                 onClick={() => setCropSubTab('catalog')}
                 style={{ fontSize: 13, padding: '6px 14px', borderRadius: 9999 }}
               >
-                📖 {lang === 'bn' ? '১৫ ফসলের ক্যাটালগ' : '15-Crop Catalog'}
+                <BookOpen size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? '১৫ ফসলের ক্যাটালগ' : '15-Crop Catalog'}
               </button>
             </div>
             {cropSubTab === 'advisory' && (
@@ -2833,7 +2834,7 @@ export function App() {
           <>
             <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border-medium)', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 16px' }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
-                🔬 {lang === 'bn' ? 'উন্নত গবেষক মোড সক্রিয় রয়েছে' : 'Advanced Research Dashboard Active'}
+                <Microscope size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'উন্নত গবেষক মোড সক্রিয় রয়েছে' : 'Advanced Research Dashboard Active'}
               </span>
               <button
                 type="button"
@@ -2841,7 +2842,7 @@ export function App() {
                 onClick={() => setDashboardMode('farmer')}
                 style={{ fontSize: 12.5, padding: '6px 16px', borderRadius: 9999, cursor: 'pointer' }}
               >
-                🏠 {lang === 'bn' ? 'সহজ কৃষক মোডে ফিরুন' : 'Return to Simple Farmer View'}
+                <Home size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'সহজ কৃষক মোডে ফিরুন' : 'Return to Simple Farmer View'}
               </button>
             </div>
             <header className="dashboard-page-header">
@@ -3019,7 +3020,7 @@ export function App() {
                 {/* "What should I do next?" Compact Action Card */}
                 <div className="dash-card" style={{ gridColumn: 'span 12', padding: '12px 18px', background: 'linear-gradient(90deg, #161e25 0%, #1a232c 100%)', border: '1px solid var(--border-light)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>💡</span>
+                    <Lightbulb size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
                     <div>
                       <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--primary)' }}>What should I do next?</span>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9', marginTop: 1 }}>
@@ -3040,7 +3041,7 @@ export function App() {
                 <div className="dash-card" style={{ gridColumn: 'span 12', padding: '14px 18px', background: 'var(--bg-card)', border: '1px solid var(--border-medium)', borderRadius: 12, marginBottom: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 16 }}>⚡</span>
+                      <Zap size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
                       <strong style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-muted)' }}>
                         Quick Operational Actions
                       </strong>
@@ -3054,7 +3055,7 @@ export function App() {
                       onClick={runAnalysis}
                       disabled={running}
                     >
-                      <span style={{ fontSize: 16 }}>▶️</span>
+                      <Play size={16} strokeWidth={1.75} />
                       <div>
                         <div>Analyze Field</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Run analysis pipeline</span>
@@ -3065,7 +3066,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('analytics', 'optimization')}
                     >
-                      <span style={{ fontSize: 16 }}>🌱</span>
+                      <Sprout size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                       <div>
                         <div>Generate Rotation</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>MILP solver</span>
@@ -3076,7 +3077,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('analytics', 'comparison_lab')}
                     >
-                      <span style={{ fontSize: 16 }}>🧪</span>
+                      <FlaskConical size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                       <div>
                         <div>Compare Strategies</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>MILP vs RL vs Rule</span>
@@ -3087,7 +3088,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('analytics', 'recovery')}
                     >
-                      <span style={{ fontSize: 16 }}>🛡️</span>
+                      <Shield size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
                       <div>
                         <div>Test Drought Shock</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Failure &amp; recovery</span>
@@ -3098,7 +3099,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('analytics', 'outcomes')}
                     >
-                      <span style={{ fontSize: 16 }}>⚖️</span>
+                      <Scale size={16} strokeWidth={1.75} />
                       <div>
                         <div>Record Harvest</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Ground truth yields</span>
@@ -3109,7 +3110,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('market')}
                     >
-                      <span style={{ fontSize: 16 }}>💰</span>
+                      <Coins size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
                       <div>
                         <div>Market Intelligence</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Prices &amp; Profit</span>
@@ -3120,7 +3121,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('sensitivity')}
                     >
-                      <span style={{ fontSize: 16 }}>📐</span>
+                      <Ruler size={16} strokeWidth={1.75} />
                       <div>
                         <div>Sensitivity Sweeps</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Elasticity testing</span>
@@ -3131,7 +3132,7 @@ export function App() {
                       className="btn-outline-action"
                       onClick={() => handleNavigate('synthetic_lab')}
                     >
-                      <span style={{ fontSize: 16 }}>🧪</span>
+                      <FlaskConical size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                       <div>
                         <div>Synthetic Data Lab</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Benchmark scenarios</span>
@@ -3142,7 +3143,7 @@ export function App() {
                       className="btn-outline-action btn-outline-action-accent"
                       onClick={() => handleNavigate('assistant')}
                     >
-                      <span style={{ fontSize: 16 }}>🤖</span>
+                      <Bot size={16} strokeWidth={1.75} />
                       <div>
                         <div>Ask AI Agronomist</div>
                         <span style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 500 }}>Decision support</span>
@@ -3224,7 +3225,7 @@ export function App() {
                           <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'block' }}>Observed Ambient Temp</span>
                           <strong style={{ fontSize: 18, color: '#38bdf8' }}>{tempVal} °C</strong>
                           <span style={{ fontSize: 10.5, color: 'var(--text-dim)', display: 'block', marginTop: 2 }}>
-                            {tempVal > 32 ? '⚠️ High Thermal Stress' : 'Optimal range for C3/C4'}
+                            {tempVal > 32 ? 'High Thermal Stress' : 'Optimal range for C3/C4'}
                           </span>
                         </div>
 
@@ -3296,12 +3297,12 @@ export function App() {
                       {/* Filterable crop list */}
                       <div className="crop-deck-cards-list">
                         {[
-                          { name: 'Sorghum', category: 'Cereals', icon: '🌾', trait: '80% Moisture', yield: '2.19 t/ha' },
-                          { name: 'Sesame', category: 'Cereals', icon: '🌱', trait: '92% Efficiency', yield: '0.97 t/ha' },
-                          { name: 'Chickpea', category: 'Legumes', icon: '🫘', trait: 'High N-Fixation', yield: '0.78 t/ha' },
-                          { name: 'Lentil', category: 'Legumes', icon: '🍃', trait: 'Soil Biota+', yield: '1.10 t/ha' },
-                          { name: 'Tomato', category: 'Vegetables', icon: '🍅', trait: 'High Biomass', yield: '2.45 t/ha' },
-                          { name: 'Wheat', category: 'Cereals', icon: '🌾', trait: 'Balanced Yield', yield: '2.85 t/ha' }
+                          { name: 'Sorghum', category: 'Cereals', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, trait: '80% Moisture', yield: '2.19 t/ha' },
+                          { name: 'Sesame', category: 'Cereals', icon: <Leaf size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, trait: '92% Efficiency', yield: '0.97 t/ha' },
+                          { name: 'Chickpea', category: 'Legumes', icon: <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, trait: 'High N-Fixation', yield: '0.78 t/ha' },
+                          { name: 'Lentil', category: 'Legumes', icon: <Leaf size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, trait: 'Soil Biota+', yield: '1.10 t/ha' },
+                          { name: 'Tomato', category: 'Vegetables', icon: <Sprout size={18} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />, trait: 'High Biomass', yield: '2.45 t/ha' },
+                          { name: 'Wheat', category: 'Cereals', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, trait: 'Balanced Yield', yield: '2.85 t/ha' }
                         ]
                           .filter(c => cropCategoryFilter === 'All' || c.category === cropCategoryFilter)
                           .map(c => (
@@ -3713,7 +3714,7 @@ export function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 20 }}>🚀</span>
+                        <Rocket size={20} strokeWidth={1.75} />
                         <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#f8fafc' }}>
                           Autonomous Agronomic Decision Support Modules
                         </h3>
@@ -3729,12 +3730,12 @@ export function App() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
                     {[
-                      { id: 'comparison_lab', icon: '🧪', title: 'Comparison Lab', subtitle: 'MILP vs RL vs Rule 3-Way Audit', color: '#00df81', desc: 'Side-by-side profit, water, and soil health benchmarks with exportable CSV/JSON results.' },
-                      { id: 'recovery', icon: '⚡', title: 'Crop Failure & Recovery', subtitle: 'Shock Event Resilience Simulator', color: '#ef4444', desc: 'Simulate drought or crop loss shocks and solve for adaptive capital recovery.' },
-                      { id: 'replan', icon: '🔄', title: 'Replan for Next Season', subtitle: 'Closed-Loop Adaptive Planning', color: '#38bdf8', desc: 'Incorporate actual harvested crops and updated soil pH/OM tests to re-optimize.' },
-                      { id: 'uncertainty', icon: '🌦️', title: 'Weather Uncertainty', subtitle: '5 Multi-Scenario Stress Tests', color: '#38bdf8', desc: 'Evaluate plan feasibility against thermal waves, drought, and tube-well restrictions.' },
-                      { id: 'sustainability', icon: '🌱', title: 'Sustainability Tracker', subtitle: 'Soil Health & Legume Trajectory', color: '#10b981', desc: 'Track multi-season biological soil scores, Fabaceae BNF breaks, and aquifer load.' },
-                      { id: 'outcomes', icon: '📋', title: 'Actual vs Estimated Outcomes', subtitle: 'Ground Truth Harvest Variance', color: '#c084fc', desc: 'Record empirical seasonal harvest yields, farmgate prices, and compute model error.' },
+                      { id: 'comparison_lab', icon: <FlaskConical size={20} strokeWidth={1.75} color="#00df81" />, title: 'Comparison Lab', subtitle: 'MILP vs RL vs Rule 3-Way Audit', color: '#00df81', desc: 'Side-by-side profit, water, and soil health benchmarks with exportable CSV/JSON results.' },
+                      { id: 'recovery', icon: <Zap size={20} strokeWidth={1.75} color="#ef4444" />, title: 'Crop Failure & Recovery', subtitle: 'Shock Event Resilience Simulator', color: '#ef4444', desc: 'Simulate drought or crop loss shocks and solve for adaptive capital recovery.' },
+                      { id: 'replan', icon: <RotateCw size={20} strokeWidth={1.75} color="#38bdf8" />, title: 'Replan for Next Season', subtitle: 'Closed-Loop Adaptive Planning', color: '#38bdf8', desc: 'Incorporate actual harvested crops and updated soil pH/OM tests to re-optimize.' },
+                      { id: 'uncertainty', icon: <CloudRain size={20} strokeWidth={1.75} color="#38bdf8" />, title: 'Weather Uncertainty', subtitle: '5 Multi-Scenario Stress Tests', color: '#38bdf8', desc: 'Evaluate plan feasibility against thermal waves, drought, and tube-well restrictions.' },
+                      { id: 'sustainability', icon: <Sprout size={20} strokeWidth={1.75} color="#10b981" />, title: 'Sustainability Tracker', subtitle: 'Soil Health & Legume Trajectory', color: '#10b981', desc: 'Track multi-season biological soil scores, Fabaceae BNF breaks, and aquifer load.' },
+                      { id: 'outcomes', icon: <ClipboardList size={20} strokeWidth={1.75} color="#c084fc" />, title: 'Actual vs Estimated Outcomes', subtitle: 'Ground Truth Harvest Variance', color: '#c084fc', desc: 'Record empirical seasonal harvest yields, farmgate prices, and compute model error.' },
                     ].map(card => (
                       <div
                         key={card.id}
@@ -4096,7 +4097,7 @@ export function App() {
                           fontWeight: theme === 'dark' ? 700 : 400
                         }}
                       >
-                        🌙 {lang === 'bn' ? 'ডার্ক' : 'Dark'}
+                        <Moon size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'ডার্ক' : 'Dark'}
                       </button>
                       <button
                         type="button"
@@ -4113,7 +4114,7 @@ export function App() {
                           fontWeight: theme === 'light' ? 700 : 400
                         }}
                       >
-                        ☀️ {lang === 'bn' ? 'লাইট' : 'Light'}
+                        <Sun size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'লাইট' : 'Light'}
                       </button>
                     </div>
                   </div>
@@ -4146,7 +4147,7 @@ export function App() {
               <div className="dash-card" style={{ padding: 24, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 20 }}>🚜</span>
+                    <Tractor size={20} strokeWidth={1.75} />
                     <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--text-main)' }}>
                       {lang === 'bn' ? 'আমার জমি' : 'My Farm'}
                     </h3>
@@ -4471,7 +4472,7 @@ export function App() {
                       <div className="form-group" style={{ padding: '12px 14px', background: 'var(--bg-card, #1e293b)', borderRadius: 8, border: '1px solid var(--border-light, #334155)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                           <label style={{ fontWeight: 600, display: 'block', margin: 0, fontSize: 13 }}>
-                            🔄 {lang === 'bn' ? 'বিদ্যমান ৩-মৌসুম ফসল আবর্তন (বেসলাইন)' : 'Existing 3-Season Crop Rotation (Baseline)'}
+                            <RotateCw size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'বিদ্যমান ৩-মৌসুম ফসল আবর্তন (বেসলাইন)' : 'Existing 3-Season Crop Rotation (Baseline)'}
                           </label>
                           <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>
                             {lang === 'bn' ? 'ফলন ও দাম ঐচ্ছিক' : 'Yield & price optional'}
@@ -4689,7 +4690,7 @@ export function App() {
                             style={{ width: 18, height: 18, accentColor: '#00df81', cursor: 'pointer' }}
                           />
                           <span style={{ fontWeight: 600, color: 'var(--text-main, #e2e8f0)', fontSize: 13 }}>
-                            🌊 {lang === 'bn' ? 'মৌসুমি প্লাবিত হাওর জমি (জুন-নভেম্বর পানির নিচে)' : 'Seasonally Flooded Haor Wetland (Submerged Jun–Nov)'}
+                            <Waves size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মৌসুমি প্লাবিত হাওর জমি (জুন-নভেম্বর পানির নিচে)' : 'Seasonally Flooded Haor Wetland (Submerged Jun–Nov)'}
                           </span>
                         </label>
                         <p style={{ margin: '4px 0 0 28px', fontSize: 11, color: 'var(--text-muted, #94a3b8)' }}>
@@ -4703,7 +4704,7 @@ export function App() {
                         if (trimmed && userFields.some(f => String(f.id) !== String(fieldForm.id) && (f.name || '').trim().toLowerCase() === trimmed)) {
                           return (
                             <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 6, color: '#ef4444', fontSize: 12.5, fontWeight: 500 }}>
-                              ⚠️ {lang === 'bn' ? 'সতর্কতা: এই নামের জমি ইতিমধ্যে নিবন্ধিত রয়েছে। অনুগ্রহ করে ভিন্ন নাম দিন।' : 'Warning: A field with this name already exists. Please choose a different name.'}
+                              {lang === 'bn' ? 'সতর্কতা: এই নামের জমি ইতিমধ্যে নিবন্ধিত রয়েছে। অনুগ্রহ করে ভিন্ন নাম দিন।' : 'Warning: A field with this name already exists. Please choose a different name.'}
                             </div>
                           );
                         }
@@ -4714,7 +4715,7 @@ export function App() {
                           if (near) {
                             return (
                               <div style={{ padding: '8px 12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: 6, color: '#f59e0b', fontSize: 12.5, fontWeight: 500 }}>
-                                ⚠️ {lang === 'bn' ? `সতর্কতা: এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${near.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `Warning: Field "${near.name}" already exists within 50 meters of these coordinates.`}
+                                {lang === 'bn' ? `সতর্কতা: এই স্থানাঙ্কের ৫০ মিটারের মধ্যে "${near.name}" জমিটি ইতিমধ্যে বিদ্যমান।` : `Warning: Field "${near.name}" already exists within 50 meters of these coordinates.`}
                               </div>
                             );
                           }
@@ -4747,7 +4748,7 @@ export function App() {
                           !Number.isFinite(parseFloat(fieldForm.area_ha)) ||
                           parseFloat(fieldForm.area_ha) <= 0
                         }
-                        title={(!Number.isFinite(parseFloat(fieldForm.latitude)) || !Number.isFinite(parseFloat(fieldForm.longitude))) ? (lang === 'bn' ? '⚠ মানচিত্রে জমি চিহ্নিত করুন' : 'Please set field pin on map') : ''}
+                        title={(!Number.isFinite(parseFloat(fieldForm.latitude)) || !Number.isFinite(parseFloat(fieldForm.longitude))) ? (lang === 'bn' ? 'মানচিত্রে জমি চিহ্নিত করুন' : 'Please set field pin on map') : ''}
                       >
                         {fieldModalLoading
                           ? (lang === 'bn' ? 'সংরক্ষণ হচ্ছে…' : 'Saving…')

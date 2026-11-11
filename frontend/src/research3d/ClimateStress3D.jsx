@@ -5,6 +5,7 @@
 // Penman-Monteith reference ET0 flux telemetry, and accessible 2D data table fallback.
 
 import React, { useRef, useMemo } from 'react';
+import { Thermometer } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -231,7 +232,7 @@ export function ClimateStress3D({
       {/* Climate Impact & Penman-Monteith Telemetry */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          🌡️ {lang === 'bn' ? 'জলবায়ু চাপ ও তাপমাত্রা পারটারবেশন' : 'Climate Stress & Thermal Impact'}
+          <Thermometer size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--amber, #f5b04c)' }} />{lang === 'bn' ? 'জলবায়ু চাপ ও তাপমাত্রা পারটারবেশন' : 'Climate Stress & Thermal Impact'}
         </h4>
 
         {/* Temperature & Scenario Badge */}
@@ -263,7 +264,7 @@ export function ClimateStress3D({
 
         {/* NASA POWER Gridded Model Notice */}
         <div style={{ marginTop: 'auto', background: 'rgba(15, 23, 42, 0.6)', padding: 10, borderRadius: 8, border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 10.5, color: '#94a3b8' }}>
-          🛰️ NASA POWER CERES/MERRA-2 গ্রিডেড ক্লাইমেট মডেল ভিত্তিক তাপমাত্রা পারটারবেশন।
+          NASA POWER CERES/MERRA-2 গ্রিডেড ক্লাইমেট মডেল ভিত্তিক তাপমাত্রা পারটারবেশন।
         </div>
       </div>
     </div>

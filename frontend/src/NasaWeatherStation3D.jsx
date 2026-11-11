@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Thermometer, Moon, Flame, CloudRain, Calendar, Satellite, AlertTriangle, Droplets, Clock, Search } from 'lucide-react';
 import { request } from './apiClient.js';
 import { useRotationPlans, extractPlanCrops } from './store/rotationPlansStore.js';
 import { toEnglishNumber } from './i18n.js';
@@ -167,7 +168,7 @@ export function NasaWeatherStation3D({
     if (!summary.years) return [];
     return [
       {
-        icon: '🌡️',
+        icon: <Thermometer size={16} strokeWidth={1.75} style={{ color: 'var(--amber, #f5b04c)' }} />,
         title_bn: `সর্বোচ্চ তাপমাত্রা দশকে ${bn(summary.tmax_trend?.[0], 2)}°C ${summary.tmax_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
         title_en: `Maximum temperature shifted ${Number(summary.tmax_trend?.[0] || 0).toFixed(2)}°C per decade`,
         p: summary.tmax_trend?.[1] ?? 1.0,
@@ -175,7 +176,7 @@ export function NasaWeatherStation3D({
         period_en: '2001–2024',
       },
       {
-        icon: '🌙',
+        icon: <Moon size={16} strokeWidth={1.75} style={{ color: 'var(--muted, #8fa394)' }} />,
         title_bn: `রাতের তাপমাত্রা দশকে ${bn(summary.tmin_trend?.[0], 2)}°C ${summary.tmin_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
         title_en: `Nighttime minimum temperature shifted ${Number(summary.tmin_trend?.[0] || 0).toFixed(2)}°C per decade`,
         p: summary.tmin_trend?.[1] ?? 1.0,
@@ -183,7 +184,7 @@ export function NasaWeatherStation3D({
         period_en: '2001–2024',
       },
       {
-        icon: '🔥',
+        icon: <Flame size={16} strokeWidth={1.75} style={{ color: 'var(--amber, #f5b04c)' }} />,
         title_bn: `৩৫°C-এর বেশি গরম দিন দশকে ${bn(summary.heat_trend?.[0], 1)}টি ${summary.heat_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
         title_en: `Heat stress days (>35°C) shifted ${Number(summary.heat_trend?.[0] || 0).toFixed(1)} days per decade`,
         p: summary.heat_trend?.[1] ?? 1.0,
@@ -191,7 +192,7 @@ export function NasaWeatherStation3D({
         period_en: '2001–2024',
       },
       {
-        icon: '🌧️',
+        icon: <CloudRain size={16} strokeWidth={1.75} style={{ color: 'var(--cyan, #5be3ff)' }} />,
         title_bn: `বছরের মোট বৃষ্টি দশকে ${bn(Math.abs(summary.annual_trend?.[0] || 0))} মিমি ${summary.annual_trend?.[0] >= 0 ? 'বেড়েছে' : 'কমেছে'}`,
         title_en: `Annual rainfall shifted ${Math.round(Math.abs(summary.annual_trend?.[0] || 0))} mm per decade`,
         p: summary.annual_trend?.[1] ?? 1.0,
@@ -199,7 +200,7 @@ export function NasaWeatherStation3D({
         period_en: '2001–2024',
       },
       {
-        icon: '📅',
+        icon: <Calendar size={16} strokeWidth={1.75} style={{ color: 'var(--lime, #c8f169)' }} />,
         title_bn: onset.verdict_bn || 'আমন রোপণের বৃষ্টি শুরুর তারিখে কোনো তাৎপর্যপূর্ণ পরিবর্তন নেই',
         title_en: onset.verdict_en || 'No statistically significant shift in monsoon onset',
         p: onset.p_value ?? 0.5,
@@ -473,7 +474,7 @@ export function NasaWeatherStation3D({
             margin: '20px 0',
           }}
         >
-          <div style={{ fontSize: 28, marginBottom: 10 }}>🛰️</div>
+          <Satellite size={28} strokeWidth={1.75} style={{ display: 'block', margin: '0 auto 10px', color: 'var(--cyan, #5be3ff)' }} />
           <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 6px' }}>
             {lang === 'bn' ? 'জমির নিজস্ব স্যাটেলাইট ও আবহাওয়া উপাত্ত লোড হচ্ছে...' : 'Loading Point-Specific Satellite & Weather Telemetry...'}
           </h3>
@@ -544,7 +545,7 @@ export function NasaWeatherStation3D({
 
       {error && !loading && (
         <div style={{ padding: 24, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: 12, color: '#f87171', margin: '20px 0' }}>
-          <strong>⚠ {error}</strong>
+          <span><AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} /><strong>{error}</strong></span>
         </div>
       )}
 
@@ -659,7 +660,7 @@ export function NasaWeatherStation3D({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, margin: 0, color: 'var(--fg, #e7efe8)' }}>
-                    💧 {lang === 'bn' ? 'মাটির নিচের পানি কমছে' : 'Groundwater Storage Trend'}
+                    <Droplets size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মাটির নিচের পানি কমছে' : 'Groundwater Storage Trend'}
                   </h3>
                   <span
                     style={{
@@ -767,7 +768,7 @@ export function NasaWeatherStation3D({
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>
-                    ⏳ {lang === 'bn'
+                    <Clock size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn'
                       ? `তখন বনাম এখন (${thenVsNow.period_then} বনাম ${thenVsNow.period_now})`
                       : `Then vs Now (${toEnglishNumber(thenVsNow.period_then)} vs ${toEnglishNumber(thenVsNow.period_now)})`}
                   </h4>
@@ -1241,7 +1242,7 @@ export function NasaWeatherStation3D({
                         {isHigh ? (lang === 'bn' ? 'বেশি ঝুঁকি' : 'High Risk') : (lang === 'bn' ? 'মাঝারি' : 'Medium')}
                       </b>
                       <div style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
-                        ⚠ <b>{w.crop.name}</b>{' '}
+                        <AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} /><b>{w.crop.name}</b>{' '}
                         {lang === 'bn'
                           ? `ফুল ${MLOC_BN[w.fIdx]} (${bn(Math.round(w.v * 100))}% ঝুঁকি) — ${advice_bn}।`
                           : `Flowers ${MLOC_EN[w.fIdx]} (${Math.round(w.v * 100)}% risk) — ${advice_en}.`}
@@ -1320,7 +1321,7 @@ export function NasaWeatherStation3D({
                     marginBottom: 14,
                   }}
                 >
-                  <span>⚠</span>
+                  <span><AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" /></span>
                   <div>
                     {lang === 'bn'
                       ? (summary.recent.stale_reason_bn || summary.recent.stale_reason)
@@ -1467,7 +1468,7 @@ export function NasaWeatherStation3D({
 
           {/* Footnotes & Data Sources in muted 11px */}
           <footer style={{ marginTop: 24, paddingTop: 12, borderTop: '1px solid var(--line, rgba(255,255,255,0.08))', fontSize: 11, color: 'var(--muted, #93a597)', display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
-            <span>🔍 {lang === 'bn' ? 'উৎস: NASA POWER (১৯৮১–২০২৬), GPM IMERG (২০০১–২০২৪), GRACE/GRACE-FO JPL RL06.3M mascon' : 'Sources: NASA POWER (1981–2026), GPM IMERG (2001–2024), GRACE/GRACE-FO JPL RL06.3M mascon'}</span>
+            <span><Search size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'উৎস: NASA POWER (১৯৮১–২০২৬), GPM IMERG (২০০১–২০২৪), GRACE/GRACE-FO JPL RL06.3M mascon' : 'Sources: NASA POWER (1981–2026), GPM IMERG (2001–2024), GRACE/GRACE-FO JPL RL06.3M mascon'}</span>
             <span>{lang === 'bn' ? 'মডেল ও অ্যানালাইসিস: FAO-56 Penman-Monteith, Mann-Kendall Trend' : 'Models: FAO-56 Penman-Monteith, Mann-Kendall Trend'}</span>
           </footer>
         </div>

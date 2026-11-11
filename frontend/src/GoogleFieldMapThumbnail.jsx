@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { Satellite } from 'lucide-react';
 import { getFieldPolygon } from './GoogleFieldMapPicker.jsx';
 
 // Web Mercator Tile Calculation for Static Satellite Crop
@@ -224,7 +225,7 @@ export function GoogleFieldMapThumbnail({
           border: '1px solid rgba(200, 241, 105, 0.3)',
         }}
       >
-        <span>🛰️ ESRI Satellite</span>
+        <span><Satellite size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />ESRI Satellite</span>
       </div>
 
       {/* 6. Top-Right Name Badge */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Sun, Thermometer, Waves, AlertTriangle, ShieldAlert, Zap, RotateCw, Lock, Shield } from 'lucide-react';
 import { RecoverySimulation3D } from './research3d/RecoverySimulation3D.jsx';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest } from './apiClient.js';
@@ -26,11 +27,11 @@ export function CropFailureRecoveryView({
   const [simData, setSimData] = useState(null);
 
   const failureTypes = [
-    { id: 'drought_irrigation_cut', label: 'Drought Shock', icon: '🌵', desc: 'Severe precip deficit & low groundwater aquifer reserve' },
-    { id: 'heat_stress', label: 'Heat Stress Wave', icon: '🌡️', desc: 'Sustained temperature spike during critical flowering phase' },
-    { id: 'excess_rainfall', label: 'Waterlogging & Flood', icon: '🌊', desc: 'Early monsoon deluge causing root zone hypoxia' },
-    { id: 'crop_failure', label: 'Crop Pest / Blight Loss', icon: '🥀', desc: 'Severe agronomic damage causing near total harvest failure' },
-    { id: 'soil_degradation', label: 'Soil Salinity / Degradation', icon: '🧂', desc: 'Sudden saline intrusion or heavy compaction shock' },
+    { id: 'drought_irrigation_cut', label: 'Drought Shock', icon: <Sun size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" />, desc: 'Severe precip deficit & low groundwater aquifer reserve' },
+    { id: 'heat_stress', label: 'Heat Stress Wave', icon: <Thermometer size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" />, desc: 'Sustained temperature spike during critical flowering phase' },
+    { id: 'excess_rainfall', label: 'Waterlogging & Flood', icon: <Waves size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />, desc: 'Early monsoon deluge causing root zone hypoxia' },
+    { id: 'crop_failure', label: 'Crop Pest / Blight Loss', icon: <AlertTriangle size={18} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />, desc: 'Severe agronomic damage causing near total harvest failure' },
+    { id: 'soil_degradation', label: 'Soil Salinity / Degradation', icon: <ShieldAlert size={18} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />, desc: 'Sudden saline intrusion or heavy compaction shock' },
   ];
 
   const severities = [
@@ -108,7 +109,7 @@ export function CropFailureRecoveryView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '26px' }}>⚡</span>
+              <Zap size={26} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Crop Failure &amp; Adaptive Recovery Simulator
               </h2>
@@ -140,7 +141,7 @@ export function CropFailureRecoveryView({
               boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
             }}
           >
-            {loading ? 'Simulating Shocks...' : '⚡ Run Failure Shock & Recovery'}
+            {loading ? 'Simulating Shocks...' : <><Zap size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />Run Failure Shock & Recovery</>}
           </button>
         </div>
 
@@ -252,7 +253,7 @@ export function CropFailureRecoveryView({
             onClick={() => runSimulation()}
             style={{ padding: '6px 14px', fontSize: 12, cursor: 'pointer', background: '#334155', color: '#fff', border: 'none', borderRadius: 6 }}
           >
-            🔄 Retry Simulation
+            Retry Simulation
           </button>
         </div>
       )}
@@ -309,7 +310,7 @@ export function CropFailureRecoveryView({
           {/* Rotation Comparison: Baseline vs Shock Impact vs Adaptive Recovery */}
           <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
             <h3 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔄</span> Multi-Season Rotation Response Breakdown
+              <RotateCw size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Multi-Season Rotation Response Breakdown
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
@@ -333,7 +334,7 @@ export function CropFailureRecoveryView({
                     if (isPast) {
                       statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: '#1e293b', color: 'var(--text-muted, #94a3b8)', fontSize: '11px' }}>Pre-Event Normal</span>;
                     } else if (isShockSeason) {
-                      statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '11px', fontWeight: 700 }}>⚠️ Shock Incurred (-{simData.failure_event?.yield_loss_pct}%)</span>;
+                      statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)', fontSize: '11px', fontWeight: 700 }}>Shock Incurred (-{simData.failure_event?.yield_loss_pct}%)</span>;
                     } else {
                       statusBadge = <span style={{ padding: '3px 8px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontSize: '11px' }}>Adaptive Recovery</span>;
                     }
@@ -398,7 +399,7 @@ export function CropFailureRecoveryView({
             {/* Binding Constraints */}
             <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '18px' }}>
               <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🔒</span> Binding Constraints Limiting Recovery
+                <Lock size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Binding Constraints Limiting Recovery
               </h4>
               <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12.5px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
                 {simData.binding_constraints?.map((c, i) => (
@@ -412,7 +413,7 @@ export function CropFailureRecoveryView({
             {/* Scientific Transparency & Disclaimer */}
             <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '12px', padding: '18px' }}>
               <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 700, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>🛡️</span> Scientific Safeguards &amp; Uncertainty Note
+                <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Scientific Safeguards &amp; Uncertainty Note
               </h4>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
                 {simData.scientific_disclaimer}

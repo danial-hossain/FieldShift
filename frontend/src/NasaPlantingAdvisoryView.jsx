@@ -3,6 +3,7 @@
 // Deterministic Agro-Meteorological Evidence from NASA POWER Daily Observations (2001–2025)
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Landmark, Wheat, Waves, Sprout, Leaf, Sun, Tractor, Satellite, AlertTriangle, Smartphone, ClipboardList, BarChart3, Scale, Microscope } from 'lucide-react';
 import { request } from './apiClient.js';
 import { RealFarmCanvas3D } from './RealFarmCanvas3D.jsx';
 import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, PageHeader } from './ui/index.js';
@@ -69,13 +70,13 @@ export function NasaPlantingAdvisoryView({
   }, [district, crop, thresholdMm, lang, activeField?.district]);
 
   const districtsList = [
-    { id: 'rajshahi', nameBn: 'রাজশাহী', nameEn: 'Rajshahi', icon: '🏛️' },
-    { id: 'bogura', nameBn: 'বগুড়া', nameEn: 'Bogura', icon: '🌾' },
-    { id: 'barisal', nameBn: 'বরিশাল', nameEn: 'Barisal', icon: '🌊' },
-    { id: 'rangpur', nameBn: 'রংপুর', nameEn: 'Rangpur', icon: '🌱' },
-    { id: 'mymensingh', nameBn: 'ময়মনসিংহ', nameEn: 'Mymensingh', icon: '🌿' },
-    { id: 'jashore', nameBn: 'যশোর', nameEn: 'Jashore', icon: '🌻' },
-    { id: 'cumilla', nameBn: 'কুমিল্লা', nameEn: 'Cumilla', icon: '🚜' },
+    { id: 'rajshahi', nameBn: 'রাজশাহী', nameEn: 'Rajshahi', icon: <Landmark size={18} strokeWidth={1.75} /> },
+    { id: 'bogura', nameBn: 'বগুড়া', nameEn: 'Bogura', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
+    { id: 'barisal', nameBn: 'বরিশাল', nameEn: 'Barisal', icon: <Waves size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /> },
+    { id: 'rangpur', nameBn: 'রংপুর', nameEn: 'Rangpur', icon: <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
+    { id: 'mymensingh', nameBn: 'ময়মনসিংহ', nameEn: 'Mymensingh', icon: <Leaf size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
+    { id: 'jashore', nameBn: 'যশোর', nameEn: 'Jashore', icon: <Sun size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" /> },
+    { id: 'cumilla', nameBn: 'কুমিল্লা', nameEn: 'Cumilla', icon: <Tractor size={18} strokeWidth={1.75} /> },
   ];
 
   const cropsList = [
@@ -163,7 +164,7 @@ export function NasaPlantingAdvisoryView({
                   size="sm"
                   onClick={() => setCrop(c.id)}
                 >
-                  🌾 {lang === 'bn' ? c.nameBn : c.nameEn}
+                  <Wheat size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? c.nameBn : c.nameEn}
                 </Button>
               );
             })}
@@ -175,7 +176,7 @@ export function NasaPlantingAdvisoryView({
       <Card variant="glass-strong" style={{ padding: 28 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 26 }}>🛰️🌾</span>
+            <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Satellite size={24} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /><Wheat size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" /></span>
             {(() => {
               const badge = evidenceBadge(rec, comp, advisoryData?.status);
               return (
@@ -205,7 +206,7 @@ export function NasaPlantingAdvisoryView({
           <div>
             {warningText && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', background: 'rgba(242, 193, 78, 0.12)', border: '1px solid var(--sun)', borderRadius: 10, color: 'var(--sun)', marginBottom: 16 }}>
-                <span>⚠️</span>
+                <AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
                 <span style={{ fontSize: 13, lineHeight: 1.5 }}>{warningText}</span>
               </div>
             )}
@@ -235,7 +236,7 @@ export function NasaPlantingAdvisoryView({
         <Card variant="glass" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 18 }}>📱</span>
+              <Smartphone size={18} strokeWidth={1.75} />
               <strong style={{ fontSize: 13, color: 'var(--text)' }}>
                 {lang === 'bn' ? 'মোবাইল এসএমএস সারসংক্ষেপ (<১৬০ অক্ষর)' : 'Mobile SMS Summary (<160 chars)'}
               </strong>
@@ -253,7 +254,7 @@ export function NasaPlantingAdvisoryView({
             <Button
               variant="secondary"
               size="sm"
-              icon={copiedSms ? '✓' : '📋'}
+              icon={copiedSms ? '✓' : <ClipboardList size={16} strokeWidth={1.75} />}
               onClick={handleCopySms}
             >
               {copiedSms ? (lang === 'bn' ? 'কপি হয়েছে' : 'Copied') : (lang === 'bn' ? 'এসএমএস কপি করুন' : 'Copy SMS')}
@@ -266,7 +267,7 @@ export function NasaPlantingAdvisoryView({
       {advisoryData && !loading && !error && (
         <Card variant="glass" style={{ padding: 24 }}>
           <CardHeader
-            icon="📊"
+            icon={<BarChart3 size={16} strokeWidth={1.75} />}
             title={lang === 'bn' ? 'বৃষ্টিপাত অনসেট প্রমাণ ও বিতরণ' : 'Rainfall Onset Evidence & Two-Period Distribution'}
             subtitle={lang === 'bn' ? '২০০১–২০১২ বনাম ২০১৩–২০২৫ নাসা উপাত্তের তুলনা' : '2001-2012 vs 2013-2025 NASA comparison'}
           />
@@ -379,7 +380,7 @@ export function NasaPlantingAdvisoryView({
       {sens.length > 0 && (
         <Card variant="glass" style={{ padding: 22 }}>
           <CardHeader
-            icon="⚖️"
+            icon={<Scale size={16} strokeWidth={1.75} />}
             title={lang === 'bn' ? 'সংবেদনশীলতা বিশ্লেষণ (Sensitivity Analysis: ±৫ মিমি)' : 'Sensitivity Analysis (Threshold ±5 mm)'}
             subtitle={lang === 'bn' ? 'বৃষ্টিপাত থ্রেশহোল্ড পরিবর্তনে শিফট স্থায়িত্ব' : 'Onset shift stability across thresholds'}
           />
@@ -421,7 +422,7 @@ export function NasaPlantingAdvisoryView({
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>🔬</span>
+            <Microscope size={20} strokeWidth={1.75} />
             <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
               {lang === 'bn' ? 'গবেষণা পদ্ধতি, ডেটা প্রোভেন্যান্স ও সীমাবদ্ধতা' : 'Methodology, Data Provenance & Limitations'}
             </span>

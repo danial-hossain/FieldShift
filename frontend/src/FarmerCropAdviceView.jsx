@@ -2,6 +2,7 @@
 // Simple, transparent, card-based crop advice for Bangladeshi farmers
 
 import React, { useState } from 'react';
+import { Wheat, Flower2, Sprout, Satellite, ClipboardList, Ruler, Lightbulb, Tag, AlertTriangle, Bot } from 'lucide-react';
 import { useTranslation, formatArea } from './i18n.js';
 import { NasaPlantingAdvisoryView } from './NasaPlantingAdvisoryView.jsx';
 import { Card, CardHeader, Stat, Button, Pill, Tabs, PageHeader } from './ui/index.js';
@@ -26,7 +27,7 @@ export function FarmerCropAdviceView({
       variety: 'ব্রি ধান-৪৯ / ব্রি ধান-৭৫',
       season: 'বর্ষা ও শরৎ (Kharif-2)',
       season_tag: 'kharif',
-      icon: '🌾',
+      icon: <Wheat size={20} strokeWidth={1.75} color="var(--lime, #c8f169)" />,
       badge: 'প্রধান খাদ্য শস্য',
       tone: 'leaf',
       why_suitable: 'আপনার জমির দোআঁশ ও এঁটেল মাটি এবং বর্তমান মৌসুমি বৃষ্টিপাত আমন ধান চাষের জন্য অত্যন্ত অনুকূল। মাটির পিএইচ (pH ৬.৫) ধানের পুষ্টি শোষণে সহায়ক।',
@@ -55,7 +56,7 @@ export function FarmerCropAdviceView({
       variety: 'বারি সরিষা-১৪ / বারি সরিষা-১৭',
       season: 'শীতকাল (Rabi)',
       season_tag: 'rabi',
-      icon: '🌼',
+      icon: <Flower2 size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
       badge: 'স্বল্পমেয়াদী অর্থকরী',
       tone: 'sun',
       why_suitable: 'ধানের পর জমি ফেলে না রেখে ৭৫-৮০ দিনে সরিষা তুলে ফেলা যায়। কম সেচ লাগে এবং জমিতে অবশিষ্ট জৈব উপাদান বাড়ায়।',
@@ -84,7 +85,7 @@ export function FarmerCropAdviceView({
       variety: 'বারি মসুর-৮ / বিনা মসুর-৬',
       season: 'শীতকাল (Rabi)',
       season_tag: 'rabi',
-      icon: '🌱',
+      icon: <Sprout size={20} strokeWidth={1.75} color="var(--lime, #c8f169)" />,
       badge: 'মাটি উর্বরকারী ডাল',
       tone: 'leaf',
       why_suitable: 'ডাল ফসল বাতাস থেকে শিকড়ের মাধ্যমে প্রাকৃতিকভাবে নাইট্রোজেন যুক্ত করে। এর ফলে পরবর্তী ফসলে ইউরিয়া সারের খরচ উল্লেখযোগ্যভাবে কমে।',
@@ -113,7 +114,7 @@ export function FarmerCropAdviceView({
       variety: 'ডায়মন্ড / কার্ডিনাল / গ্র্যানোলা',
       season: 'শীতকাল (Rabi)',
       season_tag: 'rabi',
-      icon: '🥔',
+      icon: <Sprout size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
       badge: 'উচ্চ মূল্যের ফসল',
       tone: 'sun',
       why_suitable: 'বেলে-দোআঁশ ও দোআঁশ মাটিতে আলুর কন্দ ভালো বাড়ে। সঠিক ব্যবস্থাপনায় স্বল্প সময়ে সর্বাধিক নগদ অর্থ পাওয়া যায়।',
@@ -142,7 +143,7 @@ export function FarmerCropAdviceView({
       variety: 'এনকে-৪০ / প্যাসিফিক-৯৮৪',
       season: 'রবি ও প্রাক-খরিফ',
       season_tag: 'rabi',
-      icon: '🌽',
+      icon: <Wheat size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
       badge: 'উচ্চ ফলনশীল দানা',
       tone: 'alert',
       why_suitable: 'পোল্ট্রি ও ফিড মিলে ভুট্টার ব্যাপক চাহিদা রয়েছে। দোআঁশ মাটিতে খরা সহনশীল এবং গভীর শিকড় দিয়ে মাটির নিচের খাবার টেনে নেয়।',
@@ -176,8 +177,8 @@ export function FarmerCropAdviceView({
       <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
         <Tabs
           items={[
-            { id: 'nasa_advisory', label: lang === 'bn' ? 'নাসা রোপণ পরামর্শ (Planting Window)' : 'NASA Planting Window Advisory', icon: '🛰️' },
-            { id: 'catalog', label: lang === 'bn' ? 'ফসল ক্যাটালগ ও লাভ-ক্ষতি' : 'Crop Catalog & Economics', icon: '📋' }
+            { id: 'nasa_advisory', label: lang === 'bn' ? 'নাসা রোপণ পরামর্শ (Planting Window)' : 'NASA Planting Window Advisory', icon: <Satellite size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /> },
+            { id: 'catalog', label: lang === 'bn' ? 'ফসল ক্যাটালগ ও লাভ-ক্ষতি' : 'Crop Catalog & Economics', icon: <ClipboardList size={18} strokeWidth={1.75} /> }
           ]}
           activeId={adviceTab}
           onChange={setAdviceTab}
@@ -207,7 +208,7 @@ export function FarmerCropAdviceView({
 
             {/* Formula note */}
             <div style={{ padding: '10px 14px', borderRadius: 8, background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--line)', fontSize: 12, color: 'var(--text-3)', lineHeight: 1.5, margin: '14px 0' }}>
-              📐 {lang === 'bn'
+              <Ruler size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn'
                 ? 'হিসাব ভিত্তি: সম্ভাব্য বিক্রয়মূল্য (ফলন মণ × দর টাকা/মণ) - উৎপাদন খরচ = সম্ভাব্য নিট লাভ। (১ মণ = ৪০ কেজি, ১ হেক্টর ≈ ৭.৪৭ বিঘা)। উপাত্ত সূত্র: বিএআরআই ও ডিএই ২০২৪-২০২৫ আঞ্চলিক বেঞ্চমার্ক প্রাক্কলন।'
                 : 'Calculation formula: Gross Revenue (Yield Maund × Price/Maund) - Total Cost = Net Profit (1 maund = 40 kg, 1 ha ≈ 7.47 bigha). Data source: BARI & DAE 2024-2025 regional benchmark guidelines.'}
             </div>
@@ -257,7 +258,7 @@ export function FarmerCropAdviceView({
                   </div>
 
                   <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.5, margin: '10px 0', background: 'rgba(255, 255, 255, 0.02)', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--line)' }}>
-                    💡 {lang === 'bn' ? crop.why_suitable : crop.why_suitable_en}
+                    <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? crop.why_suitable : crop.why_suitable_en}
                   </p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, margin: '14px 0', padding: '10px 12px', background: 'rgba(0, 0, 0, 0.25)', borderRadius: 10, border: '1px solid var(--line)' }}>
@@ -267,12 +268,12 @@ export function FarmerCropAdviceView({
                   </div>
 
                   <div style={{ fontSize: 12, color: 'var(--text-3)', margin: '8px 0' }}>
-                    🏷️ {t('price_label')}: <strong style={{ color: 'var(--text)' }}>{lang === 'bn' ? crop.price : crop.price_en}</strong>
+                    <Tag size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('price_label')}: <strong style={{ color: 'var(--text)' }}>{lang === 'bn' ? crop.price : crop.price_en}</strong>
                     <div style={{ fontSize: 10.5, color: 'var(--text-3)', marginTop: 2 }}>{lang === 'bn' ? crop.price_source : crop.price_source_en}</div>
                   </div>
 
                   <div style={{ fontSize: 12, color: 'var(--alert)', margin: '8px 0', lineHeight: 1.4 }}>
-                    ⚠️ {lang === 'bn' ? crop.risks : crop.risks_en}
+                    <AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? crop.risks : crop.risks_en}
                   </div>
                 </div>
 
@@ -297,7 +298,7 @@ export function FarmerCropAdviceView({
                       }
                     }}
                   >
-                    🤖 {t('ask_ai_about_crop')}
+                    <Bot size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('ask_ai_about_crop')}
                   </Button>
                 </div>
               </Card>

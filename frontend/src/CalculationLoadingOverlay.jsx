@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { AlertTriangle, Sprout } from 'lucide-react';
 
 /**
  * Polar to Cartesian coordinates helper for SVG arcs
@@ -215,7 +216,7 @@ export function CalculationLoadingOverlay({
             boxShadow: '0 12px 36px rgba(0,0,0,0.45)',
           }}
         >
-          <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>⚠️</span>
+          <AlertTriangle size={36} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ display: 'block', margin: '0 auto 12px' }} />
           <h3 style={{ margin: '0 0 8px', color: 'var(--alert, #ef4444)', fontSize: 18, fontWeight: 600 }}>
             {lang === 'bn' ? 'পরিকল্পনা গণনায় সমস্যা হয়েছে' : 'Optimization Could Not Complete'}
           </h3>
@@ -299,8 +300,8 @@ export function CalculationLoadingOverlay({
               </svg>
               {/* Ring Center */}
               <div className="calc-ring-center">
-                <span style={{ fontSize: 24, lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(200,241,105,0.4))' }}>
-                  🌱
+                <span style={{ display: 'inline-block', lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(200,241,105,0.4))' }}>
+                  <Sprout size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                 </span>
                 <span
                   style={{

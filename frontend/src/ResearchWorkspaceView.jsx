@@ -13,6 +13,7 @@
 // - Zero navigation conflicts: active tab strictly matches rendered view
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { AlertTriangle, Microscope, Wheat, CloudRain, Droplets, Landmark, FlaskConical, RotateCw, Sprout, Sun, Scale, Zap, Ruler, Shield, Gamepad2, Dna, BookOpen, Radio, Menu, Compass, Search } from 'lucide-react';
 import { useTranslation } from './i18n.js';
 import { SixSeasonRecommendationView } from './SixSeasonRecommendationView.jsx';
 import { ExperimentSimulator3DView } from './ExperimentSimulator3DView.jsx';
@@ -39,7 +40,7 @@ class WorkspaceErrorBoundary extends React.Component {
           textAlign: 'center',
           margin: '20px 0'
         }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
+          <AlertTriangle size={36} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ display: 'block', margin: '0 auto 12px' }} />
           <h4 style={{ margin: '0 0 8px', color: 'var(--hud-red)', fontSize: 17, fontWeight: 800 }}>
             {this.props.fallbackTitle || 'Display Module Notice'}
           </h4>
@@ -63,7 +64,7 @@ class WorkspaceErrorBoundary extends React.Component {
               cursor: 'pointer'
             }}
           >
-            🔄 Reload Module
+            Reload Module
           </button>
         </div>
       );
@@ -108,10 +109,10 @@ export function ResearchWorkspaceView({
   const request = typeof propRequest === 'function' ? propRequest : defaultRequest;
   const formatNumber = typeof propFormatNumber === 'function' ? propFormatNumber : defaultFormatNumber;
   const strategyProfiles = propStrategyProfiles || {
-    profit_focused: { name: 'Profit Focused', icon: '💰', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
-    water_efficiency: { name: 'Water Efficiency', icon: '💧', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
-    soil_health: { name: 'Soil Health & Regeneration', icon: '🌱', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
-    balanced: { name: 'Balanced Multi-Objective', icon: '⚖️', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
+    profit_focused: { name: 'Profit Focused', icon: 'Coins', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
+    water_efficiency: { name: 'Water Efficiency', icon: 'Droplets', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
+    soil_health: { name: 'Soil Health & Regeneration', icon: 'Sprout', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
+    balanced: { name: 'Balanced Multi-Objective', icon: 'Scale', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
   };
 
   const [subTab, setSubTab] = useState(
@@ -137,35 +138,35 @@ export function ResearchWorkspaceView({
     {
       id: 'core_computational',
       title: lang === 'bn' ? 'ক. সক্রিয় বৈজ্ঞানিক কম্পিউটেশনাল ল্যাব' : 'A. Active Computational Science Labs',
-      icon: '🔬',
+      icon: 'Microscope',
       items: [
-        { id: 'onset_science', label: lang === 'bn' ? 'অনসেট বিজ্ঞান (৩৯টি ইউনিক সেল)' : 'Onset Science (39 Unique Cells)', icon: '🔬', badge: 'NASA DUAL' },
-        { id: 'six_seasons_milp', label: lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনা ও রোটেশন (MILP)' : '6-Season Crop Recommendation (MILP)', icon: '🌾', badge: 'MILP' },
-        { id: 'uncertainty', label: lang === 'bn' ? 'আবহাওয়া সংবেদনশীলতা ও স্থিতিস্থাপকতা' : 'Weather Robustness & Uncertainty', icon: '🌦️', badge: 'STRESS' },
-        { id: 'soil_water_3d', label: lang === 'bn' ? 'মাটি ও পানির স্তর ব্যালেন্স (FAO-56)' : 'Soil & Water Hydrology (FAO-56)', icon: '💧', badge: 'FAO-56' },
-        { id: 'provenance', label: lang === 'bn' ? 'তথ্য উৎস ও নির্ভরযোগ্যতা রেজিস্ট্রি' : 'Data Provenance & Reliability Registry', icon: '🏛️', badge: '4-TIER' }
+        { id: 'onset_science', label: lang === 'bn' ? 'অনসেট বিজ্ঞান (৩৯টি ইউনিক সেল)' : 'Onset Science (39 Unique Cells)', icon: <Microscope size={18} strokeWidth={1.75} />, badge: 'NASA DUAL' },
+        { id: 'six_seasons_milp', label: lang === 'bn' ? '৬-মৌসুম ফসল পরিকল্পনা ও রোটেশন (MILP)' : '6-Season Crop Recommendation (MILP)', icon: <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, badge: 'MILP' },
+        { id: 'uncertainty', label: lang === 'bn' ? 'আবহাওয়া সংবেদনশীলতা ও স্থিতিস্থাপকতা' : 'Weather Robustness & Uncertainty', icon: <CloudRain size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />, badge: 'STRESS' },
+        { id: 'soil_water_3d', label: lang === 'bn' ? 'মাটি ও পানির স্তর ব্যালেন্স (FAO-56)' : 'Soil & Water Hydrology (FAO-56)', icon: <Droplets size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />, badge: 'FAO-56' },
+        { id: 'provenance', label: lang === 'bn' ? 'তথ্য উৎস ও নির্ভরযোগ্যতা রেজিস্ট্রি' : 'Data Provenance & Reliability Registry', icon: <Landmark size={18} strokeWidth={1.75} />, badge: '4-TIER' }
       ]
     },
     {
       id: 'archive',
       title: lang === 'bn' ? 'খ. আর্কাইভ (পরীক্ষামূলক)' : 'B. Archive (Experimental)',
-      icon: '📦',
+      icon: 'Package',
       items: [
-        { id: 'comparison_lab', label: lang === 'bn' ? 'তুলনামূলক ল্যাব (MILP বনাম RL বনাম Rule)' : 'Comparison Lab (MILP vs RL vs Rule)', icon: '🧪', badge: '3-WAY' },
-        { id: 'replan', label: lang === 'bn' ? 'পরবর্তী মৌসুমের অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Next-Season Replanning', icon: '🔄', badge: 'ADAPTIVE' },
-        { id: 'experiment_simulator_3d', label: lang === 'bn' ? 'গবেষণা সিমুলেটর ওয়ার্কবেঞ্চ' : 'Farm Experiment Simulator 3D', icon: '🔬', badge: '3D' },
-        { id: 'crop_growth_3d', label: lang === 'bn' ? 'ফসলের বৃদ্ধি ও ফেনোলজি' : 'Crop Growth & Phenology', icon: '🌱', badge: 'FAO-33' },
-        { id: 'climate_stress_3d', label: lang === 'bn' ? 'জলবায়ু ও তাপমাত্রা চাপ' : 'Climate Stress Scenarios', icon: '☀️', badge: 'NASA' },
-        { id: 'nutrient_3d', label: lang === 'bn' ? 'পুষ্টি ও রাইজোস্ফিয়ার BNF' : 'Nutrient & Rhizosphere BNF', icon: '🧪', badge: 'BARI' },
-        { id: 'scenario_ab_3d', label: lang === 'bn' ? 'দৃশ্যকল্প এ/বি দ্বৈত তুলনা' : 'Scenario A/B Comparison', icon: '⚖️', badge: 'DUAL' },
-        { id: 'stress_tests_3d', label: lang === 'bn' ? '৯টি বৈজ্ঞানিক স্ট্রেস টেস্ট বেঞ্চ' : 'Scientific Stress Test Bench', icon: '⚡', badge: '9 TESTS' },
-        { id: 'multi_field_experiment', label: lang === 'bn' ? 'মাল্টি-ফিল্ড এক্সপেরিমেন্ট ও সংবেদনশীলতা ল্যাব' : 'Multi-Field Experiment & Sensitivity Lab', icon: '🧪', badge: '6-FIELDS' },
-        { id: 'sensitivity', label: lang === 'bn' ? 'সংবেদনশীলতা বিশ্লেষণ (Sweeps)' : 'Sensitivity Analysis (Sweeps)', icon: '📐', badge: 'SWEEPS' },
-        { id: 'recovery', label: lang === 'bn' ? 'ফসল বিপর্যয় ও পুনরুদ্ধার পরিকল্পনা' : 'Crop Failure & Recovery', icon: '🛡️', badge: 'MILP' },
-        { id: 'rl_policy', label: lang === 'bn' ? 'রিইনফোর্সমেন্ট লার্নিং স্যান্ডবক্স' : 'RL Simulation Sandbox', icon: '🎮', badge: 'Q-LEARN' },
-        { id: 'synthetic_lab', label: lang === 'bn' ? 'কৃত্রিম ডেটা জেনারেটর ল্যাব' : 'Synthetic Data Lab', icon: '🧬', badge: 'SEED 42' },
-        { id: 'crop_catalog', label: lang === 'bn' ? 'বাংলাদেশ শস্য তথ্যকোষ' : 'Bangladesh Crop Database', icon: '📚', badge: 'BARI' },
-        { id: 'satellite', label: lang === 'bn' ? 'স্যাটেলাইট সেন্সর প্রস্তুতি' : 'Satellite Sensor Readiness', icon: '📡', badge: 'NASA/ESA' }
+        { id: 'comparison_lab', label: lang === 'bn' ? 'তুলনামূলক ল্যাব (MILP বনাম RL বনাম Rule)' : 'Comparison Lab (MILP vs RL vs Rule)', icon: <FlaskConical size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, badge: '3-WAY' },
+        { id: 'replan', label: lang === 'bn' ? 'পরবর্তী মৌসুমের অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Next-Season Replanning', icon: <RotateCw size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />, badge: 'ADAPTIVE' },
+        { id: 'experiment_simulator_3d', label: lang === 'bn' ? 'গবেষণা সিমুলেটর ওয়ার্কবেঞ্চ' : 'Farm Experiment Simulator 3D', icon: <Microscope size={18} strokeWidth={1.75} />, badge: '3D' },
+        { id: 'crop_growth_3d', label: lang === 'bn' ? 'ফসলের বৃদ্ধি ও ফেনোলজি' : 'Crop Growth & Phenology', icon: <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, badge: 'FAO-33' },
+        { id: 'climate_stress_3d', label: lang === 'bn' ? 'জলবায়ু ও তাপমাত্রা চাপ' : 'Climate Stress Scenarios', icon: <Sun size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" />, badge: 'NASA' },
+        { id: 'nutrient_3d', label: lang === 'bn' ? 'পুষ্টি ও রাইজোস্ফিয়ার BNF' : 'Nutrient & Rhizosphere BNF', icon: <FlaskConical size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, badge: 'BARI' },
+        { id: 'scenario_ab_3d', label: lang === 'bn' ? 'দৃশ্যকল্প এ/বি দ্বৈত তুলনা' : 'Scenario A/B Comparison', icon: <Scale size={18} strokeWidth={1.75} />, badge: 'DUAL' },
+        { id: 'stress_tests_3d', label: lang === 'bn' ? '৯টি বৈজ্ঞানিক স্ট্রেস টেস্ট বেঞ্চ' : 'Scientific Stress Test Bench', icon: <Zap size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" />, badge: '9 TESTS' },
+        { id: 'multi_field_experiment', label: lang === 'bn' ? 'মাল্টি-ফিল্ড এক্সপেরিমেন্ট ও সংবেদনশীলতা ল্যাব' : 'Multi-Field Experiment & Sensitivity Lab', icon: <FlaskConical size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />, badge: '6-FIELDS' },
+        { id: 'sensitivity', label: lang === 'bn' ? 'সংবেদনশীলতা বিশ্লেষণ (Sweeps)' : 'Sensitivity Analysis (Sweeps)', icon: <Ruler size={18} strokeWidth={1.75} />, badge: 'SWEEPS' },
+        { id: 'recovery', label: lang === 'bn' ? 'ফসল বিপর্যয় ও পুনরুদ্ধার পরিকল্পনা' : 'Crop Failure & Recovery', icon: <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />, badge: 'MILP' },
+        { id: 'rl_policy', label: lang === 'bn' ? 'রিইনফোর্সমেন্ট লার্নিং স্যান্ডবক্স' : 'RL Simulation Sandbox', icon: <Gamepad2 size={18} strokeWidth={1.75} />, badge: 'Q-LEARN' },
+        { id: 'synthetic_lab', label: lang === 'bn' ? 'কৃত্রিম ডেটা জেনারেটর ল্যাব' : 'Synthetic Data Lab', icon: <Dna size={18} strokeWidth={1.75} />, badge: 'SEED 42' },
+        { id: 'crop_catalog', label: lang === 'bn' ? 'বাংলাদেশ শস্য তথ্যকোষ' : 'Bangladesh Crop Database', icon: <BookOpen size={18} strokeWidth={1.75} />, badge: 'BARI' },
+        { id: 'satellite', label: lang === 'bn' ? 'স্যাটেলাইট সেন্সর প্রস্তুতি' : 'Satellite Sensor Readiness', icon: <Radio size={18} strokeWidth={1.75} />, badge: 'NASA/ESA' }
       ]
     }
   ], [lang]);
@@ -218,7 +219,7 @@ export function ResearchWorkspaceView({
       }}>
         <div style={{ maxWidth: '820px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '26px' }}>🔬</span>
+            <Microscope size={26} strokeWidth={1.75} />
             <span style={{
               fontSize: '11px',
               padding: '4px 12px',
@@ -247,7 +248,7 @@ export function ResearchWorkspaceView({
             className="research-mobile-toggle"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            <span>☰</span>
+            <Menu size={18} strokeWidth={1.75} />
             <span>{lang === 'bn' ? 'মডিউল মেনু' : 'Research Menu'}</span>
           </button>
           <button
@@ -289,7 +290,7 @@ export function ResearchWorkspaceView({
             style={{ marginBottom: '4px' }}
           >
             <div className="research-nav-label-box">
-              <span className="research-nav-icon">🧭</span>
+              <Compass size={18} strokeWidth={1.75} className="research-nav-icon" />
               <span className="research-nav-text" style={{ fontWeight: 800 }}>
                 {lang === 'bn' ? 'ল্যাব ওভারভিউ ও লঞ্চপ্যাড' : 'Workspace Overview & Launchpad'}
               </span>
@@ -301,7 +302,7 @@ export function ResearchWorkspaceView({
 
           {/* Search / Filter Box */}
           <div className="research-search-box">
-            <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>🔍</span>
+            <Search size={14} strokeWidth={1.75} style={{ color: 'var(--text-3)' }} />
             <input
               type="text"
               className="research-search-input"
@@ -405,7 +406,7 @@ export function ResearchWorkspaceView({
                 className="research-breadcrumb-link"
                 onClick={() => setSubTab('overview')}
               >
-                🔬 {lang === 'bn' ? 'রিসার্চ ওয়ার্কস্পেস' : 'Research Workspace'}
+                <Microscope size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'রিসার্চ ওয়ার্কস্পেস' : 'Research Workspace'}
               </span>
               <span>/</span>
               {activeItem ? (
@@ -420,7 +421,7 @@ export function ResearchWorkspaceView({
                 </>
               ) : (
                 <span className="research-breadcrumb-current">
-                  🧭 {lang === 'bn' ? 'ল্যাব ওভারভিউ' : 'Workspace Overview'}
+                  <Compass size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'ল্যাব ওভারভিউ' : 'Workspace Overview'}
                 </span>
               )}
             </div>
@@ -448,7 +449,7 @@ export function ResearchWorkspaceView({
                 marginBottom: '20px'
               }}>
                 <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
-                  🧭 {lang === 'bn' ? 'রিসার্চ ল্যাব কমান্ড সেন্টার ও লঞ্চপ্যাড' : 'Research Lab Command Center & Launchpad'}
+                  <Compass size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'রিসার্চ ল্যাব কমান্ড সেন্টার ও লঞ্চপ্যাড' : 'Research Lab Command Center & Launchpad'}
                 </h3>
                 <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-2)', lineHeight: 1.5 }}>
                   {lang === 'bn'

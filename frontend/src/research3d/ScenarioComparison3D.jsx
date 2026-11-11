@@ -4,6 +4,7 @@
 // meters (Δ Yield, Δ Water, Δ Net Profit), input diff cards, and Stewart model outcomes.
 
 import React, { useRef, useMemo } from 'react';
+import { Scale } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -114,7 +115,7 @@ export function ScenarioComparison3D({
       {/* Numerical Delta Impact Inspector */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          ⚖️ {lang === 'bn' ? 'দৃশ্যকল্প এ বনাম বি ত্রিমাত্রিক তুলনা' : 'Synchronized Scenario A vs B Diff'}
+          <Scale size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'দৃশ্যকল্প এ বনাম বি ত্রিমাত্রিক তুলনা' : 'Synchronized Scenario A vs B Diff'}
         </h4>
 
         {/* Input Parameters That Differ */}

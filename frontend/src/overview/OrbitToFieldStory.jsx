@@ -4,6 +4,7 @@
 // Full English in EN mode, full Bengali in BN mode (dataset names stay English).
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Satellite, AlertTriangle } from 'lucide-react';
 import { toBengaliNumber, cropLabel } from '../i18n.js';
 import { OrbitToFieldCanvas } from './OrbitToFieldCanvas.jsx';
 import { isWebGLAvailable, haToBigha } from '../three/farmSceneHelpers.js';
@@ -29,7 +30,7 @@ function NasaChip({ source }) {
       padding: '3px 10px',
       textTransform: 'uppercase',
     }}>
-      🛰 {source}
+      <Satellite size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4, color: 'var(--cyan, #5be3ff)' }} /> {source}
     </span>
   );
 }
@@ -124,7 +125,7 @@ function StoryGlassCard({ scene, isBn, onNavigate, isActive, side = 'left' }) {
           alignItems: 'center',
           gap: 6,
         }}>
-          <span>⚠️</span>
+          <AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
           <span>{scene.problemLine}</span>
         </div>
       )}
@@ -295,7 +296,7 @@ function StaticFallback({ scenes, isBn, onNavigate }) {
             <circle cx="200" cy="200" r="80" fill="#1a3a6a" />
           </svg>
           <div style={{ position: 'relative', zIndex: 1, maxWidth: 540 }}>
-            {s.problemLine && <div style={{ fontSize: 11, color: '#F5B04C', fontWeight: 700, marginBottom: 4 }}>⚠️ {s.problemLine}</div>}
+            {s.problemLine && <div style={{ fontSize: 11, color: '#F5B04C', fontWeight: 700, marginBottom: 4 }}><AlertTriangle size={12} strokeWidth={1.75} color="#F5B04C" style={{ verticalAlign: 'middle', marginRight: 4 }} />{s.problemLine}</div>}
             <h2 style={{ fontSize: 28, margin: '0 0 10px', color: '#fff' }} dangerouslySetInnerHTML={{ __html: isBn ? (s.headlineBn || s.headlineEn) : s.headlineEn }} />
             <p style={{ color: '#c2dcd0', fontSize: 14 }}>{isBn ? (s.bodyBn || s.bodyEn) : s.bodyEn}</p>
             {s.link && (
@@ -511,7 +512,7 @@ export function OrbitToFieldStory({
         { rawVal: 34000, prefix: isBn ? '+৳' : '+BDT ', suffix: '', label: 'Net profit gain / bigha', labelBn: 'বিঘাপ্রতি অতিরিক্ত লাভ', color: '#C8F169' },
       ],
       nums: [
-        { label: 'Strategies', labelBn: 'কৌশলসমূহ', val: 'Balanced ⭐ · Profit · Water Saving · Soil Health', valBn: 'সুষম ⭐ · সর্বোচ্চ লাভ · পানি সাশ্রয় · মাটির স্বাস্থ্য', color: '#C8F169' },
+        { label: 'Strategies', labelBn: 'কৌশলসমূহ', val: 'Balanced (Optimum) · Profit · Water Saving · Soil Health', valBn: 'সুষম (সেরা পছন্দ) · সর্বোচ্চ লাভ · পানি সাশ্রয় · মাটির স্বাস্থ্য', color: '#C8F169' },
         { label: 'Optimization', labelBn: 'মডেল', val: '6-Season MILP', valBn: '৬-মৌসুম এমআইএলপি', color: '#38D9F5' },
       ],
       nasa: 'MILP Optimizer · NASA POWER',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FlaskConical } from 'lucide-react';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest, API_BASE } from './apiClient.js';
 import { SyntheticLab3D } from './research3d/SyntheticLab3D.jsx';
@@ -130,7 +131,7 @@ export function SyntheticDataLabView({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 28 }}>🧪</span>
+            <FlaskConical size={28} strokeWidth={1.75} color="var(--lime, #c8f169)" />
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
               Synthetic Data Lab &amp; Provenance Registry
             </h1>
@@ -157,7 +158,7 @@ export function SyntheticDataLabView({
               boxShadow: activeTab === 'generator' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
             }}
           >
-            🔬 Scenario Generator
+            Scenario Generator
           </button>
           <button
             type="button"
@@ -174,7 +175,7 @@ export function SyntheticDataLabView({
               boxShadow: activeTab === 'provenance' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
             }}
           >
-            🛡️ Provenance &amp; Reliability
+            Provenance &amp; Reliability
           </button>
         </div>
       </div>
@@ -214,7 +215,7 @@ export function SyntheticDataLabView({
           {/* Left Controls Panel */}
           <div className="card" style={{ padding: 20, borderRadius: 12 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
-              ⚙️ Generator Parameters
+              Generator Parameters
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
@@ -322,7 +323,7 @@ export function SyntheticDataLabView({
                 onClick={handleGenerate}
                 disabled={loading}
               >
-                {loading ? 'Generating...' : '🔄 Generate Scenarios'}
+                {loading ? 'Generating...' : 'Generate Scenarios'}
               </button>
 
               <button
@@ -330,7 +331,7 @@ export function SyntheticDataLabView({
                 className="ui-btn ui-btn-secondary ui-btn-md"
                 onClick={handleExportCSV}
               >
-                📥 Export Scenarios (CSV)
+                Export Scenarios (CSV)
               </button>
             </div>
           </div>
@@ -339,7 +340,7 @@ export function SyntheticDataLabView({
           <div className="card" style={{ padding: 20, borderRadius: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>
-                📋 Generated Farm Scenarios (Seed: {generatedData?.metadata?.seed || seed})
+                Generated Farm Scenarios (Seed: {generatedData?.metadata?.seed || seed})
               </h3>
               <span style={{ fontSize: 12, color: '#64748b' }}>
                 Total: {generatedData?.scenarios?.length || 0} scenarios
@@ -416,7 +417,7 @@ export function SyntheticDataLabView({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>
-                    🛡️ System Parameter Provenance &amp; Reliability Index
+                    System Parameter Provenance &amp; Reliability Index
                   </h2>
                   <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
                     Documented mathematical formula assessing evidence tiers across weather, agronomy, and economics.
@@ -466,7 +467,7 @@ export function SyntheticDataLabView({
           {/* Full Registry Table */}
           <div className="card" style={{ padding: 20, borderRadius: 12 }}>
             <h3 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700 }}>
-              📜 System Parameter Registry ({registryRecords.length} variables)
+              System Parameter Registry ({registryRecords.length} variables)
             </h3>
 
             <div style={{ overflowX: 'auto', maxHeight: 500, overflowY: 'auto' }}>
@@ -506,7 +507,7 @@ export function SyntheticDataLabView({
                       <td style={{ padding: '9px 6px' }}>
                         {r.source_url ? (
                           <a href={r.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#0284c7' }}>
-                            {r.source_document} ↗
+                            {r.source_document}
                           </a>
                         ) : (
                           r.source_document

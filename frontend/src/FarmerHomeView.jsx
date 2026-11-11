@@ -4,6 +4,7 @@
 // Strictly honest metrics from NASA POWER climatology and live advisory telemetry.
 
 import React, { useEffect, useState } from 'react';
+import { Satellite } from 'lucide-react';
 
 const OrbitToFieldStory = React.lazy(() => import('./overview/OrbitToFieldStory.jsx'));
 
@@ -42,7 +43,7 @@ export class StoryErrorBoundary extends React.Component {
             <ellipse cx="200" cy="300" rx="140" ry="80" fill="#1e5c38" opacity="0.7" />
           </svg>
           <div style={{ position: 'relative', textAlign: 'center', zIndex: 1, maxWidth: 500 }}>
-            <div style={{ fontSize: 40, marginBottom: 8 }}>🛰️</div>
+            <Satellite size={40} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ display: 'block', margin: '0 auto 8px' }} />
             <div style={{ fontFamily: '"Space Grotesk",sans-serif', fontWeight: 700, fontSize: 24, marginBottom: 8 }}>FieldShift</div>
             <div style={{ fontSize: 14, color: '#9fb3a5', lineHeight: 1.5 }}>
               {this.props.lang === 'bn'

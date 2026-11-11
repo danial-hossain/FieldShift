@@ -5,6 +5,7 @@
 // explicit violation states, resilient winner logic, and transparent field input handling.
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { AlertTriangle, Globe } from 'lucide-react';
 import { Comparison3Way3D } from './research3d/Comparison3Way3D.jsx';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest } from './apiClient.js';
@@ -317,7 +318,7 @@ export function ComparisonLabView({
         {/* Stale data warning if request failed after previous data existed */}
         {isStale && (
           <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid var(--accent-amber)', borderRadius: 8, color: 'var(--accent-amber)', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>⚠️ <strong>Stale Data:</strong> Displaying previously evaluated results. Latest evaluation request failed ({error}).</span>
+            <span><AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} /><strong>Stale Data:</strong> Displaying previously evaluated results. Latest evaluation request failed ({error}).</span>
             <button
               type="button"
               className="btn btn-outline"
@@ -350,7 +351,7 @@ export function ComparisonLabView({
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🌐</span>
+            <Globe size={18} strokeWidth={1.75} />
             <strong style={{ fontSize: 14, color: 'var(--text-main)' }}>3D Algorithmic Parcel Comparison (MILP vs RL vs Rule-Based)</strong>
           </div>
           <button
@@ -724,7 +725,7 @@ export function ComparisonLabView({
                     <tr key={seasonLabel} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '10px 12px', fontWeight: 600 }}>
                         <span style={{ color: idx % 2 === 0 ? 'var(--accent-blue)' : 'var(--primary)', marginRight: 6 }}>
-                          {idx % 2 === 0 ? '❄ Rabi' : '🌧 Kharif'}
+                          {idx % 2 === 0 ? 'Rabi' : 'Kharif'}
                         </span>
                         {seasonLabel}
                       </td>

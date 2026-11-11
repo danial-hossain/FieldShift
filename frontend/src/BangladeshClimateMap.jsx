@@ -3,6 +3,7 @@
 // Visualizes NASA Earth Observations across 64 districts with scenario sliders (Rainfall ±20%, Temp +0..+2°C)
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { Map, Sliders, MapPin, Zap, CloudRain, Thermometer } from 'lucide-react';
 import districtsData from './bd_districts_choropleth.json';
 import { formatNumber } from './marketUtils.js';
 
@@ -160,7 +161,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 22 }}>🗺️🎛️</span>
+            <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Map size={20} strokeWidth={1.75} /><Sliders size={20} strokeWidth={1.75} /></span>
             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--cyan)', background: 'rgba(56, 189, 248, 0.15)', padding: '2px 8px', borderRadius: 999, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
               A6: NASA SPATIAL CLIMATE MAP &amp; SCENARIO MODEL
             </span>
@@ -176,10 +177,10 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
         {/* Layer Selector Tabs */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
-            { id: 'grace', label: '🛰️ GRACE-FO Trend' },
-            { id: 'onset', label: '🌦️ Aman Onset Shift' },
-            { id: 'rain', label: '💧 Rainfall Step' },
-            { id: 'smap', label: '🌱 SMAP Root Deficit' },
+            { id: 'grace', label: 'GRACE-FO Trend' },
+            { id: 'onset', label: 'Aman Onset Shift' },
+            { id: 'rain', label: 'Rainfall Step' },
+            { id: 'smap', label: 'SMAP Root Deficit' },
           ].map(l => (
             <button
               key={l.id}
@@ -275,7 +276,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
                 <circle cx="0" cy="0" r="7" fill="#f43f5e" />
                 <circle cx="0" cy="0" r="2.5" fill="#fff" />
                 <text x="12" y="4" fill="#f43f5e" fontSize="10" fontWeight="900">
-                  📍 {fieldName}
+                  <MapPin size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{fieldName}
                 </text>
               </g>
             </svg>
@@ -309,7 +310,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
         <div style={{ background: 'var(--glass-strong)', border: '1px solid var(--line)', borderRadius: 12, padding: 18, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 18 }}>🎛️⚡</span>
+              <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Sliders size={18} strokeWidth={1.75} /><Zap size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" /></span>
               <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
                 {lang === 'bn' ? 'জলবায়ু চাপ পরিস্থিতি সিমুলেটর (Scenario Sliders)' : 'Climate Stress Scenario Sliders'}
               </h3>
@@ -323,7 +324,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
             {/* Slider 1: Rainfall (-20% to +20%) */}
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-                <span style={{ color: 'var(--water)' }}>🌧️ {lang === 'bn' ? 'বৃষ্টিপাত অ্যানোমালি (Rainfall)' : 'Seasonal Rainfall'}:</span>
+                <span style={{ color: 'var(--water)' }}><CloudRain size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বৃষ্টিপাত অ্যানোমালি (Rainfall)' : 'Seasonal Rainfall'}:</span>
                 <span style={{ color: rainDelta > 0 ? 'var(--water)' : rainDelta < 0 ? 'var(--alert)' : 'var(--text)' }}>
                   {rainDelta > 0 ? `+${rainDelta}%` : `${rainDelta}%`}
                 </span>
@@ -347,7 +348,7 @@ export function BangladeshClimateMap({ activeField = null, lang = 'bn' }) {
             {/* Slider 2: Temperature (+0.0 to +2.0 °C) */}
             <div style={{ marginBottom: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-                <span style={{ color: 'var(--sun)' }}>🌡️ {lang === 'bn' ? 'তাপমাত্রা বৃদ্ধি (Warming)' : 'Temperature Rise'}:</span>
+                <span style={{ color: 'var(--sun)' }}><Thermometer size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'তাপমাত্রা বৃদ্ধি (Warming)' : 'Temperature Rise'}:</span>
                 <span style={{ color: tempDelta > 1.0 ? 'var(--alert)' : 'var(--sun)' }}>
                   +{tempDelta.toFixed(1)} °C
                 </span>

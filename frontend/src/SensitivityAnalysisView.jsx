@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Ruler, RotateCw, Shield } from 'lucide-react';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { SensitivityAnalysis3D } from './research3d/SensitivityAnalysis3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
@@ -62,7 +63,7 @@ export function SensitivityAnalysisView({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 28 }}>📐</span>
+            <Ruler size={28} strokeWidth={1.75} />
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: 'var(--text-main, #0f172a)' }}>
               Scientific Sensitivity &amp; Robustness Analysis
             </h1>
@@ -79,7 +80,7 @@ export function SensitivityAnalysisView({
             onClick={handleRunSensitivity}
             disabled={loading}
           >
-            <span>🔄</span> {loading ? 'Running Sweeps...' : 'Re-Run Sensitivity Sweeps'}
+            <RotateCw size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{loading ? 'Running Sweeps...' : 'Re-Run Sensitivity Sweeps'}
           </button>
         </div>
       </div>
@@ -95,7 +96,7 @@ export function SensitivityAnalysisView({
         alignItems: 'flex-start',
         gap: 14
       }}>
-        <span style={{ fontSize: 24 }}>🛡️</span>
+        <Shield size={24} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
         <div style={{ flex: 1, fontSize: 13, color: 'var(--text-muted, #475569)', lineHeight: 1.5 }}>
           <strong style={{ color: 'var(--text-main, #0f172a)', display: 'block', marginBottom: 4 }}>
             Baseline Immutability &amp; Scientific Protocol:
@@ -132,7 +133,7 @@ export function SensitivityAnalysisView({
             className="ui-btn ui-btn-primary ui-btn-sm"
             onClick={handleRunSensitivity}
           >
-            🔄 Retry Sweeps
+            Retry Sweeps
           </button>
         </div>
       ) : (
@@ -146,7 +147,7 @@ export function SensitivityAnalysisView({
           {sensitivityData?.parameter_elasticity_ranking && (
             <div className="card" style={{ padding: 20, borderRadius: 12, marginBottom: 24 }}>
               <h3 style={{ margin: '0 0 14px', fontSize: 16, fontWeight: 700 }}>
-                📊 Parameter Sensitivity Elasticity Ranking
+                Parameter Sensitivity Elasticity Ranking
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
                 {sensitivityData.parameter_elasticity_ranking.map((item, idx) => {
@@ -223,7 +224,7 @@ export function SensitivityAnalysisView({
           {/* Detailed Sweeps Table */}
           <div className="card" style={{ padding: 20, borderRadius: 12 }}>
             <h3 style={{ margin: '0 0 14px', fontSize: 15, fontWeight: 700 }}>
-              📈 Perturbation Sweeps &amp; Rotation Stability
+              Perturbation Sweeps &amp; Rotation Stability
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
@@ -274,7 +275,7 @@ export function SensitivityAnalysisView({
                         </td>
                         <td style={{ padding: '10px 8px' }}>
                           {sw.rotation_changed ? (
-                            <span style={{ color: '#d97706', fontWeight: 700 }}>⚠️ Shifted</span>
+                            <span style={{ color: '#d97706', fontWeight: 700 }}>Shifted</span>
                           ) : (
                             <span style={{ color: '#16a34a' }}>✓ Stable</span>
                           )}

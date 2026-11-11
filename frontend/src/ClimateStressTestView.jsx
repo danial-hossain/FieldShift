@@ -4,6 +4,7 @@
 // Heatwave, Drought (FAO-33/FAO-56), Flood/Inundation, Coldwave, and Salinity (FAO-29 Maas-Hoffman).
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Flame, Sun, Waves, Snowflake, ShieldAlert, Scale, Coins, Droplets, Sprout, Zap, Home, AlertTriangle, Lightbulb, RotateCw } from 'lucide-react';
 import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton, MarketIcon, WaterIcon, RotationIcon, InfoIcon } from './ui/index.js';
 import { GlassPanel, GlassCard, GlassButton, GlassBadge } from './GlassComponents.jsx';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
@@ -28,7 +29,7 @@ function formatDigits(val, lang) {
 const SCENARIOS = [
   {
     id: 'heatwave',
-    icon: '🔥',
+    icon: <Flame size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
     nameBn: 'তাপপ্রবাহ',
     nameEn: 'Heatwave',
     impactBn: 'ফুল ও পরাগ নষ্ট',
@@ -42,7 +43,7 @@ const SCENARIOS = [
   },
   {
     id: 'drought',
-    icon: '🌵',
+    icon: <Sun size={20} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
     nameBn: 'খরা',
     nameEn: 'Drought',
     impactBn: 'মাটির রস কমে, পানির চাপ',
@@ -56,7 +57,7 @@ const SCENARIOS = [
   },
   {
     id: 'flood',
-    icon: '🌊',
+    icon: <Waves size={20} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />,
     nameBn: 'বন্যা',
     nameEn: 'Flood / Inundation',
     impactBn: 'শিকড়ে অক্সিজেন বন্ধ, ডুবে যাওয়া',
@@ -70,7 +71,7 @@ const SCENARIOS = [
   },
   {
     id: 'coldwave',
-    icon: '❄️',
+    icon: <Snowflake size={20} strokeWidth={1.75} color="var(--purple, #a855f7)" />,
     nameBn: 'শৈত্যপ্রবাহ',
     nameEn: 'Coldwave',
     impactBn: 'ঠান্ডায় ক্ষতি, বৃদ্ধি ধীর',
@@ -84,7 +85,7 @@ const SCENARIOS = [
   },
   {
     id: 'salinity',
-    icon: '🧂',
+    icon: <ShieldAlert size={20} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />,
     nameBn: 'লবণাক্ততা',
     nameEn: 'Salinity Stress',
     impactBn: 'লবণের বিষক্রিয়া, পুষ্টি নিতে বাধা',
@@ -153,10 +154,10 @@ export function ClimateStressTestView({
 
   // Strategy definition metadata
   const strategies = useMemo(() => [
-    { id: 'balanced', labelBn: 'সুষম কৌশল', labelEn: 'Balanced Plan', icon: '⚖️' },
-    { id: 'profit', labelBn: 'সর্বোচ্চ লাভ', labelEn: 'Max Profit', icon: '💰' },
-    { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water Saving', icon: '💧' },
-    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health', icon: '🌱' },
+    { id: 'balanced', labelBn: 'সুষম কৌশল', labelEn: 'Balanced Plan', icon: <Scale size={16} strokeWidth={1.75} /> },
+    { id: 'profit', labelBn: 'সর্বোচ্চ লাভ', labelEn: 'Max Profit', icon: <Coins size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" /> },
+    { id: 'water', labelBn: 'পানি সাশ্রয়', labelEn: 'Water Saving', icon: <Droplets size={16} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /> },
+    { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health', icon: <Sprout size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
   ], []);
 
   // 2. Scenario & Simulation State
@@ -282,7 +283,7 @@ export function ClimateStressTestView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-              <span style={{ fontSize: 26 }}>⚡</span>
+              <Zap size={26} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
               <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: 'var(--text)' }}>
                 {lang === 'bn' ? '৩. জলবায়ু চাপ পরীক্ষা (Climate Stress Test)' : '3. Climate Stress Test'}
               </h2>
@@ -516,7 +517,7 @@ export function ClimateStressTestView({
         {/* Visualizer Top Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', borderBottom: '1px solid var(--glass-border)', background: 'var(--surface-2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 16 }}>🏡</span>
+            <Home size={16} strokeWidth={1.75} />
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
               {lang === 'bn' ? '৩ডি ক্ষেত্র প্রভাব ডায়োরামা' : '3D Farm Stress Diorama'}
             </span>
@@ -600,7 +601,7 @@ export function ClimateStressTestView({
         <Card variant="glass" style={{ marginBottom: 20, padding: '16px 20px', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'rgba(239, 68, 68, 0.08)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 24 }}>⚠️</span>
+              <AlertTriangle size={24} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#ef4444' }}>
                   {lang === 'bn' ? 'সিমুলেশন চালাতে সমস্যা হয়েছে' : 'Failed to simulate climate stress'}
@@ -945,7 +946,7 @@ export function ClimateStressTestView({
         {/* Mitigation Steps */}
         <Card variant="glass" style={{ padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-            <span style={{ fontSize: 18 }}>💡</span>
+            <Lightbulb size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>
               {lang === 'bn' ? 'কী করতে পারেন (মাঠ-প্রমাণিত কৌশল):' : 'What You Can Do (Field-Tested Mitigations):'}
             </h3>
@@ -1055,7 +1056,7 @@ export function ClimateStressTestView({
 
         {/* Bridge Action to Adaptive Replan */}
         <Card variant="glass" style={{ padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
-          <span style={{ fontSize: 32, marginBottom: 10 }}>🔄</span>
+          <RotateCw size={32} strokeWidth={1.75} style={{ display: 'block', margin: '0 auto 10px' }} />
           <h4 style={{ margin: '0 0 8px 0', fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
             {lang === 'bn' ? 'এই পরিস্থিতিতে বাকি পরিকল্পনা বদলাতে চান?' : 'Want to re-plan the remaining seasons?'}
           </h4>

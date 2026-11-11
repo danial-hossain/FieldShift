@@ -13,6 +13,7 @@
 // - WebGL-off graceful 2D fallback
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
+import { AlertTriangle, Home, RotateCw, Map, Search, Droplets, MousePointerClick } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
@@ -1414,22 +1415,22 @@ export function FarmScene3D({
           let symbolsHtml = '';
           if (irrigVal != null && irrigVal > 0) {
             const dropSize = Math.max(10, Math.min(15, 10 + Math.round(irrigVal / 70)));
-            symbolsHtml += `<span title="${currentLang === 'bn' ? `সেচ ${irrigVal} মিমি` : `Irrigation ${irrigVal} mm`}" style="font-size:${dropSize}px;line-height:1">💧</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? `সেচ ${irrigVal} মিমি` : `Irrigation ${irrigVal} mm`}" style="color:#5be3ff;font-size:${dropSize}px;line-height:1;font-weight:700">W</span>`;
           }
           if (bedData.isLegume || CROPS_META[b.cropKey]?.isLegume) {
-            symbolsHtml += `<span title="${currentLang === 'bn' ? 'মাটিতে নাইট্রোজেন দেয়' : 'Biological Nitrogen Fixer'}" style="color:#4ade80;font-size:11px;font-weight:800">🌱N</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'মাটিতে নাইট্রোজেন দেয়' : 'Biological Nitrogen Fixer'}" style="color:#4ade80;font-size:11px;font-weight:800">N</span>`;
           }
           if (bedData.stress?.heat || bedData.heatRisk === 'high') {
-            symbolsHtml += `<span title="${currentLang === 'bn' ? 'ফুল আসার সময় ৩৫°C+ গরম ঝুঁকি' : 'Heat stress risk'}" style="font-size:12px">☀️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'ফুল আসার সময় ৩৫°C+ গরম ঝুঁকি' : 'Heat stress risk'}" style="color:#f5b04c;font-size:12px;font-weight:700">H</span>`;
           }
           if (bedData.stress?.drought || bedData.droughtRisk === 'high') {
-            symbolsHtml += `<span title="${currentLang === 'bn' ? 'খরা ঝুঁকি' : 'Drought risk'}" style="font-size:12px">🏜️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'খরা ঝুঁকি' : 'Drought risk'}" style="color:#f5b04c;font-size:12px;font-weight:700">D</span>`;
           }
           if (bedData.stress?.rain || bedData.rainRisk === 'high') {
-            symbolsHtml += `<span title="${currentLang === 'bn' ? 'অতিবৃষ্টি ঝুঁকি' : 'Heavy rain risk'}" style="font-size:12px">🌧️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'অতিবৃষ্টি ঝুঁকি' : 'Heavy rain risk'}" style="color:#5be3ff;font-size:12px;font-weight:700">R</span>`;
           }
           if (bedData.stress?.cold || bedData.coldRisk === 'high') {
-            symbolsHtml += `<span title="${currentLang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="font-size:12px">❄️</span>`;
+            symbolsHtml += `<span title="${currentLang === 'bn' ? 'শৈত্যপ্রবাহ ঝুঁকি' : 'Cold stress risk'}" style="color:#a78bfa;font-size:12px;font-weight:700">C</span>`;
           }
 
           if (weatherRef.current?.isPostStress && bedLossPctsRef.current) {
@@ -2090,7 +2091,7 @@ export function FarmScene3D({
         }}
       >
         <div style={{ fontSize: 13, color: '#f59e0b', marginBottom: 12, fontWeight: 700 }}>
-          ⚠️ {lang === 'bn' ? 'ওয়েবজিএল অসমর্থিত — ২ডি ভিউ প্রদর্শিত হচ্ছে' : 'WebGL unavailable — showing 2D fallback'}
+          <AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'ওয়েবজিএল অসমর্থিত — ২ডি ভিউ প্রদর্শিত হচ্ছে' : 'WebGL unavailable — showing 2D fallback'}
         </div>
         <div
           style={{
@@ -2182,7 +2183,7 @@ export function FarmScene3D({
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
           }}
         >
-          <span style={{ fontSize: 14 }}>🏡</span>
+          <Home size={14} strokeWidth={1.75} />
           <span>{fieldName}</span>
           <span style={{ opacity: 0.5 }}>•</span>
           <span style={{ color: '#5cc27e' }}>
@@ -2217,7 +2218,7 @@ export function FarmScene3D({
               cursor: 'pointer',
             }}
           >
-            🔄 {lang === 'bn' ? 'আইসো' : 'Iso'}
+            <RotateCw size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'আইসো' : 'Iso'}
           </button>
           <button
             type="button"
@@ -2234,7 +2235,7 @@ export function FarmScene3D({
               cursor: 'pointer',
             }}
           >
-            🗺️ {lang === 'bn' ? 'টপ' : 'Top'}
+            <Map size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'টপ' : 'Top'}
           </button>
           <button
             type="button"
@@ -2251,7 +2252,7 @@ export function FarmScene3D({
               cursor: 'pointer',
             }}
           >
-            🔍 {lang === 'bn' ? 'ক্লোজ' : 'Close'}
+            <Search size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'ক্লোজ' : 'Close'}
           </button>
         </div>
       </div>
@@ -2283,7 +2284,7 @@ export function FarmScene3D({
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
           }}
         >
-          💧 {lang === 'bn' ? 'সেচ (বড় = বেশি) · 🌱N নাইট্রোজেন দেয় · ☀️ তাপ/খরা ঝুঁকি' : 'Irrig (large=more) · 🌱N Legume · ☀️ Heat/Drought Risk'}
+          <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সেচ (W) · N নাইট্রোজেন দেয় · তাপ/খরা ঝুঁকি (H/D)' : 'Irrig (W) · Legume (N) · Heat/Drought Risk (H/D)'}
         </div>
 
         {annualIrrigationMm != null && !isNaN(annualIrrigationMm) ? (
@@ -2299,7 +2300,8 @@ export function FarmScene3D({
               boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
             }}
           >
-            💧 {lang === 'bn'
+            <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />
+            {lang === 'bn'
               ? `ট্যাংক = বছরে সেচ: ${Math.round(annualIrrigationMm)} মিমি`
               : `Tank = Annual Irrigation: ${Math.round(annualIrrigationMm)} mm`}
           </div>
@@ -2317,7 +2319,7 @@ export function FarmScene3D({
           aria-label={lang === 'bn' ? 'ট্যাপ করে দেখুন' : 'Tap to interact'}
         >
           <div className="tap-to-interact-pill">
-            <span style={{ fontSize: 16 }}>👆</span>
+            <MousePointerClick size={16} strokeWidth={1.75} />
             <span>{lang === 'bn' ? 'ট্যাপ করে দেখুন' : 'Tap to interact'}</span>
           </div>
         </div>

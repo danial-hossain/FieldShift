@@ -4,6 +4,7 @@
 // FAO-56 root depth progression, calibrated depth ruler, and zero fabricated numbers.
 
 import React, { useRef, useMemo, useState } from 'react';
+import { Layers } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -449,7 +450,7 @@ export function SoilProfile3D({
       {/* Numerical Horizons & Invariant Inspection Panel */}
       <div style={{ background: '#0a101d', borderRadius: 12, border: '1px solid #1e293b', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          🪵 {lang === 'bn' ? 'মাটির স্তর ও শিকড় বিন্যাস' : 'Soil Horizons & Root Zone'}
+          <Layers size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মাটির স্তর ও শিকড় বিন্যাস' : 'Soil Horizons & Root Zone'}
         </h4>
 
         <div style={{ background: 'rgba(15, 23, 42, 0.75)', padding: '10px 12px', borderRadius: 8, fontSize: 12, border: '1px solid rgba(255,255,255,0.05)' }}>

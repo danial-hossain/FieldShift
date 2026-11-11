@@ -3,6 +3,7 @@
 // Matches docs/evidence_layout_reference.html closely.
 
 import React from 'react';
+import { Scale, Shield } from 'lucide-react';
 
 export function VerificationLimitationsSection({
   lang = 'bn',
@@ -58,7 +59,7 @@ export function VerificationLimitationsSection({
             gap: 8,
           }}
         >
-          <span>⚖️</span>
+          <Scale size={18} strokeWidth={1.75} />
           <span>{isBn ? 'যাচাই ও সীমাবদ্ধতা' : 'Verification & Limitations'}</span>
         </h2>
         <div
@@ -106,7 +107,7 @@ export function VerificationLimitationsSection({
           color: 'var(--muted, #93a597)',
         }}
       >
-        <span>🛡️ </span>
+        <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /> 
         <span>
           {isBn
             ? 'পরীক্ষা ফলাফল: consistency_check: PASS · field_variation_check: PASS · lang_check: PASS (১০ নভেম্বর ২০২৬)'

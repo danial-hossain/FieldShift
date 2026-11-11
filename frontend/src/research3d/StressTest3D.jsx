@@ -4,6 +4,7 @@
 // 3D consequence (crop wilting, water table dryout, deep percolation, nitrogen starvation) with real-time invariant assertions.
 
 import React, { useState, useMemo } from 'react';
+import { Zap } from 'lucide-react';
 import * as THREE from 'three';
 import { runAgronomicSimulation } from '../experimentSimulationEngine.js';
 import { Research3DScene } from './Research3DScene.jsx';
@@ -107,7 +108,7 @@ export function StressTest3D({ lang = 'bn' }) {
       {/* Stress Case Selector & Invariant Assertion Inspector */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          ⚡ {lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট ল্যাব' : 'Interactive Stress Test Lab'}
+          <Zap size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--amber, #f5b04c)' }} />{lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট ল্যাব' : 'Interactive Stress Test Lab'}
         </h4>
 
         {/* Case Selector Dropdown */}
@@ -137,7 +138,7 @@ export function StressTest3D({ lang = 'bn' }) {
         <div style={{ background: invariantPassed ? 'rgba(0, 223, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', border: `1px solid ${invariantPassed ? 'rgba(0, 223, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, padding: '10px 12px', borderRadius: 8, fontSize: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontWeight: 800, color: invariantPassed ? '#00df81' : '#f87171' }}>
-              {invariantPassed ? '✅ গাণিতিক ইনভেরিয়েন্ট উত্তীর্ণ (PASSED)' : '❌ ইনভেরিয়েন্ট অসঙ্গতি (FAILED)'}
+              {invariantPassed ? 'গাণিতিক ইনভেরিয়েন্ট উত্তীর্ণ (PASSED)' : 'ইনভেরিয়েন্ট অসঙ্গতি (FAILED)'}
             </span>
             <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#38bdf8' }}>
               Exit Code: 0

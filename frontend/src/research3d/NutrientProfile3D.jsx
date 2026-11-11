@@ -4,6 +4,7 @@
 // dynamic N-P-K ionic diffusion particles with absorption halos, and accessible 2D data table fallback.
 
 import React, { useRef, useMemo } from 'react';
+import { FlaskConical } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -226,7 +227,7 @@ export function NutrientProfile3D({
       {/* Numerical Nutrient Availability Panel */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          🧪 {lang === 'bn' ? 'মাটির পুষ্টি ও নাইট্রোজেন ভারসাম্য' : 'Soil Nutrient Profile & BNF'}
+          <FlaskConical size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--lime, #c8f169)' }} />{lang === 'bn' ? 'মাটির পুষ্টি ও নাইট্রোজেন ভারসাম্য' : 'Soil Nutrient Profile & BNF'}
         </h4>
 
         {/* N-P-K Regimes */}
@@ -252,7 +253,7 @@ export function NutrientProfile3D({
         <div style={{ background: isLegume ? 'rgba(244, 114, 182, 0.15)' : 'rgba(30, 41, 59, 0.5)', border: isLegume ? '1px solid rgba(244, 114, 182, 0.3)' : '1px solid rgba(255, 255, 255, 0.08)', padding: '10px 12px', borderRadius: 8, fontSize: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
             <span style={{ fontWeight: 800, color: isLegume ? '#f472b6' : '#cbd5e1' }}>
-              {isLegume ? '🌱 রাইজোবিয়াম নোডিউল সক্রিয় (BNF)' : '🌾 অপুষ্টিকারক সিরিয়াল ফসল'}
+              {isLegume ? 'রাইজোবিয়াম নোডিউল সক্রিয় (BNF)' : 'অপুষ্টিকারক সিরিয়াল ফসল'}
             </span>
             <span style={{ fontSize: 11, color: isLegume ? '#00df81' : '#f59e0b', fontWeight: 800 }}>
               {isLegume ? '+45 kg N/ha' : '-25 kg N/ha'}

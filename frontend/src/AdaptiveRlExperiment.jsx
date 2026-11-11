@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Rocket } from 'lucide-react';
 import { request as defaultRequest } from './apiClient.js';
 import {
   normalizeNumberInput,
@@ -52,10 +53,10 @@ export function AdaptiveRlExperiment({
     ? benchmarkValue ?? null
     : fieldValue ?? null;
   const fallbackProfiles = {
-    profit_focused: { name: 'Profit Focused', icon: '💰', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
-    water_efficiency: { name: 'Water Efficiency', icon: '💧', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
-    soil_health: { name: 'Soil Health & Regeneration', icon: '🌱', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
-    balanced: { name: 'Balanced Multi-Objective', icon: '⚖️', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
+    profit_focused: { name: 'Profit Focused', icon: 'Coins', weights: { profit: 0.70, water: 0.20, soil: 0.10 } },
+    water_efficiency: { name: 'Water Efficiency', icon: 'Droplets', weights: { profit: 0.20, water: 0.60, soil: 0.20 } },
+    soil_health: { name: 'Soil Health & Regeneration', icon: 'Sprout', weights: { profit: 0.20, water: 0.20, soil: 0.60 } },
+    balanced: { name: 'Balanced Multi-Objective', icon: 'Scale', weights: { profit: 0.34, water: 0.33, soil: 0.33 } }
   };
   const activeProfiles = strategyProfiles || fallbackProfiles;
   const selectedStrategy = (selectedStrategyId && activeProfiles[selectedStrategyId]) || activeProfiles.balanced || fallbackProfiles.balanced;
@@ -978,7 +979,7 @@ export function AdaptiveRlExperiment({
           </span>
           {!experiment && (
             <button type="button" className="btn-start-simulation" onClick={() => start()} disabled={loading || !baselineStateReady || !fieldId || !hasFeasibleMilpReference}>
-              <span>🚀</span> Start Simulation — {requestedSeasonCount} {Number(requestedSeasonCount) === 1 ? 'Season' : 'Seasons'}
+              <Rocket size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Start Simulation — {requestedSeasonCount} {Number(requestedSeasonCount) === 1 ? 'Season' : 'Seasons'}
             </button>
           )}
         </div>

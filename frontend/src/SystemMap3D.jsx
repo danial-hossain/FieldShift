@@ -8,6 +8,7 @@
 // Debug info goes strictly to console, zero UI counter clutter.
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Play } from 'lucide-react';
 
 const W = 1600;
 const H = 860;
@@ -751,7 +752,7 @@ export function SystemMap3D({
             gap: 6,
           }}
         >
-          <span>▶</span>
+          <Play size={14} strokeWidth={1.75} />
           <span>
             {isBn ? 'একটা সংখ্যা অনুসরণ করুন: ৭১৮ মিমি' : 'Follow One Number: 718 mm'}
           </span>

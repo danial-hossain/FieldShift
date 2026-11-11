@@ -3,6 +3,7 @@
 // Follows docs/demo_script_240s.md end-to-end with real numbers from active field
 
 import React, { useState, useEffect } from 'react';
+import { AlertOctagon, Satellite, TrendingDown, Scale, ClipboardList, CloudRain, Bot } from 'lucide-react';
 
 export function GuidedDemoModal({
   isOpen,
@@ -46,7 +47,7 @@ export function GuidedDemoModal({
       titleEn: 'The Agronomic Crisis: Climate Shifts & Groundwater Depletion',
       narrationBn: `${districtName}-এর ${areaHa} হেক্টর জমিতে দীর্ঘকাল ধরে গতানুগতিক 'বোরো–পতিত–আমন' চাষ হয়ে আসছে। কিন্তু অনিয়মিত বর্ষা এবং ভূগর্ভস্থ পানির গভীর অবনমনের কারণে এই চক্র এখন খামারির জন্য চরম ঝুঁকিপূর্ণ ও অলাভজনক হয়ে পড়েছে।`,
       narrationEn: `In ${districtName} (${areaHa} ha), the conventional Boro–Fallow–Aman cycle faces unprecedented crisis due to erratic monsoon onsets and deep aquifer depletion.`,
-      icon: '🚨',
+      icon: <AlertOctagon size={24} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />,
       keyMetrics: [
         { label: 'বার্ষিক সেচ ব্যয়', val: '১২০০ মিমি', sub: 'তীব্র ভূগর্ভস্থ পানি শোষণ' },
         { label: 'অনাবৃত মাটির সময়', val: '১২০ দিন', sub: 'রোদে মাটির জৈব পদার্থ ক্ষয়' },
@@ -60,7 +61,7 @@ export function GuidedDemoModal({
       titleEn: 'Field-Specific NASA Earth Observation Telemetry',
       narrationBn: 'ফিল্ডশিফট কোনো কাল্পনিক সংখ্যা বা এলএলএম অনুমান ব্যবহার করে না। এই জমির জন্য সরাসরি নাসা জিপিএম আইমার্জ (বৃষ্টিপাত), পাওয়ার (তাপমাত্রা ও বাষ্পীভবন), সোয়েলগ্রিডস (মাটি) এবং গ্রেস-এফও (ভূগর্ভস্থ পানি) উপাত্ত বিশ্লেষণ করা হয়েছে।',
       narrationEn: 'FieldShift eliminates hallucinations: real calibrated NASA GPM IMERG daily rain, NASA POWER 0.5° agro-climatology, SoilGrids 250m soil chemistry, and GRACE Barind aquifer trends.',
-      icon: '🛰️',
+      icon: <Satellite size={24} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />,
       keyMetrics: [
         { label: 'নাসা GPM IMERG', val: '২৩.৫ মিমি', sub: 'বর্ষা সূচনার গড় দৈনিক সঞ্চয়ন' },
         { label: 'নাসা POWER CERES', val: '৩৩.২ °C / ১৯.৪ °C', sub: '২৫ বছরের চরম তাপমাত্রা পরিসীমা' },
@@ -74,7 +75,7 @@ export function GuidedDemoModal({
       titleEn: 'Auditing Current Rotation Weak Points',
       narrationBn: 'বর্তমান বোরো ধান চাষে প্রতি হেক্টরে ১২০০ মিমি পানি পাম্প করতে হয়, যা ডিজেল ও বিদ্যুতে অতিরিক্ত ৩০,০০০+ টাকা অপচয় করে এবং মে–জুন মাসে জমি রোদে পুড়ে মাটির নাইট্রোজেন শূন্য হয়ে যায়।',
       narrationEn: 'Current Boro-Aman demands 1200 mm groundwater extraction, causing 120 days of bare soil baking and massive pumping energy costs.',
-      icon: '📉',
+      icon: <TrendingDown size={24} strokeWidth={1.75} color="var(--amber, #f5b04c)" />,
       keyMetrics: [
         { label: 'সেচ পাম্পিং খরচ', val: '~৩৫,০০০ ৳/ha', sub: 'অতিরিক্ত জ্বালানি অপচয়' },
         { label: 'জৈব নাইট্রোজেন যোগ', val: '০ কেজি', sub: 'কোনো ডালশস্য নেই' },
@@ -88,7 +89,7 @@ export function GuidedDemoModal({
       titleEn: 'Three PuLP MILP Mathematical Strategies Side-by-Side',
       narrationBn: 'PuLP MILP অ্যালগরিদম একই সাথে কৃষকের মুনাফা, পানি সাশ্রয় এবং মাটির জৈব নাইট্রোজেন বৃদ্ধিতে ৩টি ভিন্ন কৌশল সমাধান করেছে: ১. ভারসাম্যপূর্ণ (সরিষা–বোরো–আমন), ২. পানি সাশ্রয়ী (ডালশস্য নির্ভর), ৩. মাটি পুনরুদ্ধার (উচ্চ নাইট্রোজেন)।',
       narrationEn: 'PuLP Mixed-Integer Linear Programming solves multi-objective trade-offs: 1. Balanced (Mustard–Soybean–Rice), 2. Water-Saver, 3. Soil-Restorer.',
-      icon: '⚖️',
+      icon: <Scale size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" />,
       keyMetrics: [
         { label: 'কৌশল ১: ভারসাম্যপূর্ণ', val: '১,৭৪,০০০ ৳/ha', sub: 'মুনাফা ও পানির ভারসাম্য' },
         { label: 'কৌশল ২: পানি সাশ্রয়ী', val: '৪২০ মিমি সেচ', sub: '~৭৫০ মিমি পানি সাশ্রয়' },
@@ -102,7 +103,7 @@ export function GuidedDemoModal({
       titleEn: 'Why This Strategy Fits: The 5-Item Decision Card',
       narrationBn: 'চ্যালেঞ্জের নির্দেশনা অনুযায়ী প্রতিটি প্রস্তাবিত ফসলের সাথে রয়েছে ৫টি স্পষ্ট উপাদান: কেন নির্বাচন করা হলো, নাসার কোন উপাত্ত প্রমাণ হিসেবে ব্যবহৃত হলো, বিদ্যমান আবর্তনের চেয়ে কী লাভ হবে, তথ্যের সীমাবদ্ধতা কী এবং স্থানীয় কৃষি কর্মকর্তার (SAAO) কী যাচাই করা উচিত।',
       narrationEn: 'Every recommendation carries: 1. Why selected, 2. Satellite evidence, 3. Benefits vs baseline, 4. Information gaps, and 5. SAAO verification notice.',
-      icon: '📋',
+      icon: <ClipboardList size={24} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />,
       keyMetrics: [
         { label: '১. রোটেশন ফিট', val: 'সরিষা → ডাল → আমন', sub: 'বোটানিক্যাল পর্যায়ক্রম' },
         { label: '২. উপাত্ত প্রমাণ', val: 'NASA POWER + IMERG', sub: '২৫ বছরের যাচাইকৃত সিরিজ' },
@@ -116,7 +117,7 @@ export function GuidedDemoModal({
       titleEn: 'Counterfactual Resilience: What If Rainfall Drops 20%?',
       narrationBn: 'নাসার বৃষ্টিপাত ২০% কমানোর দৃশ্যকল্পে দেখা যায়, বোরো ধান চাষ করলে ফসলের ৮০% ক্ষতি হয়; কিন্তু প্রস্তাবিত সরিষা ও ডালশস্য তাদের গভীর শিকড়ের কারণে স্বাভাবিক ফলন ধরে রাখে এবং খামারির অর্থনৈতিক নিরাপত্তা নিশ্চিত করে।',
       narrationEn: 'Under -20% rainfall drought scenario, continuous Boro incurs heavy losses, whereas diversified Mustard/Soybean deep rooting preserves 85% of gross margin.',
-      icon: '🌦️',
+      icon: <CloudRain size={24} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />,
       keyMetrics: [
         { label: 'প্রচলিত বোরো ক্ষতি', val: '-৭৫% ফলন', sub: 'সেচ পানির চরম ঘাটতি' },
         { label: 'প্রস্তাবিত বিকল্প ক্ষতি', val: 'মাত্র -১২%', sub: 'খরা-সহনশীল ডালশস্য' },
@@ -130,7 +131,7 @@ export function GuidedDemoModal({
       titleEn: "Farmer's Takeaway: Actionable Rotation Plan & AI Decision Support",
       narrationBn: 'জটিল ডেটা কৃষকের উপযোগী করতে FieldShift তৈরি করেছে ৬-মৌসুমের শস্য আবর্তন পরিকল্পনা এবং এআই সিদ্ধান্ত সহায়তা। কৃষক সহজেই স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) সাথে পরামর্শ করে সিদ্ধান্ত নিতে পারেন।',
       narrationEn: 'All findings condense into a clear 6-season rotation plan and AI-assisted decision support for the farmer and local SAAO.',
-      icon: '🤖',
+      icon: <Bot size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" />,
       keyMetrics: [
         { label: '৬-মৌসুম পরিকল্পনা', val: 'কার্যকর সমাধান', sub: 'লাভ ও পানির সর্বোত্তম অনুপাত' },
         { label: 'এআই সহকারী', val: 'সহজ পরামর্শ', sub: 'যেকোনো প্রশ্নের তাৎক্ষণিক উত্তর' },
@@ -293,7 +294,7 @@ export function GuidedDemoModal({
                 cursor: 'pointer'
               }}
             >
-              {lang === 'bn' ? 'পরিকল্পনা এক্সপ্লোর করুন 🌾' : 'Explore Full Plan 🌾'}
+              {lang === 'bn' ? 'পরিকল্পনা এক্সপ্লোর করুন' : 'Explore Full Plan'}
             </button>
           )}
         </div>

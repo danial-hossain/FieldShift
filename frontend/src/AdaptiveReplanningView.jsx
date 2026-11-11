@@ -3,6 +3,7 @@
 // Matches design reference in docs/replan_layout_reference.html
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Zap, Info, Droplets, Clock, RotateCw, AlertTriangle, Brain, Bot, CheckCircle2 } from 'lucide-react';
 import { FarmScene3D } from './three/FarmScene3D.jsx';
 import { request as defaultRequest } from './apiClient.js';
 import { formatCurrency, cropLabel, seasonLabel, monthLabel, districtLabel, soilLabel, unitLabel, formatNumber } from './i18n.js';
@@ -446,7 +447,7 @@ export function AdaptiveReplanningView({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>⚡</span>
+            <Zap size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
             <span>
               {(() => {
                 const hName = stressContext.hazard || 'Drought';
@@ -501,7 +502,7 @@ export function AdaptiveReplanningView({
               { id: 'soil', labelBn: 'মাটির স্বাস্থ্য', labelEn: 'Soil Health' },
             ].map((st) => {
               const isBest = st.id === bestPriority;
-              const label = (lang === 'bn' ? st.labelBn : st.labelEn) + (isBest ? ' ⭐' : '');
+              const label = (lang === 'bn' ? st.labelBn : st.labelEn) + (isBest ? ' (Best)' : '');
               return (
                 <button
                   key={st.id}
@@ -541,7 +542,7 @@ export function AdaptiveReplanningView({
         {/* Identical Strategy Parity Note */}
         {identicalStrategyNote && (
           <div style={{ marginBottom: 10, fontSize: 12.5, color: 'var(--text-2, #5e6b60)', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span>ℹ️ {identicalStrategyNote}</span>
+            <span><Info size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{identicalStrategyNote}</span>
           </div>
         )}
 
@@ -933,7 +934,7 @@ export function AdaptiveReplanningView({
         {/* Irrigation Capacity Selector (R2e) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 14 }}>
           <b style={{ fontSize: 13, color: 'var(--text)' }}>
-            💧 {lang === 'bn' ? 'সেচ সুবিধা (বাকি মৌসুমে):' : 'Irrigation Availability (Remaining):'}
+            <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সেচ সুবিধা (বাকি মৌসুমে):' : 'Irrigation Availability (Remaining):'}
           </b>
           <div style={{ display: 'inline-flex', gap: 6 }}>
             {[
@@ -978,12 +979,12 @@ export function AdaptiveReplanningView({
             disabled={loading}
             className="ui-btn ui-btn-primary ui-btn-md"
           >
-            {loading ? '⏳ ...' : '🔄'} {lang === 'bn' ? 'বাকি মৌসুমের পরিকল্পনা আবার করুন' : 'Re-optimize Remaining Seasons'}
+            {loading ? <Clock size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} /> : <RotateCw size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />}{lang === 'bn' ? 'বাকি মৌসুমের পরিকল্পনা আবার করুন' : 'Re-optimize Remaining Seasons'}
           </button>
 
           {isDirty && (
             <span style={{ fontSize: 13, color: 'var(--chg, #d9822b)', fontWeight: 700 }}>
-              ⚠️ {lang === 'bn' ? 'তথ্য বদলেছে, আবার হিসাব করুন' : 'Inputs changed, please re-calculate'}
+              <AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'তথ্য বদলেছে, আবার হিসাব করুন' : 'Inputs changed, please re-calculate'}
             </span>
           )}
 
@@ -1227,7 +1228,7 @@ export function AdaptiveReplanningView({
             {/* Right: What Was Learned from Farmer Records */}
             <div>
               <h3 style={{ fontSize: 15, fontWeight: 800, margin: '0 0 10px', color: 'var(--text)' }}>
-                🧠 {lang === 'bn' ? 'আপনার মাঠ থেকে কী শিখল' : 'What Was Learned from Your Field'}
+                <Brain size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'আপনার মাঠ থেকে কী শিখল' : 'What Was Learned from Your Field'}
               </h3>
 
               {calibrationTable.length > 0 ? (
@@ -1295,7 +1296,7 @@ export function AdaptiveReplanningView({
                   marginBottom: 12,
                 }}
               >
-                <b>ℹ️ {lang === 'bn' ? 'পদ্ধতি প্রকাশ (Methodology):' : 'Methodology Disclosure:'}</b>{' '}
+                <b><Info size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পদ্ধতি প্রকাশ (Methodology):' : 'Methodology Disclosure:'}</b>{' '}
                 {lang === 'bn'
                   ? 'প্রতি মৌসুমের ফলাফল থেকে শেখা (feedback calibration) + MILP দিয়ে বাকি মৌসুম পুনঃঅপ্টিমাইজ। শেষ হওয়া মৌসুম আটকানো থাকে।'
                   : 'Learning from each season’s outcome (feedback calibration) + MILP re-optimization of remaining seasons with finished seasons locked.'}
@@ -1314,7 +1315,7 @@ export function AdaptiveReplanningView({
                   }}
                 >
                   <strong style={{ color: 'var(--good, #2c8a4b)', display: 'block', marginBottom: 2 }}>
-                    🤖 {lang === 'bn' ? 'RL পলিসির পরামর্শ (পরের মৌসুম - দ্বিতীয় মতামত)' : 'RL Policy Recommendation (Next Season - Second Opinion)'}
+                    <Bot size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'RL পলিসির পরামর্শ (পরের মৌসুম - দ্বিতীয় মতামত)' : 'RL Policy Recommendation (Next Season - Second Opinion)'}
                   </strong>
                   <span>
                     {lang === 'bn' ? 'প্রস্তাবিত ফসল:' : 'Proposed Action:'}{' '}
@@ -1350,8 +1351,8 @@ export function AdaptiveReplanningView({
                     });
                     setAppliedNotice(
                       lang === 'bn'
-                        ? `✅ আবর্তন পরিকল্পনা পাতায় এই নতুন পরিকল্পনা সফলভাবে প্রয়োগ করা হয়েছে! (সেচ আপডেট: ${confirmIrrig ? 'হ্যাঁ' : 'না'})`
-                        : `✅ Successfully applied adapted plan to rotation planner! (Irrigation updated: ${confirmIrrig ? 'Yes' : 'No'})`
+                        ? `আবর্তন পরিকল্পনা পাতায় এই নতুন পরিকল্পনা সফলভাবে প্রয়োগ করা হয়েছে! (সেচ আপডেট: ${confirmIrrig ? 'হ্যাঁ' : 'না'})`
+                        : `Successfully applied adapted plan to rotation planner! (Irrigation updated: ${confirmIrrig ? 'Yes' : 'No'})`
                     );
                   }}
                   style={{
@@ -1366,7 +1367,7 @@ export function AdaptiveReplanningView({
                     boxShadow: '0 2px 6px rgba(44,138,75,0.2)',
                   }}
                 >
-                  ✅ {lang === 'bn' ? 'পরিকল্পনায় প্রয়োগ করুন' : 'Apply to Rotation Plan'}
+                  <CheckCircle2 size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পরিকল্পনায় প্রয়োগ করুন' : 'Apply to Rotation Plan'}
                 </button>
 
                 {appliedNotice && (

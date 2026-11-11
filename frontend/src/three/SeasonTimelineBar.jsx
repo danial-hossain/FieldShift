@@ -1,4 +1,5 @@
 import React, { useRef, useCallback } from 'react';
+import { Pause, Play, Droplets } from 'lucide-react';
 import { formatNumber } from '../i18n.js';
 import { translateCropName } from '../SixSeasonRecommendationView.jsx';
 
@@ -187,7 +188,7 @@ export function SeasonTimelineBar({
               transition: 'all 0.15s ease',
             }}
           >
-            {isPlaying ? '⏸' : '▶'}
+            {isPlaying ? <Pause size={14} strokeWidth={2} /> : <Play size={14} strokeWidth={2} />}
           </button>
 
           <button
@@ -219,7 +220,7 @@ export function SeasonTimelineBar({
         {/* Live Accumulation Counters: Water & Profit */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12.5, fontWeight: 600 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--neon-cyan, #5BE3FF)' }}>
-            <span>💧</span>
+            <span><Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /></span>
             <span>
               {lang === 'bn' ? 'ব্যবহৃত পানি: ' : 'Water used: '}
               <strong style={{ fontVariantNumeric: 'tabular-nums' }}>

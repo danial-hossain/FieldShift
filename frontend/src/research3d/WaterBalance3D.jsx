@@ -4,6 +4,7 @@
 // particle flux streams along CatmullRomCurve3 with real flux speed, and zero fabricated numbers.
 
 import React, { useRef, useMemo } from 'react';
+import { Droplets } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -248,7 +249,7 @@ export function WaterBalance3D({
       {/* Numerical Hydrological Flux Accounting Panel */}
       <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#eef3ee' }}>
-          💧 {lang === 'bn' ? 'হাইড্রোলজিক্যাল পানি ভারসাম্য ও ভর সংরক্ষণ' : 'Hydrological Mass Balance'}
+          <Droplets size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--cyan, #5be3ff)' }} />{lang === 'bn' ? 'হাইড্রোলজিক্যাল পানি ভারসাম্য ও ভর সংরক্ষণ' : 'Hydrological Mass Balance'}
         </h4>
 
         {/* Mass Balance Conservation Equation */}
@@ -258,7 +259,7 @@ export function WaterBalance3D({
 
         {/* Inflows Accounting */}
         <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '10px 12px', borderRadius: 6, fontSize: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--water, #38bdf8)', marginBottom: 4 }}>⬇️ {lang === 'bn' ? 'ইনপুট (INFLOWS)' : 'INFLOWS'}:</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--water, #38bdf8)', marginBottom: 4 }}>{lang === 'bn' ? 'ইনপুট (INFLOWS)' : 'INFLOWS'}:</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
             <span style={{ color: 'var(--text-muted, #9AA5A0)' }}>{lang === 'bn' ? 'বৃষ্টিপাত (Rainfall):' : 'Rainfall:'}</span>
             <strong style={{ color: 'var(--water, #38bdf8)' }}>
@@ -275,7 +276,7 @@ export function WaterBalance3D({
 
         {/* Outflows Accounting */}
         <div style={{ background: 'rgba(255, 255, 255, 0.04)', padding: '10px 12px', borderRadius: 6, fontSize: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--amber, #facc15)', marginBottom: 4 }}>⬆️ {lang === 'bn' ? 'আউটপুট (OUTFLOWS)' : 'OUTFLOWS'}:</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--amber, #facc15)', marginBottom: 4 }}>{lang === 'bn' ? 'আউটপুট (OUTFLOWS)' : 'OUTFLOWS'}:</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
             <span style={{ color: 'var(--text-muted, #9AA5A0)' }}>{lang === 'bn' ? 'বাষ্পীভবন (ETa):' : 'Evapotranspiration:'}</span>
             <strong style={{ color: 'var(--amber, #facc15)' }}>
@@ -307,7 +308,7 @@ export function WaterBalance3D({
         </div>
 
         <div style={{ marginTop: 'auto', fontSize: 11, color: 'var(--text-muted, #9AA5A0)', lineHeight: 1.4 }}>
-          ℹ️ {lang === 'bn'
+          {lang === 'bn'
             ? 'হলোগ্রাফিক পানি ভারসাম্য ডিজিটাল টুইন। সরাসরি উপাত্ত অনুপস্থিত থাকলে কোনো কৃত্তিম মান তৈরি করা হয় না।'
             : 'Holographic water balance digital twin. When real observation data is missing, no fabricated values are rendered.'}
         </div>

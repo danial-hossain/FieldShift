@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Rocket, Lightbulb } from 'lucide-react';
 import { request } from './apiClient.js';
 import { soilLabel } from './i18n.js';
 
@@ -6,28 +7,28 @@ const SUGGESTED_PROMPTS = [
   {
     category: 'Rotation & Strategy',
     items: [
-      { label: '🌾 Best Rotation & Why?', text: 'Which crop rotation is best for my selected field, and why?' },
-      { label: '💧 Low Irrigation Impact', text: 'Why did the crop rotation recommendation change after I reduced irrigation?' },
-      { label: '📊 Simple MILP Explanation', text: 'Explain my MILP optimization result in simple language for a farmer.' },
-      { label: '⚖️ MILP vs RL vs Rule Benchmark', text: 'Compare the MILP plan with the RL simulation and rule-based baseline plans.' }
+      { label: 'Best Rotation & Why?', text: 'Which crop rotation is best for my selected field, and why?' },
+      { label: 'Low Irrigation Impact', text: 'Why did the crop rotation recommendation change after I reduced irrigation?' },
+      { label: 'Simple MILP Explanation', text: 'Explain my MILP optimization result in simple language for a farmer.' },
+      { label: 'MILP vs RL vs Rule Benchmark', text: 'Compare the MILP plan with the RL simulation and rule-based baseline plans.' }
     ]
   },
   {
     category: 'Risks & Feasibility',
     items: [
-      { label: '🔥 Hotter & Drier Next Season', text: 'What happens to my crop rotation if next season is hotter and rainfall decreases?' },
-      { label: '🚫 Constraint Violations', text: 'Which agricultural and water constraints made some crop choices infeasible in the optimizer?' },
-      { label: '💧 Total Water Requirement', text: 'How much water does the recommended crop rotation require across the full planning horizon?' },
-      { label: '🌱 Sustainability Score Meaning', text: 'Explain the sustainability score. Is it a real laboratory soil measurement or an empirical proxy?' }
+      { label: 'Hotter & Drier Next Season', text: 'What happens to my crop rotation if next season is hotter and rainfall decreases?' },
+      { label: 'Constraint Violations', text: 'Which agricultural and water constraints made some crop choices infeasible in the optimizer?' },
+      { label: 'Total Water Requirement', text: 'How much water does the recommended crop rotation require across the full planning horizon?' },
+      { label: 'Sustainability Score Meaning', text: 'Explain the sustainability score. Is it a real laboratory soil measurement or an empirical proxy?' }
     ]
   },
   {
     category: 'Outcomes & Decisions',
     items: [
-      { label: '📈 Actual vs Estimated Comparison', text: 'What actual harvest outcome data do we have logged for this field, and how does it compare with prior optimizer estimates?' },
-      { label: '📋 Next-Season Decision Checklist', text: 'What field, weather, and market factors should I check before making the next-season planting decision?' },
+      { label: 'Actual vs Estimated Comparison', text: 'What actual harvest outcome data do we have logged for this field, and how does it compare with prior optimizer estimates?' },
+      { label: 'Next-Season Decision Checklist', text: 'What field, weather, and market factors should I check before making the next-season planting decision?' },
       { label: '🇧🇩 Regional Language Advice', text: 'Provide targeted crop rotation and soil health advice suited for this specific agro-ecological zone.' },
-      { label: '🏆 Summary for Judges & Farmers', text: 'Give me a concise 1-minute executive summary of this field\'s plan and climate resilience that I can present to a judge or farmer.' }
+      { label: 'Summary for Judges & Farmers', text: 'Give me a concise 1-minute executive summary of this field\'s plan and climate resilience that I can present to a judge or farmer.' }
     ]
   }
 ];
@@ -460,7 +461,7 @@ export default function AiAssistantView({
             onClick={() => setPresentationMode(!presentationMode)}
             title="Toggle executive summary briefing mode for farmers or judges"
           >
-            {presentationMode ? '📋 Briefing Mode ON' : '🔬 Scientific Detail'}
+            {presentationMode ? 'Briefing Mode ON' : 'Scientific Detail'}
           </button>
 
           {fromPage && (
@@ -549,7 +550,7 @@ export default function AiAssistantView({
                   {msg.role === 'assistant' && (
                     <div className="ai-bubble-header">
                       <span className={`ai-model-tag ${msg.isFallback ? 'fallback' : 'generative'}`}>
-                        {msg.isFallback ? `⚡ ${msg.model || (language === 'bn' ? 'AI অফলাইন — পরিকল্পনার তথ্য থেকে উত্তর' : 'AI Offline — Answer derived from your plan')}` : `🤖 Gemini (${msg.model})`}
+                        {msg.isFallback ? `${msg.model || (language === 'bn' ? 'AI অফলাইন — পরিকল্পনার তথ্য থেকে উত্তর' : 'AI Offline — Answer derived from your plan')}` : `Gemini (${msg.model})`}
                       </span>
                       <span className="ai-message-timestamp">{msg.time}</span>
                     </div>
@@ -563,7 +564,7 @@ export default function AiAssistantView({
                   {/* Interactive Action Intent Card */}
                   {msg.actionIntent && (
                     <div className="ai-action-card">
-                      <div className="ai-action-icon">🚀</div>
+                      <div className="ai-action-icon"><Rocket size={18} strokeWidth={1.75} /></div>
                       <div className="ai-action-content">
                         <strong>{msg.actionIntent.label}</strong>
                         <p>{msg.actionIntent.description}</p>
@@ -586,7 +587,7 @@ export default function AiAssistantView({
                   {msg.role === 'assistant' && (
                     <div className="ai-followup-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '10px 0 6px' }}>
                       <span style={{ fontSize: 11.5, opacity: 0.7, alignSelf: 'center' }}>
-                        {language === 'bn' ? '💡 পরবর্তী প্রশ্ন:' : '💡 Next question:'}
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" />{language === 'bn' ? 'পরবর্তী প্রশ্ন:' : 'Next question:'}</span>
                       </span>
                       {[
                         language === 'bn' ? 'খরা হলে কী করব?' : 'What to do in case of drought?',
@@ -624,7 +625,7 @@ export default function AiAssistantView({
                         onClick={() => handleCopy(msg.id, msg.text)}
                         title="Copy answer to clipboard"
                       >
-                        {copiedId === msg.id ? '✓ Copied' : '📋 Copy'}
+                        {copiedId === msg.id ? '✓ Copied' : 'Copy'}
                       </button>
                       <span className="ai-provenance-tag">
                         Field: {activeField?.name || 'Selected Parcel'} · NASA Telemetry Grounded
@@ -636,7 +637,7 @@ export default function AiAssistantView({
 
               {msg.role === 'user' && (
                 <div className="ai-avatar-user">
-                  {user ? (user.name || user.email || 'U').slice(0, 1).toUpperCase() : '👨‍🌾'}
+                  {user ? (user.name || user.email || 'U').slice(0, 1).toUpperCase() : 'U'}
                 </div>
               )}
             </div>

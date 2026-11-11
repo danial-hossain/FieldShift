@@ -8,6 +8,7 @@
 // 5. Verification & Limitations (5 concise bullets & automated test guards)
 
 import React, { useState } from 'react';
+import { Satellite, Landmark } from 'lucide-react';
 import { SystemMap3D } from './SystemMap3D.jsx';
 import { NasaDataCardsSection } from './NasaDataCardsSection.jsx';
 import { MilpDecisionSection } from './MilpDecisionSection.jsx';
@@ -49,7 +50,7 @@ export function DataEvidenceView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 22 }}>🛰️🏛️</span>
+              <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}><Satellite size={20} strokeWidth={1.75} color="var(--cyan, #5be3ff)" /><Landmark size={20} strokeWidth={1.75} /></span>
               <span
                 style={{
                   fontSize: 11,

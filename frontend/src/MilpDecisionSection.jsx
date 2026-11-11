@@ -3,6 +3,7 @@
 // Matches docs/evidence_layout_reference.html closely.
 
 import React from 'react';
+import { Calculator } from 'lucide-react';
 
 export function MilpDecisionSection({
   lang = 'bn',
@@ -61,7 +62,7 @@ export function MilpDecisionSection({
             gap: 8,
           }}
         >
-          <span>🧮</span>
+          <Calculator size={18} strokeWidth={1.75} />
           <span>{isBn ? 'সিদ্ধান্ত কীভাবে হয় (MILP)' : 'How Decisions Are Made (MILP)'}</span>
         </h2>
         {onNavigate && (

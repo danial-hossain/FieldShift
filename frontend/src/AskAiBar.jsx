@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Sparkles, MessageSquare } from 'lucide-react';
 
 export function AskAiBar({
   page = 'farm_planning',
@@ -12,8 +13,8 @@ export function AskAiBar({
   const [query, setQuery] = useState('');
 
   const defaultPlaceholder = lang === 'bn'
-    ? '✨ এই পরিকল্পনা নিয়ে AI-কে জিজ্ঞেস করুন…'
-    : '✨ Ask AI about this plan…';
+    ? 'এই পরিকল্পনা নিয়ে AI-কে জিজ্ঞেস করুন…'
+    : 'Ask AI about this plan…';
 
   const handleTrigger = (text) => {
     const q = (text ?? query).trim();
@@ -64,7 +65,7 @@ export function AskAiBar({
           padding: '4px 6px 4px 16px',
         }}
       >
-        <span style={{ fontSize: 16, userSelect: 'none', opacity: 0.8 }}>✨</span>
+        <Sparkles size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ userSelect: 'none', opacity: 0.8 }} />
         <input
           type="text"
           value={query}
@@ -143,7 +144,7 @@ export function AskAiBar({
                   e.currentTarget.style.background = 'var(--surface-2, rgba(255,255,255,0.04))';
                 }}
               >
-                <span>💬</span>
+                <MessageSquare size={16} strokeWidth={1.75} />
                 <span>{chipText}</span>
               </button>
             );

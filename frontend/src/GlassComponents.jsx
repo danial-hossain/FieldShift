@@ -1,6 +1,7 @@
 // frontend/src/GlassComponents.jsx
 // Backward-compatible wrappers over the modern FieldShift UI Kit (frontend/src/ui/)
 import React from 'react';
+import { Clock, BarChart3 } from 'lucide-react';
 import { Card, Button, Pill, Stat, Tabs } from './ui/index.js';
 
 export { Card, CardHeader, Stat, RingGauge, Donut, LineChart, Sparkline, Pill, Badge, Button, Tabs, EmptyState, DataSourceTag, PageHeader } from './ui/index.js';
@@ -74,7 +75,7 @@ export function GlassButton({
     <Button
       variant={mappedVariant}
       size={btnSize}
-      icon={loading ? '⏳' : icon}
+      icon={loading ? <Clock size={16} strokeWidth={1.75} /> : icon}
       disabled={disabled || loading}
       onClick={onClick}
       type={type}
@@ -107,7 +108,7 @@ export function GlassBadge({
 }
 
 export function GlassMetricCard({
-  icon = '📊',
+  icon = <BarChart3 size={18} strokeWidth={1.75} />,
   label,
   value,
   unit = '',

@@ -6,6 +6,7 @@
 // dual scenario builder (Scenario A vs B), side-by-side diff matrix, and JSON/CSV exports.
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { Wheat, Microscope, Scale, Zap, Settings } from 'lucide-react';
 import { useTranslation, toBengaliNumber, formatArea, formatCurrency } from './i18n.js';
 import {
   CROP_AGRONOMIC_MODELS,
@@ -249,7 +250,7 @@ export function ExperimentSimulator3DView({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
             <span style={{ background: '#0284c7', color: '#ffffff', padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800 }}>
-              🔬 3D RESEARCH LAB
+              3D RESEARCH LAB
             </span>
             <span style={{ fontSize: 12, color: 'var(--text-muted, #94a3b8)' }}>
               Engine: <strong style={{ color: '#38bdf8' }}>Three.js v186 WebGL PCFSoft</strong>
@@ -275,14 +276,14 @@ export function ExperimentSimulator3DView({
             size="sm"
             onClick={handleExportJson}
           >
-            📥 Export JSON
+            Export JSON
           </GlassButton>
           <GlassButton
             variant="glass"
             size="sm"
             onClick={handleExportCsv}
           >
-            📊 Export CSV (120 Days)
+            Export CSV (120 Days)
           </GlassButton>
           {onBack && (
             <GlassButton
@@ -317,7 +318,7 @@ export function ExperimentSimulator3DView({
             transition: 'all 0.15s ease'
           }}
         >
-          🌾 {lang === 'bn' ? '৬-মৌসুমের পরিকল্পনা (6-Season Plan)' : '6-Season Crop Plan'}
+          <Wheat size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? '৬-মৌসুমের পরিকল্পনা (6-Season Plan)' : '6-Season Crop Plan'}
         </button>
         <button
           type="button"
@@ -335,7 +336,7 @@ export function ExperimentSimulator3DView({
             transition: 'all 0.15s ease'
           }}
         >
-          🔬 {lang === 'bn' ? '৩ডি এক্সপেরিমেন্ট সিমুলেটর (3D Experiment)' : '3D Farm Experiment'}
+          <Microscope size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? '৩ডি এক্সপেরিমেন্ট সিমুলেটর (3D Experiment)' : '3D Farm Experiment'}
         </button>
         <button
           type="button"
@@ -353,7 +354,7 @@ export function ExperimentSimulator3DView({
             transition: 'all 0.15s ease'
           }}
         >
-          ⚖️ {lang === 'bn' ? 'দৃশ্যকল্প তুলনা (Scenario Comparison)' : 'Scenario Comparison Matrix'}
+          <Scale size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'দৃশ্যকল্প তুলনা (Scenario Comparison)' : 'Scenario Comparison Matrix'}
         </button>
         <button
           type="button"
@@ -371,7 +372,7 @@ export function ExperimentSimulator3DView({
             transition: 'all 0.15s ease'
           }}
         >
-          ⚡ {lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট (Stress Tests 3D)' : 'Stress Tests 3D Lab'}
+          <Zap size={16} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট (Stress Tests 3D)' : 'Stress Tests 3D Lab'}
         </button>
       </div>
 
@@ -384,7 +385,7 @@ export function ExperimentSimulator3DView({
             <div style={{ background: 'var(--glass-bg-card)',borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
-                  ⚙️ {lang === 'bn' ? 'সিমুলেশন ইনপুট' : 'Simulation Inputs'}
+                  <Settings size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সিমুলেশন ইনপুট' : 'Simulation Inputs'}
                 </span>
                 <span style={{ fontSize: 11, color: activeScenarioTab === 'A' ? '#00df81' : '#38bdf8', fontWeight: 800 }}>
                   {activeScenarioTab === 'A' ? 'Scenario A' : 'Scenario B'}
@@ -552,12 +553,12 @@ export function ExperimentSimulator3DView({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10.5, fontWeight: 800, color: 'rgba(238, 243, 238, 0.68)', letterSpacing: '0.05em' }}>OVERLAY:</span>
                   {[
-                    { id: 'crop', label: '🌱 Natural / Crop' },
-                    { id: 'growth', label: '🌿 Growth Stage' },
-                    { id: 'irrigation', label: '💧 Water Budget' },
-                    { id: 'water_stress', label: '⚡ Water Stress (Ks)' },
-                    { id: 'yield', label: '📊 Yield Heatmap' },
-                    { id: 'scenario_diff', label: '⚖️ Diff A vs B' }
+                    { id: 'crop', label: 'Natural / Crop' },
+                    { id: 'growth', label: 'Growth Stage' },
+                    { id: 'irrigation', label: 'Water Budget' },
+                    { id: 'water_stress', label: 'Water Stress (Ks)' },
+                    { id: 'yield', label: 'Yield Heatmap' },
+                    { id: 'scenario_diff', label: 'Diff A vs B' }
                   ].map(l => (
                     <button
                       key={l.id}
@@ -601,7 +602,7 @@ export function ExperimentSimulator3DView({
                       color: cameraMode === 'aerial' ? '#00df81' : '#f8fafc'
                     }}
                   >
-                    🛰️ Aerial
+                    Aerial
                   </button>
                   <button
                     type="button"
@@ -621,7 +622,7 @@ export function ExperimentSimulator3DView({
                       color: cameraMode === 'ground' ? '#38bdf8' : '#f8fafc'
                     }}
                   >
-                    🧑‍🌾 Ground
+                    Ground
                   </button>
                   <button
                     type="button"
@@ -641,7 +642,7 @@ export function ExperimentSimulator3DView({
                       color: showSoilCrossSection ? '#facc15' : '#f8fafc'
                     }}
                   >
-                    🪵 Root Profile
+                    Root Profile
                   </button>
                   <button
                     type="button"
@@ -658,7 +659,7 @@ export function ExperimentSimulator3DView({
                       color: isAutoRotate ? '#c084fc' : '#f8fafc'
                     }}
                   >
-                    🔄 Auto-Orbit
+                    Auto-Orbit
                   </button>
                   <button
                     type="button"
@@ -675,7 +676,7 @@ export function ExperimentSimulator3DView({
                       color: showWireframe ? '#f43f5e' : '#f8fafc'
                     }}
                   >
-                    📐 Wireframe
+                    Wireframe
                   </button>
                 </div>
               </div>
@@ -683,12 +684,12 @@ export function ExperimentSimulator3DView({
               {/* Scientific 3D Toolset Selector Sub-bar */}
               <div style={{ padding: '6px 14px', background: 'rgba(10, 16, 29, 0.9)', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {[
-                  { id: 'farm_all', label: '🌿 ৩ডি পুরো খামার (Full Farm 3D)' },
-                  { id: 'soil_profile', label: '🪵 মাটির স্তর ও শিকড় (Soil & Root 3D)' },
-                  { id: 'water_balance', label: '💧 পানি ভারসাম্য লাইসিমিটার (Water Balance 3D)' },
-                  { id: 'crop_growth', label: '🌾 ফসল বৃদ্ধি ও স্টুয়ার্ট ফলন (Crop Growth 3D)' },
-                  { id: 'climate_stress', label: '🌡️ জলবায়ু চাপ ও থার্মাল ডোম (Climate Stress 3D)' },
-                  { id: 'nutrient_profile', label: '🧪 পুষ্টি ও রাইজোবিয়াম BNF (Nutrient Profile 3D)' }
+                  { id: 'farm_all', label: '৩ডি পুরো খামার (Full Farm 3D)' },
+                  { id: 'soil_profile', label: 'মাটির স্তর ও শিকড় (Soil & Root 3D)' },
+                  { id: 'water_balance', label: 'পানি ভারসাম্য লাইসিমিটার (Water Balance 3D)' },
+                  { id: 'crop_growth', label: 'ফসল বৃদ্ধি ও স্টুয়ার্ট ফলন (Crop Growth 3D)' },
+                  { id: 'climate_stress', label: 'জলবায়ু চাপ ও থার্মাল ডোম (Climate Stress 3D)' },
+                  { id: 'nutrient_profile', label: 'পুষ্টি ও রাইজোবিয়াম BNF (Nutrient Profile 3D)' }
                 ].map(v => (
                   <button
                     key={v.id}
@@ -812,7 +813,7 @@ export function ExperimentSimulator3DView({
                       color: activeScenarioTab === 'A' ? '#00df81' : 'rgba(238, 243, 238, 0.68)'
                     }}
                   >
-                    🌾 Scenario A
+                    Scenario A
                   </button>
                   <button
                     type="button"
@@ -828,7 +829,7 @@ export function ExperimentSimulator3DView({
                       color: activeScenarioTab === 'B' ? '#38bdf8' : 'rgba(238, 243, 238, 0.68)'
                     }}
                   >
-                    🔬 Scenario B
+                    Scenario B
                   </button>
                 </div>
               </div>
@@ -872,7 +873,7 @@ export function ExperimentSimulator3DView({
               {/* Weather & Scientific Data Provenance */}
               <div style={{ background: 'rgba(15, 23, 42, 0.6)', padding: 12, borderRadius: 10, border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: 11 }}>
                 <div style={{ fontWeight: 800, color: '#38bdf8', marginBottom: 4 }}>
-                  🛰️ DATA PROVENANCE (NASA POWER)
+                  DATA PROVENANCE (NASA POWER)
                 </div>
                 <p style={{ margin: '0 0 6px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.4 }}>
                   আবহাওয়া ডেটা নাসা পাওয়ার (NASA POWER 0.5° × 0.5° Gridded Model Reanalysis) থেকে প্রাপ্ত। এটি সরাসরি ফিল্ড সেন্সর রিডিং নয়, বরং গ্রিডেড মডেল সিমুলেশন।
@@ -904,7 +905,7 @@ export function ExperimentSimulator3DView({
                   transition: 'all 0.15s ease'
                 }}
               >
-                {isPlaying ? '⏸ Pause' : '▶ Play Simulation'}
+                {isPlaying ? 'Pause' : 'Play Simulation'}
               </button>
 
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, minWidth: 260 }}>
@@ -930,20 +931,20 @@ export function ExperimentSimulator3DView({
                   onClick={() => setCurrentDayStep(1)}
                   style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
-                  ⏪ Day 1
+                  Day 1
                 </button>
                 <button
                   type="button"
                   onClick={() => setCurrentDayStep(120)}
                   style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.08)', color: 'var(--text-main, #f8fafc)', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s ease' }}
                 >
-                  ⏩ Harvest (120)
+                  Harvest (120)
                 </button>
               </div>
 
               {/* Phenological Stage Badge */}
               <div style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '5px 12px', borderRadius: 8, fontSize: 11.5, fontWeight: 800, color: '#38bdf8' }}>
-                🌾 {currentDayStep <= 20 ? 'চারা গজানো (Seedling Emergence)' : currentDayStep <= 50 ? 'কুশি বৃদ্ধি (Tillering)' : currentDayStep <= 75 ? 'থোড় পর্যায় (Panicle Booting)' : currentDayStep <= 95 ? 'ফুল ও পরাগায়ন (Flowering)' : currentDayStep <= 110 ? 'দানাধারণ (Grain Filling)' : 'সোনালী ধান পরিপক্ব (Ripening)'}
+                {currentDayStep <= 20 ? 'চারা গজানো (Seedling Emergence)' : currentDayStep <= 50 ? 'কুশি বৃদ্ধি (Tillering)' : currentDayStep <= 75 ? 'থোড় পর্যায় (Panicle Booting)' : currentDayStep <= 95 ? 'ফুল ও পরাগায়ন (Flowering)' : currentDayStep <= 110 ? 'দানাধারণ (Grain Filling)' : 'সোনালী ধান পরিপক্ব (Ripening)'}
               </div>
             </div>
 
@@ -986,7 +987,7 @@ export function ExperimentSimulator3DView({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
             <div>
               <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: 'var(--text-main, #f8fafc)' }}>
-                ⚖️ {lang === 'bn' ? 'দৃশ্যকল্প এ বনাম দৃশ্যকল্প বি গাণিতিক তুলনা ম্যাট্রিক্স' : 'Multi-Scenario Quantitative Comparison (Scenario A vs B)'}
+                <Scale size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'দৃশ্যকল্প এ বনাম দৃশ্যকল্প বি গাণিতিক তুলনা ম্যাট্রিক্স' : 'Multi-Scenario Quantitative Comparison (Scenario A vs B)'}
               </h3>
               <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'rgba(238, 243, 238, 0.68)' }}>
                 {lang === 'bn'
@@ -1097,7 +1098,7 @@ export function ExperimentSimulator3DView({
         <div style={{ background: 'var(--glass-bg-card)',borderRadius: 16, border: '1px solid rgba(255, 255, 255, 0.08)', padding: 22, boxShadow: 'var(--glass-shadow)' }}>
           <div style={{ marginBottom: 16 }}>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 900, color: 'var(--text-main, #f8fafc)' }}>
-              ⚡ {lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট ও বাউন্ডারি যাচাই ল্যাব' : 'Scientific Stress Tests & Edge-Case Verification Lab'}
+              <Zap size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'সায়েন্টিফিক স্ট্রেস টেস্ট ও বাউন্ডারি যাচাই ল্যাব' : 'Scientific Stress Tests & Edge-Case Verification Lab'}
             </h3>
             <p style={{ margin: '4px 0 0', fontSize: 12.5, color: 'rgba(238, 243, 238, 0.68)' }}>
               {lang === 'bn'
@@ -1111,7 +1112,7 @@ export function ExperimentSimulator3DView({
 
       {/* Provenance & Methodology Footnote */}
       <div style={{ marginTop: 20, padding: 14, background: 'var(--glass-bg-card)',borderRadius: 12, border: '1px solid rgba(255, 255, 255, 0.08)', color: 'rgba(238, 243, 238, 0.68)', fontSize: 11.5 }}>
-        <strong style={{ color: '#38bdf8' }}>🔬 বৈজ্ঞানিক ভিত্তি ও সীমাবদ্ধতা (Scientific Methodology & Provenance):</strong>
+        <strong style={{ color: '#38bdf8' }}><Microscope size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />বৈজ্ঞানিক ভিত্তি ও সীমাবদ্ধতা (Scientific Methodology & Provenance):</strong>
         <p style={{ margin: '4px 0 0', lineHeight: 1.5 }}>
           সিমুলেশন মডেলটি জাতিসংঘের খাদ্য ও কৃষি সংস্থা (FAO-33 Stewart Model) এবং পেনম্যান-মন্টেথ ইভাপোট্রান্সপিরেশন (FAO-56) নীতিমালার উপর ভিত্তি করে বাস্তবায়নকৃত।
           এটি মাটির পানি ভারসাম্য ও আর্দ্রতা ঘাটতি ভিত্তিক আনুমানিক ফলন ও লাভ-ক্ষতির গবেষণা মডেল। স্থানীয় মাটি পরীক্ষা (Soil Lab Test) ও প্রত্যক্ষ ফিল্ড ট্রায়াল ছাড়া এটি কোনো গ্যারান্টিযুক্ত বাণিজ্যিক চুক্তি নয়।

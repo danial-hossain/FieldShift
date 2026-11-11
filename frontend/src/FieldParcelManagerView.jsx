@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MapPin, Ruler, Sprout, ClipboardList, Satellite, FlaskConical, Droplets, Wheat } from 'lucide-react';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { GoogleFieldMapThumbnail } from './GoogleFieldMapThumbnail.jsx';
 
@@ -201,13 +202,13 @@ export function FieldParcelManagerView({
             {hasActiveField ? (
               <>
                 <span className="hero-meta-chip font-mono">
-                  📍 {lat.toFixed(4)}° N, {lon.toFixed(4)}° E
+                  <MapPin size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lat.toFixed(4)}° N, {lon.toFixed(4)}° E
                 </span>
                 <span className="hero-meta-chip">
-                  📐 {areaHa} {lang === 'bn' ? 'হেক্টর' : 'ha'} ({areaBigha} {lang === 'bn' ? 'বিঘা' : 'bigha'})
+                  <Ruler size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{areaHa} {lang === 'bn' ? 'হেক্টর' : 'ha'} ({areaBigha} {lang === 'bn' ? 'বিঘা' : 'bigha'})
                 </span>
                 <span className="hero-meta-chip" style={{ background: soilInfo.bgBadge, color: soilInfo.textBadge, borderColor: soilInfo.colorHex }}>
-                  🌱 {soilInfo.label}
+                  <Sprout size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{soilInfo.label}
                 </span>
                 <span className="hero-source-chip">
                   {isDemo ? (lang === 'bn' ? 'অফলাইন ডেমো বেঞ্চমার্ক' : 'Offline Demo Benchmark') : (lang === 'bn' ? `জমি #${activeField.id}` : `Field #${activeField.id}`)}
@@ -216,10 +217,10 @@ export function FieldParcelManagerView({
             ) : (
               <>
                 <span className="hero-meta-chip">
-                  📋 রেজিস্ট্রি খালি (০ নিবন্ধিত জমি)
+                  <ClipboardList size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />রেজিস্ট্রি খালি (০ নিবন্ধিত জমি)
                 </span>
                 <span className="hero-meta-chip">
-                  💡 নিচে "Add New Field" চাপুন বা ডেমো খামার পরীক্ষা করুন
+                  নিচে "Add New Field" চাপুন বা ডেমো খামার পরীক্ষা করুন
                 </span>
               </>
             )}
@@ -261,7 +262,7 @@ export function FieldParcelManagerView({
                 type="button"
                 className="stage-mode-btn active"
               >
-                🛰️ {lang === 'bn' ? 'স্যাটেলাইট ভিউ ও স্থানাঙ্ক' : 'Satellite View & Location'}
+                <Satellite size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--cyan, #5be3ff)' }} />{lang === 'bn' ? 'স্যাটেলাইট ভিউ ও স্থানাঙ্ক' : 'Satellite View & Location'}
               </button>
             </div>
 
@@ -282,7 +283,7 @@ export function FieldParcelManagerView({
                     onClick={handleStartPinning}
                     title="Click anywhere on the map to pin a new location for a new field"
                   >
-                    📍 Pin New Location on Map
+                    Pin New Location on Map
                   </button>
                 )
               )}
@@ -305,7 +306,7 @@ export function FieldParcelManagerView({
               fontSize: 13
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>📍</span>
+                <MapPin size={16} strokeWidth={1.75} />
                 <span>
                   <strong>Pin Mode Active:</strong> Drag marker or click the map to select coordinates (
                   <code className="font-mono">{pinnedCoords.lat.toFixed(4)}°, {pinnedCoords.lon.toFixed(4)}°</code>
@@ -344,7 +345,7 @@ export function FieldParcelManagerView({
           <div className="param-card-3d soil-stratigraphy-card">
             <div className="card-top-row">
               <div className="card-title-wrap">
-                <span className="card-title-icon">🧪 {lang === 'bn' ? 'মাটির কণার অনুপাত' : 'Soil Texture Fractions'}</span>
+                <span className="card-title-icon"><FlaskConical size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মাটির কণার অনুপাত' : 'Soil Texture Fractions'}</span>
                 <span className="card-subtitle-note">
                   {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
                 </span>
@@ -410,7 +411,7 @@ export function FieldParcelManagerView({
           {/* Card 2: Key Physical Soil Metrics (FC & PWP only, no fake depth) */}
           <div className="param-card-3d">
             <div className="card-top-row">
-              <span className="card-title-icon">💧 {lang === 'bn' ? 'আর্দ্রতা ধারণ সক্ষমতা' : 'Moisture Retention Capacity'}</span>
+              <span className="card-title-icon"><Droplets size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'আর্দ্রতা ধারণ সক্ষমতা' : 'Moisture Retention Capacity'}</span>
               <span className="status-live-chip">
                 {activeField?.soilgrids_soil ? 'SoilGrids 250 m' : (lang === 'bn' ? 'এই মাটির ধরনের গড় মান (মাপা নয়)' : 'Average for soil type (not measured)')}
               </span>
@@ -436,7 +437,7 @@ export function FieldParcelManagerView({
           {/* Card 3: Authentic Crop Rotation History from /api/fields/{id}/history */}
           <div className="param-card-3d">
             <div className="card-top-row">
-              <span className="card-title-icon">🌾 {lang === 'bn' ? 'ফসল আবর্তনের ইতিহাস' : 'Agronomic Rotation History'}</span>
+              <span className="card-title-icon"><Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'ফসল আবর্তনের ইতিহাস' : 'Agronomic Rotation History'}</span>
               {activeField?.history && activeField.history.length > 0 && (
                 <span className="crop-history-badge">
                   {activeField.history[0].year} • {activeField.history[0].crop}

@@ -5,6 +5,7 @@
 // Stewart Ky yield deficit delta bridge, and accessible 2D data table fallback.
 
 import React, { useRef, useMemo } from 'react';
+import { Wheat, AlertTriangle } from 'lucide-react';
 import * as THREE from 'three';
 import { Research3DScene } from './Research3DScene.jsx';
 
@@ -296,7 +297,7 @@ export function CropGrowth3D({
       {/* Numerical Phenology & Stewart Model Inspector */}
       <div style={{ background: 'var(--glass-bg-card, rgba(15,23,42,0.8))',borderRadius: 12, border: '1px solid var(--glass-border, rgba(255,255,255,0.08))', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <h4 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#f8fafc' }}>
-          🌾 {lang === 'bn' ? 'ফসল বৃদ্ধি ও ফলন রেসপন্স' : 'Crop Phenology & Yield Response'}
+          <Wheat size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6, color: 'var(--lime, #c8f169)' }} />{lang === 'bn' ? 'ফসল বৃদ্ধি ও ফলন রেসপন্স' : 'Crop Phenology & Yield Response'}
         </h4>
 
         {/* Current Growth Stage */}
@@ -334,7 +335,7 @@ export function CropGrowth3D({
         {/* 0.2 t/ha Modeling Floor Notification */}
         {yieldFloorApplied && (
           <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '8px 10px', borderRadius: 8, fontSize: 11, color: '#fca5a5' }}>
-            ⚠️ <strong>০.২ টন/হেক্টর ন্যূনতম ফ্লোর (মডেলিং অনুমান):</strong> চরম খরা বা পুষ্টি শূন্যতায় বায়োমাস/স্যালভেজ মডেলিংয়ের সুবিধার্থে নির্ধারিত ন্যূনতম মান; এটি কোনো সার্বজনীন জৈবিক নিয়ম নয়।
+            <AlertTriangle size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4, color: 'var(--coral, #ff7a6b)' }} /><strong>০.২ টন/হেক্টর ন্যূনতম ফ্লোর (মডেলিং অনুমান):</strong> চরম খরা বা পুষ্টি শূন্যতায় বায়োমাস/স্যালভেজ মডেলিংয়ের সুবিধার্থে নির্ধারিত ন্যূনতম মান; এটি কোনো সার্বজনীন জৈবিক নিয়ম নয়।
           </div>
         )}
 

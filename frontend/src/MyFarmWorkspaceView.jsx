@@ -12,6 +12,7 @@ export function normalizeSeasonCode(seasonStr, lang = 'bn') {
 // Sub-navigation: 1. আমার জমিগুলো, 2. জমির বিবরণ, 3. মাটি, 4. ফসল ও ইতিহাস.
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ClipboardList, MapPin, Sprout, FileText, Wheat, Tractor, Pencil, Trash2, Save, Lightbulb, Plus } from 'lucide-react';
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { GoogleFieldMapThumbnail } from './GoogleFieldMapThumbnail.jsx';
 import { formatNumber } from './marketUtils.js';
@@ -616,7 +617,7 @@ export function MyFarmWorkspaceView({
           { value: 'Rice', label: lang === 'bn' ? 'রোপা আমন ধান' : 'T. Aman Rice' },
           { value: 'Fallow', label: lang === 'bn' ? 'পতিত জমি' : 'Fallow' },
         ];
-    return [...base, { value: '__other__', label: lang === 'bn' ? '➕ অন্যান্য (নিজে লিখুন)' : '➕ Other (Custom)' }];
+    return [...base, { value: '__other__', label: lang === 'bn' ? 'অন্যান্য (নিজে লিখুন)' : 'Other (Custom)' }];
   }, [newHistorySeason, lang]);
 
   const [customCropName, setCustomCropName] = useState('');
@@ -896,10 +897,10 @@ export function MyFarmWorkspaceView({
 
   // Canonical 4 Tabs (Bangla first, no English shouting, no emoji in headings) (P2)
   const subTabs = [
-    { id: 'all_fields', label: lang === 'bn' ? 'আমার জমিগুলো' : 'My Fields', icon: '📋' },
-    { id: 'details', label: lang === 'bn' ? 'জমির বিবরণ' : 'Field Details', icon: '📍' },
-    { id: 'soil', label: lang === 'bn' ? 'মাটি' : 'Soil', icon: '🌱' },
-    { id: 'history', label: lang === 'bn' ? 'ফসল ও ইতিহাস' : 'Crop & History', icon: '📜' },
+    { id: 'all_fields', label: lang === 'bn' ? 'আমার জমিগুলো' : 'My Fields', icon: <ClipboardList size={18} strokeWidth={1.75} /> },
+    { id: 'details', label: lang === 'bn' ? 'জমির বিবরণ' : 'Field Details', icon: <MapPin size={18} strokeWidth={1.75} /> },
+    { id: 'soil', label: lang === 'bn' ? 'মাটি' : 'Soil', icon: <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" /> },
+    { id: 'history', label: lang === 'bn' ? 'ফসল ও ইতিহাস' : 'Crop & History', icon: <FileText size={18} strokeWidth={1.75} /> },
   ];
 
   return (
@@ -910,7 +911,7 @@ export function MyFarmWorkspaceView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-              <span style={{ fontSize: 22 }}>🌾</span>
+              <Wheat size={22} strokeWidth={1.75} color="var(--lime, #c8f169)" />
               <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary, #10b981)' }}>
                 {lang === 'bn' ? 'জমি ব্যবস্থাপনা' : 'Farm Parcel Registry'}
               </span>
@@ -939,7 +940,7 @@ export function MyFarmWorkspaceView({
               style={{ display: 'flex', alignItems: 'center', gap: 6, borderColor: 'var(--accent, #10b981)', color: 'var(--accent, #10b981)', background: 'transparent' }}
               title={lang === 'bn' ? 'আবর্তন ও সেচ পরীক্ষা করতে ১ হেক্টর মডেল খামার যোগ করুন' : 'Add 1 ha model farm to test rotation'}
             >
-              <span>🌾</span>
+              <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />
               <span>{isCreatingSample ? (lang === 'bn' ? 'তৈরি হচ্ছে...' : 'Creating...') : (lang === 'bn' ? 'নমুনা জমি যোগ করুন' : 'Add Sample Field')}</span>
             </Button>
             <Button
@@ -1031,7 +1032,7 @@ export function MyFarmWorkspaceView({
           {filteredFields.length === 0 ? (
             <Card variant="glass" style={{ padding: 36, textAlign: 'center' }}>
               <EmptyState
-                icon="🚜"
+                icon={<Tractor size={18} strokeWidth={1.75} />}
                 title={lang === 'bn' ? 'কোনো জমি পাওয়া যায়নি' : 'No fields found'}
                 description={searchQuery
                   ? (lang === 'bn' ? 'আপনার অনুসন্ধানের সাথে মিল রেখে কোনো জমি পাওয়া যায়নি।' : 'No fields match your search query.')
@@ -1040,7 +1041,7 @@ export function MyFarmWorkspaceView({
                 action={
                   <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginTop: 12 }}>
                     <Button variant="primary" size="md" onClick={handleCreateSampleField} disabled={isCreatingSample} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span>🌾</span>
+                      <Wheat size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                       <span>{isCreatingSample ? (lang === 'bn' ? 'তৈরি হচ্ছে...' : 'Creating...') : (lang === 'bn' ? 'নমুনা জমি তৈরি করুন (বগুড়া মডেল খামার)' : 'Add Sample Bogura Model Farm')}</span>
                     </Button>
                     <Button variant="outline" size="md" onClick={onAddField}>
@@ -1096,7 +1097,7 @@ export function MyFarmWorkspaceView({
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 12 }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 18 }}>🌱</span>
+                            <Sprout size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" />
                             <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 800, color: 'var(--text)' }}>
                               {f.name}
                             </h3>
@@ -1180,14 +1181,14 @@ export function MyFarmWorkspaceView({
                             setSubTab('details');
                           }}
                         >
-                          ✏️ {lang === 'bn' ? 'সম্পাদনা' : 'Edit'}
+                          <Pencil size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সম্পাদনা' : 'Edit'}
                         </Button>
                         <Button
                           variant="danger"
                           size="xs"
                           onClick={() => handleFieldDeleteClick(f)}
                         >
-                          🗑️ {lang === 'bn' ? 'মুছুন' : 'Delete'}
+                          <Trash2 size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'মুছুন' : 'Delete'}
                         </Button>
                       </div>
                     </div>
@@ -1206,7 +1207,7 @@ export function MyFarmWorkspaceView({
       {subTab === 'details' && !activeField && (
         <Card variant="glass" style={{ padding: 36, textAlign: 'center' }}>
           <EmptyState
-            icon="📍"
+            icon={<MapPin size={18} strokeWidth={1.75} />}
             title={lang === 'bn' ? 'কোনো জমি নির্বাচিত নেই' : 'No Field Selected'}
             description={lang === 'bn' ? 'জমির বিস্তারিত তথ্য দেখতে প্রথমে "আমার জমিগুলো" ট্যাব থেকে একটি জমি নির্বাচন করুন।' : 'Please select a field from "My Fields" tab to view details.'}
             action={
@@ -1409,7 +1410,7 @@ export function MyFarmWorkspaceView({
                       color: activeField.seasonally_flooded ? '#f59e0b' : 'var(--text-2)'
                     }}>
                       {activeField.seasonally_flooded
-                        ? (lang === 'bn' ? '⚠️ হাওর / মৌসুমি প্লাবিত জলাভূমি (একফসলি বোরো ঝুঁকি অঞ্চল)' : 'Haor / seasonally waterlogged basin (Single-crop Boro flood risk)')
+                        ? (lang === 'bn' ? 'হাওর / মৌসুমি প্লাবিত জলাভূমি (একফসলি বোরো ঝুঁকি অঞ্চল)' : 'Haor / seasonally waterlogged basin (Single-crop Boro flood risk)')
                         : (lang === 'bn' ? '✓ সাধারণ উঁচু ও সমতল কৃষি জমি (বহুফসলি আবর্তন উপযোগী)' : 'Standard arable agricultural land')
                       }
                     </span>
@@ -1820,7 +1821,7 @@ export function MyFarmWorkspaceView({
                   disabled={isSavingBaseline}
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
-                  <span>{baselineSaved ? '✓' : '💾'}</span>
+                  <span>{baselineSaved ? '✓' : <Save size={14} strokeWidth={1.75} />}</span>
                   <span>{baselineSaved ? (lang === 'bn' ? 'সংরক্ষিত হয়েছে' : 'Baseline Saved') : (lang === 'bn' ? 'বেসলাইন সংরক্ষণ' : 'Save Baseline')}</span>
                 </Button>
               }
@@ -1900,10 +1901,10 @@ export function MyFarmWorkspaceView({
                   <span style={{ color: 'var(--text-3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     {lang === 'bn' ? 'লাভ (খরচ বাদে):' : 'Net Return:'}
                     <span
-                      title={lang === 'bn' ? '💡 আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : '💡 Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
+                      title={lang === 'bn' ? 'আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : 'Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
                       style={{ cursor: 'help', fontSize: 12 }}
                     >
-                      💡
+                      <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
                     </span>
                   </span>
                   <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--leaf)', marginTop: 2 }}>
@@ -1979,7 +1980,7 @@ export function MyFarmWorkspaceView({
                     const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
                     return (
                       <span key={cropName} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#4ade80', fontWeight: 600 }}>
-                        🌾 {cropLabel(cropName, lang)}: {lang === 'bn' ? `আপনার গড় ফলন: ${formatNumber(avg, lang, { decimals: 1 })} মণ/বিঘা` : `Your average yield: ${formatNumber(avg, lang, { decimals: 1 })} maund/bigha`}
+                        <Wheat size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{cropLabel(cropName, lang)}: {lang === 'bn' ? `আপনার গড় ফলন: ${formatNumber(avg, lang, { decimals: 1 })} মণ/বিঘা` : `Your average yield: ${formatNumber(avg, lang, { decimals: 1 })} maund/bigha`}
                       </span>
                     );
                   })}
@@ -1994,7 +1995,7 @@ export function MyFarmWorkspaceView({
             ) : fieldHistory.length === 0 ? (
               <div style={{ padding: '24px 16px', textAlign: 'center' }}>
                 <EmptyState
-                  icon="📜"
+                  icon={<FileText size={18} strokeWidth={1.75} />}
                   title={lang === 'bn' ? 'এখনো কোনো রেকর্ড নেই' : 'No records yet'}
                   description={lang === 'bn' ? 'এই জমির জন্য পূর্ববর্তী কোনো ফসলের ইতিহাস নেই। নিচে বিগত মৌসুমের ফলন তথ্য যুক্ত করুন।' : 'No historical crop records found for this field. Add past seasonal records below.'}
                   action={
@@ -2024,10 +2025,10 @@ export function MyFarmWorkspaceView({
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {lang === 'bn' ? 'লাভ (খরচ বাদে)' : 'Net Return'}
                           <span
-                            title={lang === 'bn' ? '💡 আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : '💡 Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
+                            title={lang === 'bn' ? 'আয় (ফলন x দাম) − চাষের খরচ − সেচ খরচ; জমির ভাড়া ধরা হয়নি' : 'Revenue (Yield x Price) − Production Cost − Irrigation Cost; Land rent excluded'}
                             style={{ cursor: 'help', fontSize: 12 }}
                           >
-                            💡
+                            <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" />
                           </span>
                         </span>
                       </th>
@@ -2098,7 +2099,7 @@ export function MyFarmWorkspaceView({
                                 fontSize: 12
                               }}
                             >
-                              🗑️
+                              <Trash2 size={14} strokeWidth={1.75} />
                             </button>
                           </td>
                         </tr>
@@ -2112,7 +2113,7 @@ export function MyFarmWorkspaceView({
             {/* Form: Add Past Season Record (M6) */}
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>➕</span>
+                <span><Plus size={14} strokeWidth={1.75} /></span>
                 <span>{lang === 'bn' ? 'বিগত মৌসুমের রেকর্ড যোগ করুন' : 'Add Past Seasonal Record'}</span>
               </div>
               <form id="history-entry-form" onSubmit={handleAddHistory}>
@@ -2251,7 +2252,7 @@ export function MyFarmWorkspaceView({
                     disabled={isSubmittingHistory || !newHistoryCrop.trim() || !newHistoryYield}
                     style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                   >
-                    <span>{isSubmittingHistory ? '...' : '💾'}</span>
+                    <span>{isSubmittingHistory ? '...' : <Save size={14} strokeWidth={1.75} />}</span>
                     <span>{isSubmittingHistory ? (lang === 'bn' ? 'সংরক্ষণ হচ্ছে...' : 'Saving...') : (lang === 'bn' ? 'রেকর্ড সংরক্ষণ করুন' : 'Save Record')}</span>
                   </Button>
                 </div>

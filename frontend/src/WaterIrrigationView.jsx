@@ -7,6 +7,7 @@
 // Deep engineering diagnostics demoted into collapsed expert drawer.
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { Droplets, Pause, Play, CloudRain } from 'lucide-react';
 import { request } from './apiClient.js';
 import { WaterBalance3D } from './research3d/WaterBalance3D.jsx';
 import { SoilProfile3D } from './research3d/SoilProfile3D.jsx';
@@ -501,7 +502,7 @@ const renderFieldCutaway = () => {
           <polyline points={pts([[0, Dp, wtLevelZ], [W, Dp, wtLevelZ], [W, 0, wtLevelZ]])} fill="none" stroke="#7dd3fc" strokeWidth="2" strokeDasharray={(d.L || 0) < 0 ? '5 4' : undefined} />
           {(d.L || 0) <= 0 && (
             <text x={P(W, Dp, wtLevelZ)[0] + 8} y={P(W, Dp, wtLevelZ)[1] + 4} fill="#7dd3fc" fontSize="12" fontWeight="700">
-              {`-${wtDepthCm} cm ${isAwdTrigger ? (lang === 'bn' ? '⚠️ সেচ স্তর' : '⚠️ AWD Refill') : ''}`}
+              {`-${wtDepthCm} cm ${isAwdTrigger ? (lang === 'bn' ? 'সেচ স্তর' : 'AWD Refill') : ''}`}
             </text>
           )}
         </>
@@ -548,7 +549,7 @@ const renderFieldCutaway = () => {
           <polygon points={pts([[W, 0, pondZ], [W, Dp, pondZ], [W, Dp, 0], [W, 0, 0]])} fill="#0369a1" opacity="0.65" />
           {/* Ponded depth badge */}
           <text x={P(W / 2, Dp, pondZ)[0]} y={P(W / 2, Dp, pondZ)[1] - 8} textAnchor="middle" fill="#ffffff" fontSize="13" fontWeight="800" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.8))">
-            {lang === 'bn' ? `🌊 প্লাবিত পানি: +${pondDepthCm} সেমি` : `🌊 Ponded water: +${pondDepthCm} cm`}
+            {lang === 'bn' ? `প্লাবিত পানি: +${pondDepthCm} সেমি` : `Ponded water: +${pondDepthCm} cm`}
           </text>
         </g>
       )}
@@ -655,8 +656,8 @@ const renderFieldCutaway = () => {
           {/* Water Jump Notification */}
           <text x={twX - 10} y={twY - 32} fill="#38BDF8" fontSize="14" fontWeight="800">
             {lang === 'bn'
-              ? `⚡ টিউবওয়েল সেচ: +${Math.round(d.irr)} মিমি (${formatNumberBnEn(irrLitresToday, 0, lang)} লিটার)`
-              : `⚡ Tubewell Inflow: +${Math.round(d.irr)} mm (${formatNumberBnEn(irrLitresToday, 0, lang)} litres)`}
+              ? `টিউবওয়েল সেচ: +${Math.round(d.irr)} মিমি (${formatNumberBnEn(irrLitresToday, 0, lang)} লিটার)`
+              : `Tubewell Inflow: +${Math.round(d.irr)} mm (${formatNumberBnEn(irrLitresToday, 0, lang)} litres)`}
           </text>
         </g>
       )}
@@ -676,15 +677,15 @@ const renderFieldCutaway = () => {
         {/* Litres Used Today */}
         {(d.irr || 0) > 0 ? (
           <text x="-20" y="6" fill="#38BDF8" fontSize="13.5" fontWeight="700">
-            {lang === 'bn' ? `💧 সেচ আজ: ${formatNumberBnEn(irrLitresToday, 0, lang)} লিটার` : `💧 Irrigation today: ${formatNumberBnEn(irrLitresToday, 0, lang)} litres`}
+            {lang === 'bn' ? `সেচ আজ: ${formatNumberBnEn(irrLitresToday, 0, lang)} লিটার` : `Irrigation today: ${formatNumberBnEn(irrLitresToday, 0, lang)} litres`}
           </text>
         ) : (d.rain || 0) > 0 ? (
           <text x="-20" y="6" fill="#7dd3fc" fontSize="13.5" fontWeight="700">
-            {lang === 'bn' ? `🌧️ বৃষ্টি আজ: ${formatNumberBnEn(rainLitresToday, 0, lang)} লিটার` : `🌧️ Rain today: ${formatNumberBnEn(rainLitresToday, 0, lang)} litres`}
+            {lang === 'bn' ? `বৃষ্টি আজ: ${formatNumberBnEn(rainLitresToday, 0, lang)} লিটার` : `Rain today: ${formatNumberBnEn(rainLitresToday, 0, lang)} litres`}
           </text>
         ) : (
           <text x="-20" y="6" fill="#C8F169" fontSize="13" fontWeight="600">
-            {lang === 'bn' ? `🌱 ফসলের গ্রহণ: ${formatNumberBnEn(etcLitresToday, 0, lang)} লিটার/দিন` : `🌱 Crop uptake: ${formatNumberBnEn(etcLitresToday, 0, lang)} L/day`}
+            {lang === 'bn' ? `ফসলের গ্রহণ: ${formatNumberBnEn(etcLitresToday, 0, lang)} লিটার/দিন` : `Crop uptake: ${formatNumberBnEn(etcLitresToday, 0, lang)} L/day`}
           </text>
         )}
       </g>
@@ -778,9 +779,7 @@ const renderDailyChart = () => {
 
               {/* Irrigation event marker */}
               {(d.irr || 0) > 0 && (
-                <text x={X(i)} y={T + 6} textAnchor="middle" fontSize="13">
-                  💧
-                </text>
+                <circle cx={X(i)} cy={T + 4} r={3} fill="var(--cyan, #5be3ff)" />
               )}
 
               {/* Month marker */}
@@ -861,7 +860,7 @@ const renderDailyChart = () => {
       <div className="wp-lg">
         <span><i style={{ background: CHART_PALETTE.dark.lime }} />{lang === 'bn' ? 'গাছের পানি খরচ (মিমি/দিন)' : 'Crop ETc (mm/day)'}</span>
         <span><i style={{ background: CHART_PALETTE.dark.cyan }} />{lang === 'bn' ? 'বৃষ্টি' : 'Rain'}</span>
-        <span>💧 {lang === 'bn' ? 'সেচের দিন' : 'Irrigation day'}</span>
+        <span><Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সেচের দিন' : 'Irrigation day'}</span>
         <span><i style={{ background: CHART_PALETTE.dark.lime, width: 3 }} />{lang === 'bn' ? 'বাছাই করা দিন' : 'Selected day'}</span>
       </div>
     </div>
@@ -1123,7 +1122,7 @@ return (
               onClick={togglePlay}
               aria-label={isPlaying ? (lang === 'bn' ? 'অ্যানিমেশন থামান' : 'Pause animation') : (lang === 'bn' ? 'অ্যানিমেশন চালু করুন' : 'Play animation')}
             >
-              {isPlaying ? (lang === 'bn' ? '⏸ থামান' : '⏸ Pause') : (lang === 'bn' ? '▶ চালান' : '▶ Play')}
+              {isPlaying ? <><Pause size={14} strokeWidth={2} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'থামান' : 'Pause'}</> : <><Play size={14} strokeWidth={2} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'চালান' : 'Play'}</>}
             </button>
             <input
               type="range"
@@ -1176,7 +1175,7 @@ return (
               {!activeSeason?.is_fallow && (
                 nextIrrig ? (
                   <div className="wp-next">
-                    💧 {lang === 'bn' ? 'পরের সেচ: ' : 'Next irrigation: '}
+                    <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পরের সেচ: ' : 'Next irrigation: '}
                     <b>{formatShortDate(nextIrrig.date, lang)}</b>{' '}
                     ({lang === 'bn' ? `আরও ${formatNumberBnEn(nextIrrig.day - activeDay.day, 0, lang)} দিন` : `in ${formatNumberBnEn(nextIrrig.day - activeDay.day, 0, lang)} days`}) ·{' '}
                     <b>
@@ -1234,12 +1233,12 @@ return (
                         </div>
                         {(item.irr || 0) > 0 && (
                           <div style={{ color: 'var(--blue-wp, #4fb3f0)', fontWeight: 700, marginTop: 2 }}>
-                            {lang === 'bn' ? '💧 সেচ' : '💧 Irrig'}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><Droplets size={12} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />{lang === 'bn' ? 'সেচ' : 'Irrig'}</span>
                           </div>
                         )}
                         {(item.rain || 0) > 0.5 && !(item.irr > 0) && (
                           <div style={{ color: 'var(--blue-wp, #4fb3f0)', marginTop: 2 }}>
-                            🌧️ {formatNumberBnEn(item.rain, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                            <CloudRain size={12} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{formatNumberBnEn(item.rain, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
                           </div>
                         )}
                       </div>

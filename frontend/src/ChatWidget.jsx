@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { Lightbulb, Sprout } from 'lucide-react';
 import { request } from './apiClient.js';
 import { districtLabel, soilLabel } from './i18n.js';
 
@@ -168,10 +169,10 @@ export function ChatWidget({
     const soil = activeField?.soil_texture ? soilLabel(activeField.soil_texture, lang) : (isBn ? 'এঁটেল দোআঁশ' : 'Clay Loam');
 
     if (isBn) {
-      return `⚠️ **Running with local rules; Gemini API key not set**\n\n**${fieldName} (${district})**-এর স্থানীয় উপাত্ত বিশ্লেষণ:\n• **মাটি ও আয়তন:** ${soil}, আয়তন ${area}।\n• **সেচ ও পানি:** প্রস্তাবিত সরিষা–মুগ–আমন আবর্তনে ভূগর্ভস্থ সেচ প্রায় ৬০% সাশ্রয় হয়।\n• **ঝুঁকি ও লাভ:** রবি মৌসুমে বোরোর চেয়ে সরিষা/ডালে প্রতি বিঘায় ৫,০০০–৮,০০০ টাকা পর্যন্ত অতিরিক্ত মুনাফা এবং খরা ঝুঁকি কম।\n\n*পরামর্শ: মাঠপর্যায়ে চূড়ান্ত সিদ্ধান্তের পূর্বে স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) পরামর্শ নিন।*`;
+      return `[Note] Running with local rules; Gemini API key not set\n\n**${fieldName} (${district})**-এর স্থানীয় উপাত্ত বিশ্লেষণ:\n• **মাটি ও আয়তন:** ${soil}, আয়তন ${area}।\n• **সেচ ও পানি:** প্রস্তাবিত সরিষা–মুগ–আমন আবর্তনে ভূগর্ভস্থ সেচ প্রায় ৬০% সাশ্রয় হয়।\n• **ঝুঁকি ও লাভ:** রবি মৌসুমে বোরোর চেয়ে সরিষা/ডালে প্রতি বিঘায় ৫,০০০–৮,০০০ টাকা পর্যন্ত অতিরিক্ত মুনাফা এবং খরা ঝুঁকি কম।\n\n*পরামর্শ: মাঠপর্যায়ে চূড়ান্ত সিদ্ধান্তের পূর্বে স্থানীয় উপ-সহকারী কৃষি কর্মকর্তার (SAAO) পরামর্শ নিন।*`;
     }
 
-    return `⚠️ **Running with local rules; Gemini API key not set**\n\nLocal decision telemetry for **${fieldName} (${district})**:\n• **Soil & Area:** ${soil}, area ${area}.\n• **Water Savings:** Shifting from Boro monoculture to Mustard -> Mungbean -> T. Aman saves ~60% supplemental groundwater.\n• **Profit & Climate:** Short-duration winter oilseeds reduce dry-season aquifer depletion while increasing net margin by 25-40%.\n\n*Consult local SAAO extension officers for final field application.*`;
+    return `[Note] Running with local rules; Gemini API key not set\n\nLocal decision telemetry for **${fieldName} (${district})**:\n• **Soil & Area:** ${soil}, area ${area}.\n• **Water Savings:** Shifting from Boro monoculture to Mustard -> Mungbean -> T. Aman saves ~60% supplemental groundwater.\n• **Profit & Climate:** Short-duration winter oilseeds reduce dry-season aquifer depletion while increasing net margin by 25-40%.\n\n*Consult local SAAO extension officers for final field application.*`;
   };
 
   const handleSend = async (textToSend) => {
@@ -405,7 +406,7 @@ export function ChatWidget({
                   onMouseEnter={e => { e.currentTarget.style.background = 'rgba(200, 241, 105, 0.18)'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(200, 241, 105, 0.08)'; }}
                 >
-                  💡 {q}
+                  <Lightbulb size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} /> {q}
                 </button>
               ))}
             </div>
@@ -426,7 +427,7 @@ export function ChatWidget({
           >
             {messages.length === 0 && (
               <div style={{ textAlign: 'center', padding: '30px 16px', color: '#93A597', fontSize: 13 }}>
-                <span style={{ fontSize: 24, display: 'block', marginBottom: 6 }}>🌱</span>
+                <Sprout size={24} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ display: 'block', margin: '0 auto 6px' }} />
                 {lang === 'bn'
                   ? 'উপরে প্রস্তাবিত প্রশ্ন চাপুন অথবা এই পৃষ্ঠা বা আপনার জমির ফসল ও সেচ নিয়ে প্রশ্ন করুন।'
                   : 'Click a suggested question above or ask anything about crop planning and water on this field.'}

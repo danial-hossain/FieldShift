@@ -708,7 +708,7 @@ export function OrbitToFieldCanvas({
     farmGroup.add(createPalm(3.9, 2.2));
     farmGroup.children[farmGroup.children.length - 1].position.set(8.2, 0, -3.5);
 
-    // Recommended ⭐ Star Aura over Bed 1 (Shot 07)
+    // Recommended Star Aura over Bed 1 (Shot 07)
     const starGlowGroup = new THREE.Group();
     starGlowGroup.position.set(bedCenters[0].x, 0.8, bedCenters[0].z);
     const starMesh = new THREE.Mesh(
@@ -804,7 +804,7 @@ export function OrbitToFieldCanvas({
       coast: createHtmlPill(isBn ? 'উপকূল' : 'Coast'),
       field: createHtmlPill(activeField?.name || (isBn ? 'সক্রিয় জমি' : 'Active Field')),
       waterTrend: createHtmlPill(isBn ? 'ধারা: −১.০৭ সেমি/বছর' : 'Trend: −1.07 cm/yr'),
-      starBed: createHtmlPill(isBn ? 'সুষম ⭐ সেরা পছন্দ' : 'Balanced ⭐ Optimum'),
+      starBed: createHtmlPill(isBn ? 'সুষম (সেরা পছন্দ)' : 'Balanced (Optimum)'),
       harvestDone: createHtmlPill(isBn ? '✓ ফসল তোলা সম্পন্ন' : '✓ Harvest Logged'),
     };
 
@@ -1005,7 +1005,7 @@ export function OrbitToFieldCanvas({
           // Strategy switch every 25% of this section
           const subT = (t - 0.60) / 0.12;
           if (subT < 0.25) {
-            // Balanced ⭐
+            // Balanced
             setBedPlants(bedMeshes[0], 0x48a832);
             setBedPlants(bedMeshes[1], 0x3e8a2a);
           } else if (subT < 0.50) {

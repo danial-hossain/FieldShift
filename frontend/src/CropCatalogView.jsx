@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Wheat, BookOpen } from 'lucide-react';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest } from './apiClient.js';
 
@@ -104,7 +105,7 @@ export function CropCatalogView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '26px' }}>🌾</span>
+              <Wheat size={26} strokeWidth={1.75} color="var(--lime, #c8f169)" />
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Bangladesh Crop Knowledge Database &amp; Data Provenance
               </h2>
@@ -198,7 +199,7 @@ export function CropCatalogView({
             className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={fetchCatalog}
           >
-            🔄 Retry Catalog
+            Retry Catalog
           </button>
         </div>
       )}
@@ -283,7 +284,7 @@ export function CropCatalogView({
       {catalog?.sources && (
         <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
           <h3 style={{ margin: '0 0 14px', fontSize: '15px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>📚</span> Authoritative Agronomic References &amp; Data Provenance
+            <BookOpen size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Authoritative Agronomic References &amp; Data Provenance
           </h3>
 
           <div style={{ overflowX: 'auto' }}>

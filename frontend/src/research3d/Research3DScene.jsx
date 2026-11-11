@@ -5,6 +5,7 @@
 // camera presets, 2D accessible table fallback toggle, and mobile power-saving optimizations.
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { BarChart3, Globe } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -318,7 +319,7 @@ export function Research3DScene({
         {/* Header with Switch Back to 3D */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>📊</span>
+            <BarChart3 size={18} strokeWidth={1.75} />
             <strong style={{ color: '#eef3ee', fontSize: '14px' }}>
               {hudTitle} — {lang === 'bn' ? 'সায়েন্টিফিক ডেটা টেবিল' : 'Scientific Data Table View'}
             </strong>
@@ -338,7 +339,7 @@ export function Research3DScene({
                 cursor: 'pointer'
               }}
             >
-              🌐 {lang === 'bn' ? 'ত্রিমাত্রিক (3D) মোডে ফিরুন' : 'Switch to 3D Digital Twin'}
+              <Globe size={18} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'ত্রিমাত্রিক (3D) মোডে ফিরুন' : 'Switch to 3D Digital Twin'}
             </button>
           )}
         </div>
@@ -496,7 +497,7 @@ export function Research3DScene({
             transition: 'all 0.15s ease'
           }}
         >
-          📊 2D Table
+          2D Table
         </button>
 
         {/* Camera Reset Action */}
@@ -538,10 +539,10 @@ export function Research3DScene({
       >
         <span style={{ color: 'rgba(238, 243, 238, 0.42)', fontWeight: 700, paddingRight: 4, fontSize: '10px' }}>CAM:</span>
         {[
-          { id: 'iso', label: '📐 Iso' },
-          { id: 'top', label: '🔝 Top' },
-          { id: 'profile', label: '🌾 Side' },
-          { id: 'closeup', label: '🔍 Zoom' }
+          { id: 'iso', label: 'Iso' },
+          { id: 'top', label: 'Top' },
+          { id: 'profile', label: 'Side' },
+          { id: 'closeup', label: 'Zoom' }
         ].map(p => (
           <button
             key={p.id}

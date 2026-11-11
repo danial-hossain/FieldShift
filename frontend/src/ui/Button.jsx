@@ -1,4 +1,5 @@
 import React from 'react';
+import { RotateCw } from 'lucide-react';
 
 export function Button({
   children,
@@ -25,7 +26,7 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span className="ui-btn-spinner" aria-hidden="true">⏳</span>
+        <RotateCw size={14} className="ui-btn-spinner" strokeWidth={1.75} aria-hidden="true" style={{ display: 'inline-block', animation: 'spin 1s linear infinite' }} />
       ) : icon ? (
         <span className="ui-btn-icon" aria-hidden="true">{icon}</span>
       ) : null}

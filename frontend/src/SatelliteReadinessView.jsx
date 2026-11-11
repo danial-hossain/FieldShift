@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { AlertTriangle, Satellite, Shield } from 'lucide-react';
 import { SatelliteConstellation3D } from './research3d/SatelliteConstellation3D.jsx';
 import { formatNumber as defaultFormatNumber } from './marketUtils.js';
 import { request as defaultRequest } from './apiClient.js';
@@ -77,7 +78,7 @@ export function SatelliteReadinessView({
           alignItems: 'center',
           gap: '8px'
         }}>
-          <span>⚠️</span>
+          <AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
           <span>
             {lang === 'bn'
               ? 'পরিকল্পিত ডেটা উৎস। বর্তমানে হিসাবের জন্য শুধু NASA POWER ব্যবহৃত হয়।'
@@ -88,7 +89,7 @@ export function SatelliteReadinessView({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '26px' }}>🛰️</span>
+              <Satellite size={26} strokeWidth={1.75} color="var(--cyan, #5be3ff)" />
               <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: 'var(--text-main, #f8fafc)' }}>
                 Satellite &amp; Earth Observation Sensor Readiness
               </h2>
@@ -143,7 +144,7 @@ export function SatelliteReadinessView({
             className="ui-btn ui-btn-secondary ui-btn-sm"
             onClick={fetchReadiness}
           >
-            🔄 Retry Readiness Check
+            Retry Readiness Check
           </button>
         </div>
       )}
@@ -232,7 +233,7 @@ export function SatelliteReadinessView({
       {/* Scientific Integrity Assurance */}
       <div className="dash-card" style={{ background: '#131920', border: '1px solid var(--border-medium, #1e293b)', borderRadius: '14px', padding: '20px' }}>
         <h4 style={{ margin: '0 0 10px', fontSize: '14.5px', fontWeight: 800, color: 'var(--text-main, #f8fafc)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span>🛡️</span> Zero-Hallucination Satellite Telemetry Policy
+          <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Zero-Hallucination Satellite Telemetry Policy
         </h4>
         <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-muted, #94a3b8)', lineHeight: 1.6 }}>
           {readiness?.disclaimer || "FieldShift prohibits synthetic NDVI generation. NASA POWER meteorological variables (temperature, radiation, precipitation) provide regional climate boundaries, but cannot be presented as direct farm-level canopy greenness or sub-field moisture sensors without genuine Earth observation telemetry."}

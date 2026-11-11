@@ -4,6 +4,7 @@
 // crop canopy stress response, and tiered 3D data provenance architecture.
 
 import React, { useRef, useEffect, useState, useId } from 'react';
+import { FlaskConical } from 'lucide-react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -378,7 +379,7 @@ export function SyntheticLab3D({
   if (!webGlSupported) {
     return (
       <div style={{ padding: 24, textAlign: 'center', background: '#131920', borderRadius: 14, color: '#94a3b8' }}>
-        <div style={{ fontSize: 28, marginBottom: 8 }}>🧪</div>
+        <FlaskConical size={28} strokeWidth={1.75} style={{ display: 'block', margin: '0 auto 8px', color: 'var(--lime, #c8f169)' }} />
         <h4 style={{ color: '#fff', margin: '0 0 6px' }}>3D Synthetic Sandbox Unavailable</h4>
         <p style={{ margin: 0, fontSize: 13 }}>WebGL hardware acceleration disabled. Conventional table display active.</p>
       </div>
@@ -453,7 +454,7 @@ export function SyntheticLab3D({
             fontWeight: 800,
             letterSpacing: '0.04em',
           }}>
-            🧪 Synthetic Stress Simulation
+            Synthetic Stress Simulation
           </span>
 
           <button
@@ -505,7 +506,7 @@ export function SyntheticLab3D({
         pointerEvents: 'auto',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>🧪</span>
+          <FlaskConical size={20} strokeWidth={1.75} />
           <div>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#f8fafc' }}>
               {activeTab === 'generator'

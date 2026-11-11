@@ -1,4 +1,5 @@
 import { request } from './apiClient.js';
+import { AlertTriangle, RotateCw, Printer, Info, Droplets, Tractor, ShoppingCart, Sprout, Flame, CheckCircle2, RefreshCw, Trophy, Shield, Sun, CloudRain, Clock, Target } from 'lucide-react';
 import { Card, CardHeader, Stat, Button, Pill, DataSourceTag, EmptyState, Skeleton, MarketIcon, WaterIcon, RotationIcon, ChecklistIcon, InfoIcon } from './ui/index.js';
 // frontend/src/SixSeasonRecommendationView.jsx
 // 6-Season Crop Recommendation & Rotation Planner (PuLP MILP Model)
@@ -758,8 +759,8 @@ export function SixSeasonRecommendationView({
 
       rows.push({
         id,
-        nameBn: `${nameBn}${bestScoringStrategyId === id ? ' ⭐' : ''}`,
-        nameEn: `${nameEn}${bestScoringStrategyId === id ? ' ⭐' : ''}`,
+        nameBn: `${nameBn}${bestScoringStrategyId === id ? (lang === 'bn' ? ' (সেরা)' : ' (Best)') : ''}`,
+        nameEn: `${nameEn}${bestScoringStrategyId === id ? ' (Best)' : ''}`,
         irrig,
         bare,
         n,
@@ -1220,7 +1221,7 @@ export function SixSeasonRecommendationView({
     return (
       <div className="six-season-recommendation-workspace" style={{ padding: '24px 28px', background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
         <div style={{ background: 'var(--surface-card, rgba(16, 28, 22, 0.86))', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 16, padding: 24, textAlign: 'center', maxWidth: 640, margin: '40px auto' }}>
-          <span style={{ fontSize: 36 }}>⚠️</span>
+          <AlertTriangle size={36} strokeWidth={1.75} color="var(--coral, #ff7a6b)" />
           <h3 style={{ margin: '12px 0 6px', color: 'var(--alert)' }}>
             {lang === 'bn' ? 'পরিকল্পনা ডেটা লোড করা যায়নি' : 'Unable to Load Crop Planning Data'}
           </h3>
@@ -1357,7 +1358,7 @@ export function SixSeasonRecommendationView({
           ].map(s => {
             const isActive = selectedStrategy === s.id;
             const isBest = s.id === bestScoringStrategyId;
-            const labelText = (lang === 'bn' ? s.labelBn : s.labelEn) + (isBest ? ' ⭐' : '');
+            const labelText = (lang === 'bn' ? s.labelBn : s.labelEn) + (isBest ? (lang === 'bn' ? ' (সেরা)' : ' (Best)') : '');
             return (
               <button
                 key={s.id}
@@ -1414,7 +1415,7 @@ export function SixSeasonRecommendationView({
               gap: 6,
             }}
           >
-            <span>🔄</span>
+            <RotateCw size={16} strokeWidth={1.75} />
             <span>{lang === 'bn' ? 'অভিযোজিত পুনঃপরিকল্পনা' : 'Adaptive Replan'}</span>
           </button>
 
@@ -1437,7 +1438,7 @@ export function SixSeasonRecommendationView({
             }}
             title={lang === 'bn' ? '১ পাতার প্রিন্ট কার্ড (Ctrl+P)' : 'Print 1-Page Farmer Card (Ctrl+P)'}
           >
-            <span>🖨️</span>
+            <Printer size={16} strokeWidth={1.75} />
             <span>{lang === 'bn' ? 'প্রিন্ট কার্ড' : 'Print Card'}</span>
           </button>
         </div>
@@ -1470,7 +1471,7 @@ export function SixSeasonRecommendationView({
           )}
           {(strategyComparisonNote || identicalStrategyNote) && (
             <div style={{ fontSize: 12, color: 'var(--muted, #5e6b60)' }}>
-              ℹ️ {strategyComparisonNote || identicalStrategyNote}
+              <Info size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{strategyComparisonNote || identicalStrategyNote}
             </div>
           )}
         </div>
@@ -1479,7 +1480,7 @@ export function SixSeasonRecommendationView({
       {/* 3. Farmer Priorities Compact Row (PL14) */}
       <div className="pri" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 18px', alignItems: 'center', background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 12, padding: '8px 12px' }}>
         <div className="pg" style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
-          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}>💧 {lang === 'bn' ? 'পানি' : 'Water'}</span>
+          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}><Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পানি' : 'Water'}</span>
           {[
             { id: 'full', labelBn: 'পর্যাপ্ত', labelEn: 'Full' },
             { id: 'limited', labelBn: 'সীমিত', labelEn: 'Limited' },
@@ -1527,12 +1528,12 @@ export function SixSeasonRecommendationView({
                 setNoPowerTiller(e.target.checked);
               }}
             />
-            <span>🚜 {lang === 'bn' ? 'পাওয়ার টিলার নেই' : 'No power tiller'}</span>
+            <span><Tractor size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পাওয়ার টিলার নেই' : 'No power tiller'}</span>
           </label>
         </div>
 
         <div className="pg" style={{ display: 'flex', flexWrap: 'wrap', gap: 5, alignItems: 'center' }}>
-          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}>🛒 {lang === 'bn' ? 'বিক্রি করতে পারি না' : 'Cannot sell'}</span>
+          <span className="pl" style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text)' }}><ShoppingCart size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বিক্রি করতে পারি না' : 'Cannot sell'}</span>
           {[
             { id: 'Tomato', labelBn: 'টমেটো', labelEn: 'Tomato' },
             { id: 'Sesame', labelBn: 'তিল', labelEn: 'Sesame' },
@@ -1575,7 +1576,7 @@ export function SixSeasonRecommendationView({
                 ? `বাদ: ${[...excludedCrops.map(c => translateCropName(c, 'bn')), ...(noPowerTiller && !excludedCrops.includes('Potato') ? ['আলু'] : [])].join(', ')}। অ্যাপ এগুলো ছাড়া নতুন পরিকল্পনা করবে।`
                 : `Excluded: ${[...excludedCrops, ...(noPowerTiller ? ['Potato'] : [])].join(', ')}. Optimizer excludes these crops.`)
             : (lang === 'bn'
-                ? '⚖️ লাভ/পানি/মাটির গুরুত্ব উপরের কৌশলের বোতাম দিয়েই বাছুন। এখানে কিছু বদলালে অ্যাপ নতুন করে হিসাব করবে।'
+                ? 'লাভ/পানি/মাটির গুরুত্ব উপরের কৌশলের বোতাম দিয়েই বাছুন। এখানে কিছু বদলালে অ্যাপ নতুন করে হিসাব করবে।'
                 : 'Select weights from strategy buttons above. Adjusting priorities here triggers automatic re-solve.')}
         </div>
       </div>
@@ -1769,7 +1770,7 @@ export function SixSeasonRecommendationView({
                     <span>{translateCropName(c, lang)}</span>
                   </b>
                   <span style={{ fontSize: 12, color: 'var(--water)', fontVariantNumeric: 'tabular-nums' }}>
-                    💧 {irrig > 0 ? `${formatNumber(irrig, lang)} ${unitLabel('mm', lang)}` : (lang === 'bn' ? 'সেচ নেই' : '0 mm')}
+                    <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{irrig > 0 ? `${formatNumber(irrig, lang)} ${unitLabel('mm', lang)}` : (lang === 'bn' ? 'সেচ নেই' : '0 mm')}
                   </span>
                 </button>
               );
@@ -1884,29 +1885,29 @@ export function SixSeasonRecommendationView({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, margin: '4px 0 10px' }}>
               {activeCropMeta?.is_legume && (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'rgba(74, 222, 128, 0.15)', border: '1px solid #4ade80', color: '#4ade80', fontWeight: 700 }}>
-                  🌱 {lang === 'bn' ? 'নাইট্রোজেন দেয়' : 'Fixes N'}
+                  <Sprout size={14} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'নাইট্রোজেন দেয়' : 'Fixes N'}
                 </span>
               )}
               {selectedCropIrrig === 0 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--leaf)' }}>
-                  💧 {lang === 'bn' ? 'সেচ লাগে না' : 'Rainfed'}
+                  <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সেচ লাগে না' : 'Rainfed'}
                 </span>
               ) : selectedCropIrrig <= 150 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--water)' }}>
-                  💧 {lang === 'bn' ? 'কম পানি' : 'Low water'}
+                  <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'কম পানি' : 'Low water'}
                 </span>
               ) : selectedCropIrrig <= 400 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
-                  💧 {lang === 'bn' ? 'পরিমিত সেচ' : 'Moderate water'}
+                  <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পরিমিত সেচ' : 'Moderate water'}
                 </span>
               ) : (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--hud-red, #ef4444)' }}>
-                  💧 {lang === 'bn' ? 'বেশি পানি' : 'High water'}
+                  <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বেশি পানি' : 'High water'}
                 </span>
               )}
               {activePeriodIdx % 3 === 1 && (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
-                  ☀️ {lang === 'bn' ? 'তাপ-খরা ঝুঁকি' : 'Heat risk'}
+                  <Flame size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'তাপ-খরা ঝুঁকি' : 'Heat risk'}
                 </span>
               )}
             </div>
@@ -1971,13 +1972,13 @@ export function SixSeasonRecommendationView({
                 <div style={{ padding: '6px 0' }}>
                   {currentProsCons.pros.length > 0 && (
                     <div style={{ marginBottom: 4 }}>
-                      <span style={{ fontWeight: 700, color: 'var(--leaf)' }}>✅ {lang === 'bn' ? 'সুবিধা: ' : 'Benefits: '}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--leaf)' }}><CheckCircle2 size={16} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সুবিধা: ' : 'Benefits: '}</span>
                       {currentProsCons.pros.join(' · ')}
                     </div>
                   )}
                   {currentProsCons.cons.length > 0 && (
                     <div>
-                      <span style={{ fontWeight: 700, color: 'var(--alert)' }}>⚠️ {lang === 'bn' ? 'ঝুঁকি: ' : 'Risks: '}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--alert)' }}><AlertTriangle size={16} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'ঝুঁকি: ' : 'Risks: '}</span>
                       {currentProsCons.cons.join(' · ')}
                     </div>
                   )}
@@ -1988,14 +1989,14 @@ export function SixSeasonRecommendationView({
             {/* Baseline Comparison Slot */}
             {selectedStrategy !== 'baseline' && (
               <div style={{ fontSize: 13, background: 'var(--surface-2, rgba(255,255,255,0.04))', borderRadius: 10, padding: '8px 10px', marginTop: 8 }}>
-                🔄 {lang === 'bn' ? 'বর্তমানে এই মৌসুমে:' : 'Currently in this season:'} <b>{baselineCropInSlot ? translateCropName(baselineCropInSlot, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</b> ({baselineSlotIrrig != null ? (baselineCropInSlot?.toLowerCase() === 'fallow' ? (lang === 'bn' ? 'জমি ফাঁকা, ০ মিমি' : 'Fallow, 0 mm') : (lang === 'bn' ? `${formatNumber(baselineSlotIrrig, lang)} মিমি সেচ` : `${formatNumber(baselineSlotIrrig, lang)} mm irrigation`)) : (lang === 'bn' ? 'সেচের তথ্য নেই' : 'No irrigation data')})
+                <RotateCw size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বর্তমানে এই মৌসুমে:' : 'Currently in this season:'} <b>{baselineCropInSlot ? translateCropName(baselineCropInSlot, lang) : (lang === 'bn' ? 'তথ্য নেই' : 'No data')}</b> ({baselineSlotIrrig != null ? (baselineCropInSlot?.toLowerCase() === 'fallow' ? (lang === 'bn' ? 'জমি ফাঁকা, ০ মিমি' : 'Fallow, 0 mm') : (lang === 'bn' ? `${formatNumber(baselineSlotIrrig, lang)} মিমি সেচ` : `${formatNumber(baselineSlotIrrig, lang)} mm irrigation`)) : (lang === 'bn' ? 'সেচের তথ্য নেই' : 'No irrigation data')})
               </div>
             )}
 
             {/* Alternatives & PL5 Explanation */}
             {candidateAlternatives.length > 0 && (
               <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 8 }}>
-                🔁 {lang === 'bn' ? 'বিকল্প:' : 'Alternatives:'} {candidateAlternatives.map(a => `${translateCropName(a.crop, lang)} (${lang === 'bn' ? `স্কোর: ${formatNumber(a.score, lang)}` : `${formatNumber(a.score, lang)} pts`})`).join(', ')}.
+                <RefreshCw size={16} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বিকল্প:' : 'Alternatives:'} {candidateAlternatives.map(a => `${translateCropName(a.crop, lang)} (${lang === 'bn' ? `স্কোর: ${formatNumber(a.score, lang)}` : `${formatNumber(a.score, lang)} pts`})`).join(', ')}.
                 {candidateAlternatives[0]?.score > Math.round((selectedCropEntry?.objective_score || selectedCropEntry?.dynamic_gross_margin_bdt_ha || 0) / 1000) && (
                   <div style={{ marginTop: 4, color: 'var(--sun)' }}>
                     {lang === 'bn'
@@ -2027,7 +2028,7 @@ export function SixSeasonRecommendationView({
         {/* Card 1: Key Benefits */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
-            🏆 {lang === 'bn' ? 'মূল সুফল' : 'Key Benefits vs Baseline'}
+            <Trophy size={18} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'মূল সুফল' : 'Key Benefits vs Baseline'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--line)', paddingBottom: 4 }}>
@@ -2071,23 +2072,23 @@ export function SixSeasonRecommendationView({
         {/* Card 2: Risk Summary */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
-            🛡️ {lang === 'bn' ? 'আবহাওয়া ঝুঁকি' : 'Agro-Climatic Risk'}
+            <Shield size={18} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'আবহাওয়া ঝুঁকি' : 'Agro-Climatic Risk'}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-              <span>🏜️ {lang === 'bn' ? 'খরা (বর্ষার আগে)' : 'Pre-monsoon drought'}</span>
+              <span><Sun size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'খরা (বর্ষার আগে)' : 'Pre-monsoon drought'}</span>
               <span style={{ fontWeight: 700, color: 'var(--bad, #b4532a)' }}>{lang === 'bn' ? 'বেশি' : 'High'}</span>
             </div>
             <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-              <span>☀️ {lang === 'bn' ? 'তাপপ্রবাহ (এপ্রিল–মে)' : 'Heat stress (Apr-May)'}</span>
+              <span><Flame size={14} strokeWidth={1.75} color="var(--amber, #f5b04c)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'তাপপ্রবাহ (এপ্রিল–মে)' : 'Heat stress (Apr-May)'}</span>
               <span style={{ fontWeight: 700, color: 'var(--bad, #b4532a)' }}>{lang === 'bn' ? 'বেশি' : 'High'}</span>
             </div>
             <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-              <span>🌧️ {lang === 'bn' ? 'অতিবৃষ্টি' : 'Heavy rain'}</span>
+              <span><CloudRain size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'অতিবৃষ্টি' : 'Heavy rain'}</span>
               <span style={{ fontWeight: 700, color: 'var(--good, #2c8a4b)' }}>{lang === 'bn' ? 'কম' : 'Low'}</span>
             </div>
             <div className="risk" style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--line)', fontSize: 13 }}>
-              <span>⏳ {lang === 'bn' ? 'বর্ষা দেরি' : 'Late monsoon'}</span>
+              <span><Clock size={14} strokeWidth={1.75} style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'বর্ষা দেরি' : 'Late monsoon'}</span>
               <span style={{ fontWeight: 700, color: 'var(--good, #2c8a4b)' }}>{lang === 'bn' ? 'কম' : 'Low'}</span>
             </div>
           </div>
@@ -2099,7 +2100,7 @@ export function SixSeasonRecommendationView({
         {/* Card 3: Compact Strategy Comparison Table */}
         <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 16, padding: '14px 16px' }}>
           <h3 style={{ fontSize: 14.5, margin: '0 0 8px', color: 'var(--text)' }}>
-            🎯 {lang === 'bn' ? 'কৌশল তুলনা' : 'Strategy Comparison'}
+            <Target size={18} strokeWidth={1.75} color="var(--lime, #c8f169)" style={{ verticalAlign: 'middle', marginRight: 6 }} />{lang === 'bn' ? 'কৌশল তুলনা' : 'Strategy Comparison'}
           </h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, fontVariantNumeric: 'tabular-nums' }}>
             <thead>
@@ -2152,7 +2153,7 @@ export function SixSeasonRecommendationView({
             </tbody>
           </table>
           <p style={{ margin: '8px 0 0', fontSize: 11.5, color: 'var(--text-muted)' }}>
-            ⭐ = {lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে।' : 'Best suited to your priority.'}
+            (Best) = {lang === 'bn' ? 'সবচেয়ে উপযুক্ত আপনার অগ্রাধিকারে।' : 'Best suited to your priority.'}
           </p>
         </div>
       </div>
@@ -2254,7 +2255,7 @@ export function SixSeasonRecommendationView({
                     <td><span className="fpc-crop-badge">{cropName}</span></td>
                     <td>{formatNumber(mm, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</td>
                     <td>{formatNumber(litres, lang)} {lang === 'bn' ? 'লিটার' : 'litres'}</td>
-                    <td>{isLegume ? (lang === 'bn' ? '🌱 নাইট্রোজেন সংবন্ধন' : '🌱 Nitrogen Fixation') : (mm > 400 ? (lang === 'bn' ? '💧 AWD সাশ্রয়ী' : '💧 AWD Efficient') : (lang === 'bn' ? '🌿 কম পানি সহনশীল' : '🌿 Drought Resilient'))}</td>
+                    <td>{isLegume ? (lang === 'bn' ? 'নাইট্রোজেন সংবন্ধন' : 'Nitrogen Fixation') : (mm > 400 ? (lang === 'bn' ? 'AWD সাশ্রয়ী' : 'AWD Efficient') : (lang === 'bn' ? 'কম পানি সহনশীল' : 'Drought Resilient'))}</td>
                   </tr>
                 );
               })}
@@ -2271,7 +2272,7 @@ export function SixSeasonRecommendationView({
             {riskSuite.slice(0, 3).map((r, idx) => (
               <div key={idx} className="fpc-risk-card">
                 <div className="fpc-risk-head">
-                  <strong>⚠️ {lang === 'bn' ? (r.labelBn || r.label) : (r.labelEn || r.label)}</strong>
+                  <strong><AlertTriangle size={14} strokeWidth={1.75} color="var(--coral, #ff7a6b)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? (r.labelBn || r.label) : (r.labelEn || r.label)}</strong>
                   <span className="fpc-risk-pill">{lang === 'bn' ? (r.levelBn || r.level) : (r.levelEn || r.level)}</span>
                 </div>
                 <div className="fpc-risk-action">
