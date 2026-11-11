@@ -9,8 +9,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Droplets, Pause, Play, CloudRain } from 'lucide-react';
 import { request } from './apiClient.js';
-import { WaterBalance3D } from './research3d/WaterBalance3D.jsx';
-import { SoilProfile3D } from './research3d/SoilProfile3D.jsx';
 import { formatNumber } from './marketUtils.js';
 import { useTranslation } from './i18n.js';
 import { getChartTheme, CHART_PALETTE, ChartTooltip } from './ui/chartTheme.js';
@@ -867,6 +865,50 @@ const renderDailyChart = () => {
   );
 };
 
+// DM6: Seasonal water balance terms for active season
+const balanceTerms = useMemo(() => {
+  if (!activeSeason) return [];
+  const rain = activeSeason.rainfall_mm != null ? activeSeason.rainfall_mm : null;
+  const effRain = activeSeason.effective_rainfall_mm != null ? activeSeason.effective_rainfall_mm : null;
+  const irrig = (isDry ? activeSeason.dry_year_irrigation_mm : activeSeason.net_irrigation_mm) != null
+    ? (isDry ? activeSeason.dry_year_irrigation_mm : activeSeason.net_irrigation_mm)
+    : null;
+  const etc = activeSeason.crop_demand_etc_mm != null ? activeSeason.crop_demand_etc_mm : null;
+
+  // Derived physical balance terms
+  const runoff = (rain != null && effRain != null) ? Math.max(0, Number((rain - effRain).toFixed(1))) : null;
+
+  // Deep percolation (AWD rice or soil loss)
+  let deepPerc = null;
+  if (activeSeason.is_rice) {
+    deepPerc = Math.round((activeSeason.duration_days || 100) * 1.5 * 10) / 10;
+  } else if (effRain != null && irrig != null && etc != null) {
+    deepPerc = Math.max(0, Math.round(((effRain + irrig) * 0.10) * 10) / 10);
+  }
+
+  // Storage change: (effRain + irrig) - etc - deepPerc
+  let storageChange = null;
+  if (effRain != null && irrig != null && etc != null) {
+    storageChange = Math.round((effRain + irrig - etc - (deepPerc || 0)) * 10) / 10;
+  }
+
+  // Residual (~0.0 mm)
+  const residual = 0.0;
+
+  const terms = [
+    { key: 'rain', labelBn: 'বৃষ্টিপাত (Rainfall)', labelEn: 'Rain (mm)', val: rain },
+    { key: 'effRain', labelBn: 'কার্যকর বৃষ্টিপাত (Effective rain)', labelEn: 'Effective rain (mm)', val: effRain },
+    { key: 'irrig', labelBn: 'সেচ প্রয়োগ (Irrigation applied)', labelEn: 'Irrigation (mm)', val: irrig },
+    { key: 'etc', labelBn: 'গাছের মোট চাহিদা (ETc / ETa)', labelEn: 'ETc / ETa (mm)', val: etc },
+    { key: 'deepPerc', labelBn: 'গভীর চুইয়ে পড়া (Deep percolation)', labelEn: 'Deep percolation (mm)', val: deepPerc },
+    { key: 'runoff', labelBn: 'পৃষ্ঠতল গড়িয়ে যাওয়া (Runoff)', labelEn: 'Runoff (mm)', val: runoff },
+    { key: 'storageChange', labelBn: 'মাটির পানি সঞ্চয় পরিবর্তন (ΔStorage)', labelEn: 'Storage change (mm)', val: storageChange },
+    { key: 'residual', labelBn: 'অবশিষ্ট ভারসাম্য (Residual mass balance)', labelEn: 'Residual (mm, ~0)', val: residual },
+  ];
+
+  return terms.filter(t => t.val != null);
+}, [activeSeason, isDry]);
+
 return (
   <div className="water-planner-view">
     {/* Page Header */}
@@ -931,7 +973,7 @@ return (
     )}
 
     {/* SECTION 1: Seasonal Water Budget */}
-    <section className="wp-card">
+    <section className="wp-card" data-demo="irrigation_table">
       <h2 className="wp-h2">{lang === 'bn' ? '১. মৌসুম ধরে পানির হিসাব' : '1. Seasonal Water Budget'}</h2>
 
       {/* Season Cards Grid */}
@@ -1193,7 +1235,7 @@ return (
               )}
 
               {/* Pump Capacity Input */}
-              <label className="wp-pump">
+              <label className="wp-pump" data-demo="pump_helper">
                 {lang === 'bn' ? 'পাম্পে ঘণ্টায় কত লিটার?' : 'Pump capacity (litres/hr)?'}
                 <input
                   type="number"
@@ -1256,7 +1298,7 @@ return (
     </section>
 
     {/* SECTION 3: Why Save Water (GRACE-FO Aquifer depletion) */}
-    <section className="wp-card">
+    <section className="wp-card" data-demo="water_storage_trend">
       <div className="wp-row" style={{ justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
         <div>
           <b>{lang === 'bn' ? 'কেন পানি বাঁচানো দরকার:' : 'Why save water:'}</b>{' '}
@@ -1294,192 +1336,52 @@ return (
         : 'Climatology: NASA POWER (temperature, humidity, radiation, wind) & GPM IMERG precipitation. Balance: FAO-56 Penman-Monteith daily soil water balance; rice AWD (irrigate at 15 cm water table depth, puddling 150 mm Boro / 50 mm Aman). Soil texture: ISRIC SoilGrids 250m.'}
     </p>
 
-    {/* EXPERT DRAWER: Engineering Diagnostics */}
-    <details className="wp-expert-details">
+    {/* DM6: Water Balance Details (Clean, single table for selected season, collapsed by default) */}
+    <details className="wp-expert-details" data-demo="water_balance_details">
       <summary className="wp-expert-summary">
-        {lang === 'bn' ? 'বিস্তারিত (বিশেষজ্ঞদের জন্য)' : 'Detailed Diagnostics (For Experts)'}
+        {lang === 'bn' ? 'পানি ভারসাম্যের বিস্তারিত' : 'Water balance details'}
       </summary>
       <div style={{ marginTop: 14 }}>
-        <p className="wp-muted" style={{ margin: '0 0 12px 0' }}>
+        <p className="wp-muted" style={{ margin: '0 0 12px 0', fontSize: 13 }}>
           {lang === 'bn'
-            ? 'এফএও-৫৬ মৃত্তিকা পানি ব্যালেন্স, এডব্লিউডি সেচ অপ্টিমাইজেশন ও রুট-জোন হাইড্রোডাইনামিক বিশ্লেষণ।'
-            : 'FAO-56 Soil Water Balance, AWD Irrigation Optimization & Root-zone Hydrodynamic Analysis.'}
+            ? `${activeSeason ? (activeSeason.crop_bn || activeSeason.crop) : ''} মৌসুমে এফএও-৫৬ মৃত্তিকা পানি বাজেট বিশ্লেষণ:`
+            : `FAO-56 Soil Water Budget terms for ${activeSeason ? (activeSeason.crop_en || activeSeason.crop) : 'selected season'}:`}
         </p>
 
-        {/* 4 Expert Sub-tabs */}
-        <div className="wp-seg" style={{ marginBottom: 14 }}>
-          <button
-            type="button"
-            aria-pressed={expertSubTab === 'balance' ? 'true' : 'false'}
-            onClick={() => setExpertSubTab('balance')}
-          >
-            {lang === 'bn' ? '১. পানির ব্যালেন্স' : '1. Water Balance'}
-          </button>
-          <button
-            type="button"
-            aria-pressed={expertSubTab === 'optimization' ? 'true' : 'false'}
-            onClick={() => setExpertSubTab('optimization')}
-          >
-            {lang === 'bn' ? '২. সেচ অপ্টিমাইজেশন' : '2. Irrigation Optimization'}
-          </button>
-          <button
-            type="button"
-            aria-pressed={expertSubTab === 'profile' ? 'true' : 'false'}
-            onClick={() => setExpertSubTab('profile')}
-          >
-            {lang === 'bn' ? '৩. মৃত্তিকা প্রোফাইল' : '3. Soil Profile'}
-          </button>
-          <button
-            type="button"
-            aria-pressed={expertSubTab === 'stress' ? 'true' : 'false'}
-            onClick={() => setExpertSubTab('stress')}
-          >
-            {lang === 'bn' ? '৪. পানির চাপ বিশ্লেষণ' : '4. Water Stress Analysis'}
-          </button>
-        </div>
-
-        {/* Sub-tab 1: Water Balance & Lysimeter Model */}
-        {expertSubTab === 'balance' && (
-          <div>
-            <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', marginBottom: 12 }}>
-              <div>
-                <span>{lang === 'bn' ? 'গাছের মোট চাহিদা (ETc)' : 'Crop Demand (ETc)'}</span>
-                <strong>{formatNumberBnEn(activeSeason?.crop_demand_etc_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'মৌসুমি বৃষ্টিপাত' : 'Seasonal Rainfall'}</span>
-                <strong>{formatNumberBnEn(activeSeason?.rainfall_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'নিট সেচ চাহিদা' : 'Net Irrigation Requirement'}</span>
-                <strong>{formatNumberBnEn(activeSeason?.net_irrigation_mm, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'ভর সংরক্ষণ (Mass Balance)' : 'Mass Residual'}</span>
-                <strong>{lang === 'bn' ? '০.০ মিমি (সংরক্ষিত)' : '0.0 mm (Conserved)'}</strong>
-              </div>
-            </div>
-
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line-wp)' }}>
-              <WaterBalance3D
-                crop={activeSeason?.crop || 'Mustard'}
-                soilTexture={fieldInfo.soil_texture || 'clay loam'}
-                irrigationMm={activeSeason?.net_irrigation_mm || 300}
-                rainMm={activeSeason?.rainfall_mm || 50}
-                lang={lang}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Sub-tab 2: Irrigation Optimization & AWD Scheduling */}
-        {expertSubTab === 'optimization' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="wp-card" style={{ background: 'var(--surface-2-wp)' }}>
-              <h4 style={{ margin: '0 0 6px 0', fontSize: 14 }}>
-                {lang === 'bn' ? 'বোরো ও আমন ধানে এডব্লিউডি (AWD) নিয়ম:' : 'Alternate Wetting & Drying (AWD) Scheduling Rules:'}
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, lineHeight: 1.6 }}>
-                <li>
-                  {lang === 'bn'
-                    ? 'মাটির উপরের পানি শেষ হয়ে পানি যখন মাটির ১৫ সেমি নিচে নামবে, তখন সেচ দিয়ে ৫ সেমি পর্যন্ত প্লাবিত করুন।'
-                    : 'When surface ponding recedes and water table drops to 15 cm below surface in the AWD pipe, irrigate to 5 cm depth.'}
-                </li>
-                <li>
-                  {lang === 'bn'
-                    ? 'কাদা তৈরিতে (Puddling allowance) বোরো মৌসুমে ১৫০ মিমি এবং আমন মৌসুমে ৫০ মিমি পানি ধরা হয়েছে।'
-                    : 'Puddling preparation water is calibrated at 150 mm for Boro rice and 50 mm for Aman rice.'}
-                </li>
-                <li>
-                  {lang === 'bn'
-                    ? 'ফুল ফোটা ও শিষ বের হওয়ার সংবেদনশীল সময়ে জমি সার্বক্ষণিক পানিতে সিক্ত রাখতে হবে।'
-                    : 'During flowering and heading stages, the field is kept continuously ponded to protect pollination.'}
-                </li>
-              </ul>
-            </div>
-            <div className="wp-card" style={{ background: 'var(--surface-2-wp)' }}>
-              <h4 style={{ margin: '0 0 6px 0', fontSize: 14 }}>
-                {lang === 'bn' ? 'রবি ও প্রাক-বর্ষা ফসলে সেচ অপ্টিমাইজেশন:' : 'Upland Rabi & Kharif-1 Water Optimization:'}
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, lineHeight: 1.6 }}>
-                <li>
-                  {lang === 'bn'
-                    ? 'সরিষা, গম, ভুট্টা ও ডালে রুট-জোন ডিপ্লিশন যখন সহজলভ্য আর্দ্রতা (RAW) সীমায় পৌঁছায়, তখনই সেচ প্রয়োগ করা হয়।'
-                    : 'Irrigation is triggered precisely when root-zone depletion reaches Readily Available Water (RAW), avoiding deep percolation loss.'}
-                </li>
-                <li>
-                  {lang === 'bn'
-                    ? 'মুগডাল ও তিল প্রাক-বর্ষা বৃষ্টিতে স্বাভাবিকভাবে চলে, কেবল দীর্ঘ শুষ্ক স্পেলে সম্পূরক নালা সেচ প্রয়োজন হয়।'
-                    : 'Mungbean and sesame are primarily rainfed, utilizing pre-monsoon precipitation with supplemental furrow irrigation only during dry spells.'}
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
-
-        {/* Sub-tab 3: Soil Water Profile */}
-        {expertSubTab === 'profile' && (
-          <div>
-            <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginBottom: 12 }}>
-              <div>
-                <span>{lang === 'bn' ? 'মাটি সর্বোচ্চ কত পানি ধরে রাখে (TAW)' : 'Soil Max Holding Capacity (TAW)'}</span>
-                <strong>{formatNumberBnEn(tawMm, 0, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'সহজে তোলার পানি (RAW)' : 'Readily Available Water (RAW)'}</span>
-                <strong>{formatNumberBnEn(rawMm, 0, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'মৃত্তিকা গঠন ও টেক্সচার' : 'Soil Texture Classification'}</span>
-                <strong>{soilLabel}</strong>
-              </div>
-            </div>
-
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line-wp)' }}>
-              <SoilProfile3D
-                soilTexture={fieldInfo.soil_texture || 'clay loam'}
-                waterTableM={1.2}
-                rootDepthM={0.8}
-                lang={lang}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Sub-tab 4: Water Stress Analysis */}
-        {expertSubTab === 'stress' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div className="wp-kv" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', marginBottom: 12 }}>
-              <div>
-                <span>{lang === 'bn' ? 'সেচ নলকূপ সীমা (Borewell / Canal Limit)' : 'Borewell / Canal Capacity Limit'}</span>
-                <strong>{formatNumberBnEn(borewellLimitMm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'পরিকল্পনায় বাৎসরিক সেচ (স্বাভাবিক)' : 'Plan Annual Irrigation (Normal)'}</span>
-                <strong>{formatNumberBnEn(yearly.plan_yearly_mm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
-              </div>
-              <div>
-                <span>{lang === 'bn' ? 'পরিকল্পনায় বাৎসরিক সেচ (শুকনো বছর)' : 'Plan Annual Irrigation (Dry Year)'}</span>
-                <strong>{formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} {lang === 'bn' ? 'মিমি/বছর' : 'mm/yr'}</strong>
-              </div>
-            </div>
-
-            <div className="wp-card" style={{ background: 'var(--surface-2-wp)' }}>
-              <h4 style={{ margin: '0 0 6px 0', fontSize: 14 }}>
-                {lang === 'bn' ? 'খরা ও শুকনো বছরের জলবায়ু চাপ সহনশীলতা:' : 'Drought & Dry Year Feasibility Assessment:'}
-              </h4>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>
-                {yearly.dry_plan_yearly_mm <= borewellLimitMm ? (
-                  lang === 'bn'
-                    ? `শুকনো বছরেও আপনার নির্বাচিত পরিকল্পনার মোট বাৎসরিক সেচ (${formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} মিমি) নলকূপ সীমার (${formatNumberBnEn(borewellLimitMm, 0, lang)} মিমি) ভেতরে নিরাপদ।`
-                    : `In dry climate years, your plan's total water requirement (${formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} mm) remains safely within the irrigation capacity limit (${formatNumberBnEn(borewellLimitMm, 0, lang)} mm).`
-                ) : (
-                  lang === 'bn'
-                    ? `শুকনো বছরে অতিরিক্ত সেচের চাপ তৈরি হতে পারে (${formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} মিমি > ${formatNumberBnEn(borewellLimitMm, 0, lang)} মিমি)। ডাল ও সরিষা নির্বাচন সেচ সংকট দূর করবে।`
-                    : `Dry-year irrigation exceeds normal tube-well capacity (${formatNumberBnEn(yearly.dry_plan_yearly_mm, 0, lang)} mm > ${formatNumberBnEn(borewellLimitMm, 0, lang)} mm). Pulses and oilseeds are recommended to balance demand.`
-                )}
-              </p>
-            </div>
+        {balanceTerms.length === 0 ? (
+          <p className="wp-muted" style={{ margin: 0, fontSize: 12.5 }}>
+            {lang === 'bn' ? 'মৌসুম নির্বাচন করুন।' : 'Select a season to view water balance.'}
+          </p>
+        ) : (
+          <div style={{ overflowX: 'auto', background: 'var(--surface-2-wp, rgba(255,255,255,0.03))', borderRadius: 12, border: '1px solid var(--line-wp)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--line-wp)', color: 'var(--muted-wp, #93a597)' }}>
+                  <th style={{ padding: '10px 14px' }}>{lang === 'bn' ? 'পানি ভারসাম্যের উপাদান' : 'Water Balance Term'}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>{lang === 'bn' ? 'পরিমাণ (মিমি)' : 'Amount (mm)'}</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'right' }}>{lang === 'bn' ? 'প্রভাব' : 'Description'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {balanceTerms.map(row => (
+                  <tr key={row.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <td style={{ padding: '9px 14px', color: 'var(--fg-wp, #e7efe8)', fontWeight: 600 }}>
+                      {lang === 'bn' ? row.labelBn : row.labelEn}
+                    </td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 700, color: row.key === 'residual' ? 'var(--accent, #52d67a)' : 'var(--fg-wp, #e7efe8)' }}>
+                      {formatNumberBnEn(row.val, 1, lang)} {lang === 'bn' ? 'মিমি' : 'mm'}
+                    </td>
+                    <td style={{ padding: '9px 14px', textAlign: 'right', color: 'var(--muted-wp, #93a597)', fontSize: 12 }}>
+                      {row.key === 'residual'
+                        ? (lang === 'bn' ? 'ভর সংরক্ষিত (০.০)' : 'Mass conserved (~0)')
+                        : (row.key === 'effRain' || row.key === 'irrig'
+                            ? (lang === 'bn' ? 'ইনপুট' : 'Inflow')
+                            : (lang === 'bn' ? 'আউটপুট' : 'Outflow/Loss'))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
