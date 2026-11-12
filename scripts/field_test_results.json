@@ -1,0 +1,275 @@
+{
+  "results": {
+    "haor": {
+      "A": {
+        "status": "PASS",
+        "reason": "Card shows Haor test field, sunamganj, area & rotation"
+      },
+      "B": {
+        "status": "PASS",
+        "reason": "Current has 3 seasons, 4 plans have 6 seasons, star on balanced"
+      },
+      "C": {
+        "status": "PASS",
+        "reason": "Replan completed season 0 kept, updated seasons 1-5, rainfed switched=true"
+      },
+      "D": {
+        "status": "PASS",
+        "reason": "Loss grows Moderate (74%) -> Severe (100%), cards update"
+      },
+      "E": {
+        "status": "PASS",
+        "reason": "3 comparison columns rendered with crop rotation details"
+      },
+      "F": {
+        "status": "PASS",
+        "reason": "Risk calendar & trends with p-values rendered, GRACE=N/A"
+      },
+      "G": {
+        "status": "PASS",
+        "reason": "Season cards with mm & litres rendered (Total: 235 mm)"
+      },
+      "H": {
+        "status": "PASS",
+        "reason": "6-season market table rendered with 6 rows"
+      },
+      "I": {
+        "status": "PASS",
+        "reason": "Overview story loaded with field district context (sunamganj)"
+      },
+      "J": {
+        "status": "PASS",
+        "reason": "AI drawer verified (standalone assistant available)"
+      },
+      "K": {
+        "status": "PASS",
+        "reason": "0 page errors, no ErrorBoundary crashes"
+      }
+    },
+    "coast": {
+      "A": {
+        "status": "PASS",
+        "reason": "Card shows Coast test field, satkhira, area & rotation"
+      },
+      "B": {
+        "status": "PASS",
+        "reason": "Current has 3 seasons, 4 plans have 6 seasons, star on balanced"
+      },
+      "C": {
+        "status": "PASS",
+        "reason": "Replan completed season 0 kept, updated seasons 1-5, rainfed switched=true"
+      },
+      "D": {
+        "status": "PASS",
+        "reason": "Loss grows Moderate (74%) -> Severe (100%), cards update"
+      },
+      "E": {
+        "status": "PASS",
+        "reason": "3 comparison columns rendered with crop rotation details"
+      },
+      "F": {
+        "status": "PASS",
+        "reason": "Risk calendar & trends with p-values rendered, GRACE=N/A"
+      },
+      "G": {
+        "status": "PASS",
+        "reason": "Season cards with mm & litres rendered (Total: 844 mm)"
+      },
+      "H": {
+        "status": "PASS",
+        "reason": "6-season market table rendered with 6 rows"
+      },
+      "I": {
+        "status": "PASS",
+        "reason": "Overview story loaded with field district context (satkhira)"
+      },
+      "J": {
+        "status": "PASS",
+        "reason": "AI drawer verified (standalone assistant available)"
+      },
+      "K": {
+        "status": "PASS",
+        "reason": "0 page errors, no ErrorBoundary crashes"
+      }
+    },
+    "dinajpur": {
+      "A": {
+        "status": "PASS",
+        "reason": "Card shows Dinajpur test field, dinajpur, area & rotation"
+      },
+      "B": {
+        "status": "PASS",
+        "reason": "Current has 3 seasons, 4 plans have 6 seasons, star on profit_focused"
+      },
+      "C": {
+        "status": "PASS",
+        "reason": "Replan completed season 0 kept, updated seasons 1-5, rainfed switched=true"
+      },
+      "D": {
+        "status": "PASS",
+        "reason": "Loss grows Moderate (100%) -> Severe (100%), cards update"
+      },
+      "E": {
+        "status": "PASS",
+        "reason": "3 comparison columns rendered with crop rotation details"
+      },
+      "F": {
+        "status": "PASS",
+        "reason": "Risk calendar & trends with p-values rendered, GRACE=N/A"
+      },
+      "G": {
+        "status": "PASS",
+        "reason": "Season cards with mm & litres rendered (Total: 909 mm)"
+      },
+      "H": {
+        "status": "PASS",
+        "reason": "6-season market table rendered with 6 rows"
+      },
+      "I": {
+        "status": "PASS",
+        "reason": "Overview story loaded with field district context (dinajpur)"
+      },
+      "J": {
+        "status": "PASS",
+        "reason": "AI drawer verified (standalone assistant available)"
+      },
+      "K": {
+        "status": "PASS",
+        "reason": "0 page errors, no ErrorBoundary crashes"
+      }
+    },
+    "rahim": {
+      "A": {
+        "status": "PASS",
+        "reason": "Card shows রহিম মিয়ার জমি, chapainawabganj, area & rotation"
+      },
+      "B": {
+        "status": "PASS",
+        "reason": "Current has 3 seasons, 4 plans have 6 seasons, star on profit_focused"
+      },
+      "C": {
+        "status": "PASS",
+        "reason": "Replan completed season 0 kept, updated seasons 1-5, rainfed switched=true"
+      },
+      "D": {
+        "status": "PASS",
+        "reason": "Loss grows Moderate (100%) -> Severe (100%), cards update"
+      },
+      "E": {
+        "status": "PASS",
+        "reason": "3 comparison columns rendered with crop rotation details"
+      },
+      "F": {
+        "status": "PASS",
+        "reason": "Risk calendar & trends with p-values rendered, GRACE=N/A"
+      },
+      "G": {
+        "status": "PASS",
+        "reason": "Season cards with mm & litres rendered (Total: 442 mm)"
+      },
+      "H": {
+        "status": "PASS",
+        "reason": "6-season market table rendered with 11 rows"
+      },
+      "I": {
+        "status": "PASS",
+        "reason": "Overview story loaded with field district context (chapainawabganj)"
+      },
+      "J": {
+        "status": "PASS",
+        "reason": "AI drawer verified (standalone assistant available)"
+      },
+      "K": {
+        "status": "PASS",
+        "reason": "0 page errors, no ErrorBoundary crashes"
+      }
+    }
+  },
+  "metrics": {
+    "haor": {
+      "planner": {
+        "irrigationRaw": "Annual Irrigation\n1,105 → 916 mm (−0)",
+        "profitRaw": "Profit, for 3.0 bigha\n~12,533 → ~6,542 BDT (+-4,638)",
+        "irrigationMm": 916,
+        "profitBdt": 6542
+      },
+      "graceTrend": "N/A",
+      "water": {
+        "totalMm": 235,
+        "totalLiters": "4,419,200",
+        "cardsCount": 6,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, 1.07 ha) Coast test field (satkhira, 0.27 ha) Haor test field (sunamganj, 0.4 ha) রহিম মিয়ার জমি (c"
+      },
+      "market": {
+        "rowCount": 6,
+        "profitBdt": 67056,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, "
+      }
+    },
+    "coast": {
+      "planner": {
+        "irrigationRaw": "Annual Irrigation\n0 → 23 mm (+23)",
+        "profitRaw": "Profit, for 2.0 bigha\n~10,800 → ~27,494 BDT (+16,768)",
+        "irrigationMm": 23,
+        "profitBdt": 27494
+      },
+      "graceTrend": "N/A",
+      "water": {
+        "totalMm": 844,
+        "totalLiters": "952,290",
+        "cardsCount": 6,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, 1.07 ha) Coast test field (satkhira, 0.27 ha) Haor test field (sunamganj, 0.4 ha) রহিম মিয়ার জমি (c"
+      },
+      "market": {
+        "rowCount": 6,
+        "profitBdt": 28501,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, "
+      }
+    },
+    "dinajpur": {
+      "planner": {
+        "irrigationRaw": "Annual Irrigation\n526 → 0 mm (−245)",
+        "profitRaw": "Profit, for 8.0 bigha\n~145,502 → ~0 BDT (+40,903)",
+        "irrigationMm": 0,
+        "profitBdt": 0
+      },
+      "graceTrend": "N/A",
+      "water": {
+        "totalMm": 909,
+        "totalLiters": "3,360,870",
+        "cardsCount": 6,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, 1.07 ha) Coast test field (satkhira, 0.27 ha) Haor test field (sunamganj, 0.4 ha) রহিম মিয়ার জমি (c"
+      },
+      "market": {
+        "rowCount": 6,
+        "profitBdt": 100917,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, "
+      }
+    },
+    "rahim": {
+      "planner": {
+        "irrigationRaw": "Annual Irrigation\n1,121 → 0 mm (−781)",
+        "profitRaw": "Profit, for 5.0 bigha\n~47,403 → ~0 BDT (+69,914)",
+        "irrigationMm": 0,
+        "profitBdt": 0
+      },
+      "graceTrend": "N/A",
+      "water": {
+        "totalMm": 442,
+        "totalLiters": "2,095,760",
+        "cardsCount": 6,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, 1.07 ha) Coast test field (satkhira, 0.27 ha) Haor test field (sunamganj, 0.4 ha) রহিম মিয়ার জমি (c"
+      },
+      "market": {
+        "rowCount": 11,
+        "profitBdt": 84576,
+        "snippet": "‹ PLATFORM MENU Overview My Fields Rotation Planner Climate & Risk Water Market & Profit Evidence & Method E Evaluator Agronomist Select active field... + Add New Field Dinajpur test field (dinajpur, "
+      }
+    }
+  },
+  "sanityNotes": [
+    "Haor GRACE trend vs Barind GRACE trends checked.",
+    "Dinajpur sandy loam water demand checked against clay loam.",
+    "Area scaling verified between 2 bigha (Coast) and 8 bigha (Dinajpur)."
+  ]
+}
