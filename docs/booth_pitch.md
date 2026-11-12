@@ -1,7 +1,7 @@
 # FieldShift 2026 — Event Booth Spoken Pitch & Judge Q&A Guide
 ## NASA International Space Apps Challenge 2026 — Bangladesh National Event (13–14 Nov)
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data"  
-**Team:** Azoic (Dhaka, Bangladesh) — Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+**Team:** Azoic (Dhaka, Bangladesh) — Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy  
 
 ---
 

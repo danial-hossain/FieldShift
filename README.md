@@ -2,7 +2,7 @@
 
 **NASA International Space Apps Challenge 2026**  
 **Challenge:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
-**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy)  
+**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy)  
 **License:** Apache License 2.0 (see [LICENSE](LICENSE))  
 **Prior Work Disclosure:** Documented in [docs/PRIOR_WORK.md](docs/PRIOR_WORK.md)  
 **AI Disclosure:** Documented in [docs/AI_USE.md](docs/AI_USE.md)  
@@ -97,9 +97,9 @@ FieldShift supports running locally:
 - **Danial Hossain** — Team Lead, Agronomic MILP Optimization & Backend Engineering
 - **Md. Fazle Elahi Mahi** — NASA Earth Observation Data Engineering & IMERG Validation
 - **Nusrat Jahan Tuli** — Geospatial Analysis, Satellite Ingestion & GIS Mapping
-- **Roman Ahmed Tanmoy** — Frontend Architecture & 3D WebGL Digital Twin
+- **Noman Ahmed Tonmoy** — Frontend Architecture & 3D WebGL Digital Twin
 - **Mustakim Musa** — Scientific Research, Agricultural Extension & Statistical Verification
-- **Abir Ahmed Joy** — UX Design, Bilingual Bengali Localization & Video Production
+- **Abrar Ahmed Chy** — UX Design, Bilingual Bengali Localization & Video Production
 
 ---
 

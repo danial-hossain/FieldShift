@@ -3,7 +3,7 @@
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data"  
 **Event Dates:** November 13–14, 2026  
 **Repository:** [https://github.com/danial-hossain/FieldShift2026](https://github.com/danial-hossain/FieldShift2026)  
-**Authors:** Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+**Authors:** Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy  
 
 ---
 

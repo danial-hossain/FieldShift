@@ -31,7 +31,7 @@ export const demoData = {
   stress: { label: 'Example: Drought (moderate) on the Profit plan', droughtBeds: [0, 3], floodBeds: [], tags: [{ bed: 0, text: 'Tomato −x %' }, { bed: 3, text: 'Sunflower −x %' }] },
   // from the adaptive replan records (the Rahim field has: 2025 Rabi Mustard 5.2 maund/bigha)
   learning: { harvestBed: 0, harvestText: 'Mustard · 5.2 maund/bigha', changedBed: 3 },
-  team: ['Danial Hossain (Lead)', 'Md. Fazle Elahi Mahi', 'Nusrat Jahan Tuli', 'Roman Ahmed Tanmoy', 'Mustakim Musa', 'Abir Ahmed Joy'],
+  team: ['Danial Hossain (Lead)', 'Md. Fazle Elahi Mahi', 'Nusrat Jahan Tuli', 'Noman Ahmed Tonmoy', 'Mustakim Musa', 'Abrar Ahmed Chy'],
   datasetsUsed: ['NASA POWER', 'GPM IMERG', 'GRACE-FO', 'ISRIC SoilGrids'],
 };
 export default demoData;

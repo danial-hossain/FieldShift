@@ -3,7 +3,7 @@
 
 **Project:** FieldShift 2026: Climate-Adaptive Crop Rotation & Planting Intelligence  
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
-**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy)  
+**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy)  
 **License:** Apache License 2.0  
 
 ---

@@ -33,7 +33,7 @@ Warm regards,
 
 **Danial Hossain**  
 Team Lead, Team Azoic (Dhaka, Bangladesh)  
-Members: Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+Members: Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy  
 Repository: [https://github.com/danial-hossain/FieldShift2026](https://github.com/danial-hossain/FieldShift2026)  
 Email: [lead contact email]  
 Phone: [lead contact phone]  

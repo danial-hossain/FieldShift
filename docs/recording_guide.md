@@ -115,4 +115,4 @@ The URL query `?demo=1` automatically:
   1. `0:00 – 0:05`: Title card with Space Apps logo & Team Azoic -> Cut to Rajshahi 1.0 ha farm parcel.
   2. `0:05 – 0:12`: Quick jump to Data & Evidence: GRACE Barind depletion chart ($-1.48\text{ cm/yr}$) and MODIS bare soil fallow gap.
   3. `0:12 – 0:22`: Switch to Farm Planning: 4-column side-by-side comparison. Click Water-Saving Strategy showing 140 mm water savings and 12-month green calendar.
-  4. `0:22 – 0:30`: Highlight OFFLINE=1 badge + closing slide naming Daniel, Mahi, Tuli, Tanmoy, Musa, Joy — Team Azoic, Dhaka.
+  4. `0:22 – 0:30`: Highlight OFFLINE=1 badge + closing slide naming Danial, Mahi, Tuli, Tonmoy, Musa, Chy — Team Azoic, Dhaka.

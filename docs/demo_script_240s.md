@@ -2,7 +2,7 @@
 ## NASA International Space Apps Challenge 2026 — Team Azoic (Dhaka, Bangladesh)
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data"  
 **Duration:** Exactly 240 Seconds (4 Minutes)  
-**Presenters:** Team Azoic — Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Roman Ahmed Tanmoy, Mustakim Musa, Abir Ahmed Joy  
+**Presenters:** Team Azoic — Danial Hossain (Lead), Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy  
 **Tone:** Agronomically rigorous, statistically honest, farmer-centered, clear English voiceover with visual Bangla UI cues  
 **Structure:** Aligned with the 7 Guided Demo Steps (P3.1) and Two-Field Regional Comparison (P3.2)  
 

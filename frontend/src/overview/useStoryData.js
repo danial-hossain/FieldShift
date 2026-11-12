@@ -31,9 +31,9 @@ const DEFAULT_TEAM = [
   'Danial Hossain (Lead)',
   'Md. Fazle Elahi Mahi',
   'Nusrat Jahan Tuli',
-  'Roman Ahmed Tanmoy',
+  'Noman Ahmed Tonmoy',
   'Mustakim Musa',
-  'Abir Ahmed Joy',
+  'Abrar Ahmed Chy',
 ];
 
 const DEFAULT_DATASETS = [
