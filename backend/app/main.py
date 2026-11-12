@@ -1258,6 +1258,13 @@ def workflow(payload: Payload, fieldshift_session: str | None = Cookie(None), db
                     "baseline_nitrogen_kg": milp_res.get("baseline_nitrogen_kg"),
                     "plan_nitrogen_kg": milp_res.get("plan_nitrogen_kg"),
                     "nitrogen_delta_kg": milp_res.get("nitrogen_delta_kg"),
+                    "plan_rotation": (milp_res.get("baseline_comparison") or {}).get("plan_rotation") or [
+                        milp_res.get("selected_crop_by_period", {}).get("Y1_S1", "Mustard"),
+                        milp_res.get("selected_crop_by_period", {}).get("Y1_S2", "Mungbean"),
+                        milp_res.get("selected_crop_by_period", {}).get("Y1_S3", "Rice"),
+                    ],
+                    "plan_rotation_text_bn": (milp_res.get("baseline_comparison") or {}).get("plan_rotation_text_bn") or milp_res.get("plan_rotation_text_bn"),
+                    "plan_rotation_text_en": (milp_res.get("baseline_comparison") or {}).get("plan_rotation_text_en") or milp_res.get("plan_rotation_text_en"),
                     "baseline_rotation": milp_res.get("baseline_rotation"),
                     "baseline_rotation_text_bn": milp_res.get("baseline_rotation_text_bn"),
                     "baseline_rotation_text_en": milp_res.get("baseline_rotation_text_en"),

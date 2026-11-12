@@ -16,7 +16,7 @@ import { ClipboardList, MapPin, Sprout, FileText, Wheat, Tractor, Pencil, Trash2
 import { GoogleFieldMapPicker } from './GoogleFieldMapPicker.jsx';
 import { GoogleFieldMapThumbnail } from './GoogleFieldMapThumbnail.jsx';
 import { formatNumber } from './marketUtils.js';
-import { useTranslation, toBengaliNumber, cropLabel, seasonLabel, formatMoney, formatUnit, unitLabel, formatNumber as formatI18nNumber } from './i18n.js';
+import { useTranslation, toBengaliNumber, cropLabel, seasonLabel, formatMoney, formatUnit, unitLabel, formatNumber as formatI18nNumber, formatRotationText } from './i18n.js';
 import { Card, CardHeader, Stat, Pill, Button, Tabs, EmptyState, Toast, SourceChip, Skeleton } from './ui/index.js';
 import { tonPerHaToMaundPerBigha, maundPerBighaToTonPerHa } from './utils/conversions.js';
 import { computeSaxtonRawls } from './utils/saxtonRawls.js';
@@ -531,6 +531,47 @@ export function MyFarmWorkspaceView({
 
     return () => { isCancelled = true; };
   }, [activeField?.id, existingRotation.rabi, existingRotation.kharif1, existingRotation.kharif2, request]);
+
+  const recommendedRotationText = useMemo(() => {
+    if (!baselinePlanning) {
+      return lang === 'bn' ? 'সরিষা → মুগডাল → আমন ধান' : 'Mustard → Mungbean → Aman Rice';
+    }
+
+    if (lang === 'en' && baselinePlanning.plan_rotation_text_en) {
+      return formatRotationText(baselinePlanning.plan_rotation_text_en, 'en');
+    }
+    if (lang === 'bn' && baselinePlanning.plan_rotation_text_bn) {
+      return formatRotationText(baselinePlanning.plan_rotation_text_bn, 'bn');
+    }
+
+    if (Array.isArray(baselinePlanning.plan_rotation) && baselinePlanning.plan_rotation.length > 0) {
+      return formatRotationText(baselinePlanning.plan_rotation.slice(0, 3), lang);
+    }
+
+    if (baselinePlanning.milp_status?.selected_crop_by_period) {
+      const sel = baselinePlanning.milp_status.selected_crop_by_period;
+      const crops = ['Y1_S1', 'Y1_S2', 'Y1_S3'].map(k => sel[k]).filter(Boolean);
+      if (crops.length > 0) {
+        return formatRotationText(crops, lang);
+      }
+    }
+
+    if (baselinePlanning.strategy_recommendation?.sequences?.balanced) {
+      const crops = baselinePlanning.strategy_recommendation.sequences.balanced.slice(0, 3);
+      if (crops.length > 0) {
+        return formatRotationText(crops, lang);
+      }
+    }
+
+    if (baselinePlanning.plan_rotation_text_bn) {
+      return formatRotationText(baselinePlanning.plan_rotation_text_bn, lang);
+    }
+    if (baselinePlanning.plan_rotation_text_en) {
+      return formatRotationText(baselinePlanning.plan_rotation_text_en, lang);
+    }
+
+    return lang === 'bn' ? 'সরিষা → মুগডাল → আমন ধান' : 'Mustard → Mungbean → Aman Rice';
+  }, [baselinePlanning, lang]);
 
   // M6: Authentic Field History from /api/fields/{id}/history
   const [fieldHistory, setFieldHistory] = useState([]);
@@ -1593,7 +1634,7 @@ export function MyFarmWorkspaceView({
                         {lang === 'bn' ? 'সুপারিশকৃত ফসল আবর্তন:' : 'Recommended Rotation:'}
                       </span>
                       <strong style={{ fontSize: 15, color: 'var(--leaf, #10b981)' }}>
-                        {baselinePlanning.plan_rotation_text_bn || (baselinePlanning.plan_rotation ? baselinePlanning.plan_rotation.join(' → ') : 'সরিষা → মুগডাল → আমন ধান')}
+                        {recommendedRotationText}
                       </strong>
                     </div>
 

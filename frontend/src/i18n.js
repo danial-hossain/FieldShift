@@ -394,8 +394,57 @@ export const CROP_LABELS = {
   'garlic': { bn: 'রসুন', en: 'Garlic' },
   'chilli': { bn: 'মরিচ', en: 'Chilli' },
   'fallow': { bn: 'পতিত', en: 'Fallow' },
-  'unknown': { bn: 'তথ্য নেই', en: 'Unknown' }
+  'unknown': { bn: 'তথ্য নেই', en: 'Unknown' },
+  'সরিষা': { bn: 'সরিষা', en: 'Mustard' },
+  'মুগডাল': { bn: 'মুগডাল', en: 'Mungbean' },
+  'মুগ ডাল': { bn: 'মুগডাল', en: 'Mungbean' },
+  'মসুর ডাল': { bn: 'মসুর ডাল', en: 'Lentil' },
+  'ছোলা': { bn: 'ছোলা', en: 'Chickpea' },
+  'বোরো ধান': { bn: 'বোরো ধান', en: 'Boro Rice' },
+  'বোরো': { bn: 'বোরো ধান', en: 'Boro Rice' },
+  'আমন ধান': { bn: 'আমন ধান', en: 'Aman Rice' },
+  'রোপা আমন ধান': { bn: 'রোপা আমন ধান', en: 'T. Aman Rice' },
+  'আমন': { bn: 'আমন ধান', en: 'Aman Rice' },
+  'আউশ ধান': { bn: 'আউশ ধান', en: 'Aus Rice' },
+  'আউশ': { bn: 'আউশ ধান', en: 'Aus' },
+  'ধান': { bn: 'ধান', en: 'Rice' },
+  'গম': { bn: 'গম', en: 'Wheat' },
+  'ভুট্টা': { bn: 'ভুট্টা', en: 'Maize' },
+  'আলু': { bn: 'আলু', en: 'Potato' },
+  'তিল': { bn: 'তিল', en: 'Sesame' },
+  'সয়াবিন': { bn: 'সয়াবিন', en: 'Soybean' },
+  'সয়াবিন': { bn: 'সয়াবিন', en: 'Soybean' },
+  'সূর্যমুখী': { bn: 'সূর্যমুখী', en: 'Sunflower' },
+  'টমেটো': { bn: 'টমেটো', en: 'Tomato' },
+  'চীনাবাদাম': { bn: 'চীনাবাদাম', en: 'Groundnut' },
+  'পাট': { bn: 'পাট', en: 'Jute' },
+  'পতিত': { bn: 'পতিত', en: 'Fallow' },
+  'মাষকলাই': { bn: 'মাষকলাই', en: 'Blackgram' },
+  'খেসারি': { bn: 'খেসারি', en: 'Grasspea' },
+  'বরবটি': { bn: 'বরবটি', en: 'Cowpea' },
+  'পেঁয়াজ': { bn: 'পেঁয়াজ', en: 'Onion' },
+  'পেঁয়াজ': { bn: 'পেঁয়াজ', en: 'Onion' },
+  'রসুন': { bn: 'রসুন', en: 'Garlic' },
+  'মরিচ': { bn: 'মরিচ', en: 'Chilli' },
+  'ধনে': { bn: 'ধনে', en: 'Coriander' },
+  'মুগ': { bn: 'মুগডাল', en: 'Mungbean' },
+  'মসুর': { bn: 'মসুর ডাল', en: 'Lentil' }
 };
+
+export function formatRotationText(rawTextOrArray, lang = 'bn') {
+  if (!rawTextOrArray) return lang === 'bn' ? 'সরিষা → মুগডাল → আমন ধান' : 'Mustard → Mungbean → Aman Rice';
+  let items = [];
+  if (Array.isArray(rawTextOrArray)) {
+    items = rawTextOrArray;
+  } else if (typeof rawTextOrArray === 'string') {
+    items = rawTextOrArray.split(/→|->/).map(s => s.trim().replace(/\s*\(.*?\)\s*/g, '')).filter(Boolean);
+  }
+  if (!items.length) return lang === 'bn' ? 'সরিষা → মুগডাল → আমন ধান' : 'Mustard → Mungbean → Aman Rice';
+  return items.map((item, idx) => {
+    const seasonCode = idx === 0 ? 'Y1_S1' : (idx === 1 ? 'Y1_S2' : 'Y1_S3');
+    return cropLabel(item, lang, seasonCode) || item;
+  }).join(' → ');
+}
 
 export function cropLabel(crop, lang = 'bn', seasonCode = null) {
   if (!crop) return lang === 'bn' ? 'তথ্য নেই' : 'No data';

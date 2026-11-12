@@ -13,7 +13,8 @@ import {
   districtLabel,
   soilLabel,
   unitLabel,
-  formatNumber
+  formatNumber,
+  formatRotationText
 } from './i18n.js';
 
 test('i18n dictionary contains essential navigation and farmer keys', () => {
@@ -119,4 +120,23 @@ test('L1: unified localized formatting helpers format correctly in both bn and e
   assert.strictEqual(formatNumber(1200, 'en'), '1,200');
   assert.strictEqual(formatNumber(0.669, 'bn', 2), '০.৬৭');
   assert.strictEqual(formatNumber(0.669, 'en', 2), '0.67');
+});
+
+test('formatRotationText translates Bengali and English rotation chains properly', () => {
+  assert.strictEqual(
+    formatRotationText('সরিষা → মুগডাল → আমন ধান', 'en'),
+    'Mustard → Mungbean → Aman Rice'
+  );
+  assert.strictEqual(
+    formatRotationText('Mustard -> Soybean -> Rice', 'bn'),
+    'সরিষা → সয়াবিন → আমন ধান'
+  );
+  assert.strictEqual(
+    formatRotationText(['Mustard', 'Mungbean', 'Rice'], 'en'),
+    'Mustard → Mungbean → T. Aman Rice'
+  );
+  assert.strictEqual(
+    formatRotationText(['সরিষা', 'মুগডাল', 'আমন ধান'], 'bn'),
+    'সরিষা → মুগডাল → আমন ধান'
+  );
 });

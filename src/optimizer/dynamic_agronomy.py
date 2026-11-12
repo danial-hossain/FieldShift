@@ -900,7 +900,20 @@ def compute_rotation_comparison(
             "profit_bdt_ha": round(b_prof, 0) if b_c else None,
         })
 
+    p_s1 = selection.get("Y1_S1") or "Mustard"
+    p_s2 = selection.get("Y1_S2") or "Mungbean"
+    p_s3 = selection.get("Y1_S3") or "Rice"
+    p_s1_bn = crop_names_bn.get(p_s1, p_s1)
+    p_s2_bn = crop_names_bn.get(p_s2, p_s2)
+    p_s3_bn = crop_names_bn.get(p_s3, p_s3)
+    p_s3_en = "Aman Rice" if p_s3 == "Rice" else p_s3
+    plan_rotation_text_bn = f"{p_s1_bn} → {p_s2_bn} → {p_s3_bn}"
+    plan_rotation_text_en = f"{p_s1} -> {p_s2} -> {p_s3_en}"
+
     return {
+        "plan_rotation": [p_s1, p_s2, p_s3],
+        "plan_rotation_text_bn": plan_rotation_text_bn,
+        "plan_rotation_text_en": plan_rotation_text_en,
         "baseline_rotation": [b_s1, b_s2, b_s3] if b_map else None,
         "baseline_rotation_text_bn": baseline_rotation_text_bn,
         "baseline_rotation_text_en": baseline_rotation_text_en,
