@@ -23,23 +23,22 @@ const PAGES = [
 async function measureScrollFps(page) {
   return await page.evaluate(async () => {
     return new Promise((resolve) => {
+      const durationMs = 3000;
+      const scrollEl = document.scrollingElement || document.documentElement || document.body;
+      const maxScroll = Math.max(scrollEl.scrollHeight - window.innerHeight, 600);
       let frames = 0;
       const start = performance.now();
-      let scrollY = 0;
-      let dir = 1;
 
       function onFrame(now) {
         frames++;
-        scrollY += dir * 20;
-        if (scrollY > 500) dir = -1;
-        if (scrollY < 0) dir = 1;
-        window.scrollTo(0, scrollY);
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / durationMs, 1);
+        window.scrollTo(0, progress * maxScroll);
 
-        if (now - start < 1500) {
+        if (elapsed < durationMs) {
           requestAnimationFrame(onFrame);
         } else {
-          const elapsed = (now - start) / 1000;
-          resolve(Math.round(frames / elapsed));
+          resolve(Math.round(frames / (elapsed / 1000)));
         }
       }
       requestAnimationFrame(onFrame);
@@ -72,6 +71,10 @@ async function run() {
       await page.waitForTimeout(400);
 
       const afterFps = await measureScrollFps(page);
+      if (p.name === 'My Fields') {
+        await page.screenshot({ path: 'scripts/my_fields_after.png' });
+        console.log('Saved scripts/my_fields_after.png');
+      }
       const beforeFps = BEFORE_FPS[p.name];
       const diff = afterFps - beforeFps;
       const pct = Math.round((diff / beforeFps) * 100);

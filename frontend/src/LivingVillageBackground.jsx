@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import './LivingVillageBackground.css';
+import './ui/perf.css';
 
 /*
  * Village dusk background — performance version.
@@ -63,6 +64,12 @@ export function LivingVillageBackground() {
 
   return (
     <div className="lvb" aria-hidden="true">
+      <img
+        src="/bg/village_dusk_bg_1600.webp"
+        alt=""
+        className="lvb-mobile"
+        draggable="false"
+      />
       {LAYERS.map((L, i) => (
         <div key={L.id} className={`lvb-layer lvb-${L.id}`} ref={(el) => (refs.current[i] = el)}>
           <Frame id={L.id}>

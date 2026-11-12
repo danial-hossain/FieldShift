@@ -14,5 +14,10 @@
 @keyframes lvbSun{from{opacity:.7}to{opacity:1}}
 .lvb-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,9,7,.55) 0%,rgba(4,9,7,.68) 45%,rgba(4,9,7,.82) 100%)}
 [data-theme="light"] .lvb-overlay{background:linear-gradient(180deg,rgba(240,246,240,.35),rgba(240,246,240,.70))}
-@media (max-width:768px){.lvb-frame i{display:none}}
+.lvb-mobile{display:none}
+@media (max-width:768px){
+  .lvb-layer{display:none!important}
+  .lvb-mobile{display:block;position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .lvb-frame i{display:none}
+}
 @media (prefers-reduced-motion:reduce){.lvb-frame i{animation:none!important}}
