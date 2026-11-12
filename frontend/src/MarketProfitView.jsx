@@ -44,10 +44,31 @@ function formatNum(num, decimals = 1, lang = 'bn') {
 
 const STRATEGIES = [
   { id: 'balanced', bn: 'সুষম', en: 'Balanced', descBn: 'মুনাফা, পানি ও মাটির সমতা', descEn: 'Balanced multi-objective' },
-  { id: 'profit', bn: 'লাভজনক', en: 'Profit-focused', descBn: 'সর্বোচ্চ মোট আর্থিক আয়', descEn: 'Maximum gross margins' },
-  { id: 'water', bn: 'পানি সাশ্রয়ী', en: 'Water-saving', descBn: 'ভূগর্ভস্থ পানি সংরক্ষণ', descEn: 'Preserves groundwater' },
+  { id: 'profit', bn: 'লাভজনক', en: 'Profit', descBn: 'সর্বোচ্চ মোট আর্থিক আয়', descEn: 'Maximum gross margins' },
+  { id: 'water', bn: 'পানি সাশ্রয়ী', en: 'Water saving', descBn: 'ভূগর্ভস্থ পানি সংরক্ষণ', descEn: 'Preserves groundwater' },
   { id: 'soil', bn: 'মাটি সমৃদ্ধ', en: 'Soil health', descBn: 'মাটির স্বাস্থ্য ও উর্বরতা বৃদ্ধি', descEn: 'Builds organic matter' },
 ];
+
+function formatSeasonPeriodLabel(s, isBn) {
+  const period = typeof s === 'string' ? s : s?.period;
+  const map = {
+    Y1_S1: { bn: '১ম বছর · রবি', en: 'Year 1 · Rabi' },
+    Y1_S2: { bn: '১ম বছর · খরিফ-১', en: 'Year 1 · Kharif-1' },
+    Y1_S3: { bn: '১ম বছর · খরিফ-২', en: 'Year 1 · Kharif-2' },
+    Y2_S1: { bn: '২য় বছর · রবি', en: 'Year 2 · Rabi' },
+    Y2_S2: { bn: '২য় বছর · খরিফ-১', en: 'Year 2 · Kharif-1' },
+    Y2_S3: { bn: '২য় বছর · খরিফ-২', en: 'Year 2 · Kharif-2' },
+  };
+  if (period && map[period]) {
+    return isBn ? map[period].bn : map[period].en;
+  }
+  if (s && s.year && (s.season_name_en || s.season_name_bn)) {
+    const yrStr = isBn ? (s.year === 1 ? '১ম বছর' : `${s.year}য় বছর`) : `Year ${s.year}`;
+    const sName = isBn ? s.season_name_bn : s.season_name_en;
+    return `${yrStr} · ${sName}`;
+  }
+  return period || '';
+}
 
 export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
   const isBn = lang === 'bn';
@@ -184,9 +205,14 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
   const currentRotationCropsText = useMemo(() => {
     const csList = economics?.current_seasons || [];
     if (csList.length > 0) {
-      return csList.map(cs => isBn ? cs.crop_bn : cs.crop_en).join(' ➔ ');
+      return csList.map(cs => {
+        const crop = isBn ? cs.crop_bn : cs.crop_en;
+        if (!isBn && (crop === 'Rice' || crop === 'rice')) return 'Aman rice';
+        if (isBn && (crop === 'ধান' || crop === 'রাইস')) return 'আমন ধান';
+        return crop;
+      }).join(' ➔ ');
     }
-    return isBn ? 'বোরো ধান ➔ পতিত ➔ আমন ধান' : 'Boro Rice ➔ Fallow ➔ Rice';
+    return isBn ? 'বোরো ধান ➔ পতিত ➔ আমন ধান' : 'Boro Rice ➔ Fallow ➔ Aman rice';
   }, [economics?.current_seasons, isBn]);
 
   // Max revenue for the sensitivity chart scale
@@ -217,7 +243,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       <header
         className="market-header-card"
         style={{
-          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
+          background: 'var(--surface-panel)',
           border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
@@ -371,8 +397,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         <div
           className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+            background: 'var(--surface-card)',
+            border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
             boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -430,8 +456,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         <div
           className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+            background: 'var(--surface-card)',
+            border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
             boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -455,8 +481,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         <div
           className="market-kpi-tile"
           style={{
-            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+            background: 'var(--surface-card)',
+            border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-lg, 16px)',
             padding: '20px 22px',
             boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -486,8 +512,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       <section
         className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+          background: 'var(--surface-panel)',
+          border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
           marginBottom: 32,
@@ -511,7 +537,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         </div>
 
         {/* Responsive Table */}
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', background: 'var(--surface-table)', borderRadius: 12, padding: 8 }}>
           <table
             data-demo="wholesale_prices"
             className="market-table"
@@ -553,9 +579,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                     {/* Season */}
                     <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
                       <div style={{ fontWeight: 600, color: 'var(--text, #F4F7F4)' }}>
-                        {isBn ? s.season_name_bn : s.season_name_en}
+                        {formatSeasonPeriodLabel(s, isBn)}
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-muted, #8C9B90)' }}>{s.period}</div>
                     </td>
 
                     {/* Crop */}
@@ -578,7 +603,9 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                             display: 'inline-block',
                           }}
                         />
-                        {isBn ? s.crop_bn : s.crop_en}
+                        {isBn
+                          ? (s.crop_bn === 'ধান' ? 'আমন ধান' : s.crop_bn)
+                          : (s.crop_en === 'Rice' || s.crop === 'Rice' ? 'Aman rice' : s.crop_en)}
                       </span>
                     </td>
 
@@ -711,8 +738,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
           data-demo="price_forecast"
           className="market-card-section"
           style={{
-            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+            background: 'var(--surface-panel)',
+            border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-xl, 20px)',
             padding: '24px 26px',
             boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -852,8 +879,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         <div
           className="market-card-section"
           style={{
-            background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-            border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+            background: 'var(--surface-panel)',
+            border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
             borderRadius: 'var(--r-xl, 20px)',
             padding: '24px 26px',
             boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -916,8 +943,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
       <section
         className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+          background: 'var(--surface-panel)',
+          border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '24px 28px',
           marginBottom: 32,
@@ -938,7 +965,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         </div>
 
         {adaptive.has_records && adaptive.records.length > 0 ? (
-          <div style={{ overflowX: 'auto' }}>
+          <div style={{ overflowX: 'auto', background: 'var(--surface-table)', borderRadius: 12, padding: 8 }}>
             <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted, #8C9B90)' }}>
@@ -1021,8 +1048,8 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
         data-demo="buyer_contacts"
         className="market-card-section"
         style={{
-          background: 'var(--glass-surface-bg, rgba(8, 14, 11, 0.80))',
-          border: 'var(--glass-surface-border, 1px solid rgba(255, 255, 255, 0.10))',
+          background: 'var(--surface-panel)',
+          border: 'var(--surface-border, 1px solid rgba(255, 255, 255, 0.10))',
           borderRadius: 'var(--r-xl, 20px)',
           padding: '18px 24px',
           boxShadow: 'var(--shadow-glass, 0 10px 30px rgba(0, 0, 0, 0.35))',
@@ -1078,7 +1105,7 @@ export function MarketProfitView({ activeField, lang = 'bn', onNavigateTab }) {
                 : 'All reference prices are compiled from 2025 farmgate benchmarks by DAM, TCB, and BBS. Static catalogue; no live broker API.'}
             </p>
 
-            <div style={{ overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto', background: 'var(--surface-table)', borderRadius: 12, padding: 8 }}>
               <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted, #8C9B90)' }}>

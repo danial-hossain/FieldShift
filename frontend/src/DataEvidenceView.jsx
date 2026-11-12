@@ -40,7 +40,7 @@ export function DataEvidenceView({
       <div
         className="dash-card ui-card-hud"
         style={{
-          background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)',
+          background: 'var(--surface-panel)',
           border: '1px solid rgba(56, 189, 248, 0.3)',
           borderRadius: 14,
           padding: '10px 16px',

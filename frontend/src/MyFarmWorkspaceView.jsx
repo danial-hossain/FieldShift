@@ -1072,7 +1072,7 @@ export function MyFarmWorkspaceView({
                     variant="glass"
                     style={{
                       border: isSelected ? '1.5px solid #10b981' : '1px solid var(--line, rgba(255,255,255,0.12))',
-                      background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface-card, rgba(16, 28, 22, 0.7))',
+                      background: isSelected ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface-card)',
                       borderRadius: 14,
                       padding: 0,
                       overflow: 'hidden',

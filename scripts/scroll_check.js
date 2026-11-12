@@ -51,7 +51,10 @@ async function run() {
   console.log('FIELDSHIFT SCROLL FPS BENCHMARK (1920x1080 Viewport)');
   console.log('===============================================================');
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--ignore-gpu-blocklist', '--enable-gpu-rasterization', '--use-gl=angle', '--use-angle=d3d11']
+  });
   const results = [];
 
   for (const p of PAGES) {

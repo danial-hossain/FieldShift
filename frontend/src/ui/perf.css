@@ -6,12 +6,16 @@
    slightly more opaque glass colour so it looks the same.
    ========================================================================== */
 :root {
-  --glass-panel-bg: rgba(8, 14, 11, 0.86);
+  --glass-panel-bg: var(--surface-panel);
+  --glass-surface-bg: var(--surface-panel);
+  --glass-card-bg: var(--surface-card);
   --glass-panel-blur: none;
   --glass-surface-blur: none;
 }
 [data-theme="light"], .light-theme, body.light {
-  --glass-panel-bg: rgba(255, 255, 255, 0.88);
+  --glass-panel-bg: var(--surface-panel);
+  --glass-surface-bg: var(--surface-panel);
+  --glass-card-bg: var(--surface-card);
 }
 
 body *:not(.sidebar):not(.global-top-bar):not([class*="modal"]):not([class*="Modal"]):not([class*="demo-"]):not([class*="chat"]):not([class*="Chat"]):not(.fsx-play) {
@@ -20,12 +24,14 @@ body *:not(.sidebar):not(.global-top-bar):not([class*="modal"]):not([class*="Mod
 }
 
 /* cheaper shadows inside scrolling content */
-.main-content .ui-card, .main-content .glass-card, .main-content .card-inner {
+.main-content .ui-card, .main-content .glass-card, .main-content .card-inner,
+.main-wrapper .ui-card, .main-wrapper .glass-card, .main-wrapper .card-inner,
+.main-wrapper .card, .main-wrapper .wp-card {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* isolate heavy blocks so a change inside does not repaint the whole page */
-.glass-panel, .panel, .dash-card, .wp-card, .ui-card { contain: layout paint; }
+.glass-panel, .panel, .dash-card, .wp-card, .ui-card, .card { contain: layout paint; }
 
 /* the shell keeps its glass */
 .sidebar, .global-top-bar {

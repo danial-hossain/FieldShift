@@ -189,7 +189,7 @@ export function NasaWeatherStation3D({
   const clearestSignal = useMemo(() => {
     if (!data) return null;
     const signals = [
-      { name_bn: 'মাটির নিচের পানি', name_en: 'Groundwater storage', p: grace.p_value ?? 1.0 },
+      { name_bn: 'পানি সঞ্চয় (GRACE-FO)', name_en: 'water storage (GRACE-FO)', p: grace.p_value ?? 1.0 },
       { name_bn: 'সর্বোচ্চ তাপমাত্রা', name_en: 'Maximum temperature', p: summary.tmax_trend?.[1] ?? 1.0 },
       { name_bn: 'রাতের তাপমাত্রা', name_en: 'Nighttime temperature', p: summary.tmin_trend?.[1] ?? 1.0 },
       { name_bn: 'অতিরিক্ত গরম দিন', name_en: 'Extreme heat days', p: summary.heat_trend?.[1] ?? 1.0 },
@@ -504,7 +504,7 @@ export function NasaWeatherStation3D({
         <div
           style={{
             padding: '36px 20px',
-            background: 'var(--surface, #131b16)',
+            background: 'var(--surface-panel)',
             border: '1px solid var(--line, rgba(255,255,255,0.1))',
             borderRadius: 16,
             textAlign: 'center',
@@ -595,7 +595,7 @@ export function NasaWeatherStation3D({
           <section
             className="card"
             style={{
-              background: 'var(--surface, #131b16)',
+              background: 'var(--surface-panel)',
               border: '1px solid var(--line, rgba(255,255,255,0.1))',
               borderRadius: 16,
               padding: 20,
@@ -955,7 +955,7 @@ export function NasaWeatherStation3D({
           <section
             className="card"
             style={{
-              background: 'var(--surface, #131b16)',
+              background: 'var(--surface-panel)',
               border: '1px solid var(--line, rgba(255,255,255,0.1))',
               borderRadius: 16,
               padding: 20,
@@ -1018,7 +1018,7 @@ export function NasaWeatherStation3D({
             </div>
 
             {/* Calendar Grid Container */}
-            <div data-demo="risk_calendar" style={{ overflowX: 'auto', paddingBottom: 6 }}>
+            <div data-demo="risk_calendar" style={{ overflowX: 'auto', padding: '12px 14px', background: 'var(--surface-table)', borderRadius: 12, border: 'var(--surface-border)' }}>
               <div
                 style={{
                   display: 'grid',
@@ -1333,7 +1333,7 @@ export function NasaWeatherStation3D({
               data-demo="recent_weather"
               className="card"
               style={{
-                background: 'var(--surface, #131b16)',
+                background: 'var(--surface-panel)',
                 border: '1px solid var(--line, rgba(255,255,255,0.1))',
                 borderRadius: 16,
                 padding: 20,

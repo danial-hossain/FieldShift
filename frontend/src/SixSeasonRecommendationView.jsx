@@ -1912,11 +1912,11 @@ export function SixSeasonRecommendationView({
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--leaf)' }}>
                   <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'সেচ লাগে না' : 'Rainfed'}
                 </span>
-              ) : selectedCropIrrig <= 150 ? (
+              ) : selectedCropIrrig < 350 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--water)' }}>
                   <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'কম পানি' : 'Low water'}
                 </span>
-              ) : selectedCropIrrig <= 400 ? (
+              ) : selectedCropIrrig <= 600 ? (
                 <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 99, background: 'var(--surface-2, rgba(255,255,255,0.04))', border: '1px solid var(--line)', color: 'var(--sun)' }}>
                   <Droplets size={14} strokeWidth={1.75} color="var(--cyan, #5be3ff)" style={{ verticalAlign: 'middle', marginRight: 4 }} />{lang === 'bn' ? 'পরিমিত সেচ' : 'Moderate water'}
                 </span>

@@ -42,7 +42,7 @@ export function MilpDecisionSection({
     <section
       className="card"
       style={{
-        background: 'var(--surface, #121a17)',
+        background: 'var(--surface-panel)',
         border: '1px solid var(--line, #243029)',
         borderRadius: 16,
         padding: '12px 18px',

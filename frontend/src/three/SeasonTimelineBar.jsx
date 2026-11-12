@@ -152,7 +152,7 @@ export function SeasonTimelineBar({
         width: '100%',
         marginTop: 10,
         padding: '12px 16px',
-        background: 'var(--surface, rgba(8, 14, 11, 0.85))',
+        background: 'var(--surface-card, rgba(10, 18, 13, 0.55))',
         border: '1px solid var(--line, rgba(255, 255, 255, 0.12))',
         borderRadius: 14,
         display: 'flex',

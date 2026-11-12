@@ -8,10 +8,10 @@
 
 :root {
   /* Design Tokens — Calm, Warm, Earthy, Matte */
-  --bg:             #0f1412;
-  --surface:        #161d1a;
-  --surface-2:      #1d2622;
-  --border:         rgba(255, 255, 255, 0.07);
+  --bg:             transparent;
+  --surface:        var(--surface-card, rgba(10, 18, 13, 0.55));
+  --surface-2:      var(--surface-table, rgba(8, 14, 11, 0.72));
+  --border:         rgba(255, 255, 255, 0.08);
   --text:           #e8ece9;
   --text-muted:     #9aa5a0;
   --leaf:           #7fb069;
@@ -275,7 +275,7 @@ html, body {
 
 /* Glass Surfaces */
 .glass-panel {
-  background: var(--surface-card, rgba(16, 28, 22, 0.86));
+  background: var(--surface-panel, rgba(10, 18, 13, 0.62));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-card);
   box-shadow: var(--glass-shadow);
@@ -295,7 +295,7 @@ html, body {
 }
 
 .glass-panel-elevated {
-  background: var(--glass-strong, rgba(20, 36, 28, 0.92));
+  background: var(--surface-panel, rgba(10, 18, 13, 0.62));
   border: 1px solid var(--glass-border-light);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow-elevated);
@@ -303,7 +303,7 @@ html, body {
 }
 
 .glass-card {
-  background: var(--surface-card, rgba(16, 28, 22, 0.86));
+  background: var(--surface-card, rgba(10, 18, 13, 0.55));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
@@ -14155,10 +14155,12 @@ h2, h3, .card-title, .panel-title {
 :root,
 [data-mode="farmer"] {
   --bg-deep: #07120d;
-  --surface-card: rgba(10, 18, 14, 0.62);
-  --glass: rgba(10, 18, 14, 0.62);
-  --glass-strong: rgba(10, 18, 14, 0.80);
-  --line: rgba(255, 255, 255, 0.12);
+  --surface-panel: rgba(10, 18, 13, 0.62);
+  --surface-card: rgba(10, 18, 13, 0.55);
+  --surface-table: rgba(8, 14, 11, 0.72);
+  --glass: var(--surface-card);
+  --glass-strong: var(--surface-table);
+  --line: rgba(255, 255, 255, 0.08);
   --text: #eef3ee;
   --text-2: rgba(238, 243, 238, 0.68);
   --text-3: rgba(238, 243, 238, 0.45);
@@ -14172,8 +14174,8 @@ h2, h3, .card-title, .panel-title {
 
   /* Phase 3 Token Aliases */
   --bg: transparent;
-  --surface: var(--glass);
-  --surface-2: var(--glass-strong);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-table);
   --border: var(--line);
   --text-muted: var(--text-2);
 
@@ -14189,9 +14191,11 @@ h2, h3, .card-title, .panel-title {
 
 [data-mode="research"] {
   --bg-deep: #050b10;
-  --surface-card: rgba(10, 18, 14, 0.62);
-  --glass: rgba(10, 18, 14, 0.62);
-  --glass-strong: rgba(10, 18, 14, 0.80);
+  --surface-panel: rgba(10, 18, 13, 0.62);
+  --surface-card: rgba(10, 18, 13, 0.55);
+  --surface-table: rgba(8, 14, 11, 0.72);
+  --glass: var(--surface-card);
+  --glass-strong: var(--surface-table);
   --line: rgba(95, 211, 243, 0.18);
   --text: #d8f3ff;
   --text-2: rgba(216, 243, 255, 0.6);
@@ -14210,8 +14214,8 @@ h2, h3, .card-title, .panel-title {
 
   /* Aliases */
   --bg: transparent;
-  --surface: var(--glass);
-  --surface-2: var(--glass-strong);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-table);
   --border: var(--line);
   --text-muted: var(--text-2);
 }
@@ -15479,10 +15483,10 @@ body[data-lang="bn"],
 .market-header-card,
 .market-kpi-tile,
 .market-card-section {
-  background: rgba(8, 14, 11, 0.80) !important;
-  backdrop-filter: blur(18px) saturate(130%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: var(--surface-panel) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: var(--surface-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
@@ -15490,7 +15494,7 @@ body[data-lang="bn"],
 table tbody,
 .market-table tbody,
 .table-container tbody {
-  background: rgba(8, 14, 11, 0.88) !important;
+  background: var(--surface-table) !important;
 }
 
 table tbody tr:nth-child(even),
@@ -17165,10 +17169,10 @@ span[style*="197, 232, 108"] {
    Layout reference: docs/water_layout_reference.html
    ============================================================================== */
 .water-planner-view {
-  --bg-wp: #0c120e;
-  --surface-wp: #131b16;
-  --surface-2-wp: #18221c;
-  --line-wp: #243029;
+  --bg-wp: transparent;
+  --surface-wp: var(--surface-panel, rgba(10, 18, 13, 0.62));
+  --surface-2-wp: var(--surface-card, rgba(10, 18, 13, 0.55));
+  --line-wp: var(--surface-border, rgba(255, 255, 255, 0.08));
   --fg-wp: #e7efe8;
   --muted-wp: #93a597;
   --faint-wp: #9AA5A0;
@@ -17192,10 +17196,10 @@ span[style*="197, 232, 108"] {
 
 [data-theme="dark"] .water-planner-view,
 .theme-dark .water-planner-view {
-  --bg-wp: #0c120e;
-  --surface-wp: #131b16;
-  --surface-2-wp: #18221c;
-  --line-wp: #243029;
+  --bg-wp: transparent;
+  --surface-wp: var(--surface-panel, rgba(10, 18, 13, 0.62));
+  --surface-2-wp: var(--surface-card, rgba(10, 18, 13, 0.55));
+  --line-wp: var(--surface-border, rgba(255, 255, 255, 0.08));
   --fg-wp: #e7efe8;
   --muted-wp: #93a597;
   --faint-wp: #9AA5A0;
@@ -17210,9 +17214,9 @@ span[style*="197, 232, 108"] {
 
 [data-theme="light"] .water-planner-view,
 .theme-light .water-planner-view {
-  --bg-wp: #f1f4ee;
-  --surface-wp: #ffffff;
-  --surface-2-wp: #f4f7f1;
+  --bg-wp: transparent;
+  --surface-wp: var(--surface-panel, rgba(255, 255, 255, 0.62));
+  --surface-2-wp: var(--surface-card, rgba(255, 255, 255, 0.55));
   --line-wp: #dde5da;
   --fg-wp: #18231b;
   --muted-wp: #334155;
@@ -17294,7 +17298,7 @@ span[style*="197, 232, 108"] {
   font: inherit;
   color: inherit;
   text-align: left;
-  background: var(--surface-wp);
+  background: var(--surface-card, rgba(10, 18, 13, 0.55));
   border: 1px solid var(--line-wp);
   border-radius: 14px;
   padding: 12px;
@@ -18608,10 +18612,10 @@ body[data-lang="bn"],
 .market-header-card,
 .market-kpi-tile,
 .market-card-section {
-  background: rgba(8, 14, 11, 0.80) !important;
-  backdrop-filter: blur(18px) saturate(130%) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(130%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  background: var(--surface-panel) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: var(--surface-border, 1px solid rgba(255, 255, 255, 0.08)) !important;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
@@ -18619,7 +18623,7 @@ body[data-lang="bn"],
 table tbody,
 .market-table tbody,
 .table-container tbody {
-  background: rgba(8, 14, 11, 0.88) !important;
+  background: var(--surface-table) !important;
 }
 
 table tbody tr:nth-child(even),

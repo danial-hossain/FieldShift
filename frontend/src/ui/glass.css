@@ -4,18 +4,28 @@
    ========================================================================== */
 
 :root {
-  /* Surface Tokens: Level 1 Panel (Dark Theme) */
-  --glass-panel-bg: rgba(8, 14, 11, 0.78);
-  --glass-panel-blur: blur(20px) saturate(140%);
-  --glass-panel-border: 1px solid rgba(255, 255, 255, 0.08);
-  --glass-panel-radius: 22px;
-  --glass-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 40px rgba(0, 0, 0, 0.35);
+  /* Surface Tokens (Dark Theme) — The ONLY 3 surface tokens */
+  --surface-panel: rgba(10, 18, 13, 0.62);   /* big page sections / header cards */
+  --surface-card:  rgba(10, 18, 13, 0.55);   /* cards inside a panel, KPI tiles, season cards */
+  --surface-table: rgba(8, 14, 11, 0.72);    /* table bodies and long text blocks so text is readable */
+  --surface-border: 1px solid rgba(255, 255, 255, 0.08);
+  --surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 
-  /* Surface Tokens: Level 2 Card (Dark Theme) */
-  --glass-card-bg: rgba(255, 255, 255, 0.05);
-  --glass-card-border: 1px solid rgba(255, 255, 255, 0.10);
+  /* System compatibility mappings */
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-table);
+  --glass-panel-bg: var(--surface-panel);
+  --glass-panel-blur: none;
+  --glass-panel-border: var(--surface-border);
+  --glass-panel-radius: 22px;
+  --glass-panel-shadow: var(--surface-highlight), 0 18px 40px rgba(0, 0, 0, 0.35);
+
+  --glass-card-bg: var(--surface-card);
+  --glass-card-border: var(--surface-border);
   --glass-card-radius: 16px;
-  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --glass-card-shadow: var(--surface-highlight);
+  --glass-surface-bg: var(--surface-panel);
+  --glass-surface-border: var(--surface-border);
 
   /* Surface Tokens: Level 3 Chip/Button (Dark Theme) */
   --glass-chip-bg: rgba(255, 255, 255, 0.06);
@@ -52,13 +62,23 @@
 [data-theme="light"],
 .light-theme,
 body.light {
-  --glass-panel-bg: rgba(255, 255, 255, 0.82);
-  --glass-panel-border: 1px solid rgba(0, 0, 0, 0.08);
-  --glass-panel-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.90), 0 18px 40px rgba(0, 0, 0, 0.08);
+  --surface-panel: rgba(255, 255, 255, 0.62);
+  --surface-card:  rgba(255, 255, 255, 0.55);
+  --surface-table: rgba(255, 255, 255, 0.80);
+  --surface-border: 1px solid rgba(0, 0, 0, 0.08);
+  --surface-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.40);
 
-  --glass-card-bg: rgba(255, 255, 255, 0.65);
-  --glass-card-border: 1px solid rgba(0, 0, 0, 0.08);
-  --glass-card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --surface: var(--surface-card);
+  --surface-2: var(--surface-table);
+  --glass-panel-bg: var(--surface-panel);
+  --glass-panel-border: var(--surface-border);
+  --glass-panel-shadow: var(--surface-highlight), 0 18px 40px rgba(0, 0, 0, 0.08);
+
+  --glass-card-bg: var(--surface-card);
+  --glass-card-border: var(--surface-border);
+  --glass-card-shadow: var(--surface-highlight);
+  --glass-surface-bg: var(--surface-panel);
+  --glass-surface-border: var(--surface-border);
 
   --glass-chip-bg: rgba(0, 0, 0, 0.04);
   --glass-chip-border: 1px solid rgba(21, 128, 61, 0.30);
@@ -89,12 +109,14 @@ body.light {
 .wp-card,
 .weather-station,
 .farm-planning-workspace > .ui-card,
+.my-farm-workspace > .ui-card,
+.climate-risk-view .card,
+.water-planner-view .wp-card,
 .market-header-card,
-.market-card-section {
-  background: var(--glass-panel-bg) !important;
-  -webkit-backdrop-filter: var(--glass-panel-blur) !important;
-  backdrop-filter: var(--glass-panel-blur) !important;
-  border: var(--glass-panel-border) !important;
+.market-card-section,
+.evidence-workspace .dash-card {
+  background: var(--surface-panel) !important;
+  border: var(--surface-border) !important;
   border-radius: var(--glass-panel-radius) !important;
   box-shadow: var(--glass-panel-shadow) !important;
 }
@@ -108,11 +130,27 @@ body.light {
 .ui-key-number-tile,
 .market-kpi-tile,
 .stat-card,
-.evidence-card {
-  background: var(--glass-card-bg) !important;
-  border: var(--glass-card-border) !important;
+.evidence-card,
+.calc-card-fly-in,
+.water-planner-view .wp-sc,
+.sc {
+  background: var(--surface-card) !important;
+  border: var(--surface-border) !important;
   border-radius: var(--glass-card-radius) !important;
   box-shadow: var(--glass-card-shadow) !important;
+}
+
+/* ==========================================================================
+   LEVEL 1b: High-readability Table & Dense Content Containers
+   ========================================================================== */
+.glass-table,
+.glass-table-container,
+.market-table-wrap,
+.wp-table-wrap,
+[data-demo="wholesale_prices"],
+[data-demo="risk_calendar"] {
+  background: var(--surface-table) !important;
+  border: var(--surface-border) !important;
 }
 
 /* Selected or Recommended Card: Top Highlight & Subtle Gradient Border */
