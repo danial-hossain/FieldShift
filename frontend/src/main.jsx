@@ -2607,30 +2607,10 @@ export function App() {
               aria-label={lang === 'bn' ? 'ডেমো মোড' : 'Demo Mode'}
               aria-pressed={demoModeActive ? 'true' : 'false'}
               onClick={() => setDemoModeActive(prev => !prev)}
-              style={{
-                width: 'auto',
-                padding: '0 14px',
-                height: 40,
-                fontWeight: 700,
-                fontSize: 13,
-                background: demoModeActive
-                  ? 'linear-gradient(135deg, rgba(82,214,122,.28) 0%, rgba(46,184,92,.42) 100%)'
-                  : 'rgba(8,14,11,.65)',
-                color: demoModeActive ? '#a8f5c0' : 'var(--leaf-neon, #7ee787)',
-                border: demoModeActive ? '1px solid rgba(82,214,122,.85)' : '1px solid rgba(82,214,122,.40)',
-                borderRadius: '9999px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 7,
-                cursor: 'pointer',
-                boxShadow: demoModeActive
-                  ? '0 0 20px rgba(82,214,122,.45), inset 0 0 12px rgba(82,214,122,.25)'
-                  : '0 0 12px rgba(82,214,122,.15)',
-                transition: 'all 0.2s ease'
-              }}
             >
-              <Presentation size={16} />
+              <Presentation size={15} />
               <span>{lang === 'bn' ? 'ডেমো' : 'Demo'}</span>
+              <span className="demo-kbd-badge">D</span>
             </button>
 
             {/* Header Language Switcher (Bangla / English) */}

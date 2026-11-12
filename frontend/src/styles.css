@@ -15046,21 +15046,27 @@ h2, h3, .card-title, .panel-title {
   vertical-align: middle !important;
 }
 
-.top-bar-icon-btn:not(.lang-toggle-btn) {
+.top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn) {
   width: 40px !important;
   justify-content: center !important;
   padding: 0 !important;
 }
 
-.lang-toggle-btn {
+.lang-toggle-btn,
+.demo-mode-toggle-btn {
   width: auto !important;
   min-width: max-content !important;
-  padding: 0 16px !important;
+  padding: 0 14px !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
 }
 
-.lang-toggle-btn span {
+.lang-toggle-btn {
+  padding: 0 16px !important;
+}
+
+.lang-toggle-btn span,
+.demo-mode-toggle-btn span {
   white-space: nowrap !important;
   display: inline-block !important;
 }
@@ -15307,7 +15313,7 @@ body,
   /* Hide extra top-bar clutter on mobile */
   .top-bar-pill-badge,
   .theme-toggle-btn,
-  .top-bar-icon-btn:not(.lang-toggle-btn),
+  .top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn),
   .global-search-pill,
   .top-bar-user-profile {
     display: none !important;
@@ -18171,7 +18177,7 @@ body,
   /* Hide extra top-bar clutter on mobile */
   .top-bar-pill-badge,
   .theme-toggle-btn,
-  .top-bar-icon-btn:not(.lang-toggle-btn),
+  .top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn),
   .global-search-pill,
   .top-bar-user-profile {
     display: none !important;
@@ -18816,7 +18822,7 @@ button.primary:active:not(:disabled) {
 .btn-outline,
 .btn-ghost,
 .glass-chip,
-.top-bar-icon-btn:not(.lang-toggle-btn),
+.top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn),
 .irrigation-chip:not(.active):not([aria-pressed="true"]),
 .ui-chip {
   border: 1px solid rgba(200, 241, 105, 0.25) !important;
@@ -18828,7 +18834,7 @@ button.primary:active:not(:disabled) {
 .btn-outline:hover:not(:disabled),
 .btn-ghost:hover:not(:disabled),
 .glass-chip:hover,
-.top-bar-icon-btn:not(.lang-toggle-btn):hover,
+.top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn):hover,
 .irrigation-chip:not(.active):not([aria-pressed="true"]):hover,
 .ui-chip:hover {
   border-color: rgba(200, 241, 105, 0.5) !important;
@@ -18840,7 +18846,7 @@ button.primary:active:not(:disabled) {
 [data-theme="light"] .btn-outline,
 [data-theme="light"] .btn-ghost,
 [data-theme="light"] .glass-chip,
-[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn),
+[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn),
 [data-theme="light"] .irrigation-chip:not(.active):not([aria-pressed="true"]),
 [data-theme="light"] .ui-chip {
   border: 1px solid rgba(76, 154, 31, 0.25) !important;
@@ -18851,7 +18857,7 @@ button.primary:active:not(:disabled) {
 [data-theme="light"] .btn-outline:hover:not(:disabled),
 [data-theme="light"] .btn-ghost:hover:not(:disabled),
 [data-theme="light"] .glass-chip:hover,
-[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn):hover,
+[data-theme="light"] .top-bar-icon-btn:not(.lang-toggle-btn):not(.demo-mode-toggle-btn):hover,
 [data-theme="light"] .irrigation-chip:not(.active):not([aria-pressed="true"]):hover,
 [data-theme="light"] .ui-chip:hover {
   border-color: rgba(76, 154, 31, 0.5) !important;
