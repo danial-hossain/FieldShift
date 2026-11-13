@@ -2,23 +2,25 @@
 
 **NASA International Space Apps Challenge 2026**  
 **Challenge:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
-**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy)  
+**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi [Presenter/storyteller], Nusrat Jahan Tuli [Designer], Noman Ahmed Tonmoy [Data scientist], Mustakim Musa [Developer], Abrar Ahmed Chy [Developer])  
 **License:** Apache License 2.0 (see [LICENSE](LICENSE))  
 **Prior Work Disclosure:** Documented in [docs/PRIOR_WORK.md](docs/PRIOR_WORK.md)  
 **AI Disclosure:** Documented in [docs/AI_USE.md](docs/AI_USE.md)  
+> "Code, documentation, the logo and village illustrations were created with help from Google Antigravity (Gemini) and Claude, and reviewed by Team AZOIC. Demo videos use real screen recordings of the app and our own voice; subtitles and editing were done with Claude's help."  
 **Methodology & Cross-Validation:** Documented in [docs/imerg_validation.md](docs/imerg_validation.md)  
 
 ---
 
 ## What FieldShift Does: The Rotation-First Story
 
-In the drought-prone Barind Tract of Rajshahi and riverine floodplains across Bangladesh, smallholder farmers are locked into a high-risk **Boro–Fallow–Aman** monoculture. Pumping deep tubewell groundwater for dry-season Boro rice rapidly depletes regional aquifers, while extended 75-day pre-monsoon fallows leave topsoil exposed to erosion and strip soil organic matter.
+In the drought-prone Barind Tract of Rajshahi and riverine floodplains across Bangladesh, smallholder farmers are locked into a high-risk **Boro–Fallow–Aman** monoculture. Pumping deep tubewell groundwater for dry-season Boro rice rapidly depletes regional aquifers, while extended 75-day pre-monsoon fallows leave topsoil exposed to erosion and strip soil organic matter — fields lie bare about 115 days a year (current rotation).
 
-**FieldShift 2026** transforms agricultural decision-support from a single-season forecast into an **honest, multi-season crop rotation intelligence tool**. When a farmer registers their parcel anywhere in Bangladesh, FieldShift evaluates their **existing rotation as the baseline** and benchmarks it against **three NASA-informed alternative strategies**:
+**FieldShift 2026** transforms agricultural decision-support from a single-season forecast into an **honest, multi-season crop rotation intelligence tool**. When a farmer registers their parcel anywhere in Bangladesh, FieldShift evaluates their **existing rotation as the baseline** and benchmarks it against **four NASA-informed alternative strategies** (matching the app's tabs: Balanced, Profit, Water saving, Soil health):
 
 1. **Balanced Strategy:** Mathematically balances gross margin, irrigation water preservation, and soil organic matter replenishment across a 6-season (2-year) planning horizon.
-2. **Water-Saving Strategy:** Replaces heavy dry-season rice pumping with low-water pulses, mustard, or oilseeds, reducing aquifer drawdown in depleting Barind regions.
-3. **Soil-Building Strategy:** Maximizes biological nitrogen fixation (BNF) with leguminous pulses and living canopy cover, cutting synthetic urea costs and breaking pest cycles.
+2. **Profit Strategy:** Maximizes net farmgate gross margin while adhering to seasonal crop suitability, market risk diversification, and basic rotation rules.
+3. **Water-Saving Strategy:** Replaces heavy dry-season rice pumping with low-water pulses, mustard, or oilseeds, reducing aquifer drawdown in depleting Barind regions.
+4. **Soil-Building Strategy:** Maximizes biological nitrogen fixation (BNF) with leguminous pulses and living canopy cover, cutting synthetic urea costs and breaking pest cycles.
 
 For every strategy (including the farmer's current baseline), FieldShift generates a deterministic **5-Item Agronomic Assessment Card**:
 - **১. কেন এই প্রস্তাব? (Why Suggested):** Objective drivers and binding resource constraints (irrigation limits, labor shortage, power tiller equipment availability).
@@ -40,15 +42,21 @@ FieldShift relies on validated satellite observations and physical assimilations
 | :--- | :--- | :--- | :--- |
 | **NASA GPM IMERG** | `GPM_3IMERGDF` v07 (Final Daily) | 0.1° × 0.1° (~10 km); 2001–2024 (24 yrs) | Satellite-calibrated daily precipitation; rainfall reliability, dry-spell risk, and monsoon onset cross-validation. |
 | **NASA POWER** | Daily Point Meteorology (v2.0) | 0.5° × 0.5° (~50 km); 2001–2025 (25 yrs) | Surface solar radiation (`ALLSKY_SFC_SW_DWN`), daily air temperature (`T2M`, `T2M_MAX`, `T2M_MIN`), humidity (`RH2M`), wind speed (`WS2M`), Growing Degree Days (GDD), and reference evapotranspiration ($ET_0$). |
-| **NASA SMAP** | L4 Global Surface & Root Zone Soil Moisture (`SPL4SMGP`) | 9 km grid | Planned for root zone soil moisture assimilation. |
-| **NASA MODIS** | Terra MODIS Vegetation Indices (`MOD13Q1.061`) | 250 m, 16-day composite | Planned for vegetative canopy and greenness index integration. |
-| **NASA GRACE / GRACE-FO** | Level-3 JPL RL06.3M Mascon Water Storage (`TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4`) | 0.5° CRI grid; 2002–2024 (259 monthly NetCDF records) | Terrestrial groundwater storage anomalies recomputed directly from JPL NetCDF showing Barind tract aquifer decline of **-1.07 cm/year** and haor wetland recharge of **+0.44 cm/year**, setting MILP water-scarcity optimization weights. |
+| **NASA GRACE / GRACE-FO** | Level-3 JPL RL06.3M Mascon Water Storage (`TELLUS_GRAC-GRFO_MASCON_CRI_GRID_RL06.3_V4`) | JPL RL06.3 mascons (3°), CRI on a 0.5° grid; 2002–2024 (259 monthly NetCDF records) | Terrestrial groundwater storage anomalies recomputed directly from JPL NetCDF showing Barind tract aquifer decline of **-1.07 cm/year** and haor wetland recharge of **+0.44 cm/year**, setting MILP water-scarcity optimization weights. |
 | **NASA SRTM** | SRTMGL1 1 Arc-Second Global Elevation | 30 m spatial resolution | Partial elevation and topographic slope integration for drainage assessment. |
 
-### Supplementary Open Datasets
+### Planned (not yet used)
+
+| NASA Dataset | Product / Collection | Resolution | Intended Agronomic Use |
+| :--- | :--- | :--- | :--- |
+| **NASA SMAP** | L4 Global Surface & Root Zone Soil Moisture (`SPL4SMGP`) | 9 km grid | Root zone soil moisture assimilation for real-time irrigation deficit triggers. |
+| **NASA MODIS** | Terra MODIS Vegetation Indices (`MOD13Q1.061`) | 250 m, 16-day composite | Vegetative canopy growth, NDVI phenology tracking, and greenness index integration. |
+
+### Supplementary & Price Datasets
+- `data/crops/crop_knowledge.csv`: BBS, BARI Krishi Projukti Hatboi, and BRRI yield and cost baselines.
+- `data/market/faostat_bd.csv`: FAOSTAT Bangladesh supply, deficit rankings, and trade dependency.
+- `src/data/market_intelligence.py` & `src/data/bangladesh_crops.py`: Monitored grower and wholesale farmgate prices from Department of Agricultural Marketing (DAM Bangladesh), Trading Corporation of Bangladesh (TCB), BBS, and DAE.
 - **ISRIC SoilGrids 250m:** Soil texture class, clay/sand fractions, bulk density, and available water capacity (AWC).
-- **FAOSTAT:** Bangladesh national average crop yields and producer prices.
-- **Bangladesh Bureau of Statistics (BBS) & DAE:** District and Upazila agricultural gazetteer and crop calendars.
 
 ---
 
@@ -74,12 +82,11 @@ Judges, researchers, and farmers should note the following boundaries of the mod
 
 ## Local Execution
 
-FieldShift supports running locally:
+FieldShift data files are cached locally:
 - 64-district NASA POWER agro-climatologies, GPM IMERG onset metrics, and GRACE-FO NetCDF trends are stored in local data files.
 - Start with:
   ```powershell
   # Terminal 1: Backend
-  $env:OFFLINE="1"
   python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
   ```
   ```powershell
@@ -87,31 +94,31 @@ FieldShift supports running locally:
   cd frontend
   npm run dev
   ```
-- Access demo mode at `http://127.0.0.1:5173/?demo=1`.
+- Access demo mode at `http://localhost:5173/?demo=1`.
 - Optimization solvers (PuLP CBC MILP), financial calculators, and 3D procedural visualizations execute on the local system.
 
 ---
 
 ## Team Azoic (Dhaka, Bangladesh)
 
-- **Danial Hossain** — Team Lead, Agronomic MILP Optimization & Backend Engineering
-- **Md. Fazle Elahi Mahi** — NASA Earth Observation Data Engineering & IMERG Validation
-- **Nusrat Jahan Tuli** — Geospatial Analysis, Satellite Ingestion & GIS Mapping
-- **Noman Ahmed Tonmoy** — Frontend Architecture & 3D WebGL Digital Twin
-- **Mustakim Musa** — Scientific Research, Agricultural Extension & Statistical Verification
-- **Abrar Ahmed Chy** — UX Design, Bilingual Bengali Localization & Video Production
+- **Danial Hossain** — Lead
+- **Md. Fazle Elahi Mahi** — Presenter/storyteller
+- **Nusrat Jahan Tuli** — Designer
+- **Noman Ahmed Tonmoy** — Data scientist
+- **Mustakim Musa** — Developer
+- **Abrar Ahmed Chy** — Developer
 
 ---
 
 ## Verification & Test Suite
 
 FieldShift includes comprehensive automated test suites:
-- **Frontend Unit Tests:** 151/151 passed (`cd frontend ; npm test`).
-- **SSR Smoke Test:** 12/12 platform destinations + Research Sub-Lab passed (`cd frontend ; npm run smoke`).
-- **Offline Integrity Check:** 10/10 checkpoints passed (`python scripts/demo_check.py`).
-- **Dynamic Zone Variation Guard:** 4/4 agro-ecological zones verified (`python scripts/field_variation_check.py`).
-- **Interactive Control Inventory & Persistence:** 30/30 controls verified, 0 no-effect, 0 error (`node scripts/control_inventory.js`).
-- **WCAG AA Contrast Compliance:** 2,057 elements verified, 0 failures across dark & light themes (`node scripts/contrast_check.js`).
-- **Cross-Page Numeric Consistency:** 0 discrepancies verified across Planner, Water, Weather, and Soil (`python scripts/consistency_check.py`).
-- **Agronomic Sanity Suite:** 27/27 rules & sanity tests passed (`python -m pytest tests/test_agronomic_rules.py tests/test_agronomic_sanity.py`).
+- **Frontend Unit Tests:** 164/164 passed (`cd frontend ; npm test`).
+- **SSR Smoke Test:** 11/11 platform destinations + Research Sub-Lab passed (`cd frontend ; npm run smoke`).
+- **Data Integrity Check:** 9/10 checkpoints passed (`python scripts/demo_check.py`).
+- **Dynamic Zone Variation Guard:** 5/5 fields across 4 canonical agro-ecological zones verified (`python scripts/field_variation_check.py`).
+- **Interactive Control Inventory & Persistence:** 24/30 controls verified (`node scripts/control_inventory.js`).
+- **WCAG AA Contrast Compliance:** Dark theme 100% compliant across all pages; token contrast up to 17.7:1 (`node scripts/contrast_check.js`).
+- **Cross-Page Numeric Consistency:** 4 regional fields audited with single-source-of-truth convergence across Planner, Water, and Soil models (`python scripts/consistency_check.py`).
+- **Agronomic Sanity Suite:** 26/27 rules & sanity tests passed (`python -m pytest tests/test_agronomic_rules.py tests/test_agronomic_sanity.py`).
 - **Cross-Field Visual Differentiation:** 43/43 views verified across all 4 canonical zones (`node scripts/visual_test_report.js`).

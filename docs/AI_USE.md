@@ -3,8 +3,10 @@
 
 **Project:** FieldShift 2026: Climate-Adaptive Crop Rotation & Planting Intelligence  
 **Challenge Track:** "Field Shift: Adapting Farms with NASA Data" (Bangladesh Event, 13–14 Nov 2026)  
-**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi, Nusrat Jahan Tuli, Noman Ahmed Tonmoy, Mustakim Musa, Abrar Ahmed Chy)  
+**Team:** Team Azoic, Dhaka (Danial Hossain [Lead], Md. Fazle Elahi Mahi [Presenter/storyteller], Nusrat Jahan Tuli [Designer], Noman Ahmed Tonmoy [Data scientist], Mustakim Musa [Developer], Abrar Ahmed Chy [Developer])  
 **License:** Apache License 2.0  
+
+> "Code, documentation, the logo and village illustrations were created with help from Google Antigravity (Gemini) and Claude, and reviewed by Team AZOIC. Demo videos use real screen recordings of the app and our own voice; subtitles and editing were done with Claude's help."
 
 ---
 
@@ -27,7 +29,7 @@ FieldShift 2026 was conceptualized, architected, and scientifically governed by 
    - **Role:** Verification of FAO-56 Penman-Monteith reference evapotranspiration formulas, validation of SciPy Mann-Whitney U test p-value calculations, and bilingual Bengali grammar consistency checking.
 4. **In-App Farmer AI Assistant:**
    - **Location:** [`frontend/src/AiAssistantView.jsx#L110-L165`](file:///h:/FieldShift2026/frontend/src/AiAssistantView.jsx#L110-L165).
-   - **Model & Architecture:** Operates with a deterministic hybrid architecture. In offline mode (`OFFLINE=1`), it executes an agronomic rule-based response engine using verified NASA POWER and GPM IMERG telemetry. When online, it connects to Google Gemini (`gemini-2.5-flash`) via the backend route with strict prompt bounding: the assistant is strictly prohibited from fabricating crop yields, hallucinating planting dates, or providing unverified pesticide advice.
+   - **Model & Architecture:** Operates with a deterministic hybrid architecture. In local cached mode, it executes an agronomic rule-based response engine using verified NASA POWER and GPM IMERG telemetry. When online, it connects to Google Gemini (`gemini-2.5-flash`) via the backend route with strict prompt bounding: the assistant is strictly prohibited from fabricating crop yields, hallucinating planting dates, or providing unverified pesticide advice.
 
 ---
 
